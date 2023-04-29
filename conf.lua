@@ -1,0 +1,10 @@
+function love.conf(t)
+    t.window.title = "Open Hexagon"
+    t.window.width = 960
+    t.window.height = 540
+    t.window.resizable = true
+    t.window.minwidth = 640
+    t.window.minheight = 360
+
+    t.console = true -- windows only
+end
