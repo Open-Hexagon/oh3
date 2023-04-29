@@ -1,0 +1,2 @@
+-- TODO: 2.0 compatibility mode
+-- Keep this completely separated from game.lua, even if you have to duplicate code.
