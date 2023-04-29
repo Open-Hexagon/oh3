@@ -1,0 +1,2 @@
+-- TODO: 1.92 compatibility mode
+-- Keep this completely separated from all other modes, even if you have to duplicate code.

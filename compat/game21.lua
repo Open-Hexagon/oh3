@@ -1,0 +1,2 @@
+-- TODO: 2.1.X compatibility mode
+-- Keep this completely separated from all other modes (except maybe game20.lua), even if you have to duplicate code.
