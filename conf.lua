@@ -1,5 +1,6 @@
 function love.conf(t)
     t.window.title = "Open Hexagon"
+    t.window.icon = "assets/image/icon.png"
     t.window.width = 960
     t.window.height = 540
     t.window.resizable = true
