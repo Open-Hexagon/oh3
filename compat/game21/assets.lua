@@ -3,12 +3,21 @@ local json = require("extlibs.json.jsonc")
 
 local assets = {
     loaded_packs = {},
-    pack_path = "Packs/"
+    pack_path = "Packs/",
+    lua_file_cache = {}
 }
 
-function assets:load_pack(folder)
-    if self.loaded_packs[folder] == nil then
-        folder = self.pack_path .. folder
+function assets:load_lua_file(pack_folder, path)
+    path = self.pack_path .. pack_folder .. "/" .. path
+    if self.lua_file_cache[path] == nil then
+        self.lua_file_cache[path] = loadfile(path)
+    end
+    return self.lua_file_cache[path]
+end
+
+function assets:load_pack(name)
+    if self.loaded_packs[name] == nil then
+        local folder = self.pack_path .. name
 
         -- check validity
         do
@@ -28,7 +37,9 @@ function assets:load_pack(folder)
             check_file("Scripts")
         end
 
-        local pack_data = {}
+        local pack_data = {
+            path = folder
+        }
 
         -- pack metadata
         do
@@ -110,10 +121,9 @@ function assets:load_pack(folder)
             pack_data.styles[style_json.id] = style_json
         end
 
-        self.loaded_packs[folder] = pack_data
-    else
-        return self.loaded_packs[folder]
+        self.loaded_packs[name] = pack_data
     end
+    return self.loaded_packs[name]
 end
 
 return assets

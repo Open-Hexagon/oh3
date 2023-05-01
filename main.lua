@@ -1,4 +1,8 @@
 function love.run()
+    -- load game for testing
+    local game = require("compat.game21")
+    game:start("cube", "pointless")
+
     -- target frametime
     local frametime = 1 / 240
     local start_time = love.timer.getTime()
@@ -37,8 +41,15 @@ function love.run()
                     local width, height = love.graphics.getDimensions()
                     screen = love.graphics.newCanvas(width * scale[1], height * scale[2])
                 end
+
+                -- allow game modules to have their own event handlers
+                if game.running and game[name] ~= nil then
+                    game[name](game, a, b, c, d, e, f)
+                end
             end
-            -- TODO: update game state
+            if game.running then
+                game:update(frametime)
+            end
         end
         if love.graphics.isActive() then
             local width, height = love.graphics.getDimensions()
@@ -46,12 +57,12 @@ function love.run()
             love.graphics.origin()
             love.graphics.clear(0, 0, 0, 1)
             -- can only start rendering once the initial resize event was processed
-            if screen ~= nil then
+            if game.running and screen ~= nil then
                 -- render onto the screen
                 love.graphics.setCanvas(screen)
                 -- clear with white for now, so the resizing can be seen in action
                 love.graphics.clear(1, 1, 1, 1)
-                -- TODO: rendering
+                game:draw()
                 love.graphics.setCanvas()
                 -- render the canvas in the middle of the window
                 love.graphics.origin()
