@@ -1,7 +1,8 @@
 local log = require("log")(...)
 local lua_runtime = {
-    env = {},
-    assets = nil
+    env = nil,
+    assets = nil,
+    file_cache = {}
 }
 
 function lua_runtime:init_env(assets, pack_name)
@@ -18,10 +19,13 @@ function lua_runtime:init_env(assets, pack_name)
 end
 
 function lua_runtime:run_lua_file(path)
-    if self.assets == nil then
+    if self.env == nil then
         error("attempted to load a lua file without initializing the environment")
     else
-        local lua_file = self.assets:load_lua_file(path)
+        if self.file_cache[path] == nil then
+            self.file_cache[path] = loadfile(path)
+        end
+        local lua_file = self.file_cache[path]
         setfenv(lua_file, self.env)
         lua_file()
     end

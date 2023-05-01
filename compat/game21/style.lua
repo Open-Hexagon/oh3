@@ -121,7 +121,7 @@ function style:calculate_color(color_data)
         end
     end
     for i = 1, 4 do
-        local value = color_data.result[i] + color_data.pulse[i] * self.pulse_factor
+        local value = color_data.result[i] + color_data.pulse[i] * self._pulse_factor
         if value > 255 then
             value = 255
         elseif value < 0 then
@@ -152,7 +152,7 @@ function style:update(frametime, mult)
             self._current_hue = self.hue_min
         end
     end
-    self.pulse_factor = self.pulse_factor + self.pulse_increment * frametime
+    self._pulse_factor = self._pulse_factor + self.pulse_increment * frametime
     if self.pulse_factor < self.pulse_min then
         self.pulse_increment = -self.pulse_increment
         self.pulse_factor = self.pulse_min

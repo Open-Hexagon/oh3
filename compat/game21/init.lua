@@ -32,7 +32,7 @@ function game:start(pack_folder, level_id, difficulty_mult)
 
     self.music = self.pack_data.music[self.level_data.musicId]
     -- TODO: seek to other segments if not first play
-    self.music.source:seek(self.music.segments[1])
+    self.music.source:seek(self.music.segments[1].time)
     love.audio.play(self.music.source)
 
     -- initialize random seed

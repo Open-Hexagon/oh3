@@ -4,16 +4,7 @@ local json = require("extlibs.json.jsonc")
 local assets = {
     loaded_packs = {},
     pack_path = "Packs/",
-    lua_file_cache = {}
 }
-
-function assets:load_lua_file(pack_folder, path)
-    path = self.pack_path .. pack_folder .. "/" .. path
-    if self.lua_file_cache[path] == nil then
-        self.lua_file_cache[path] = loadfile(path)
-    end
-    return self.lua_file_cache[path]
-end
 
 function assets:load_pack(name)
     if self.loaded_packs[name] == nil then

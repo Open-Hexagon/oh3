@@ -9,7 +9,7 @@ function level_status:new(sync_music_to_dm)
         score_overwrite = "",
         sync_music_to_dm = sync_music_to_dm,
         music_pitch = 1,
-        beep_sound = love.audio.newSource("assets/audio/beep.ogg", "static"),
+        beep_sound = love.audio.newSource("assets/audio/click.ogg", "static"),
         level_up_sound = love.audio.newSource("assets/audio/increment.ogg", "static"),
         swap_sound = love.audio.newSource("assets/audio/swap.ogg", "static"),
         death_sound = love.audio.newSource("assets/audio/death.ogg", "static"),
