@@ -48,7 +48,7 @@ function game:start(pack_folder, level_id, difficulty_mult)
 
     -- TODO: call self.lua_runtime.env.onPreUnload if not first play
 
-    self.lua_runtime:init_env(self.assets, pack_folder)
+    self.lua_runtime:init_env(self, pack_folder)
     self.lua_runtime:run_lua_file(self.pack_data.path .. "/" .. self.level_data.luaFile)
     self.running = true
 

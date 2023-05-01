@@ -5,7 +5,8 @@ local lua_runtime = {
     file_cache = {}
 }
 
-function lua_runtime:init_env(assets, pack_name)
+function lua_runtime:init_env(game, pack_name)
+    local assets = game.assets
     local pack = assets.loaded_packs[pack_name]
     log("initializing environment...")
     self.env = {
@@ -22,7 +23,38 @@ function lua_runtime:init_env(assets, pack_name)
             end
             self:run_lua_file(assets:get_pack(pname).path .. "/Scripts/" .. script)
             self.env.u_execScript = old
-        end
+        end,
+        u_rndIntUpper = function(upper)
+            return math.random(1, upper)
+        end,
+        u_getDifficultyMult = function()
+            return game.difficulty_mult
+        end,
+        l_setSpeedMult = function() end,
+        l_setSpeedInc = function() end,
+        l_setSpeedMax = function() end,
+        l_setRotationSpeed = function() end,
+        l_setRotationSpeedInc = function() end,
+        l_setRotationSpeedMax = function() end,
+        l_setDelayMult = function() end,
+        l_setDelayInc = function() end,
+        l_setFastSpin = function() end,
+        l_setSides = function() end,
+        l_setSidesMax = function() end,
+        l_setSidesMin = function() end,
+        l_setIncTime = function() end,
+        l_setPulseMin = function() end,
+        l_setPulseMax = function() end,
+        l_setPulseSpeed = function() end,
+        l_setPulseSpeedR = function() end,
+        l_setPulseDelayMax = function() end,
+        l_setBeatPulseMax = function() end,
+        l_setBeatPulseDelayMax = function() end,
+        l_setBeatPulseSpeedMult = function() end,
+        e_messageAdd = function() end,
+        l_getLevelTime = function()
+            return 0
+        end,
     }
 end
 

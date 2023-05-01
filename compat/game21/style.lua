@@ -153,12 +153,12 @@ function style:update(frametime, mult)
         end
     end
     self._pulse_factor = self._pulse_factor + self.pulse_increment * frametime
-    if self.pulse_factor < self.pulse_min then
+    if self._pulse_factor < self.pulse_min then
         self.pulse_increment = -self.pulse_increment
-        self.pulse_factor = self.pulse_min
-    elseif self.pulse_factor > self.pulse_max then
+        self._pulse_factor = self.pulse_min
+    elseif self._pulse_factor > self.pulse_max then
         self.pulse_increment = -self.pulse_increment
-        self.pulse_factor = self.pulse_max
+        self._pulse_factor = self.pulse_max
     end
 end
 
