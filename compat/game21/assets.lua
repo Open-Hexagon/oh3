@@ -117,7 +117,6 @@ function assets:load_pack(name)
         pack_data.styles = {}
         for contents in file_ext_read_iter(folder .. "/Styles", ".json") do
             local style_json = json.decode_jsonc(contents)
-            -- TODO: make resetable, updatable style object instead
             pack_data.styles[style_json.id] = style_json
         end
 

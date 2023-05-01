@@ -1,30 +1,32 @@
-local status = {
-    flash_color = {0, 0, 0},
-    _total_frametime_accumulator = 0,
-    _played_frametime_accumulator = 0,
-    _paused_frametime_accumulator = 0,
-    _current_pause = 6,
-    _current_increment_time = 0,
-    _custom_score = 0,
-    pulse = 75,
-    pulse_direction = 1,
-    pulse_delay = 0,
-    beat_pulse = 0,
-    beat_pulse_delay = 0,
-    pulse3D = 1,
-    pulse3D_direction = 1,
-    flash_effect = 0,
-    radius = 75,
-    fast_spin = 0,
-    camera_shake = 0,
-    has_died = false,
-    must_state_change = "none",
-    score_invalid = false,
-    invalid_reason = "",
-    started = false,
-    show_player_trail = true,
-    fragment_shaders = {}
-}
+local status = {}
+
+function status:reset_all_data()
+    self.flash_color = {0, 0, 0}
+    self._total_frametime_accumulator = 0
+    self._played_frametime_accumulator = 0
+    self._paused_frametime_accumulator = 0
+    self._current_pause = 6
+    self._current_increment_time = 0
+    self._custom_score = 0
+    self.pulse = 75
+    self.pulse_direction = 1
+    self.pulse_delay = 0
+    self.beat_pulse = 0
+    self.beat_pulse_delay = 0
+    self.pulse3D = 1
+    self.pulse3D_direction = 1
+    self.flash_effect = 0
+    self.radius = 75
+    self.fast_spin = 0
+    self.camera_shake = 0
+    self.has_died = false
+    self.must_state_change = "none"
+    self.score_invalid = false
+    self.invalid_reason = ""
+    self.started = false
+    self.show_player_trail = true
+    self.fragment_shaders = {}
+end
 
 function status:start()
     self:reset_time()
@@ -113,5 +115,7 @@ end
 function status:get_custom_score()
     return self._custom_score
 end
+
+status:reset_all_data()
 
 return status

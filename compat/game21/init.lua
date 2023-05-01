@@ -13,7 +13,10 @@ local game = {
     level_status = nil,
     go_sound = love.audio.newSource("assets/audio/go.ogg", "static"),
     last_move = 0,
-    must_change_sides = false
+    must_change_sides = false,
+    current_rotation = 0,
+    status = require("compat.game21.status"),
+    style = require("compat.game21.style")
 }
 
 function game:start(pack_folder, level_id, difficulty_mult)
@@ -22,10 +25,10 @@ function game:start(pack_folder, level_id, difficulty_mult)
 
     self.level_data = self.assets.loaded_packs[pack_folder].levels[level_id]
     self.level_status = LevelStatus:new(true)    -- TODO: get bool from config
+    self.style:select(self.pack_data.styles[self.level_data.styleId])
+    self.style:compute_colors()
     self.difficulty_mult = difficulty_mult
-    self.status = require("compat.game21.status")
-
-    -- TODO: compute initial style colors
+    self.status:reset_all_data()
 
     self.music = self.pack_data.music[self.level_data.musicId]
     -- TODO: seek to other segments if not first play
@@ -103,7 +106,7 @@ function game:update(frametime)
     self.last_move = move or self.last_move
     -- TODO: update key icons and level info, or in ui code?
     if self.running then
-        -- TODO: compute style colors
+        self.style:compute_colors()
         -- TODO: update player
         -- TODO: put in if not dead block
         local prevent_player_input
@@ -137,6 +140,10 @@ function game:update(frametime)
         -- TODO: update custom timelines
         -- TODO: update beatpulse
         -- TODO: update pulse
+
+        -- TODO: only if not black and white
+        self.style:update(frametime, math.pow(self.difficulty_mult, 0.8))
+
         -- TODO: update player radius
         -- TODO: update walls
         -- TODO: update custom walls
@@ -157,7 +164,7 @@ function game:update(frametime)
             next_rotation = next_rotation + math.abs((get_smoother_step(0, self.level_status.fast_spin, self.status.fast_spin) / 3.5) * 17) * get_sign(next_rotation)
             self.status.fast_spin = self.status.fast_spin - frametime
         end
-        -- TODO: turn by: next_rotation
+        self.current_rotation = self.current_rotation + next_rotation
         -- TODO: update camera shake
 
         -- TODO: put in if not dead block
