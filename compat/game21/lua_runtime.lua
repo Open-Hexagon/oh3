@@ -6,14 +6,22 @@ local lua_runtime = {
 }
 
 function lua_runtime:init_env(assets, pack_name)
-    self.assets = assets
     local pack = assets.loaded_packs[pack_name]
     log("initializing environment...")
     self.env = {
         print = print,
         math = math,
         u_execScript = function(path)
-            self:run_lua_file(pack.path .. "/" .. path)
+            self:run_lua_file(pack.path .. "/Scripts/" .. path)
+        end,
+        u_execDependencyScript = function(disambiguator, name, author, script)
+            local pname = assets.metadata_pack_json_map[assets:_build_pack_id(disambiguator, author, name)].pack_name
+            local old = self.env.u_execScript
+            self.env.u_execScript = function(path)
+                self:run_lua_file(assets:get_pack(pname).path .. "/Scripts/" .. path)
+            end
+            self:run_lua_file(assets:get_pack(pname).path .. "/Scripts/" .. script)
+            self.env.u_execScript = old
         end
     }
 end

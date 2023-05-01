@@ -21,7 +21,8 @@ local game = {
 
 function game:start(pack_folder, level_id, difficulty_mult)
     -- TODO: put this somewhere else so it can be loaded for the menu
-    self.pack_data = self.assets:load_pack(pack_folder)
+    --       or maybe not because it caches loaded packs anyway?
+    self.pack_data = self.assets:get_pack(pack_folder)
 
     self.level_data = self.assets.loaded_packs[pack_folder].levels[level_id]
     self.level_status = LevelStatus:new(true)    -- TODO: get bool from config

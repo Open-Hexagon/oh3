@@ -4,50 +4,79 @@ local json = require("extlibs.json.jsonc")
 local assets = {
     loaded_packs = {},
     pack_path = "Packs/",
+    metadata_pack_json_map = {},
+    folder_pack_json_map = {},
 }
 
-function assets:load_pack(name)
-    if self.loaded_packs[name] == nil then
-        local folder = self.pack_path .. name
+function assets:_build_pack_id(disambiguator, author, name, version)
+    local pack_id = disambiguator
+        .. "_"
+        .. author
+        .. "_"
+        .. name
+    if version ~= nil then
+        pack_id = pack_id .. "_" .. math.floor(version)
+    end
+    pack_id = pack_id:gsub(" ", "_")
+    return pack_id
+end
 
-        -- check validity
-        do
-            local files = love.filesystem.getDirectoryItems(folder)
-            local function check_file(file)
-                local is_in = false
-                for i = 1, #files do
-                    if files[i] == file then
-                        is_in = true
-                    end
-                end
-                if not is_in then
-                    error("Invalid pack " .. folder .. ", " .. file .. " does not exist!")
+function assets:init()
+    local pack_folders = love.filesystem.getDirectoryItems(self.pack_path)
+    for i = 1, #pack_folders do
+        local folder = self.pack_path .. pack_folders[i]
+        -- check if valid pack
+        local files = love.filesystem.getDirectoryItems(folder)
+        local function check_file(file)
+            local is_in = false
+            for j = 1, #files do
+                if files[j] == file then
+                    is_in = true
                 end
             end
-            check_file("pack.json")
-            check_file("Scripts")
+            if not is_in then
+                error("Invalid pack " .. folder .. ", " .. file .. " does not exist!")
+            end
         end
+        check_file("pack.json")
+        check_file("Scripts")
+
+        local contents = love.filesystem.read(folder .. "/pack.json")
+        if contents == nil then
+            error("Failed to load pack.json")
+        end
+        local pack_json = json.decode_jsonc(contents)
+        pack_json.pack_id = assets:_build_pack_id(pack_json.disambiguator, pack_json.author, pack_json.name, pack_json.version)
+        local index_pack_id = assets:_build_pack_id(pack_json.disambiguator, pack_json.author, pack_json.name)
+        pack_json.pack_name = pack_folders[i]
+        self.metadata_pack_json_map[index_pack_id] = pack_json
+        self.folder_pack_json_map[folder] = pack_json
+    end
+end
+
+function assets:get_pack(name)
+    if self.loaded_packs[name] == nil then
+        local folder = self.pack_path .. name
 
         local pack_data = {
             path = folder
         }
 
         -- pack metadata
-        do
-            local contents = love.filesystem.read(folder .. "/pack.json")
-            if contents == nil then
-                error("Failed to load pack.json")
+        pack_data.pack_json = self.folder_pack_json_map[folder]
+        pack_data.pack_id = pack_data.pack_json.pack_id
+        if pack_data.pack_json.dependencies ~= nil then
+            for i = 1, #pack_data.pack_json.dependencies do
+                local dependency = pack_data.pack_json.dependencies[i]
+                local index_pack_id = self:_build_pack_id(dependency.disambiguator, dependency.author, dependency.name)
+                local pack_json = self.metadata_pack_json_map[index_pack_id]
+                if pack_json == nil then
+                    error("can't find dependency '" .. index_pack_id .. "' of '" .. pack_data.pack_id .. "'.")
+                end
+                self:get_pack(pack_json.pack_name)
             end
-            pack_data.pack_json = json.decode_jsonc(contents)
-            pack_data.pack_id = pack_data.pack_json.disambiguator
-                .. "_"
-                .. pack_data.pack_json.author
-                .. "_"
-                .. pack_data.pack_json.name
-                .. "_"
-                .. math.floor(pack_data.pack_json.version)
-            pack_data.pack_id = pack_data.pack_id:gsub(" ", "_")
         end
+
         log("Loading '" .. pack_data.pack_id .. "' assets")
 
         local function file_ext_read_iter(dir, ending)
@@ -115,5 +144,7 @@ function assets:load_pack(name)
     end
     return self.loaded_packs[name]
 end
+
+assets:init()
 
 return assets
