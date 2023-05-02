@@ -61,7 +61,9 @@ function love.run()
                 -- render onto the screen
                 love.graphics.setCanvas(screen)
                 -- clear with white for now, so the resizing can be seen in action
-                love.graphics.clear(1, 1, 1, 1)
+                love.graphics.clear(0, 0, 0, 1)
+		-- make (0, 0) be the center
+		love.graphics.translate(screen:getWidth() / 2, screen:getHeight() / 2)
                 game:draw()
                 love.graphics.setCanvas()
                 -- render the canvas in the middle of the window

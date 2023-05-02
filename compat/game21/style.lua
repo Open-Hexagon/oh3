@@ -86,7 +86,7 @@ function style:select(style_data)
     for i = 1, #colors do
         set_color_data_defaults(colors[i])
         table.insert(self._color_datas, colors[i])
-        table.insert(colors, colors[i].result)
+        table.insert(self._colors, colors[i].result)
     end
 end
 
@@ -187,7 +187,7 @@ function style:draw_background(center_pos, sides, darken_uneven_background_chunk
         local distance = self.bg_tile_radius
         for i = 0, sides - 1 do
             local angle = math.rad(self.bg_rot_off) + div * i
-            local color = self:_get_color(i)
+            local color = self:_get_color(i) or {0, 0, 0, 255}
             local must_darken = (i % 2 == 0 and i == sides - 1) and darken_uneven_background_chunk
             if black_and_white then
                 for j = 1, 3 do
@@ -199,7 +199,7 @@ function style:draw_background(center_pos, sides, darken_uneven_background_chunk
                     color[j] = color[j] / 1.4
                 end
             end
-            love.graphics.setColor(unpack(color))
+            love.graphics.setColor(color[1] / 255, color[2] / 255, color[3] / 255, color[4] / 255)
             local angle0, angle1 = angle + half_div, angle - half_div
             love.graphics.polygon("fill",
                 center_pos[1] + cos(angle0) * distance,
@@ -238,7 +238,7 @@ function style:get_wall_color()
 end
 
 function style:get_color(index)
-    return unpack(self:_get_color(index) or {0, 0, 0, 0})
+    return unpack(self:_get_color(index) or {0, 0, 0, 255})
 end
 
 function style:get_current_hue()

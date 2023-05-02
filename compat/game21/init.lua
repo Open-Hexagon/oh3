@@ -74,6 +74,7 @@ function game:set_sides(sides)
 end
 
 function game:update(frametime)
+    frametime = frametime * 60
     -- TODO: don't update if debug pause
 
     -- update flash
@@ -188,6 +189,11 @@ function game:update(frametime)
 end
 
 function game:draw()
+    love.graphics.rotate(math.rad(self.current_rotation))
+    -- TODO: keep track of center pos and apply camera shake instead of (0, 0)
+    -- TODO: apply right shaders when rendering
+    self.style:draw_background({0, 0}, self.level_status.sides, true, false)
+    -- TODO: everything else
 end
 
 return game
