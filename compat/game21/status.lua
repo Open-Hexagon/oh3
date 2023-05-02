@@ -1,7 +1,7 @@
 local status = {}
 
 function status:reset_all_data()
-    self.flash_color = {0, 0, 0}
+    self.flash_color = { 0, 0, 0 }
     self._total_frametime_accumulator = 0
     self._played_frametime_accumulator = 0
     self._paused_frametime_accumulator = 0

@@ -10,9 +10,9 @@ local function set_color_data_defaults(data)
     data.dynamic_darkness = data.dynamic_darkness or 1
     data.hue_shift = data.hue_shift or 0
     data.offset = data.offset or 0
-    data.color = data.value or {0, 0, 0, 255}
-    data.pulse = data.pulse or {0, 0, 0, 255}
-    data.result = {0, 0, 0, 0}
+    data.color = data.value or { 0, 0, 0, 255 }
+    data.pulse = data.pulse or { 0, 0, 0, 255 }
+    data.result = { 0, 0, 0, 0 }
 
     -- removes a runtime check
     if data.dynamic and not data.dynamic_offset and data.dynamic_darkness == 0 then
@@ -23,9 +23,9 @@ end
 local function parse_cap_color(obj)
     if type(obj) == "string" then
         if obj == "main" then
-            return 1  -- just use main color
+            return 1 -- just use main color
         elseif obj == "main_darkened" then
-            return 2  -- use main color but divide rgb by 1.4
+            return 2 -- use main color but divide rgb by 1.4
         end
     else
         local legacy = obj.legacy
@@ -33,10 +33,10 @@ local function parse_cap_color(obj)
             legacy = true
         end
         if legacy then
-            return 4  -- use the color of the 1st background panel (5 would be 2nd)
+            return 4 -- use the color of the 1st background panel (5 would be 2nd)
         else
             set_color_data_defaults(obj)
-            return 3  -- custom color
+            return 3 -- custom color
         end
     end
 end
@@ -67,8 +67,8 @@ function style:select(style_data)
     self.bg_tile_radius = 10000
     self.bg_color_offset = 0
     self.bg_rot_off = 0
-    self._3D_override_color = style_data["3D_override_color"] or {0, 0, 0, 0}
-    self._current_3D_override_color = {0, 0, 0, 0}
+    self._3D_override_color = style_data["3D_override_color"] or { 0, 0, 0, 0 }
+    self._current_3D_override_color = { 0, 0, 0, 0 }
     self._main_color_data = style_data.main
     self._player_color_data = style_data.player_color or style_data.main
     self._text_color = style_data.text_color or style_data.main
@@ -78,7 +78,7 @@ function style:select(style_data)
     self._color_datas = {}
     self._colors = {}
     self._color_start_index = 0
-    self._current_hue_color = {0, 0, 0, 0}
+    self._current_hue_color = { 0, 0, 0, 0 }
     set_color_data_defaults(self._main_color_data)
     set_color_data_defaults(self._player_color_data)
     set_color_data_defaults(self._text_color)
@@ -188,7 +188,7 @@ function style:draw_background(center_pos, sides, darken_uneven_background_chunk
         local distance = self.bg_tile_radius
         for i = 0, sides - 1 do
             local angle = math.rad(self.bg_rot_off) + div * i
-            local color = self:_get_color(i) or {0, 0, 0, 1}
+            local color = self:_get_color(i) or { 0, 0, 0, 1 }
             local must_darken = (i % 2 == 0 and i == sides - 1) and darken_uneven_background_chunk
             if black_and_white then
                 for j = 1, 3 do
@@ -202,7 +202,8 @@ function style:draw_background(center_pos, sides, darken_uneven_background_chunk
             end
             set_color(unpack(color))
             local angle0, angle1 = angle + half_div, angle - half_div
-            love.graphics.polygon("fill",
+            love.graphics.polygon(
+                "fill",
                 center_pos[1] + cos(angle0) * distance,
                 center_pos[2] + sin(angle0) * distance,
                 center_pos[1] + cos(angle1) * distance,
@@ -239,7 +240,7 @@ function style:get_wall_color()
 end
 
 function style:get_color(index)
-    return unpack(self:_get_color(index) or {0, 0, 0, 255})
+    return unpack(self:_get_color(index) or { 0, 0, 0, 255 })
 end
 
 function style:get_current_hue()

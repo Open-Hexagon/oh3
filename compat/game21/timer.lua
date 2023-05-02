@@ -11,7 +11,7 @@ function timer:new(time, running)
         current = 0,
         total = 0,
         ticks = 0,
-        loop = true
+        loop = true,
     }, timer)
 end
 

@@ -19,7 +19,11 @@ local game = {
     style = require("compat.game21.style"),
     player = require("compat.game21.player"),
     player_now_ready_to_swap = false,
-    center_pos = {0, 0}
+    center_pos = { 0, 0 },
+
+    -- TODO: check if the inital values cause issues (may need the values from the canvas instead here)
+    width = love.graphics.getWidth(),
+    height = love.graphics.getHeight(),
 }
 
 function game:start(pack_folder, level_id, difficulty_mult)
@@ -28,7 +32,7 @@ function game:start(pack_folder, level_id, difficulty_mult)
     self.pack_data = self.assets:get_pack(pack_folder)
 
     self.level_data = self.assets.loaded_packs[pack_folder].levels[level_id]
-    self.level_status:reset(true)    -- TODO: get bool from config
+    self.level_status:reset(true) -- TODO: get bool from config
     self.style:select(self.pack_data.styles[self.level_data.styleId])
     self.style:compute_colors()
     self.difficulty_mult = difficulty_mult
@@ -77,9 +81,22 @@ function game:start(pack_folder, level_id, difficulty_mult)
     self.lua_runtime.env.onLoad()
 end
 
+function game:perform_player_swap(play_sound)
+    self.player:player_swap()
+    if self.lua_runtime.env.onCursorSwap ~= nil then
+        self.lua_runtime.env.onCursorSwap()
+    end
+    if play_sound then
+        love.audio.play(self.level_status.swap_sound)
+    end
+end
+
 function game:refresh_music_pitch()
     -- TODO: account for config music speed mult
-    self.music.source:setPitch(self.level_status.music_pitch * (self.level_status.sync_music_to_dm and math.pow(self.difficulty_mult, 0.12) or 1))
+    self.music.source:setPitch(
+        self.level_status.music_pitch
+            * (self.level_status.sync_music_to_dm and math.pow(self.difficulty_mult, 0.12) or 1)
+    )
 end
 
 function game:get_swap_cooldown()
@@ -146,11 +163,7 @@ function game:update(frametime)
                 end
                 if self.level_status.swap_enabled and swap and self.player:is_ready_to_swap() then
                     -- TODO: swap particles
-                    self.player:player_swap()
-                    if self.lua_runtime.env.onCursorSwap ~= nil then
-                        self.lua_runtime.env.onCursorSwap()
-                    end
-                    love.audio.play(self.level_status.swap_sound)
+                    self:perform_player_swap(true)
                     self.player:reset_swap(self:get_swap_cooldown())
                     self.player:set_just_swapped(true)
                     self.player_now_ready_to_swap = false
@@ -164,7 +177,10 @@ function game:update(frametime)
             end
             -- TODO: update event and message timeline
             -- increment
-            if self.level_status.inc_enabled and self.status:get_increment_time_seconds() < self.level_status.inc_time then
+            if
+                self.level_status.inc_enabled
+                and self.status:get_increment_time_seconds() < self.level_status.inc_time
+            then
                 self.level_status.current_increments = self.level_status.current_increments + 1
                 -- TODO: increment difficulty
                 self.status:reset_increment_time()
@@ -204,7 +220,9 @@ function game:update(frametime)
                 x = math.max(0, math.min(1, (x - edge0) / (edge1 - edge0)))
                 return x * x * x * (x * (x * 6 - 15) + 10)
             end
-            next_rotation = next_rotation + math.abs((get_smoother_step(0, self.level_status.fast_spin, self.status.fast_spin) / 3.5) * 17) * get_sign(next_rotation)
+            next_rotation = next_rotation
+                + math.abs((get_smoother_step(0, self.level_status.fast_spin, self.status.fast_spin) / 3.5) * 17)
+                    * get_sign(next_rotation)
             self.status.fast_spin = self.status.fast_spin - frametime
         end
         self.current_rotation = self.current_rotation + next_rotation * frametime
@@ -231,6 +249,10 @@ function game:update(frametime)
 end
 
 function game:draw(width, height)
+    -- for lua access
+    self.width = width
+    self.height = height
+
     -- do the resize adjustment the old game did after already enforcing our aspect ratio
     local zoom_factor = 1 / math.max(1024 / width, 768 / height)
     love.graphics.scale(zoom_factor, zoom_factor)
@@ -249,7 +271,7 @@ function game:draw(width, height)
     end
     -- TODO: apply right shaders when rendering
     -- TODO: only draw background if not disabled in config
-    self.style:draw_background({0, 0}, self.level_status.sides, true, false)
+    self.style:draw_background({ 0, 0 }, self.level_status.sides, true, false)
     -- TODO: draw 3d if enabled in config
     -- TODO: draw walls
 

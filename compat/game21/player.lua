@@ -10,10 +10,10 @@ local focused_tirangle_width = -1.5
 local triangle_width_range = unfocused_triangle_width - focused_tirangle_width
 
 function player:reset(swap_cooldown, size, speed, focus_speed)
-    self._start_pos = {0, 0}
-    self._pos = {0, 0}
-    self._pre_push_pos = {0, 0}
-    self._last_pos = {0, 0}
+    self._start_pos = { 0, 0 }
+    self._pos = { 0, 0 }
+    self._pre_push_pos = { 0, 0 }
+    self._last_pos = { 0, 0 }
     self._hue = 0
     self._angle = 0
     self._last_angle = 0
@@ -32,8 +32,8 @@ function player:reset(swap_cooldown, size, speed, focus_speed)
     self._swap_blink_timer = timer:new(6)
     self._dead_effect_timer = timer:new(80, false)
     self._curr_tilted_angle = 0
-    self._color = {0, 0, 0, 0}
-    self._death_effect_color = {0, 0, 0, 0}
+    self._color = { 0, 0, 0, 0 }
+    self._death_effect_color = { 0, 0, 0, 0 }
 end
 
 function player:get_color(color)
@@ -84,10 +84,16 @@ function player:draw_pivot(sides, style)
     local sin, cos = math.sin, math.cos
     for i = 0, sides - 1 do
         local s_angle = div * 2 * i
-        local p1_x, p1_y = self._start_pos[1] + cos(s_angle - div) * p_radius, self._start_pos[2] + sin(s_angle - div) * p_radius
-        local p2_x, p2_y = self._start_pos[1] + cos(s_angle + div) * p_radius, self._start_pos[2] + sin(s_angle + div) * p_radius
-        local p3_x, p3_y = self._start_pos[1] + cos(s_angle + div) * (p_radius + base_thickness), self._start_pos[2] + sin(s_angle + div) * (p_radius + base_thickness)
-        local p4_x, p4_y = self._start_pos[1] + cos(s_angle - div) * (p_radius + base_thickness), self._start_pos[2] + sin(s_angle - div) * (p_radius + base_thickness)
+        local p1_x, p1_y =
+            self._start_pos[1] + cos(s_angle - div) * p_radius, self._start_pos[2] + sin(s_angle - div) * p_radius
+        local p2_x, p2_y =
+            self._start_pos[1] + cos(s_angle + div) * p_radius, self._start_pos[2] + sin(s_angle + div) * p_radius
+        local p3_x, p3_y =
+            self._start_pos[1] + cos(s_angle + div) * (p_radius + base_thickness),
+            self._start_pos[2] + sin(s_angle + div) * (p_radius + base_thickness)
+        local p4_x, p4_y =
+            self._start_pos[1] + cos(s_angle - div) * (p_radius + base_thickness),
+            self._start_pos[2] + sin(s_angle - div) * (p_radius + base_thickness)
         set_color(style:get_main_color())
         love.graphics.polygon("fill", p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y)
         set_color(style:get_cap_color_result())
@@ -106,8 +112,12 @@ function player:draw_death_effect()
         local s_angle = div * 2 * i
         local p1_x, p1_y = self._pos[1] + cos(s_angle - div) * d_radius, self._pos[2] + sin(s_angle - div) * d_radius
         local p2_x, p2_y = self._pos[1] + cos(s_angle + div) * d_radius, self._pos[2] + sin(s_angle + div) * d_radius
-        local p3_x, p3_y = self._pos[1] + cos(s_angle + div) * (d_radius + thickness), self._pos[2] + sin(s_angle + div) * (d_radius + base_thickness)
-        local p4_x, p4_y = self._pos[1] + cos(s_angle - div) * (d_radius + thickness), self._pos[2] + sin(s_angle - div) * (d_radius + base_thickness)
+        local p3_x, p3_y =
+            self._pos[1] + cos(s_angle + div) * (d_radius + thickness),
+            self._pos[2] + sin(s_angle + div) * (d_radius + base_thickness)
+        local p4_x, p4_y =
+            self._pos[1] + cos(s_angle - div) * (d_radius + thickness),
+            self._pos[2] + sin(s_angle - div) * (d_radius + base_thickness)
         love.graphics.polygon("fill", p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y)
     end
 end
@@ -120,7 +130,10 @@ function player:kill(fatal)
     self._dead_effect_timer:restart()
     if fatal then
         self._dead = true
-        if not self._just_swapped and math.sqrt((self._pos[1] - self._last_pos[1]) ^ 2 + (self._pos[2] - self._last_pos[2]) ^ 2) < 24 then
+        if
+            not self._just_swapped
+            and math.sqrt((self._pos[1] - self._last_pos[1]) ^ 2 + (self._pos[2] - self._last_pos[2]) ^ 2) < 24
+        then
             self._pos[1] = -math.cos(self._angle) * self._size + self._last_pos[1]
             self._pos[2] = -math.sin(self._angle) * self._size + self._last_pos[2]
         end
@@ -203,7 +216,8 @@ function player:update_input_movement(movement_dir, player_speed_mult, focused, 
     self._current_speed = player_speed_mult * (focused and self._focus_speed or self._speed) * frametime
     self._angle = self._angle + math.rad(self._current_speed * movement_dir)
     local inc = frametime / 10
-    self._curr_tilted_angle = movement_dir == 0 and move_towards(self._curr_tilted_angle, 0, inc) or move_towards(self._curr_tilted_angle, movement_dir, inc * 2)
+    self._curr_tilted_angle = movement_dir == 0 and move_towards(self._curr_tilted_angle, 0, inc)
+        or move_towards(self._curr_tilted_angle, movement_dir, inc * 2)
 end
 
 function player:reset_swap(swap_cooldown)
@@ -222,8 +236,12 @@ function player:update_position(radius)
     self._pos[2] = sin(self._angle) * self._radius + self._start_pos[2]
     self._pre_push_pos[1] = self._pos[1]
     self._pre_push_pos[2] = self._pos[2]
-    local pos_diff_x = self._last_pos[1] - self._start_pos[1] - cos(self._last_angle + math.rad(self._current_speed)) * self._radius
-    local pos_diff_y = self._last_pos[2] - self._start_pos[2] - sin(self._last_angle + math.rad(self._current_speed)) * self._radius
+    local pos_diff_x = self._last_pos[1]
+        - self._start_pos[1]
+        - cos(self._last_angle + math.rad(self._current_speed)) * self._radius
+    local pos_diff_y = self._last_pos[2]
+        - self._start_pos[2]
+        - sin(self._last_angle + math.rad(self._current_speed)) * self._radius
     self._max_safe_distance = pos_diff_x ^ 2 + pos_diff_y ^ 2 + 32
 end
 

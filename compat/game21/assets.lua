@@ -17,15 +17,11 @@ local assets = {
         ["swapBlip.ogg"] = "swap_blip.ogg",
     },
     audio_path = "assets/audio/",
-    cached_sounds = {}
+    cached_sounds = {},
 }
 
 function assets:_build_pack_id(disambiguator, author, name, version)
-    local pack_id = disambiguator
-        .. "_"
-        .. author
-        .. "_"
-        .. name
+    local pack_id = disambiguator .. "_" .. author .. "_" .. name
     if version ~= nil then
         pack_id = pack_id .. "_" .. math.floor(version)
     end
@@ -58,7 +54,8 @@ function assets:init()
             error("Failed to load pack.json")
         end
         local pack_json = json.decode_jsonc(contents)
-        pack_json.pack_id = assets:_build_pack_id(pack_json.disambiguator, pack_json.author, pack_json.name, pack_json.version)
+        pack_json.pack_id =
+            assets:_build_pack_id(pack_json.disambiguator, pack_json.author, pack_json.name, pack_json.version)
         local index_pack_id = assets:_build_pack_id(pack_json.disambiguator, pack_json.author, pack_json.name)
         pack_json.pack_name = pack_folders[i]
         self.metadata_pack_json_map[index_pack_id] = pack_json
@@ -71,12 +68,12 @@ function assets:get_pack(name)
         local folder = self.pack_path .. name
 
         local pack_data = {
-            path = folder
+            path = folder,
         }
 
         -- pack metadata
         pack_data.pack_json = self.folder_pack_json_map[folder]
-	if pack_data.pack_json == nil then
+        if pack_data.pack_json == nil then
             error(folder .. " doesn't exist or is not a valid pack!")
         end
         pack_data.pack_id = pack_data.pack_json.pack_id
@@ -143,7 +140,7 @@ function assets:get_pack(name)
             --       - sampler2D -> Image
             --       - sampler2DArray -> ArrayImage
             --       - samplerCube -> CubeImage
-            --       - sampler3D -> VolumeImage 
+            --       - sampler3D -> VolumeImage
             -- might also need to change glsl version, can check hardware support with love.graphics.getSupported
             pack_data.shaders[filename] = love.graphics.newShader(code)
         end

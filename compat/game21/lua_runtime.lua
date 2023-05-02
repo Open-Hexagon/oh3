@@ -3,7 +3,7 @@ local lua_runtime = {
     env = nil,
     assets = nil,
     file_cache = {},
-    error_sound = love.audio.newSource("assets/audio/error.ogg", "static")
+    error_sound = love.audio.newSource("assets/audio/error.ogg", "static"),
 }
 
 function lua_runtime:error(msg)
@@ -17,24 +17,6 @@ function lua_runtime:init_env(game, pack_name)
     self.env = {
         print = print,
         math = math,
-        u_execScript = function(path)
-            self:run_lua_file(pack.path .. "/Scripts/" .. path)
-        end,
-        u_execDependencyScript = function(disambiguator, name, author, script)
-            local pname = assets.metadata_pack_json_map[assets:_build_pack_id(disambiguator, author, name)].pack_name
-            local old = self.env.u_execScript
-            self.env.u_execScript = function(path)
-                self:run_lua_file(assets:get_pack(pname).path .. "/Scripts/" .. path)
-            end
-            self:run_lua_file(assets:get_pack(pname).path .. "/Scripts/" .. script)
-            self.env.u_execScript = old
-        end,
-        u_rndIntUpper = function(upper)
-            return math.random(1, upper)
-        end,
-        u_getDifficultyMult = function()
-            return game.difficulty_mult
-        end,
         e_messageAdd = function() end,
     }
     local function make_accessors(prefix, name, t, f)
@@ -45,6 +27,8 @@ function lua_runtime:init_env(game, pack_name)
             return t[f]
         end
     end
+
+    -- Level functions
     make_accessors("l", "SpeedMult", game.level_status, "speed_mult")
     make_accessors("l", "PlayerSpeedMult", game.level_status, "player_speed_mult")
     make_accessors("l", "SpeedInc", game.level_status, "speed_inc")
@@ -115,6 +99,7 @@ function lua_runtime:init_env(game, pack_name)
         return false
     end
 
+    -- Audio functions
     self.env.a_setMusic = function(music_id)
         self.env.a_setMusicSegment(music_id, 0)
     end
@@ -180,6 +165,126 @@ function lua_runtime:init_env(game, pack_name)
         game.level_status.death_sound = get_pack_sound(filename) or game.level_status.death_sound
     end
 
+    -- Utility functions
+    self.env.u_rndReal = function()
+        -- u_rndReal = math.random wouldn't ignore args
+        return math.random()
+    end
+    self.env.u_rndIntUpper = function(upper)
+        return math.random(1, upper)
+    end
+    self.env.u_rndInt = function(lower, upper)
+        return math.random(lower, upper)
+    end
+    self.env.u_rndSwitch = function(mode, lower, upper)
+        if mode == 0 then
+            return math.random()
+        elseif mode == 1 then
+            return math.random(1, upper)
+        elseif mode == 2 then
+            return math.random(lower, upper)
+        end
+        return 0
+    end
+    self.env.u_getAttemptRandomSeed = function()
+        return game.seed
+    end
+    self.env.u_inMenu = function()
+        -- the lua env shouldn't be active in the menu?
+        return false
+    end
+    -- pretend to be the current newest version (2.1.7)
+    self.env.u_getVersionMajor = function()
+        return 2
+    end
+    self.env.u_getVersionMinor = function()
+        return 1
+    end
+    self.env.u_getVersionMicro = function()
+        return 7
+    end
+    self.env.u_getVersionString = function()
+        return "2.1.7"
+    end
+    self.env.u_execScript = function(path)
+        self:run_lua_file(pack.path .. "/Scripts/" .. path)
+    end
+    self.env.u_execDependencyScript = function(disambiguator, name, author, script)
+        local pname = assets.metadata_pack_json_map[assets:_build_pack_id(disambiguator, author, name)].pack_name
+        local old = self.env.u_execScript
+        self.env.u_execScript = function(path)
+            self:run_lua_file(assets:get_pack(pname).path .. "/Scripts/" .. path)
+        end
+        self:run_lua_file(assets:get_pack(pname).path .. "/Scripts/" .. script)
+        self.env.u_execScript = old
+    end
+    self.env.u_getWidth = function()
+        return game.height
+    end
+    self.env.u_getHeight = function()
+        return game.width
+    end
+    self.env.u_setFlashEffect = function(value)
+        game.status.flash_effect = value
+    end
+    self.env.u_setFlashColor = function(r, g, b)
+        -- TODO: init flash effect with r, g, b
+    end
+    self.env.u_log = function(message)
+        log("[lua] " .. message)
+    end
+    self.env.u_isKeyPressed = function(key)
+        -- TODO: this won't work, will need sfml keycode -> love key string conversion
+        return love.keyboard.isDown(key)
+    end
+    self.env.u_haltTime = function(duration)
+        game.status:pauseTime(duration / 60)
+    end
+    self.env.u_clearWalls = function()
+        -- TODO: walls don't exist yet ;P
+    end
+    self.env.u_getPlayerAngle = function()
+        return game.player:get_player_angle()
+    end
+    self.env.u_setPlayerAngle = function(angle)
+        return game.player:set_player_angle(angle)
+    end
+    self.env.u_isMouseButtonPressed = function(button)
+        -- TODO: check if sfml button numbers correspond to love ones
+        return love.mouse.isDown(button)
+    end
+    self.env.u_isFastSpinning = function()
+        return game.status.fast_spin > 0
+    end
+    self.env.u_forceIncrement = function()
+        -- TODO: call game:increment_difficulty() (doesn't exist yet)
+    end
+    self.env.u_getDifficultyMult = function()
+        return game.difficulty_mult
+    end
+    self.env.u_getSpeedMultDM = function()
+        local result = game.level_status.speed_mult * math.pow(game.difficulty_mult, 0.65)
+        if not game.level_status:has_speed_max_limit() then
+            return result
+        end
+        return result < game.level_status.speed_max and result or game.level_status.speed_max
+    end
+    self.env.u_getDelayMultDM = function()
+        local result = game.level_status.delay_mult * math.pow(game.difficulty_mult, 0.1)
+        if not game.level_status:has_delay_max_limit() then
+            return result
+        end
+        return result < game.level_status.delay_max and result or game.level_status.delay_max
+    end
+    self.env.u_swapPlayer = function(play_sound)
+        game:perform_player_swap(play_sound)
+    end
+    -- deprecated functions
+    self.env.u_playSound = self.env.a_playSound
+    self.env.u_playPackSound = self.env.a_playPackSound
+    -- TODO: u_kill, u_eventKill (needs timeline)
+
+    -- Miscellaneous functions
     self.env.steam_unlockAchievement = function(achievement)
         self:error("Attempt to unlock steam achievement '" .. achievement .. "' in compat mode")
     end

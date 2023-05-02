@@ -2,7 +2,7 @@ local default_sounds = {
     beep_sound = love.audio.newSource("assets/audio/click.ogg", "static"),
     level_up_sound = love.audio.newSource("assets/audio/increment.ogg", "static"),
     swap_sound = love.audio.newSource("assets/audio/swap.ogg", "static"),
-    death_sound = love.audio.newSource("assets/audio/death.ogg", "static")
+    death_sound = love.audio.newSource("assets/audio/death.ogg", "static"),
 }
 local level_status = {}
 level_status.__index = level_status

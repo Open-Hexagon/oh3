@@ -41,7 +41,7 @@ function love.run()
                     local width, height = love.graphics.getDimensions()
                     screen = love.graphics.newCanvas(width * scale[1], height * scale[2], {
                         -- TODO: make adjustable in settings
-                        msaa = 4
+                        msaa = 4,
                     })
                 end
 
