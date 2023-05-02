@@ -69,6 +69,8 @@ function love.run()
                 -- render the canvas in the middle of the window
                 love.graphics.origin()
                 love.graphics.translate((width - width * scale[1]) / 2, (height - height * scale[2]) / 2)
+                -- the color of the canvas' contents will look wrong if color isn't white
+                love.graphics.setColor(1, 1, 1, 1)
                 love.graphics.draw(screen)
             end
             love.graphics.present()
