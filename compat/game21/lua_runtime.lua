@@ -8,7 +8,6 @@ local lua_runtime = {
 function lua_runtime:init_env(game, pack_name)
     local assets = game.assets
     local pack = assets.loaded_packs[pack_name]
-    log("initializing environment...")
     self.env = {
         print = print,
         math = math,
@@ -109,6 +108,7 @@ function lua_runtime:init_env(game, pack_name)
         -- TODO
         return false
     end
+    log("initialized environment")
 end
 
 function lua_runtime:run_lua_file(path)

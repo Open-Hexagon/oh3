@@ -111,14 +111,15 @@ function game:update(frametime)
     local move
     if cw and not ccw then
         move = 1
+        self.last_move = 1
     elseif not cw and ccw then
         move = -1
+        self.last_move = -1
     elseif cw and ccw then
         move = -self.last_move
     else
         move = 0
     end
-    self.last_move = move or self.last_move
     -- TODO: update key icons and level info, or in ui code?
     if self.running then
         self.style:compute_colors()
