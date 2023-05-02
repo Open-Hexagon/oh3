@@ -223,7 +223,7 @@ end
 
 function game:draw(width, height)
     -- do the resize adjustment the old game did after already enforcing our aspect ratio
-    local zoom_factor = math.max(1024 / width, 768 / height)
+    local zoom_factor = 1 / math.max(1024 / width, 768 / height)
     love.graphics.scale(zoom_factor, zoom_factor)
 
     -- apply rotation

@@ -1,3 +1,4 @@
+local set_color = require("compat.game21.color_transform")
 local get_color_from_hue = require("compat.game21.hue").get_color
 local style = {}
 style.__index = style
@@ -187,19 +188,19 @@ function style:draw_background(center_pos, sides, darken_uneven_background_chunk
         local distance = self.bg_tile_radius
         for i = 0, sides - 1 do
             local angle = math.rad(self.bg_rot_off) + div * i
-            local color = self:_get_color(i) or {0, 0, 0, 255}
+            local color = self:_get_color(i) or {0, 0, 0, 1}
             local must_darken = (i % 2 == 0 and i == sides - 1) and darken_uneven_background_chunk
             if black_and_white then
                 for j = 1, 3 do
                     color[j] = 0
                 end
-                color[4] = 255
+                color[4] = 1
             elseif must_darken then
                 for j = 1, 3 do
                     color[j] = color[j] / 1.4
                 end
             end
-            love.graphics.setColor(color[1] / 255, color[2] / 255, color[3] / 255, color[4] / 255)
+            set_color(unpack(color))
             local angle0, angle1 = angle + half_div, angle - half_div
             love.graphics.polygon("fill",
                 center_pos[1] + cos(angle0) * distance,

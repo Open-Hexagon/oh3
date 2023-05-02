@@ -1,5 +1,6 @@
 local player = {}
 
+local set_color = require("compat.game21.color_transform")
 local timer = require("compat.game21.timer")
 local get_color_from_hue = require("compat.game21.hue").get_color
 
@@ -73,7 +74,7 @@ function player:draw(sides, style, angle_tilt_intensity, swap_blinking_effect)
     else
         self:get_color(self._color)
     end
-    love.graphics.setColor(unpack(self._color))
+    set_color(unpack(self._color))
     love.graphics.polygon("fill", pos_x, pos_y, p_left_x, p_left_y, p_right_x, p_right_y)
 end
 
@@ -87,9 +88,9 @@ function player:draw_pivot(sides, style)
         local p2_x, p2_y = self._start_pos[1] + cos(s_angle + div) * p_radius, self._start_pos[2] + sin(s_angle + div) * p_radius
         local p3_x, p3_y = self._start_pos[1] + cos(s_angle + div) * (p_radius + base_thickness), self._start_pos[2] + sin(s_angle + div) * (p_radius + base_thickness)
         local p4_x, p4_y = self._start_pos[1] + cos(s_angle - div) * (p_radius + base_thickness), self._start_pos[2] + sin(s_angle - div) * (p_radius + base_thickness)
-        love.graphics.setColor(style:get_main_color())
+        set_color(style:get_main_color())
         love.graphics.polygon("fill", p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y)
-        love.graphics.setColor(style:get_cap_color_result())
+        set_color(style:get_cap_color_result())
         love.graphics.polygon("fill", p1_x, p1_y, p2_x, p2_y, unpack(self._start_pos))
     end
 end
@@ -99,7 +100,7 @@ function player:draw_death_effect()
     local d_radius = self._hue / 8
     local thickness = self._hue / 20
     get_color_from_hue((360 - self._hue) / 360, self._death_effect_color)
-    love.graphics.setColor(unpack(self._death_effect_color))
+    set_color(unpack(self._death_effect_color))
     local sin, cos = math.sin, math.cos
     for i = 0, 5 do
         local s_angle = div * 2 * i
