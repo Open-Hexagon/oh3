@@ -64,6 +64,9 @@ function assets:get_pack(name)
 
         -- pack metadata
         pack_data.pack_json = self.folder_pack_json_map[folder]
+	if pack_data.pack_json == nil then
+            error(folder .. " doesn't exist or is not a valid pack!")
+        end
         pack_data.pack_id = pack_data.pack_json.pack_id
         if pack_data.pack_json.dependencies ~= nil then
             for i = 1, #pack_data.pack_json.dependencies do
