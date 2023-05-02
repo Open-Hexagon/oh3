@@ -12,11 +12,15 @@ local game = {
     message_text = "",
     level_status = nil,
     go_sound = love.audio.newSource("assets/audio/go.ogg", "static"),
+    swap_blip_sound = love.audio.newSource("assets/audio/swap_blip.ogg", "static"),
     last_move = 0,
     must_change_sides = false,
     current_rotation = 0,
     status = require("compat.game21.status"),
-    style = require("compat.game21.style")
+    style = require("compat.game21.style"),
+    player = require("compat.game21.player"),
+    player_now_ready_to_swap = false,
+    center_pos = {0, 0}
 }
 
 function game:start(pack_folder, level_id, difficulty_mult)
@@ -42,7 +46,12 @@ function game:start(pack_folder, level_id, difficulty_mult)
     math.randomseed(self.seed)
     math.random()
 
-    -- TODO: timeline, walls, custom walls, player, zoom, rotation reset
+    -- TODO: timeline, walls, custom walls reset
+
+    -- TODO: get player size, speed and focus speed from config
+    self.player:reset(self:get_swap_cooldown(), 7.3, 9.45, 4.625)
+
+    -- TODO: zoom, rotation reset
 
     self.must_change_sides = false
 
@@ -63,6 +72,10 @@ function game:start(pack_folder, level_id, difficulty_mult)
     self.message_text = ""
     love.audio.play(self.go_sound)
     self.lua_runtime.env.onLoad()
+end
+
+function game:get_swap_cooldown()
+    return math.max(36 * self.level_status.swap_cooldown_mult, 8)
 end
 
 function game:set_sides(sides)
@@ -109,48 +122,67 @@ function game:update(frametime)
     -- TODO: update key icons and level info, or in ui code?
     if self.running then
         self.style:compute_colors()
-        -- TODO: update player
-        -- TODO: put in if not dead block
-        local prevent_player_input
-        if self.lua_runtime.env.onInput ~= nil then
-            prevent_player_input = self.lua_runtime.env.onInput(frametime, move, focus, swap)
-        end
-        if not prevent_player_input then
-            -- TODO: update player input movement, swap and swap particles
-        end
-        self.status:accumulate_frametime(frametime)
-        if self.level_status.score_overwritten then
-            self.status:update_custom_score(self.lua_runtime.env[self.level_status.score_overwrite])
-        end
-        -- TODO: update event and message timeline
-        -- increment
-        if self.level_status.inc_enabled and self.status:get_increment_time_seconds() < self.level_status.inc_time then
-            self.level_status.current_increments = self.level_status.current_increments + 1
-            -- TODO: increment difficulty
-            self.status:reset_increment_time()
-            self.must_change_sides = true
-        end
-
-        -- TODO: when no walls and must side change, do side change
-
-        if not self.status:is_time_paused() then
-            if self.lua_runtime.env.onUpdate ~= nil then
-                self.lua_runtime.env.onUpdate(frametime)
+        self.player:update(focus, self.level_status.swap_enabled, frametime)
+        if not self.status.has_died then
+            local prevent_player_input
+            if self.lua_runtime.env.onInput ~= nil then
+                prevent_player_input = self.lua_runtime.env.onInput(frametime, move, focus, swap)
             end
-            -- TODO: update main timeline and call onStep unless game must change sides
+            if not prevent_player_input then
+                self.player:update_input_movement(move, self.level_status.player_speed_mult, focus, frametime)
+                if not self.player_now_ready_to_swap and self.player:is_ready_to_swap() then
+                    self.player_now_ready_to_swap = true
+                    -- TODO: only play swap sound if enabled in config
+                    love.audio.play(self.swap_blip_sound)
+                end
+                if self.level_status.swap_enabled and swap and self.player:is_ready_to_swap() then
+                    -- TODO: swap particles
+                    self.player:player_swap()
+                    if self.lua_runtime.env.onCursorSwap ~= nil then
+                        self.lua_runtime.env.onCursorSwap()
+                    end
+                    love.audio.play(self.level_status.swap_sound)
+                    self.player:reset_swap(self:get_swap_cooldown())
+                    self.player:set_just_swapped(true)
+                    self.player_now_ready_to_swap = true
+                else
+                    self.player:set_just_swapped(false)
+                end
+            end
+            self.status:accumulate_frametime(frametime)
+            if self.level_status.score_overwritten then
+                self.status:update_custom_score(self.lua_runtime.env[self.level_status.score_overwrite])
+            end
+            -- TODO: update event and message timeline
+            -- increment
+            if self.level_status.inc_enabled and self.status:get_increment_time_seconds() < self.level_status.inc_time then
+                self.level_status.current_increments = self.level_status.current_increments + 1
+                -- TODO: increment difficulty
+                self.status:reset_increment_time()
+                self.must_change_sides = true
+            end
+
+            -- TODO: when no walls and must side change, do side change
+
+            if not self.status:is_time_paused() then
+                if self.lua_runtime.env.onUpdate ~= nil then
+                    self.lua_runtime.env.onUpdate(frametime)
+                end
+                -- TODO: update main timeline and call onStep unless game must change sides
+            end
+            -- TODO: update custom timelines
+            -- TODO: update beatpulse
+            -- TODO: update pulse
+
+            -- TODO: only if not black and white
+            self.style:update(frametime, math.pow(self.difficulty_mult, 0.8))
+
+            self.player:update_position(self.status.radius)
+            -- TODO: update walls
+            -- TODO: update custom walls
+        else
+            self.level_status.rotation_speed = self.level_status.rotation_speed * 0.99
         end
-        -- TODO: update custom timelines
-        -- TODO: update beatpulse
-        -- TODO: update pulse
-
-        -- TODO: only if not black and white
-        self.style:update(frametime, math.pow(self.difficulty_mult, 0.8))
-
-        -- TODO: update player radius
-        -- TODO: update walls
-        -- TODO: update custom walls
-        -- TODO: put in else (if dead) block
-        self.level_status.rotation_speed = self.level_status.rotation_speed * 0.99
 
         -- TODO: update 3d pulse
         -- update rotation
@@ -169,12 +201,13 @@ function game:update(frametime)
         self.current_rotation = self.current_rotation + next_rotation
         -- TODO: update camera shake
 
-        -- TODO: put in if not dead block
-        math.random(math.abs(self.status.pulse * 1000))
-        math.random(math.abs(self.status.pulse3D * 1000))
-        math.random(math.abs(self.status.fast_spin * 1000))
-        math.random(math.abs(self.status.flash_effect * 1000))
-        math.random(math.abs(self.level_status.rotation_speed * 1000))
+        if not self.status.has_died then
+            math.random(math.abs(self.status.pulse * 1000))
+            math.random(math.abs(self.status.pulse3D * 1000))
+            math.random(math.abs(self.status.fast_spin * 1000))
+            math.random(math.abs(self.status.flash_effect * 1000))
+            math.random(math.abs(self.level_status.rotation_speed * 1000))
+        end
 
         -- TODO: update particles (trail and swap)
 
@@ -188,12 +221,33 @@ function game:update(frametime)
     end
 end
 
-function game:draw()
+function game:draw(width, height)
+    -- do the resize adjustment the old game did after already enforcing our aspect ratio
+    local zoom_factor = math.max(1024 / width, 768 / height)
+    love.graphics.scale(zoom_factor, zoom_factor)
+
+    -- apply rotation
     love.graphics.rotate(math.rad(self.current_rotation))
-    -- TODO: keep track of center pos and apply camera shake instead of (0, 0)
+
+    if not self.status.has_died then
+        if self.level_status.camera_shake > 0 then
+            self.center_pos[1] = (math.random() * 2 - 1) * self.level_status.camera_shake
+            self.center_pos[2] = (math.random() * 2 - 1) * self.level_status.camera_shake
+        else
+            self.center_pos[1] = 0
+            self.center_pos[2] = 0
+        end
+    end
     -- TODO: apply right shaders when rendering
+    -- TODO: only draw background if not disabled in config
     self.style:draw_background({0, 0}, self.level_status.sides, true, false)
-    -- TODO: everything else
+    -- TODO: draw 3d if enabled in config
+    -- TODO: draw walls
+
+    -- TODO: get tilt intensity and swap blink effect from config
+    self.player:draw(self.level_status.sides, self.style, 1, true)
+
+    -- TODO: draw particles, text, flash
 end
 
 return game
