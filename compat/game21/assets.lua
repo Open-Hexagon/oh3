@@ -6,6 +6,18 @@ local assets = {
     pack_path = "Packs/",
     metadata_pack_json_map = {},
     folder_pack_json_map = {},
+    sound_mapping = {
+        ["beep.ogg"] = "click.ogg",
+        ["difficultyMultDown.ogg"] = "difficulty_mult_down.ogg",
+        ["difficultyMultUp.ogg"] = "difficulty_mult_up.ogg",
+        ["gameOver.ogg"] = "game_over.ogg",
+        ["levelUp.ogg"] = "level_up.ogg",
+        ["openHexagon.ogg"] = "open_hexagon.ogg",
+        ["personalBest.ogg"] = "personal_best.ogg",
+        ["swapBlip.ogg"] = "swap_blip.ogg",
+    },
+    audio_path = "assets/audio/",
+    cached_sounds = {}
 }
 
 function assets:_build_pack_id(disambiguator, author, name, version)
@@ -143,9 +155,28 @@ function assets:get_pack(name)
             pack_data.styles[style_json.id] = style_json
         end
 
+        -- sounds
+        pack_data.sounds = love.filesystem.getDirectoryItems(folder .. "/Sounds")
+        pack_data.cached_sounds = {}
+
         self.loaded_packs[name] = pack_data
     end
     return self.loaded_packs[name]
+end
+
+function assets:get_sound(id)
+    id = self.sound_mapping[id] or id
+    if self.cached_sounds[id] == nil then
+        self.cached_sounds[id] = love.audio.newSource(self.audio_path .. id, "static")
+    end
+    return self.cached_sounds[id]
+end
+
+function assets:get_pack_sound(pack, id)
+    if pack.cached_sounds[id] == nil then
+        pack.cached_sounds[id] = love.audio.newSource(pack.path .. "/Sounds/" .. id, "static")
+    end
+    return pack.cached_sounds[id]
 end
 
 assets:init()

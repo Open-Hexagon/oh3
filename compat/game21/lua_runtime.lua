@@ -2,8 +2,14 @@ local log = require("log")(...)
 local lua_runtime = {
     env = nil,
     assets = nil,
-    file_cache = {}
+    file_cache = {},
+    error_sound = love.audio.newSource("assets/audio/error.ogg", "static")
 }
+
+function lua_runtime:error(msg)
+    love.audio.play(self.error_sound)
+    log("Error: " .. msg)
+end
 
 function lua_runtime:init_env(game, pack_name)
     local assets = game.assets
@@ -107,6 +113,75 @@ function lua_runtime:init_env(game, pack_name)
     self.env.l_getOfficial = function()
         -- TODO
         return false
+    end
+
+    self.env.a_setMusic = function(music_id)
+        self.env.a_setMusicSegment(music_id, 0)
+    end
+    self.env.a_setMusicSegment = function(music_id, segment)
+        local music = game.pack_data.music[music_id]
+        if music == nil then
+            self:error("Music with id '" .. music_id .. "' doesn't exist!")
+        else
+            game.music = music
+            game:refresh_music_pitch()
+            game.music.source:seek(self.music.segments[segment + 1])
+        end
+    end
+    self.env.a_setMusicSeconds = function(music_id, seconds)
+        local music = game.pack_data.music[music_id]
+        if music == nil then
+            self:error("Music with id '" .. music_id .. "' doesn't exist!")
+        else
+            game.music = music
+            game:refresh_music_pitch()
+            game.music.source:seek(seconds)
+        end
+    end
+    self.env.a_playSound = function(sound_id)
+        local sound = assets:get_sound(sound_id)
+        if sound == nil then
+            self:error("Sound with id '" .. sound_id .. "' doesn't exist!")
+        else
+            love.audio.play(sound)
+        end
+    end
+    local function get_pack_sound(sound_id, cb)
+        local sound = assets:get_pack_sound(pack, sound_id)
+        if sound == nil then
+            self:error("Pack Sound with id '" .. sound_id .. "' doesn't exist!")
+        else
+            return sound
+        end
+    end
+    self.env.a_playPackSound = function(sound_id)
+        local sound = get_pack_sound(sound_id)
+        if sound ~= nil then
+            love.audio.play(sound)
+        end
+    end
+    self.env.a_syncMusicToDM = function(value)
+        game.level_status.sync_music_to_dm = value
+    end
+    self.env.a_setMusicPitch = function(pitch)
+        game.level_status.music_pitch = pitch
+        game:refresh_music_pitch()
+    end
+    self.env.a_overrideBeepSound = function(filename)
+        game.level_status.beep_sound = get_pack_sound(filename) or game.level_status.beep_sound
+    end
+    self.env.a_overrideIncrementSound = function(filename)
+        game.level_status.level_up_sound = get_pack_sound(filename) or game.level_status.level_up_sound
+    end
+    self.env.a_overrideSwapSound = function(filename)
+        game.level_status.swap_sound = get_pack_sound(filename) or game.level_status.swap_sound
+    end
+    self.env.a_overrideDeathSound = function(filename)
+        game.level_status.death_sound = get_pack_sound(filename) or game.level_status.death_sound
+    end
+
+    self.env.steam_unlockAchievement = function(achievement)
+        self:error("Attempt to unlock steam achievement '" .. achievement .. "' in compat mode")
     end
     log("initialized environment")
 end

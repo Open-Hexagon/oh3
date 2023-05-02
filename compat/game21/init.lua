@@ -1,8 +1,8 @@
 -- 2.1.X compatibility mode
-local LevelStatus = require("compat.game21.level_status")
 local game = {
     assets = require("compat.game21.assets"),
     lua_runtime = require("compat.game21.lua_runtime"),
+    level_status = require("compat.game21.level_status"),
     running = false,
     level_data = nil,
     pack_data = nil,
@@ -10,7 +10,6 @@ local game = {
     music = nil,
     seed = nil,
     message_text = "",
-    level_status = nil,
     go_sound = love.audio.newSource("assets/audio/go.ogg", "static"),
     swap_blip_sound = love.audio.newSource("assets/audio/swap_blip.ogg", "static"),
     last_move = 0,
@@ -29,13 +28,17 @@ function game:start(pack_folder, level_id, difficulty_mult)
     self.pack_data = self.assets:get_pack(pack_folder)
 
     self.level_data = self.assets.loaded_packs[pack_folder].levels[level_id]
-    self.level_status = LevelStatus:new(true)    -- TODO: get bool from config
+    self.level_status:reset(true)    -- TODO: get bool from config
     self.style:select(self.pack_data.styles[self.level_data.styleId])
     self.style:compute_colors()
     self.difficulty_mult = difficulty_mult
     self.status:reset_all_data()
 
     self.music = self.pack_data.music[self.level_data.musicId]
+    if self.music == nil then
+        error("Music with id '" .. self.level_data.musicId .. "' doesn't exist!")
+    end
+    self:refresh_music_pitch()
     -- TODO: seek to other segments if not first play
     self.music.source:seek(self.music.segments[1].time)
     love.audio.play(self.music.source)
@@ -72,6 +75,11 @@ function game:start(pack_folder, level_id, difficulty_mult)
     self.message_text = ""
     love.audio.play(self.go_sound)
     self.lua_runtime.env.onLoad()
+end
+
+function game:refresh_music_pitch()
+    -- TODO: account for config music speed mult
+    self.music.source:setPitch(self.level_status.music_pitch * (self.level_status.sync_music_to_dm and math.pow(self.difficulty_mult, 0.12) or 1))
 end
 
 function game:get_swap_cooldown()
@@ -145,7 +153,7 @@ function game:update(frametime)
                     love.audio.play(self.level_status.swap_sound)
                     self.player:reset_swap(self:get_swap_cooldown())
                     self.player:set_just_swapped(true)
-                    self.player_now_ready_to_swap = true
+                    self.player_now_ready_to_swap = false
                 else
                     self.player:set_just_swapped(false)
                 end
