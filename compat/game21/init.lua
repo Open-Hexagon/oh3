@@ -199,7 +199,7 @@ function game:update(frametime)
             self.status.fast_spin = self.status.fast_spin - frametime
         end
         self.current_rotation = self.current_rotation + next_rotation * frametime
-        -- TODO: update camera shake
+        -- TODO: update camera shake (the one for death, totally independant from the level_status one)
 
         if not self.status.has_died then
             math.random(math.abs(self.status.pulse * 1000))
