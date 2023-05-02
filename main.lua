@@ -39,7 +39,10 @@ function love.run()
                     end
                     -- recreate screen canvas to have the correct size
                     local width, height = love.graphics.getDimensions()
-                    screen = love.graphics.newCanvas(width * scale[1], height * scale[2])
+                    screen = love.graphics.newCanvas(width * scale[1], height * scale[2], {
+                        -- TODO: make adjustable in settings
+                        msaa = 4
+                    })
                 end
 
                 -- allow game modules to have their own event handlers

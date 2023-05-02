@@ -30,24 +30,6 @@ function lua_runtime:init_env(game, pack_name)
         u_getDifficultyMult = function()
             return game.difficulty_mult
         end,
-        l_setSpeedMult = function() end,
-        l_setSpeedInc = function() end,
-        l_setSpeedMax = function() end,
-        l_setRotationSpeed = function() end,
-        l_setRotationSpeedInc = function() end,
-        l_setRotationSpeedMax = function() end,
-        l_setDelayMult = function() end,
-        l_setDelayInc = function() end,
-        l_setFastSpin = function() end,
-        l_setSides = function() end,
-        l_setSidesMax = function() end,
-        l_setSidesMin = function() end,
-        l_setIncTime = function() end,
-        l_setPulseMin = function() end,
-        l_setPulseMax = function() end,
-        l_setPulseSpeed = function() end,
-        l_setPulseSpeedR = function() end,
-        l_setPulseDelayMax = function() end,
         l_setBeatPulseMax = function() end,
         l_setBeatPulseDelayMax = function() end,
         l_setBeatPulseSpeedMult = function() end,
@@ -56,6 +38,39 @@ function lua_runtime:init_env(game, pack_name)
             return 0
         end,
     }
+    local function make_accessors(prefix, name, t, f)
+        self.env[prefix .. "_set" .. name] = function(value)
+            t[f] = value
+        end
+        self.env[prefix .. "_get" .. name] = function()
+            return t[f]
+        end
+    end
+    make_accessors("l", "SpeedMult", game.level_status, "speed_mult")
+    make_accessors("l", "SpeedInc", game.level_status, "speed_inc")
+    make_accessors("l", "SpeedMax", game.level_status, "speed_max")
+    make_accessors("l", "RotationSpeed", game.level_status, "rotation_speed")
+    make_accessors("l", "RotationSpeedInc", game.level_status, "rotation_speed_inc")
+    make_accessors("l", "RotationSpeedMax", game.level_status, "rotation_speed_max")
+    make_accessors("l", "DelayMult", game.level_status, "delay_mult")
+    make_accessors("l", "DelayInc", game.level_status, "delay_inc")
+    make_accessors("l", "DelayMin", game.level_status, "delay_min")
+    make_accessors("l", "DelayMax", game.level_status, "delay_max")
+    make_accessors("l", "FastSpin", game.level_status, "fast_spin")
+    make_accessors("l", "Sides", game.level_status, "sides")
+    make_accessors("l", "SidesMin", game.level_status, "sides_min")
+    make_accessors("l", "SidesMax", game.level_status, "sides_max")
+    make_accessors("l", "IncTime", game.level_status, "inc_time")
+    make_accessors("l", "PulseMin", game.level_status, "pulse_min")
+    make_accessors("l", "PulseMax", game.level_status, "pulse_max")
+    make_accessors("l", "PulseSpeed", game.level_status, "pulse_speed")
+    make_accessors("l", "PulseSpeedR", game.level_status, "pulse_speed_r")
+    make_accessors("l", "PulseDelayMax", game.level_status, "pulse_delay_max")
+    make_accessors("l", "PulseInitialDelay", game.level_status, "pulse_initial_delay")
+    make_accessors("l", "BeatPulseMax", game.level_status, "beat_pulse_max")
+    make_accessors("l", "BeatPulseDelayMax", game.level_status, "beat_pulse_delay_max")
+    make_accessors("l", "BeatPulseInitialDelay", game.level_status, "beat_pulse_initial_delay")
+    make_accessors("l", "BeatPulseSpeedMult", game.level_status, "beat_pulse_speed_mult")
 end
 
 function lua_runtime:run_lua_file(path)

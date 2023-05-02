@@ -198,7 +198,7 @@ function game:update(frametime)
             next_rotation = next_rotation + math.abs((get_smoother_step(0, self.level_status.fast_spin, self.status.fast_spin) / 3.5) * 17) * get_sign(next_rotation)
             self.status.fast_spin = self.status.fast_spin - frametime
         end
-        self.current_rotation = self.current_rotation + next_rotation
+        self.current_rotation = self.current_rotation + next_rotation * frametime
         -- TODO: update camera shake
 
         if not self.status.has_died then
