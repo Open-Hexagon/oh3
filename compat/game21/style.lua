@@ -21,6 +21,9 @@ local function set_color_data_defaults(data)
 end
 
 local function parse_cap_color(obj)
+    if obj == nil then
+        return 4
+    end
     if type(obj) == "string" then
         if obj == "main" then
             return 1 -- just use main color
@@ -180,8 +183,12 @@ function style:compute_colors()
     for i = 1, #self._color_datas do
         self:calculate_color(self._color_datas[i])
     end
-    local rotation = 2 * self._current_swap_time / self.max_swap_time
-    self._color_start_index = math.floor(rotation + self.bg_color_offset)
+    if self.max_swap_time == 0 then
+        self._color_start_index = 0
+    else
+        local rotation = 2 * self._current_swap_time / self.max_swap_time
+        self._color_start_index = math.floor(rotation + self.bg_color_offset)
+    end
 end
 
 function style:draw_background(center_pos, sides, darken_uneven_background_chunk, black_and_white)

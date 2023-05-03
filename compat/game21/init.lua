@@ -53,13 +53,14 @@ function game:start(pack_folder, level_id, difficulty_mult)
         error("Music with id '" .. self.level_data.musicId .. "' doesn't exist!")
     end
     self:refresh_music_pitch()
-    local music_time
+    local segment
     if self.first_play then
-        music_time = self.music.segments[1].time
+        segment = self.music.segments[1]
     else
-        music_time = self.music.segments[math.random(1, #self.music.segments)].time
+        segment = self.music.segments[math.random(1, #self.music.segments)]
     end
-    self.music.source:seek(music_time)
+    self.status.beat_pulse_delay = self.status.beat_pulse_delay + (segment.beat_pulse_delay_offset or 0)
+    self.music.source:seek(segment.time)
     love.audio.play(self.music.source)
 
     -- initialize random seed
@@ -126,11 +127,14 @@ function game:perform_player_swap(play_sound)
     end
 end
 
+function game:get_music_dm_sync_factor()
+    return math.pow(self.difficulty_mult, 0.12)
+end
+
 function game:refresh_music_pitch()
     -- TODO: account for config music speed mult
     self.music.source:setPitch(
-        self.level_status.music_pitch
-            * (self.level_status.sync_music_to_dm and math.pow(self.difficulty_mult, 0.12) or 1)
+        self.level_status.music_pitch * (self.level_status.sync_music_to_dm and self:get_music_dm_sync_factor() or 1)
     )
 end
 
@@ -269,8 +273,30 @@ function game:update(frametime)
                 end
             end
             -- TODO: update custom timelines
-            -- TODO: update beatpulse
-            -- TODO: update pulse
+            -- TODO: update beatpulse (if not disabled in config)
+            -- TODO: 75 instead of radius min if beatpulse disabled in config
+            self.status.radius = self.level_status.radius_min * (self.status.pulse / self.level_status.pulse_min) + self.status.beat_pulse
+
+            if not self.level_status.manual_pulse_control then
+                if self.status.pulse_delay <= 0 then
+                    local pulse_add = self.status.pulse_direction > 0 and self.level_status.pulse_speed
+                        or -self.level_status.pulse_speed_r
+                    local pulse_limit = self.status.pulse_direction > 0 and self.level_status.pulse_max
+                        or self.level_status.pulse_min
+                    self.status.pulse = self.status.pulse + pulse_add * frametime * self:get_music_dm_sync_factor()
+                    if
+                        (self.status.pulse_direction > 0 and self.status.pulse >= pulse_limit)
+                        or (self.status.pulse_direction < 0 and self.status.pulse <= pulse_limit)
+                    then
+                        self.status.pulse = pulse_limit
+                        self.status.pulse_direction = -self.status.pulse_direction
+                        if self.status.pulse_direction < 0 then
+                            self.status.pulse_delay = self.level_status.pulse_delay_max
+                        end
+                    end
+                end
+                self.status.pulse_delay = self.status.pulse_delay - frametime * self:get_music_dm_sync_factor()
+            end
 
             -- TODO: only if not black and white
             self.style:update(frametime, math.pow(self.difficulty_mult, 0.8))
@@ -327,7 +353,9 @@ function game:draw(screen)
 
     -- do the resize adjustment the old game did after already enforcing our aspect ratio
     local zoom_factor = 1 / math.max(1024 / self.width, 768 / self.height)
-    love.graphics.scale(zoom_factor, zoom_factor)
+    -- apply pulse as well
+    local p = self.status.pulse / self.level_status.pulse_min
+    love.graphics.scale(zoom_factor / p, zoom_factor / p)
 
     -- apply rotation
     love.graphics.rotate(math.rad(self.current_rotation))

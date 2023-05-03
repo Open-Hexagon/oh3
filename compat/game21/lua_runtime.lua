@@ -214,7 +214,7 @@ function lua_runtime:init_env(game, pack_name)
         game.event_timeline:append_wait_for_seconds(duration)
     end
     self.env.e_waitUntilS = function(time)
-        game.event_timeline:append_wait_for_until_fn(function()
+        game.event_timeline:append_wait_until_fn(function()
             return game.status:get_level_start_tp() + time * 1000
         end)
     end
