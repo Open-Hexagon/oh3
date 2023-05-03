@@ -17,7 +17,6 @@ function lua_runtime:init_env(game, pack_name)
     self.env = {
         print = print,
         math = math,
-        e_messageAdd = function() end,
     }
     local function make_accessors(prefix, name, t, f)
         self.env[prefix .. "_set" .. name] = function(value)
@@ -163,6 +162,97 @@ function lua_runtime:init_env(game, pack_name)
     end
     self.env.a_overrideDeathSound = function(filename)
         game.level_status.death_sound = get_pack_sound(filename) or game.level_status.death_sound
+    end
+
+    -- Main timeline functions
+    self.env.t_eval = function(code)
+        local fn = loadstring(code)
+        setfenv(fn, self.env)
+        game.main_timeline:append_do(fn)
+    end
+    self.env.t_clear = function()
+        game.main_timeline:clear()
+    end
+    self.env.t_kill = function()
+        -- TODO
+    end
+    self.env.t_wait = function(duration)
+        game.main_timeline:wait_for_sixths(duration)
+    end
+    self.env.t_waitS = function(duration)
+        game.main_timeline:wait_for_seconds(duration)
+    end
+    self.env.t_waitUntilS = function(time)
+        game.main_timeline:wait_for_until_fn(function()
+            return game.status:get_level_start_tp() + time * 1000
+        end)
+    end
+
+    -- Event timeline functions
+    self.env.e_eval = function(code)
+        local fn = loadstring(code)
+        setfenv(fn, self.env)
+        game.event_timeline:append_do(fn)
+    end
+    self.env.e_kill = function()
+        -- TODO
+    end
+    self.env.e_stopTime = function(duration)
+        game.event_timeline:append_do(function()
+            game.status:pause_time(duration / 60)
+        end)
+    end
+    self.env.e_stopTimeS = function(duration)
+        game.event_timeline:append_do(function()
+            game.status:pause_time(duration)
+        end)
+    end
+    self.env.e_wait = function(duration)
+        game.event_timeline:wait_for_sixths(duration)
+    end
+    self.env.e_waitS = function(duration)
+        game.event_timeline:wait_for_seconds(duration)
+    end
+    self.env.e_waitUntilS = function(time)
+        game.event_timeline:wait_for_until_fn(function()
+            return game.status:get_level_start_tp() + time * 1000
+        end)
+    end
+    local function add_message(message, duration, sound_toggle)
+        -- TODO: don't do anything if messages disabled in config
+        game.message_timeline:append_do(function()
+            if sound_toggle then
+                love.audio.play(game.level_status.beep_sound)
+            end
+            game.message_text = message:upper()
+        end)
+        game.message_timeline:append_wait_for_sixths(duration)
+        game.message_timeline:append_do(function()
+            game.message_text = ""
+        end)
+    end
+    self.env.e_messageAdd = function(message, duration)
+        game.event_timeline:append_do(function()
+            add_message(message, duration, true)
+        end)
+    end
+    self.env.e_messageAddImportant = function(message, duration)
+        game.event_timeline:append_do(function()
+            if game.first_play then
+                add_message(message, duration, true)
+            end
+        end)
+    end
+    self.env.e_messageAddImportantSilent = function(message, duration)
+        game.event_timeline:append_do(function()
+            if game.first_play then
+                add_message(message, duration, false)
+            end
+        end)
+    end
+    self.env.e_clearMessages = function()
+        -- yes the game really does not do this with the event timeline like all the other e_ functions
+        game.message_timeline:clear()
     end
 
     -- Utility functions

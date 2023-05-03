@@ -67,7 +67,7 @@ function love.run()
                 love.graphics.clear(0, 0, 0, 1)
                 -- make (0, 0) be the center
                 love.graphics.translate(screen:getWidth() / 2, screen:getHeight() / 2)
-                game:draw(screen:getDimensions())
+                game:draw(screen)
                 love.graphics.setCanvas()
                 -- render the canvas in the middle of the window
                 love.graphics.origin()

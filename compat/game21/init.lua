@@ -1,5 +1,6 @@
 -- 2.1.X compatibility mode
 local Timeline = require("compat.game21.timeline")
+local set_color = require("compat.game21.color_transform")
 local game = {
     assets = require("compat.game21.assets"),
     lua_runtime = require("compat.game21.lua_runtime"),
@@ -14,6 +15,8 @@ local game = {
     go_sound = love.audio.newSource("assets/audio/go.ogg", "static"),
     swap_blip_sound = love.audio.newSource("assets/audio/swap_blip.ogg", "static"),
     level_up_sound = love.audio.newSource("assets/audio/level_up.ogg", "static"),
+    restart_sound = love.audio.newSource("assets/audio/restart.ogg", "static"),
+    select_sound = love.audio.newSource("assets/audio/select.ogg", "static"),
     last_move = 0,
     must_change_sides = false,
     current_rotation = 0,
@@ -25,35 +28,41 @@ local game = {
     message_timeline = Timeline:new(),
     main_timeline = Timeline:new(),
     center_pos = { 0, 0 },
+    first_play = true,
 
     -- TODO: check if the inital values cause issues (may need the values from the canvas instead here)
     width = love.graphics.getWidth(),
     height = love.graphics.getHeight(),
 }
 
+game.message_font = game.assets:get_font("OpenSquare-Regular.ttf", 32)
+
 function game:start(pack_folder, level_id, difficulty_mult)
     -- TODO: put this somewhere else so it can be loaded for the menu
     --       or maybe not because it caches loaded packs anyway?
     self.pack_data = self.assets:get_pack(pack_folder)
-
     self.level_data = self.assets.loaded_packs[pack_folder].levels[level_id]
     self.level_status:reset(true) -- TODO: get bool from config
     self.style:select(self.pack_data.styles[self.level_data.styleId])
     self.style:compute_colors()
     self.difficulty_mult = difficulty_mult
     self.status:reset_all_data()
-
     self.music = self.pack_data.music[self.level_data.musicId]
     if self.music == nil then
         error("Music with id '" .. self.level_data.musicId .. "' doesn't exist!")
     end
     self:refresh_music_pitch()
-    -- TODO: seek to other segments if not first play
-    self.music.source:seek(self.music.segments[1].time)
+    local music_time
+    if self.first_play then
+        music_time = self.music.segments[1].time
+    else
+        music_time = self.music.segments[math.random(1, #self.music.segments)].time
+    end
+    self.music.source:seek(music_time)
     love.audio.play(self.music.source)
 
     -- initialize random seed
-    -- TODO: replays
+    -- TODO: replays (need to read random seed from there)
     self.seed = math.floor(love.timer.getTime() * 1000)
     math.randomseed(self.seed)
     math.random()
@@ -68,23 +77,28 @@ function game:start(pack_folder, level_id, difficulty_mult)
     -- TODO: get player size, speed and focus speed from config
     self.player:reset(self:get_swap_cooldown(), 7.3, 9.45, 4.625)
 
-    -- TODO: zoom, rotation reset
+    -- TODO: zoom reset
 
+    self.current_rotation = 0
     self.must_change_sides = false
-
-    -- TODO: call self.lua_runtime.env.onPreUnload if not first play
-
+    if not self.first_play and self.lua_runtime.env.onPreUnload ~= nil then
+        self.lua_runtime.onPreUnload()
+    end
     self.lua_runtime:init_env(self, pack_folder)
     self.lua_runtime:run_lua_file(self.pack_data.path .. "/" .. self.level_data.luaFile)
     self.running = true
-
-    -- TODO: call self.lua_runtime.env.onUnload if not first play
-
+    if self.first_play then
+        love.audio.play(self.select_sound)
+    else
+        if self.lua_runtime.env.onUnload ~= nil then
+            self.lua_runtime.onUnload()
+        end
+        love.audio.play(self.restart_sound)
+    end
     self.lua_runtime.env.onInit()
     self:set_sides(self.level_status.sides)
     self.status.pulse_delay = self.status.pulse_delay + self.level_status.pulse_initial_delay
     self.status.beat_pulse_delay = self.status.beat_pulse_delay + self.level_status.beat_pulse_initial_delay
-
     self.status:start()
     self.message_text = ""
     love.audio.play(self.go_sound)
@@ -124,7 +138,8 @@ end
 function game:increment_difficulty()
     love.audio.play(self.level_up_sound)
     local sign_mult = self.level_status.rotation_speed > 0 and 1 or -1
-    self.level_status.rotation_speed = self.level_status.rotation_speed + self.level_status.rotation_speed_inc * sign_mult
+    self.level_status.rotation_speed = self.level_status.rotation_speed
+        + self.level_status.rotation_speed_inc * sign_mult
     if math.abs(self.level_status.rotation_speed) > self.level_status.rotation_speed_max then
         self.level_status.rotation_speed = self.level_status.rotation_speed_max * sign_mult
     end
@@ -296,13 +311,12 @@ function game:update(frametime)
     end
 end
 
-function game:draw(width, height)
+function game:draw(screen)
     -- for lua access
-    self.width = width
-    self.height = height
+    self.width, self.height = screen:getDimensions()
 
     -- do the resize adjustment the old game did after already enforcing our aspect ratio
-    local zoom_factor = 1 / math.max(1024 / width, 768 / height)
+    local zoom_factor = 1 / math.max(1024 / self.width, 768 / self.height)
     love.graphics.scale(zoom_factor, zoom_factor)
 
     -- apply rotation
@@ -327,6 +341,25 @@ function game:draw(width, height)
     self.player:draw(self.level_status.sides, self.style, 1, true)
 
     -- TODO: draw particles, text, flash
+
+    if self.message_text ~= "" then
+        -- text shouldn't be affected by rotation/pulse
+        love.graphics.origin()
+        love.graphics.scale(zoom_factor, zoom_factor)
+        -- text
+        -- TODO: offset_color = self.style:get_color(0)  -- black in bw mode
+        -- TODO: draw outlines (if not disabled in config)
+        -- TODO: bw: text color = white apart from alpha which is gotten from style
+        set_color(self.style:get_text_color())
+        -- have to split into lines as love doesn't align text the same way as sfml otherwise
+        -- TODO: config text scale (maybe we won't have that settings since we'll have ui scale?)
+        love.graphics.print(
+            self.message_text,
+            game.message_font,
+            self.width / zoom_factor / 2 - game.message_font:getWidth(self.message_text) / 2,
+            self.height / zoom_factor / 5.5
+        )
+    end
 end
 
 return game

@@ -18,6 +18,7 @@ local assets = {
     },
     audio_path = "assets/audio/",
     cached_sounds = {},
+    loaded_fonts = {}
 }
 
 function assets:_build_pack_id(disambiguator, author, name, version)
@@ -174,6 +175,16 @@ function assets:get_pack_sound(pack, id)
         pack.cached_sounds[id] = love.audio.newSource(pack.path .. "/Sounds/" .. id, "static")
     end
     return pack.cached_sounds[id]
+end
+
+function assets:get_font(name, size)
+    if self.loaded_fonts[name] == nil then
+        self.loaded_fonts[name] = {}
+    end
+    if self.loaded_fonts[name][size] == nil then
+        self.loaded_fonts[name][size] = love.graphics.newFont("assets/font/" .. name, size)
+    end
+    return self.loaded_fonts[name][size]
 end
 
 assets:init()
