@@ -36,6 +36,7 @@ if _VERSION == "Lua 5.1" or _VERSION == "Lua 5.2" then
         error(string_format("invalid UTF-8 code '%x'", c))
     end
 else
+    ---@diagnostic disable-next-line
     utf8_char = utf8.char
 end
 
