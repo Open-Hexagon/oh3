@@ -7,5 +7,7 @@ function love.conf(t)
     t.window.minwidth = 640
     t.window.minheight = 360
 
+    t.window.msaa = 5 -- anti-aliasing
+
     t.console = true -- windows only
 end
