@@ -257,7 +257,7 @@ function lua_runtime:init_env(game, pack_name)
         return game.status.fast_spin > 0
     end
     self.env.u_forceIncrement = function()
-        -- TODO: call game:increment_difficulty() (doesn't exist yet)
+        game:increment_difficulty()
     end
     self.env.u_getDifficultyMult = function()
         return game.difficulty_mult

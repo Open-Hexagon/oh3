@@ -13,6 +13,7 @@ local game = {
     message_text = "",
     go_sound = love.audio.newSource("assets/audio/go.ogg", "static"),
     swap_blip_sound = love.audio.newSource("assets/audio/swap_blip.ogg", "static"),
+    level_up_sound = love.audio.newSource("assets/audio/level_up.ogg", "static"),
     last_move = 0,
     must_change_sides = false,
     current_rotation = 0,
@@ -120,6 +121,17 @@ function game:set_sides(sides)
     self.level_status.sides = sides
 end
 
+function game:increment_difficulty()
+    love.audio.play(self.level_up_sound)
+    local sign_mult = self.level_status.rotation_speed > 0 and 1 or -1
+    self.level_status.rotation_speed = self.level_status.rotation_speed + self.level_status.rotation_speed_inc * sign_mult
+    if math.abs(self.level_status.rotation_speed) > self.level_status.rotation_speed_max then
+        self.level_status.rotation_speed = self.level_status.rotation_speed_max * sign_mult
+    end
+    self.level_status.rotation_speed = -self.level_status.rotation_speed
+    self.status.fast_spin = self.level_status.fast_spin
+end
+
 function game:update(frametime)
     frametime = frametime * 60
     -- TODO: don't update if debug pause
@@ -199,12 +211,25 @@ function game:update(frametime)
                 and self.status:get_increment_time_seconds() >= self.level_status.inc_time
             then
                 self.level_status.current_increments = self.level_status.current_increments + 1
-                -- TODO: increment difficulty
+                self:increment_difficulty()
                 self.status:reset_increment_time()
                 self.must_change_sides = true
             end
 
-            -- TODO: when no walls and must side change, do side change
+            -- TODO: if no walls (walls don't exist yet ;P)
+            if self.must_change_sides then
+                local side_number = math.random(self.level_status.sides_min, self.level_status.sides_max)
+                self.level_status.speed_mult = self.level_status.speed_mult + self.level_status.speed_inc
+                self.level_status.delay_mult = self.level_status.delay_mult + self.level_status.delay_inc
+                if self.level_status.rnd_side_changes_enabled then
+                    self:set_sides(side_number)
+                end
+                self.must_change_sides = false
+                love.audio.play(self.level_status.level_up_sound)
+                if self.lua_runtime.env.onIncrement ~= nil then
+                    self.lua_runtime.env.onIncrement()
+                end
+            end
 
             if not self.status:is_time_paused() then
                 if self.lua_runtime.env.onUpdate ~= nil then
@@ -213,7 +238,8 @@ function game:update(frametime)
                 if self.main_timeline:update(self.status:get_time_tp()) and not self.must_change_sides then
                     self.main_timeline:clear()
                     if self.lua_runtime.env.onStep ~= nil then
-                        self.lua_runtime.env.onStep()
+                        -- TODO: implement walls so this can be called
+                        --self.lua_runtime.env.onStep()
                     end
                 end
             end
