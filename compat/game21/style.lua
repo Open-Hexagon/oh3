@@ -199,19 +199,17 @@ function style:draw_background(center_pos, sides, darken_uneven_background_chunk
         local distance = self.bg_tile_radius
         for i = 0, sides - 1 do
             local angle = math.rad(self.bg_rot_off) + div * i
-            local color = self:_get_color(i) or { 0, 0, 0, 1 }
+            local r, g, b, a = self:get_color(i)
             local must_darken = (i % 2 == 0 and i == sides - 1) and darken_uneven_background_chunk
             if black_and_white then
-                for j = 1, 3 do
-                    color[j] = 0
-                end
+                r, g, b = 0, 0, 0
                 color[4] = 1
             elseif must_darken then
-                for j = 1, 3 do
-                    color[j] = color[j] / 1.4
-                end
+                r = r / 1.4
+                g = g / 1.4
+                b = b / 1.4
             end
-            set_color(unpack(color))
+            set_color(r, g, b, a)
             local angle0, angle1 = angle + half_div, angle - half_div
             love.graphics.polygon(
                 "fill",
