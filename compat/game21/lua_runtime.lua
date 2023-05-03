@@ -26,6 +26,11 @@ function lua_runtime:init_env(game, pack_name)
             return t[f]
         end
     end
+    local function make_accessor(prefix, name, t, f)
+        self.env[prefix .. "_" .. name] = function(value)
+            t[f] = value
+        end
+    end
 
     -- Level functions
     make_accessors("l", "SpeedMult", game.level_status, "speed_mult")
@@ -71,6 +76,7 @@ function lua_runtime:init_env(game, pack_name)
     make_accessors("l", "ManualPulseControl", game.level_status, "manual_pulse_control")
     make_accessors("l", "ManualBeatPulseControl", game.level_status, "manual_beat_pulse_control")
     make_accessors("l", "CurrentIncrements", game.level_status, "current_increments")
+    make_accessor("l", "enableRndSideChanges", game.level_status, "rnd_side_changes_enabled")
     self.env.l_addTracked = function(variable, name)
         game.level_status.tracked_variables[variable] = name
     end
@@ -93,6 +99,14 @@ function lua_runtime:init_env(game, pack_name)
     make_accessors("l", "BeatPulseDelay", game.status, "beat_pulse_delay")
     make_accessors("l", "ShowPlayerTrail", game.status, "show_player_trail")
     make_accessors("l", "CameraShake", game.status, "camera_shake")
+    make_accessors("l", "Rotation", game, "current_rotation")
+    self.env.l_overrideScore = function(variable)
+        self.level_status.score_overwrite = variable
+        self.level_status.score_overwritten = true
+        if type(self.env[variable]) ~= "number" then
+            self:error("Score override must be a number value")
+        end
+    end
     self.env.l_getOfficial = function()
         -- TODO
         return false
