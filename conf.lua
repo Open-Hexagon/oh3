@@ -7,5 +7,8 @@ function love.conf(t)
     t.window.minwidth = 640
     t.window.minheight = 360
 
+    -- TODO: make configurable
+    t.window.vsync = 0
+
     t.console = true -- windows only
 end
