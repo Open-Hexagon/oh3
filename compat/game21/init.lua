@@ -1,4 +1,5 @@
 -- 2.1.X compatibility mode
+local Timeline = require("compat.game21.timeline")
 local game = {
     assets = require("compat.game21.assets"),
     lua_runtime = require("compat.game21.lua_runtime"),
@@ -19,6 +20,9 @@ local game = {
     style = require("compat.game21.style"),
     player = require("compat.game21.player"),
     player_now_ready_to_swap = false,
+    event_timeline = Timeline:new(),
+    message_timeline = Timeline:new(),
+    main_timeline = Timeline:new(),
     center_pos = { 0, 0 },
 
     -- TODO: check if the inital values cause issues (may need the values from the canvas instead here)
@@ -53,7 +57,12 @@ function game:start(pack_folder, level_id, difficulty_mult)
     math.randomseed(self.seed)
     math.random()
 
-    -- TODO: timeline, walls, custom walls reset
+    self.event_timeline:clear()
+    self.message_timeline:clear()
+
+    -- TODO: custom timeline reset
+
+    -- TODO: walls, custom walls reset
 
     -- TODO: get player size, speed and focus speed from config
     self.player:reset(self:get_swap_cooldown(), 7.3, 9.45, 4.625)
@@ -175,11 +184,19 @@ function game:update(frametime)
             if self.level_status.score_overwritten then
                 self.status:update_custom_score(self.lua_runtime.env[self.level_status.score_overwrite])
             end
-            -- TODO: update event and message timeline
+
+            -- events
+            if self.event_timeline:update(self.status:get_time_tp()) then
+                self.event_timeline:clear()
+            end
+            if self.message_timeline:update(self.status:get_current_tp()) then
+                self.message_timeline:clear()
+            end
+
             -- increment
             if
                 self.level_status.inc_enabled
-                and self.status:get_increment_time_seconds() < self.level_status.inc_time
+                and self.status:get_increment_time_seconds() >= self.level_status.inc_time
             then
                 self.level_status.current_increments = self.level_status.current_increments + 1
                 -- TODO: increment difficulty
@@ -193,7 +210,12 @@ function game:update(frametime)
                 if self.lua_runtime.env.onUpdate ~= nil then
                     self.lua_runtime.env.onUpdate(frametime)
                 end
-                -- TODO: update main timeline and call onStep unless game must change sides
+                if self.main_timeline:update(self.status:get_time_tp()) and not self.must_change_sides then
+                    self.main_timeline:clear()
+                    if self.lua_runtime.env.onStep ~= nil then
+                        self.lua_runtime.env.onStep()
+                    end
+                end
             end
             -- TODO: update custom timelines
             -- TODO: update beatpulse
