@@ -29,6 +29,7 @@ local game = {
     main_timeline = Timeline:new(),
     center_pos = { 0, 0 },
     first_play = true,
+    walls = require("compat.game21.walls"),
 
     -- TODO: check if the inital values cause issues (may need the values from the canvas instead here)
     width = love.graphics.getWidth(),
@@ -72,7 +73,9 @@ function game:start(pack_folder, level_id, difficulty_mult)
 
     -- TODO: custom timeline reset
 
-    -- TODO: walls, custom walls reset
+    self.walls:reset(self.level_status)
+
+    -- TODO: custom walls reset
 
     -- TODO: get player size, speed and focus speed from config
     self.player:reset(self:get_swap_cooldown(), 7.3, 9.45, 4.625)
@@ -103,6 +106,14 @@ function game:start(pack_folder, level_id, difficulty_mult)
     self.message_text = ""
     love.audio.play(self.go_sound)
     self.lua_runtime.env.onLoad()
+end
+
+function game:get_speed_mult_dm()
+    local result = self.level_status.speed_mult * math.pow(self.difficulty_mult, 0.65)
+    if not self.level_status:has_speed_max_limit() then
+        return result
+    end
+    return result < self.level_status.speed_max and result or self.level_status.speed_max
 end
 
 function game:perform_player_swap(play_sound)
@@ -147,6 +158,7 @@ function game:increment_difficulty()
     self.status.fast_spin = self.level_status.fast_spin
 end
 
+-- TODO: (not sure where) music restart
 function game:update(frametime)
     frametime = frametime * 60
     -- TODO: don't update if debug pause
@@ -231,8 +243,7 @@ function game:update(frametime)
                 self.must_change_sides = true
             end
 
-            -- TODO: if no walls (walls don't exist yet ;P)
-            if self.must_change_sides then
+            if self.must_change_sides and self.walls:empty() then
                 local side_number = math.random(self.level_status.sides_min, self.level_status.sides_max)
                 self.level_status.speed_mult = self.level_status.speed_mult + self.level_status.speed_inc
                 self.level_status.delay_mult = self.level_status.delay_mult + self.level_status.delay_inc
@@ -253,8 +264,7 @@ function game:update(frametime)
                 if self.main_timeline:update(self.status:get_time_tp()) and not self.must_change_sides then
                     self.main_timeline:clear()
                     if self.lua_runtime.env.onStep ~= nil then
-                        -- TODO: implement walls so this can be called
-                        --self.lua_runtime.env.onStep()
+                        self.lua_runtime.env.onStep()
                     end
                 end
             end
@@ -266,7 +276,7 @@ function game:update(frametime)
             self.style:update(frametime, math.pow(self.difficulty_mult, 0.8))
 
             self.player:update_position(self.status.radius)
-            -- TODO: update walls
+            self.walls:update(frametime, self.status.radius)
             -- TODO: update custom walls
         else
             self.level_status.rotation_speed = self.level_status.rotation_speed * 0.99
@@ -335,7 +345,8 @@ function game:draw(screen)
     -- TODO: only draw background if not disabled in config
     self.style:draw_background({ 0, 0 }, self.level_status.sides, true, false)
     -- TODO: draw 3d if enabled in config
-    -- TODO: draw walls
+
+    self.walls:draw(self.style)
 
     -- TODO: get tilt intensity and swap blink effect from config
     self.player:draw(self.level_status.sides, self.style, 1, true)

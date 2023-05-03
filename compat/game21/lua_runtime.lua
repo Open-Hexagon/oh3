@@ -177,13 +177,13 @@ function lua_runtime:init_env(game, pack_name)
         -- TODO
     end
     self.env.t_wait = function(duration)
-        game.main_timeline:wait_for_sixths(duration)
+        game.main_timeline:append_wait_for_sixths(duration)
     end
     self.env.t_waitS = function(duration)
-        game.main_timeline:wait_for_seconds(duration)
+        game.main_timeline:append_wait_for_seconds(duration)
     end
     self.env.t_waitUntilS = function(time)
-        game.main_timeline:wait_for_until_fn(function()
+        game.main_timeline:append_wait_for_until_fn(function()
             return game.status:get_level_start_tp() + time * 1000
         end)
     end
@@ -208,13 +208,13 @@ function lua_runtime:init_env(game, pack_name)
         end)
     end
     self.env.e_wait = function(duration)
-        game.event_timeline:wait_for_sixths(duration)
+        game.event_timeline:append_wait_for_sixths(duration)
     end
     self.env.e_waitS = function(duration)
-        game.event_timeline:wait_for_seconds(duration)
+        game.event_timeline:append_wait_for_seconds(duration)
     end
     self.env.e_waitUntilS = function(time)
-        game.event_timeline:wait_for_until_fn(function()
+        game.event_timeline:append_wait_for_until_fn(function()
             return game.status:get_level_start_tp() + time * 1000
         end)
     end
@@ -331,7 +331,7 @@ function lua_runtime:init_env(game, pack_name)
         game.status:pauseTime(duration / 60)
     end
     self.env.u_clearWalls = function()
-        -- TODO: walls don't exist yet ;P
+        game.walls:clear()
     end
     self.env.u_getPlayerAngle = function()
         return game.player:get_player_angle()
@@ -353,11 +353,7 @@ function lua_runtime:init_env(game, pack_name)
         return game.difficulty_mult
     end
     self.env.u_getSpeedMultDM = function()
-        local result = game.level_status.speed_mult * math.pow(game.difficulty_mult, 0.65)
-        if not game.level_status:has_speed_max_limit() then
-            return result
-        end
-        return result < game.level_status.speed_max and result or game.level_status.speed_max
+        return game:get_speed_mult_dm()
     end
     self.env.u_getDelayMultDM = function()
         local result = game.level_status.delay_mult * math.pow(game.difficulty_mult, 0.1)
@@ -373,6 +369,67 @@ function lua_runtime:init_env(game, pack_name)
     self.env.u_playSound = self.env.a_playSound
     self.env.u_playPackSound = self.env.a_playPackSound
     -- TODO: u_kill, u_eventKill (needs timeline)
+
+    local function wall(
+        hue_modifier,
+        side,
+        thickness,
+        speed_mult,
+        acceleration,
+        min_speed,
+        max_speed,
+        ping_pong,
+        curving
+    )
+        game.main_timeline:append_do(function()
+            game.walls:wall(
+                game:get_speed_mult_dm(),
+                game.difficulty_mult,
+                hue_modifier,
+                side,
+                thickness,
+                speed_mult,
+                acceleration,
+                min_speed,
+                max_speed,
+                ping_pong,
+                curving
+            )
+        end)
+    end
+    self.env.w_wall = function(side, thickness)
+        wall(0, side, thickness)
+    end
+    self.env.w_wallAdj = function(side, thickness, speed_mult)
+        wall(0, side, thickness, speed_mult)
+    end
+    self.env.w_wallAcc = function(side, thickness, speed_mult, acceleration, min_speed, max_speed)
+        wall(0, side, thickness, speed_mult, acceleration, min_speed, max_speed)
+    end
+    self.env.w_wallModSpeedData = function(
+        hue_modifier,
+        side,
+        thickness,
+        speed_mult,
+        acceleration,
+        min_speed,
+        max_speed,
+        ping_pong
+    )
+        wall(hue_modifier, side, thickness, speed_mult, acceleration, min_speed, max_speed, ping_pong)
+    end
+    self.env.w_wallModCurveData = function(
+        hue_modifier,
+        side,
+        thickness,
+        speed_mult,
+        acceleration,
+        min_speed,
+        max_speed,
+        ping_pong
+    )
+        wall(hue_modifier, side, thickness, speed_mult, acceleration, min_speed, max_speed, ping_pong, true)
+    end
 
     -- Miscellaneous functions
     self.env.steam_unlockAchievement = function(achievement)

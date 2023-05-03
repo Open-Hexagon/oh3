@@ -18,7 +18,7 @@ local assets = {
     },
     audio_path = "assets/audio/",
     cached_sounds = {},
-    loaded_fonts = {}
+    loaded_fonts = {},
 }
 
 function assets:_build_pack_id(disambiguator, author, name, version)

@@ -29,17 +29,14 @@ function hue.get_color(h, color)
     end
 end
 
-function hue.transform(h, color)
+function hue.transform(h, r, g, b)
     -- using 3.14 instead of pi for parity with the OH code
     local u = math.cos(h * 3.14 / 180)
     local w = math.sin(h * 3.14 / 180)
-    local r, g, b = unpack(color)
-    color[1] = math.floor((0.701 * u + 0.168 * w) * r + (-0.587 * u + 0.330 * w) * g + (-0.114 * u - 0.497 * w) * b)
-        % 256
-    color[2] = math.floor((-0.299 * u - 0.328 * w) * r + (0.413 * u + 0.035 * w) * g + (-0.114 * u + 0.292 * w) * b)
-        % 256
-    color[3] = math.floor((-0.3 * u + 1.25 * w) * r + (-0.588 * u - 1.05 * w) * g + (0.886 * u - 0.203 * w) * b) % 256
-    color[4] = 255
+    return math.floor((0.701 * u + 0.168 * w) * r + (-0.587 * u + 0.330 * w) * g + (-0.114 * u - 0.497 * w) * b) % 256,
+        math.floor((-0.299 * u - 0.328 * w) * r + (0.413 * u + 0.035 * w) * g + (-0.114 * u + 0.292 * w) * b) % 256,
+        math.floor((-0.3 * u + 1.25 * w) * r + (-0.588 * u - 1.05 * w) * g + (0.886 * u - 0.203 * w) * b) % 256,
+        255
 end
 
 return hue

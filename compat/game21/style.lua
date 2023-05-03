@@ -120,6 +120,10 @@ function style:calculate_color(color_data)
                 color_data.result[4] = 255
             end
         end
+    else
+        for i = 1, 4 do
+            color_data.result[i] = color_data.value[i]
+        end
     end
     for i = 1, 4 do
         local value = color_data.result[i] + color_data.pulse[i] * self._pulse_factor

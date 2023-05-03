@@ -4,7 +4,7 @@ timeline.__index = timeline
 function timeline:new()
     return setmetatable({
         _actions = {},
-        _current_index = 1
+        _current_index = 1,
     }, timeline)
 end
 
@@ -14,7 +14,7 @@ function timeline:clear()
 end
 
 function timeline:append_do(func)
-    self._actions[#self._actions+1] = function()
+    self._actions[#self._actions + 1] = function()
         func()
         return true
     end
@@ -22,7 +22,7 @@ end
 
 function timeline:append_wait_for(duration)
     local wait_start_tp
-    self._actions[#self._actions+1] = function(time_point)
+    self._actions[#self._actions + 1] = function(time_point)
         if wait_start_tp == nil then
             wait_start_tp = time_point
         end
@@ -40,13 +40,13 @@ function timeline:append_wait_for_sixths(sixths)
 end
 
 function timeline:append_wait_until(target_time_point)
-    self._actions[#self._actions+1] = function(time_point)
+    self._actions[#self._actions + 1] = function(time_point)
         return time_point >= target_time_point
     end
 end
 
 function timeline:append_wait_until_fn(time_point_func)
-    self._actions[#self._actions+1] = function(time_point)
+    self._actions[#self._actions + 1] = function(time_point)
         return time_point >= time_point_func()
     end
 end
