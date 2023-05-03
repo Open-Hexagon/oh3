@@ -370,7 +370,7 @@ function game:draw(screen)
     love.graphics.scale(zoom_factor / p, zoom_factor / p)
 
     -- apply rotation
-    love.graphics.rotate(math.rad(self.current_rotation))
+    love.graphics.rotate(-math.rad(self.current_rotation))
 
     if not self.status.has_died then
         if self.level_status.camera_shake > 0 then

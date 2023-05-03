@@ -184,7 +184,7 @@ function style:compute_colors()
         self:calculate_color(self._color_datas[i])
     end
     if self.max_swap_time == 0 then
-        self._color_start_index = 0
+        self._color_start_index = self.bg_color_offset
     else
         local rotation = 2 * self._current_swap_time / self.max_swap_time
         self._color_start_index = math.floor(rotation + self.bg_color_offset)
@@ -202,8 +202,7 @@ function style:draw_background(center_pos, sides, darken_uneven_background_chunk
             local r, g, b, a = self:get_color(i)
             local must_darken = (i % 2 == 0 and i == sides - 1) and darken_uneven_background_chunk
             if black_and_white then
-                r, g, b = 0, 0, 0
-                color[4] = 1
+                r, g, b, a = 0, 0, 0, 255
             elseif must_darken then
                 r = r / 1.4
                 g = g / 1.4
