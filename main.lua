@@ -1,4 +1,4 @@
-local ui = require "ui.ui"
+local ui = require "ui"
 
 function love.load(arg)
     ui.load()
@@ -16,7 +16,7 @@ end
 
 function love.run()
     -- Parse arguments
-    -- (Some Lua language servers don't know that the lua.arg field exists)
+    -- (Some Lua language servers don't know that the love.arg field exists)
     ---@diagnostic disable-next-line: undefined-field
     love.load(love.arg.parseGameArguments(arg))
 
@@ -50,7 +50,6 @@ function love.run()
             print(name, a, b, c, d, e, f)
         end
 
-        -- update as much as required depending on passed time
         local current_time = love.timer.getTime()
         local dt = love.timer.step()
 
