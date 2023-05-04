@@ -105,7 +105,6 @@ function lua_runtime:init_env(game, pack_name)
     make_accessors("l", "BeatPulse", game.status, "beat_pulse")
     make_accessors("l", "BeatPulseDelay", game.status, "beat_pulse_delay")
     make_accessors("l", "ShowPlayerTrail", game.status, "show_player_trail")
-    make_accessors("l", "CameraShake", game.status, "camera_shake")
     make_accessors("l", "Rotation", game, "current_rotation")
     self.env.l_overrideScore = function(variable)
         self.level_status.score_overwrite = variable
@@ -517,6 +516,9 @@ function lua_runtime:init_env(game, pack_name)
     )
         wall(hue_modifier, side, thickness, speed_mult, acceleration, min_speed, max_speed, ping_pong, true)
     end
+
+    -- Custom timeline functions
+    game.custom_timelines.add_lua_functions(game)
 
     -- Custom wall functions
     for name, fn in pairs(game.custom_walls) do

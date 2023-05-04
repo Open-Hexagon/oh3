@@ -14,11 +14,11 @@ local function create_cw(deadly, collision)
     end
     highest_handle = math.max(highest_handle, handle)
     custom_walls[handle] = {
-        vertices = {0, 0, 0, 0, 0, 0, 0, 0},
-        colors = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        vertices = { 0, 0, 0, 0, 0, 0, 0, 0 },
+        colors = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
         collision = collision,
         deadly = deadly,
-        killing_side = 0
+        killing_side = 0,
     }
     return handle
 end
@@ -55,11 +55,7 @@ cws.cw_moveVertexPos = function(handle, vertex, offset_x, offset_y)
     custom_walls[handle].vertices[vertex * 2 + 1] = custom_walls[handle].vertices[vertex * 2 + 1] + offset_x
     custom_walls[handle].vertices[vertex * 2 + 2] = custom_walls[handle].vertices[vertex * 2 + 2] + offset_y
 end
-cws.cw_moveVertexPos4Same = function(
-    handle,
-    offset_x,
-    offset_y
-)
+cws.cw_moveVertexPos4Same = function(handle, offset_x, offset_y)
     is_valid_handle(handle)
     custom_walls[handle].vertices[1] = custom_walls[handle].vertices[1] + offset_x
     custom_walls[handle].vertices[2] = custom_walls[handle].vertices[2] + offset_y
@@ -146,7 +142,14 @@ cws.cw_getVertexPos = function(handle, vertex)
 end
 cws.cw_getVertexPos4 = function(handle)
     is_valid_handle(handle)
-    return custom_walls[handle].vertices[1], custom_walls[handle].vertices[2], custom_walls[handle].vertices[3], custom_walls[handle].vertices[4], custom_walls[handle].vertices[5], custom_walls[handle].vertices[6], custom_walls[handle].vertices[7], custom_walls[handle].vertices[8]
+    return custom_walls[handle].vertices[1],
+        custom_walls[handle].vertices[2],
+        custom_walls[handle].vertices[3],
+        custom_walls[handle].vertices[4],
+        custom_walls[handle].vertices[5],
+        custom_walls[handle].vertices[6],
+        custom_walls[handle].vertices[7],
+        custom_walls[handle].vertices[8]
 end
 cws.cw_clear = function()
     custom_walls = {}

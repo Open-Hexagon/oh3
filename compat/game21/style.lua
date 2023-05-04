@@ -191,7 +191,7 @@ function style:compute_colors()
     end
 end
 
-function style:draw_background(center_pos, sides, darken_uneven_background_chunk, black_and_white)
+function style:draw_background(sides, darken_uneven_background_chunk, black_and_white)
     if #self._color_datas ~= 0 then
         local sin, cos = math.sin, math.cos
         local div = 2 * math.pi / sides
@@ -212,12 +212,12 @@ function style:draw_background(center_pos, sides, darken_uneven_background_chunk
             local angle0, angle1 = angle + half_div, angle - half_div
             love.graphics.polygon(
                 "fill",
-                center_pos[1] + cos(angle0) * distance,
-                center_pos[2] + sin(angle0) * distance,
-                center_pos[1] + cos(angle1) * distance,
-                center_pos[2] + sin(angle1) * distance,
-                center_pos[1],
-                center_pos[2]
+                cos(angle0) * distance,
+                sin(angle0) * distance,
+                cos(angle1) * distance,
+                sin(angle1) * distance,
+                0,
+                0
             )
         end
     end

@@ -27,11 +27,11 @@ local game = {
     event_timeline = Timeline:new(),
     message_timeline = Timeline:new(),
     main_timeline = Timeline:new(),
-    center_pos = { 0, 0 },
+    custom_timelines = require("compat.game21.custom_timelines"),
     first_play = true,
     walls = require("compat.game21.walls"),
     custom_walls = require("compat.game21.custom_walls"),
-    flash_color = {0, 0, 0, 0},
+    flash_color = { 0, 0, 0, 0 },
 
     -- TODO: check if the inital values cause issues (may need the values from the canvas instead here)
     width = love.graphics.getWidth(),
@@ -73,16 +73,14 @@ function game:start(pack_folder, level_id, difficulty_mult)
 
     self.event_timeline:clear()
     self.message_timeline:clear()
-
-    -- TODO: custom timeline reset
-
+    self.custom_timelines:reset()
     self.walls:reset(self.level_status)
     self.custom_walls.cw_clear()
 
     -- TODO: get player size, speed and focus speed from config
     self.player:reset(self:get_swap_cooldown(), 7.3, 9.45, 4.625)
 
-    self.flash_color = {255, 255, 255, 0}
+    self.flash_color = { 255, 255, 255, 0 }
 
     self.current_rotation = 0
     self.must_change_sides = false
@@ -274,7 +272,7 @@ function game:update(frametime)
                     end
                 end
             end
-            -- TODO: update custom timelines
+            self.custom_timelines.update(self.status:get_current_tp())
 
             -- TODO: only if beatpulse not disabled in config
             if not self.level_status.manual_beat_pulse_control then
@@ -379,16 +377,16 @@ function game:draw(screen)
 
     if not self.status.has_died then
         if self.level_status.camera_shake > 0 then
-            self.center_pos[1] = (math.random() * 2 - 1) * self.level_status.camera_shake
-            self.center_pos[2] = (math.random() * 2 - 1) * self.level_status.camera_shake
-        else
-            self.center_pos[1] = 0
-            self.center_pos[2] = 0
+            love.graphics.translate(
+                -- use love.math.random instead of math.random to not break replay rng
+                (love.math.random() * 2 - 1) * self.level_status.camera_shake,
+                (love.math.random() * 2 - 1) * self.level_status.camera_shake
+            )
         end
     end
     -- TODO: apply right shaders when rendering
     -- TODO: only draw background if not disabled in config
-    self.style:draw_background({ 0, 0 }, self.level_status.sides, true, false)
+    self.style:draw_background(self.level_status.sides, self.level_status.darken_uneven_background_chunk, false)
     -- TODO: draw 3d if enabled in config
 
     self.walls:draw(self.style)
