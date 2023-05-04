@@ -393,7 +393,9 @@ function lua_runtime:init_env(game, pack_name)
         game.status.flash_effect = value
     end
     self.env.u_setFlashColor = function(r, g, b)
-        -- TODO: init flash effect with r, g, b
+        game.flash_color[1] = r
+        game.flash_color[2] = g
+        game.flash_color[3] = b
     end
     self.env.u_log = function(message)
         log("[lua] " .. message)

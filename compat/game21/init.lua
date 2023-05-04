@@ -30,6 +30,7 @@ local game = {
     center_pos = { 0, 0 },
     first_play = true,
     walls = require("compat.game21.walls"),
+    flash_color = {0, 0, 0, 0},
 
     -- TODO: check if the inital values cause issues (may need the values from the canvas instead here)
     width = love.graphics.getWidth(),
@@ -81,7 +82,7 @@ function game:start(pack_folder, level_id, difficulty_mult)
     -- TODO: get player size, speed and focus speed from config
     self.player:reset(self:get_swap_cooldown(), 7.3, 9.45, 4.625)
 
-    -- TODO: zoom reset
+    self.flash_color = {255, 255, 255, 0}
 
     self.current_rotation = 0
     self.must_change_sides = false
@@ -176,6 +177,7 @@ function game:update(frametime)
     elseif self.status.flash_effect > 255 then
         self.status.flash_effect = 255
     end
+    self.flash_color[4] = self.status.flash_effect
 
     -- TODO: effect timeline
 
@@ -396,10 +398,10 @@ function game:draw(screen)
 
     -- TODO: draw particles, text, flash
 
+    -- text and flash shouldn't be affected by rotation/pulse
+    love.graphics.origin()
+    love.graphics.scale(zoom_factor, zoom_factor)
     if self.message_text ~= "" then
-        -- text shouldn't be affected by rotation/pulse
-        love.graphics.origin()
-        love.graphics.scale(zoom_factor, zoom_factor)
         -- text
         -- TODO: offset_color = self.style:get_color(0)  -- black in bw mode
         -- TODO: draw outlines (if not disabled in config)
@@ -413,6 +415,12 @@ function game:draw(screen)
             self.width / zoom_factor / 2 - game.message_font:getWidth(self.message_text) / 2,
             self.height / zoom_factor / 5.5
         )
+    end
+
+    -- TODO: draw flash if not disabled in config
+    if self.flash_color[4] ~= 0 then
+        set_color(unpack(self.flash_color))
+        love.graphics.rectangle("fill", 0, 0, self.width / zoom_factor, self.height / zoom_factor)
     end
 end
 
