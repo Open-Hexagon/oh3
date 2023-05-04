@@ -15,6 +15,7 @@ function lua_runtime:init_env(game, pack_name)
     local assets = game.assets
     local pack = assets.loaded_packs[pack_name]
     self.env = {
+        pairs = pairs,
         print = print,
         math = math,
     }
@@ -506,6 +507,13 @@ function lua_runtime:init_env(game, pack_name)
         ping_pong
     )
         wall(hue_modifier, side, thickness, speed_mult, acceleration, min_speed, max_speed, ping_pong, true)
+    end
+
+    -- Custom wall functions
+    for name, fn in pairs(game.custom_walls) do
+        if name:sub(1, 3) == "cw_" then
+            self.env[name] = fn
+        end
     end
 
     -- Miscellaneous functions

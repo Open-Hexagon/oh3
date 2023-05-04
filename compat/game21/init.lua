@@ -30,6 +30,7 @@ local game = {
     center_pos = { 0, 0 },
     first_play = true,
     walls = require("compat.game21.walls"),
+    custom_walls = require("compat.game21.custom_walls"),
     flash_color = {0, 0, 0, 0},
 
     -- TODO: check if the inital values cause issues (may need the values from the canvas instead here)
@@ -76,8 +77,7 @@ function game:start(pack_folder, level_id, difficulty_mult)
     -- TODO: custom timeline reset
 
     self.walls:reset(self.level_status)
-
-    -- TODO: custom walls reset
+    self.custom_walls.cw_clear()
 
     -- TODO: get player size, speed and focus speed from config
     self.player:reset(self:get_swap_cooldown(), 7.3, 9.45, 4.625)
@@ -392,6 +392,7 @@ function game:draw(screen)
     -- TODO: draw 3d if enabled in config
 
     self.walls:draw(self.style)
+    self.custom_walls.draw()
 
     -- TODO: get tilt intensity and swap blink effect from config
     self.player:draw(self.level_status.sides, self.style, 1, true)
