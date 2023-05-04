@@ -280,14 +280,17 @@ function game:update(frametime)
                     self.status.beat_pulse = self.level_status.beat_pulse_max
                     self.status.beat_pulse_delay = self.level_status.beat_pulse_delay_max
                 else
-                    self.status.beat_pulse_delay = self.status.beat_pulse_delay - frametime * self:get_music_dm_sync_factor()
+                    self.status.beat_pulse_delay = self.status.beat_pulse_delay
+                        - frametime * self:get_music_dm_sync_factor()
                 end
                 if self.status.beat_pulse > 0 then
-                    self.status.beat_pulse = self.status.beat_pulse - 2 * frametime * self:get_music_dm_sync_factor() * self.level_status.beat_pulse_speed_mult
+                    self.status.beat_pulse = self.status.beat_pulse
+                        - 2 * frametime * self:get_music_dm_sync_factor() * self.level_status.beat_pulse_speed_mult
                 end
             end
             -- TODO: 75 instead of radius min if beatpulse disabled in config
-            self.status.radius = self.level_status.radius_min * (self.status.pulse / self.level_status.pulse_min) + self.status.beat_pulse
+            self.status.radius = self.level_status.radius_min * (self.status.pulse / self.level_status.pulse_min)
+                + self.status.beat_pulse
 
             if not self.level_status.manual_pulse_control then
                 if self.status.pulse_delay <= 0 then
