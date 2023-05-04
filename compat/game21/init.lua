@@ -1,5 +1,7 @@
 -- 2.1.X compatibility mode
 local Timeline = require("compat.game21.timeline")
+local Quads = require("compat.game21.dynamic_quads")
+local Tris = require("compat.game21.dynamic_tris")
 local set_color = require("compat.game21.color_transform")
 local game = {
     assets = require("compat.game21.assets"),
@@ -32,6 +34,10 @@ local game = {
     walls = require("compat.game21.walls"),
     custom_walls = require("compat.game21.custom_walls"),
     flash_color = { 0, 0, 0, 0 },
+    wall_quads = Quads:new(),
+    pivot_quads = Quads:new(),
+    player_tris = Tris:new(),
+    cap_tris = Tris:new(),
 
     -- TODO: check if the inital values cause issues (may need the values from the canvas instead here)
     width = love.graphics.getWidth(),
@@ -389,11 +395,21 @@ function game:draw(screen)
     self.style:draw_background(self.level_status.sides, self.level_status.darken_uneven_background_chunk, false)
     -- TODO: draw 3d if enabled in config
 
-    self.walls:draw(self.style)
-    self.custom_walls.draw()
+    self.wall_quads:clear()
+    self.walls:draw(self.style, self.wall_quads)
+    self.custom_walls.draw(self.wall_quads)
 
     -- TODO: get tilt intensity and swap blink effect from config
-    self.player:draw(self.level_status.sides, self.style, 1, true)
+    self.player_tris:clear()
+    self.pivot_quads:clear()
+    self.cap_tris:clear()
+    self.player:draw(self.level_status.sides, self.style, self.pivot_quads, self.player_tris, self.cap_tris, 1, true)
+
+    love.graphics.setColor(1, 1, 1, 1)
+    self.wall_quads:draw()
+    self.cap_tris:draw()
+    self.pivot_quads:draw()
+    self.player_tris:draw()
 
     -- TODO: draw particles, text, flash
 

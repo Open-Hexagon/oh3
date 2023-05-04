@@ -1,4 +1,3 @@
-local set_color = require("compat.game21.color_transform")
 local custom_walls = {}
 local free_handles = {}
 local cws = {}
@@ -156,13 +155,21 @@ cws.cw_clear = function()
     free_handles = {}
     highest_handle = 0
 end
-function cws.draw()
+function cws.draw(wall_quads)
     for i = 1, highest_handle do
         local cw = custom_walls[i]
         if cw ~= nil then
-            -- TODO: handle vertex colors correctly (just takes first one right now)
-            set_color(unpack(cw.colors))
-            love.graphics.polygon("fill", cw.vertices)
+            wall_quads:add_quad(
+                cw.vertices[1],
+                cw.vertices[2],
+                cw.vertices[3],
+                cw.vertices[4],
+                cw.vertices[5],
+                cw.vertices[6],
+                cw.vertices[7],
+                cw.vertices[8],
+                unpack(cw.colors)
+            )
         end
     end
 end

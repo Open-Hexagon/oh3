@@ -1,6 +1,5 @@
 local player = {}
 
-local set_color = require("compat.game21.color_transform")
 local timer = require("compat.game21.timer")
 local get_color_from_hue = require("compat.game21.hue").get_color
 
@@ -50,14 +49,12 @@ function player:get_color_adjusted_for_swap(color)
     end
 end
 
--- TODO: clean draw code up a little (also draws more polygons than it needs to)
--- (currently it's pretty much just copied from the game)
-function player:draw(sides, style, angle_tilt_intensity, swap_blinking_effect)
+function player:draw(sides, style, pivotquads, playertris, cap_tris, angle_tilt_intensity, swap_blinking_effect)
     -- TODO: 255, 255, 255, normal a if bw mode
     self._color[1], self._color[2], self._color[3], self._color[4] = style:get_player_color()
-    self:draw_pivot(sides, style)
+    self:draw_pivot(sides, style, pivotquads, cap_tris)
     if not self._dead_effect_timer.running then
-        self:draw_death_effect()
+        self:draw_death_effect(pivotquads)
     end
     local tilted_angle = self._angle + (self._curr_tilted_angle * math.rad(24) * angle_tilt_intensity)
     local deg100 = math.rad(100)
@@ -74,11 +71,10 @@ function player:draw(sides, style, angle_tilt_intensity, swap_blinking_effect)
     else
         self:get_color(self._color)
     end
-    set_color(unpack(self._color))
-    love.graphics.polygon("fill", pos_x, pos_y, p_left_x, p_left_y, p_right_x, p_right_y)
+    playertris:add_tris(pos_x, pos_y, p_left_x, p_left_y, p_right_x, p_right_y, unpack(self._color))
 end
 
-function player:draw_pivot(sides, style)
+function player:draw_pivot(sides, style, pivotquads, cap_tris)
     local div = math.pi / sides
     local p_radius = self._radius * 0.75
     local sin, cos = math.sin, math.cos
@@ -94,19 +90,16 @@ function player:draw_pivot(sides, style)
         local p4_x, p4_y =
             self._start_pos[1] + cos(s_angle - div) * (p_radius + base_thickness),
             self._start_pos[2] + sin(s_angle - div) * (p_radius + base_thickness)
-        set_color(style:get_main_color())
-        love.graphics.polygon("fill", p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y)
-        set_color(style:get_cap_color_result())
-        love.graphics.polygon("fill", p1_x, p1_y, p2_x, p2_y, unpack(self._start_pos))
+        pivotquads:add_quad(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y, style:get_main_color())
+        cap_tris:add_tris(p1_x, p1_y, p2_x, p2_y, self._start_pos[1], self._start_pos[2], style:get_cap_color_result())
     end
 end
 
-function player:draw_death_effect()
+function player:draw_death_effect(quads)
     local div = math.pi / 6
     local d_radius = self._hue / 8
     local thickness = self._hue / 20
     get_color_from_hue((360 - self._hue) / 360, self._death_effect_color)
-    set_color(unpack(self._death_effect_color))
     local sin, cos = math.sin, math.cos
     for i = 0, 5 do
         local s_angle = div * 2 * i
@@ -118,7 +111,7 @@ function player:draw_death_effect()
         local p4_x, p4_y =
             self._pos[1] + cos(s_angle - div) * (d_radius + thickness),
             self._pos[2] + sin(s_angle - div) * (d_radius + base_thickness)
-        love.graphics.polygon("fill", p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y)
+        quads:add_quad(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y, unpack(self._death_effect_color))
     end
 end
 

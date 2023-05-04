@@ -1,4 +1,3 @@
-local set_color = require("compat.game21.color_transform")
 local transform_hue = require("compat.game21.hue").transform
 local walls = {
     _walls = {},
@@ -120,15 +119,34 @@ function walls:update(frametime, radius)
     end
 end
 
-function walls:draw(style)
+function walls:draw(style, wallquads)
     for i = 1, #self._walls do
         local wall = self._walls[i]
         if wall.hue_modifier == 0 then
-            set_color(style:get_wall_color())
+            wallquads:add_quad(
+                wall.vertices[1],
+                wall.vertices[2],
+                wall.vertices[3],
+                wall.vertices[4],
+                wall.vertices[5],
+                wall.vertices[6],
+                wall.vertices[7],
+                wall.vertices[8],
+                style:get_wall_color()
+            )
         else
-            set_color(transform_hue(wall.hue_modifier, style:get_wall_color()))
+            wallquads:add_quad(
+                wall.vertices[1],
+                wall.vertices[2],
+                wall.vertices[3],
+                wall.vertices[4],
+                wall.vertices[5],
+                wall.vertices[6],
+                wall.vertices[7],
+                wall.vertices[8],
+                transform_hue(wall.hue_modifier, style:get_wall_color())
+            )
         end
-        love.graphics.polygon("fill", wall.vertices)
     end
 end
 
