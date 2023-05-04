@@ -15,6 +15,12 @@ function lua_runtime:init_env(game, pack_name)
     local assets = game.assets
     local pack = assets.loaded_packs[pack_name]
     self.env = {
+        table = table,
+        getmetatable = getmetatable,
+        setmetatable = setmetatable,
+        type = type,
+        string = string,
+        ipairs = ipairs,
         pairs = pairs,
         print = print,
         math = math,
@@ -332,6 +338,9 @@ function lua_runtime:init_env(game, pack_name)
     end
 
     -- Utility functions
+    self.env.u_isHeadless = function()
+        return false
+    end
     self.env.u_rndReal = function()
         -- u_rndReal = math.random wouldn't ignore args
         return math.random()
