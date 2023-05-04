@@ -1,7 +1,7 @@
 function love.run()
     -- load game for testing
     local game = require("compat.game21")
-    game:start("ohl4", "Sharpshooter", 1)
+    game:start("cube", "pointless", 1)
 
     -- target frametime
     local frametime = 1 / 240
@@ -76,6 +76,10 @@ function love.run()
                 love.graphics.setColor(1, 1, 1, 1)
                 love.graphics.draw(screen)
             end
+            -- used for performance testing TODO: remove once we have a proper ui element for it
+            love.timer.step()
+            love.graphics.print("FPS: " .. love.timer.getFPS())
+
             love.graphics.present()
         end
     end
