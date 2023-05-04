@@ -1,16 +1,6 @@
 local quads = {}
 quads.__index = quads
 
-local instance_vertex_shader = love.graphics.newShader([[
-attribute vec2 instance_position;
-
-vec4 position(mat4 transform_projection, vec4 vertex_position)
-{
-	vertex_position.xy += instance_position;
-	return transform_projection * vertex_position;
-}
-]])
-
 local step_size = 256
 
 function quads:_resize()
@@ -29,8 +19,18 @@ function quads:_resize()
     end
     self.mesh = love.graphics.newMesh(self.vertices, "triangles", "stream")
     self.mesh:setVertexMap(self.vertex_map)
-    if self.instance_mesh ~= nil then
-        self.mesh:attachAttribute("instance_position", self.instance_mesh, "perinstance")
+    for attribute, mesh in pairs(self.instance_meshes) do
+        self.mesh:attachAttribute(attribute, mesh, "perinstance")
+    end
+end
+
+function quads:set_instance_attribute_array(attribute, attr_type, components, values)
+    if self.instance_meshes[attribute] == nil or #values ~= self.instance_meshes[attribute]:getVertexCount() then
+        self.instance_meshes[attribute] =
+            love.graphics.newMesh({ { attribute, attr_type, components } }, values, nil, "stream")
+        self.mesh:attachAttribute(attribute, self.instance_meshes[attribute], "perinstance")
+    else
+        self.instance_meshes[attribute]:setVertices(values)
     end
 end
 
@@ -40,6 +40,7 @@ function quads:new()
         vertex_map = {},
         size = 0,
         quads = 0,
+        instance_meshes = {},
     }, self)
     obj:_resize()
     return obj
@@ -73,20 +74,11 @@ function quads:draw()
     end
 end
 
-function quads:draw_instanced(count, positions)
+function quads:draw_instanced(count)
     if self.quads ~= 0 then
-        if self.instance_mesh == nil or #positions ~= self.instance_mesh:getVertexCount() then
-            self.instance_mesh =
-                love.graphics.newMesh({ { "instance_position", "float", 2 } }, positions, nil, "stream")
-            self.mesh:attachAttribute("instance_position", self.instance_mesh, "perinstance")
-        else
-            self.instance_mesh:setVertices(positions)
-        end
         self.mesh:setVertices(self.vertices)
         self.mesh:setDrawRange(1, self.quads * 6)
-        love.graphics.setShader(instance_vertex_shader)
         love.graphics.drawInstanced(self.mesh, count)
-        love.graphics.setShader()
     end
 end
 

@@ -82,6 +82,7 @@ function style:select(style_data)
     self._colors = {}
     self._color_start_index = 0
     self._current_hue_color = { 0, 0, 0, 0 }
+    self._3D_override_is_main = true
     set_color_data_defaults(self._main_color_data)
     set_color_data_defaults(self._player_color_data)
     set_color_data_defaults(self._text_color)
@@ -175,7 +176,8 @@ function style:compute_colors()
     self:calculate_color(self._player_color_data)
     self:calculate_color(self._text_color)
     self:calculate_color(self._wall_color)
-    if self._3D_override_color[4] == 0 then
+    self._3D_override_is_main = self._3D_override_color[4] == 0
+    if self._3D_override_is_main then
         self._current_3D_override_color = self._main_color_data.result
     else
         self._current_3D_override_color = self._3D_override_color

@@ -38,6 +38,30 @@ local game = {
     pivot_quads = Quads:new(),
     player_tris = Tris:new(),
     cap_tris = Tris:new(),
+    layer_offsets = {},
+    pivot_layer_colors = {},
+    wall_layer_colors = {},
+    player_layer_colors = {},
+    layer_shader = love.graphics.newShader([[
+        attribute vec2 instance_position;
+        attribute vec4 instance_color;
+        varying vec4 instance_color_out;
+
+        vec4 position(mat4 transform_projection, vec4 vertex_position)
+        {
+            instance_color_out = instance_color / 255.0;
+            vertex_position.xy += instance_position;
+            return transform_projection * vertex_position;
+        }
+    ]],
+    [[
+        varying vec4 instance_color_out;
+
+        vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
+        {
+            return instance_color_out;
+        }
+    ]]),
 
     -- TODO: check if the inital values cause issues (may need the values from the canvas instead here)
     width = love.graphics.getWidth(),
@@ -329,7 +353,12 @@ function game:update(frametime)
             self.level_status.rotation_speed = self.level_status.rotation_speed * 0.99
         end
 
-        -- TODO: update 3d pulse
+        self.status.pulse3D = self.status.pulse3D + self.style._3D_pulse_speed * self.status.pulse3D_direction * frametime
+        if self.status.pulse3D > self.style._3D_pulse_max then
+            self.status.pulse3D_direction = -1
+        elseif self.status.pulse3D < self.style._3D_pulse_min then
+            self.status.pulse3D_direction = 1
+        end
         -- update rotation
         local next_rotation = self.level_status.rotation_speed * 10
         if self.status.fast_spin > 0 then
@@ -378,9 +407,6 @@ function game:draw(screen)
     local p = self.status.pulse / self.level_status.pulse_min
     love.graphics.scale(zoom_factor / p, zoom_factor / p)
 
-    -- apply rotation
-    love.graphics.rotate(-math.rad(self.current_rotation))
-
     if not self.status.has_died then
         if self.level_status.camera_shake > 0 then
             love.graphics.translate(
@@ -390,10 +416,21 @@ function game:draw(screen)
             )
         end
     end
+    -- TODO: only if 3d enabled in config
+    local depth = self.style._3D_depth
+    local pulse_3d = self.status.pulse3D   -- TODO: config can disable pulse
+    local effect = self.style._3D_skew * pulse_3d    -- TODO: config 3d mult
+    local rad_rot = math.rad(self.current_rotation + 90)
+    local sin_rot = math.sin(rad_rot)
+    local cos_rot = math.cos(rad_rot)
+    love.graphics.scale(1, 1 / (1 + effect))
+
+    -- apply rotation
+    love.graphics.rotate(-math.rad(self.current_rotation))
+
     -- TODO: apply right shaders when rendering
     -- TODO: only draw background if not disabled in config
     self.style:draw_background(self.level_status.sides, self.level_status.darken_uneven_background_chunk, false)
-    -- TODO: draw 3d if enabled in config
 
     self.wall_quads:clear()
     self.walls:draw(self.style, self.wall_quads)
@@ -403,9 +440,81 @@ function game:draw(screen)
     self.player_tris:clear()
     self.pivot_quads:clear()
     self.cap_tris:clear()
-    self.player:draw(self.level_status.sides, self.style, self.pivot_quads, self.player_tris, self.cap_tris, 1, true)
-
+    if self.status.started then
+        self.player:draw(self.level_status.sides, self.style, self.pivot_quads, self.player_tris, self.cap_tris, 1, true)
+    end
     love.graphics.setColor(1, 1, 1, 1)
+
+    -- TODO: only if 3d enabled in config
+    local function adjust_alpha(a, i)
+        if self.style._3D_alpha_mult == 0 then
+            return a
+        end
+        local new_alpha = (a / self.style._3D_alpha_mult) - i * self.style._3D_alpha_falloff
+        if new_alpha > 255 then
+            return 255
+        elseif new_alpha < 0 then
+            return 0
+        end
+        return new_alpha
+    end
+    for j = 1, depth do
+        local i = depth - j
+        local offset = self.style._3D_spacing * (i + 1) * self.style._3D_perspective_mult * effect * 3.6 * 1.4
+        self.layer_offsets[j] = self.layer_offsets[j] or {}
+        self.layer_offsets[j][1] = offset * cos_rot
+        self.layer_offsets[j][2] = offset * sin_rot
+        local r, g, b, a = self.style:get_3D_override_color()
+        -- TODO: set to 255 / 1.4 if bw mode (alpha stays)
+        r = r / self.style._3D_darken_mult
+        g = g / self.style._3D_darken_mult
+        b = b / self.style._3D_darken_mult
+        a = adjust_alpha(a, i)
+        self.pivot_layer_colors[j] = self.pivot_layer_colors[j] or {}
+        self.pivot_layer_colors[j][1] = r
+        self.pivot_layer_colors[j][2] = g
+        self.pivot_layer_colors[j][3] = b
+        self.pivot_layer_colors[j][4] = a
+        if self.style._3D_override_is_main then
+            r, g, b, a = self.style:get_wall_color()
+            r = r / self.style._3D_darken_mult
+            g = g / self.style._3D_darken_mult
+            b = b / self.style._3D_darken_mult
+            a = adjust_alpha(a, i)
+        end
+        self.wall_layer_colors[j] = self.wall_layer_colors[j] or {}
+        self.wall_layer_colors[j][1] = r
+        self.wall_layer_colors[j][2] = g
+        self.wall_layer_colors[j][3] = b
+        self.wall_layer_colors[j][4] = a
+        if self.style._3D_override_is_main then
+            r, g, b, a = self.style:get_player_color()
+            r = r / self.style._3D_darken_mult
+            g = g / self.style._3D_darken_mult
+            b = b / self.style._3D_darken_mult
+            a = adjust_alpha(a, i)
+        end
+        self.player_layer_colors[j] = self.player_layer_colors[j] or {}
+        self.player_layer_colors[j][1] = r
+        self.player_layer_colors[j][2] = g
+        self.player_layer_colors[j][3] = b
+        self.player_layer_colors[j][4] = a
+    end
+    if depth > 0 then
+        self.wall_quads:set_instance_attribute_array("instance_position", "float", 2, self.layer_offsets)
+        self.wall_quads:set_instance_attribute_array("instance_color", "float", 4, self.wall_layer_colors)
+        self.pivot_quads:set_instance_attribute_array("instance_position", "float", 2, self.layer_offsets)
+        self.pivot_quads:set_instance_attribute_array("instance_color", "float", 4, self.pivot_layer_colors)
+        self.player_tris:set_instance_attribute_array("instance_position", "float", 2, self.layer_offsets)
+        self.player_tris:set_instance_attribute_array("instance_color", "float", 4, self.player_layer_colors)
+
+        love.graphics.setShader(self.layer_shader)
+        self.wall_quads:draw_instanced(depth)
+        self.pivot_quads:draw_instanced(depth)
+        self.player_tris:draw_instanced(depth)
+        love.graphics.setShader()
+    end
+
     self.wall_quads:draw()
     self.cap_tris:draw()
     self.pivot_quads:draw()
