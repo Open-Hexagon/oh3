@@ -1,4 +1,5 @@
 local ui = require "ui"
+local signal = require "anim.signal"
 
 function love.load(arg)
     ui.load()
@@ -11,6 +12,7 @@ function love.draw()
 end
 
 function love.update(dt)
+    signal.update(dt)
     ui.update(dt)
 end
 

@@ -25,6 +25,28 @@ function extmath.clamp(t, a, b)
     return t
 end
 
+do
+    local alpha = 0.898204193266868
+    local beta = 0.485968200201465
+    ---Approximates sqrt(x * x + y * y)
+    ---@param x number
+    ---@param y number
+    ---@return number
+    function extmath.alpha_max_beta_min(x, y)
+        local min, max
+        if x < y then
+            min, max = math.abs(x), math.abs(y)
+        else
+            min, max = math.abs(y), math.abs(x)
+        end
+        local z = alpha * max + beta * min
+        if max < z then
+            return z
+        end
+        return max
+    end
+end
+
 ---Linear interpolation between `a` and `b` with parameter `t`
 ---@param a number
 ---@param b number

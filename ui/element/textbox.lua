@@ -3,8 +3,8 @@ local TextBox = {}
 TextBox.__index = TextBox
 
 function TextBox:draw()
-    local x, y = self.left:get(), self.top:get()
-    local width, height = self.right:get() - x, self.bottom:get() - y
+    local x, y = self.left(), self.top()
+    local width, height = self.right() - x, self.bottom() - y
 
     love.graphics.setColor(1, 1, 1, 0.5)
     love.graphics.rectangle("fill", x, y, width, height)
@@ -15,7 +15,7 @@ end
 
 local M = {}
 
-function M.new(text, left, right, top, bottom)
+function M.new(left, right, top, bottom, text, color, fill_color, margin_width, border_width)
     local newinst = setmetatable({
         text = text,
         left = left,

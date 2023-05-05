@@ -2,23 +2,24 @@ local stack = require "ui.stack"
 local settings = require "ui.overlay.settings"
 local textbox = require "ui.element.textbox"
 local layout = require "ui.layout"
+local signal = require "anim.signal"
+
+local lefttab = signal.new_offset(layout.LEFT, signal.new_waveform(1/4, function (t)
+    return 100 + 50 * math.sin(2 * math.pi * t)
+end))
+local leftbar = signal.new_offset(lefttab, 100)
+local rightbar = signal.new_offset(layout.RIGHT, -50)
 
 
-local lefttab = layout.new_aligner(layout.LEFT, 50)
-local leftbar = layout.new_aligner(lefttab, 100)
-local rightbar = layout.new_aligner(layout.RIGHT, -50)
+local centerx = signal.new_lerp(leftbar, rightbar, 0.5)
+local centery = signal.new_lerp(layout.TOP, layout.BOTTOM, 0.5)
 
-
-local centerx = layout.new_proportional_aligner(leftbar, rightbar, 0.5)
-local centery = layout.new_proportional_aligner(layout.TOP, layout.BOTTOM, 0.5)
-
-local centerboxleft = layout.new_aligner(centerx, -50)
-local centerboxright = layout.new_aligner(centerx, 50)
-local centerboxtop = layout.new_aligner(centery, -50)
-local centerboxbottom = layout.new_aligner(centery, 50)
+local centerboxleft = signal.new_offset(centerx, -50)
+local centerboxright = signal.new_offset(centerx, 50)
+local centerboxtop = signal.new_offset(centery, -50)
+local centerboxbottom = signal.new_offset(centery, 50)
 
 local tabs = textbox.new(
-    "",
     layout.LEFT,
     lefttab,
     layout.TOP,
@@ -26,7 +27,6 @@ local tabs = textbox.new(
 )
 
 local bar = textbox.new(
-    "",
     lefttab,
     leftbar,
     layout.TOP,
@@ -34,7 +34,6 @@ local bar = textbox.new(
 )
 
 local center = textbox.new(
-    "",
     centerboxleft,
     centerboxright,
     centerboxtop,
@@ -42,7 +41,6 @@ local center = textbox.new(
 )
 
 local rbar = textbox.new(
-    "",
     rightbar,
     layout.RIGHT,
     layout.TOP,
