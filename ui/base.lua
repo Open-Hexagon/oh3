@@ -4,47 +4,39 @@ local textbox = require "ui.element.textbox"
 local layout = require "ui.layout"
 local signal = require "anim.signal"
 
-local lefttab = signal.new_offset(layout.LEFT, signal.new_waveform(1/4, function (t)
+local lefttab = signal.new_sum(layout.LEFT, signal.new_waveform(1 / 4, function(t)
     return 100 + 50 * math.sin(2 * math.pi * t)
 end))
-local leftbar = signal.new_offset(lefttab, 100)
-local rightbar = signal.new_offset(layout.RIGHT, -50)
+local leftbar = signal.new_sum(lefttab, 100)
+local rightbar = signal.new_sum(layout.RIGHT, -50)
 
 
 local centerx = signal.new_lerp(leftbar, rightbar, 0.5)
 local centery = signal.new_lerp(layout.TOP, layout.BOTTOM, 0.5)
 
-local centerboxleft = signal.new_offset(centerx, -50)
-local centerboxright = signal.new_offset(centerx, 50)
-local centerboxtop = signal.new_offset(centery, -50)
-local centerboxbottom = signal.new_offset(centery, 50)
+local centerboxleft = signal.new_sum(centerx, -50)
+local centerboxright = signal.new_sum(centerx, 50)
+local centerboxtop = signal.new_sum(centery, -50)
+local centerboxbottom = signal.new_sum(centery, 50)
 
 local tabs = textbox.new(
-    layout.LEFT,
-    lefttab,
-    layout.TOP,
-    layout.BOTTOM
+    "",
+    { layout.LEFT, lefttab, layout.TOP, layout.BOTTOM }
 )
 
 local bar = textbox.new(
-    lefttab,
-    leftbar,
-    layout.TOP,
-    layout.BOTTOM
+    "",
+    { lefttab, leftbar, layout.TOP, layout.BOTTOM }
 )
 
 local center = textbox.new(
-    centerboxleft,
-    centerboxright,
-    centerboxtop,
-    centerboxbottom
+    "",
+    { centerboxleft, centerboxright, centerboxtop, centerboxbottom }
 )
 
 local rbar = textbox.new(
-    rightbar,
-    layout.RIGHT,
-    layout.TOP,
-    layout.BOTTOM
+    "",
+    { rightbar, layout.RIGHT, layout.TOP, layout.BOTTOM }
 )
 
 
@@ -58,15 +50,6 @@ function base.update(dt)
 end
 
 function base.resize()
-    lefttab:reset()
-    leftbar:reset()
-    rightbar:reset()
-    centerx:reset()
-    centery:reset()
-    centerboxleft:reset()
-    centerboxright:reset()
-    centerboxtop:reset()
-    centerboxbottom:reset()
 end
 
 function base.draw()

@@ -16,7 +16,7 @@ local panel_colors = {
 local center_color = { 1, 1, 1, 0.3 }
 local border_color = { 1, 1, 1, 1 }
 
-local angle = signal.new_waveform(1/10, function (t)
+local angle = signal.new_waveform(1 / 10, function(t)
     return extmath.tau * t
 end)
 
@@ -33,8 +33,9 @@ function background.draw()
     local center = {}
     local arc = 2 * math.pi / sides
     love.graphics.translate(layout.center_x, layout.center_y)
+    love.graphics.rotate(angle())
     for i = 0, sides - 1 do
-        local a1 = i * arc + angle()
+        local a1 = i * arc
         local a2 = a1 + arc
         local x1, y1 = math.cos(a1), math.sin(a1)
         local x2, y2 = math.cos(a2), math.sin(a2)

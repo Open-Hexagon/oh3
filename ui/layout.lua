@@ -4,25 +4,36 @@ local Grid = {}
 Grid.__index = Grid
 
 function Grid:resize()
-    
+
 end
 
 local layout = {}
 
 do
     local zero = signal.new_signal(0)
+    ---A signal that outputs the X coordinate of the LEFT edge of the screen (always 0).
     layout.LEFT = zero
+
+    ---A signal that outputs the Y coordinate of the TOP edge of the screen (always 0).
     layout.TOP = zero
+
+    ---A signal that outputs the X coordinate of the RIGHT edge of the screen.
     layout.RIGHT = function()
         return layout.width
     end
+
+    ---A signal that outputs the Y coordinate of the BOTTOM edge of the screen.
     layout.BOTTOM = function()
         return layout.height
     end
-    layout.CENTER_X = function ()
+
+    ---A signal that outputs the X coordinate of the CENTER of the screen.
+    layout.CENTER_X = function()
         return layout.center_x
     end
-    layout.CENTER_Y = function ()
+
+    ---A signal that outputs the Y coordinate of the CENTER edge of the screen.
+    layout.CENTER_Y = function()
         return layout.center_x
     end
 end
