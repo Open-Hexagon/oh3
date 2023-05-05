@@ -94,8 +94,10 @@ function game:start(pack_folder, level_id, difficulty_mult)
         segment = self.music.segments[math.random(1, #self.music.segments)]
     end
     self.status.beat_pulse_delay = self.status.beat_pulse_delay + (segment.beat_pulse_delay_offset or 0)
-    self.music.source:seek(segment.time)
-    love.audio.play(self.music.source)
+    if self.music.source ~= nil then
+        self.music.source:seek(segment.time)
+        love.audio.play(self.music.source)
+    end
 
     -- initialize random seed
     -- TODO: replays (need to read random seed from there)
@@ -116,8 +118,8 @@ function game:start(pack_folder, level_id, difficulty_mult)
 
     self.current_rotation = 0
     self.must_change_sides = false
-    if not self.first_play and self.lua_runtime.env.onPreUnload ~= nil then
-        self.lua_runtime.onPreUnload()
+    if not self.first_play then
+        self.lua_runtime.run_fn_if_exists("onPreUnload")
     end
     self.lua_runtime.init_env(self)
     self.lua_runtime.run_lua_file(self.pack_data.path .. "/" .. self.level_data.luaFile)
@@ -125,19 +127,17 @@ function game:start(pack_folder, level_id, difficulty_mult)
     if self.first_play then
         love.audio.play(self.select_sound)
     else
-        if self.lua_runtime.env.onUnload ~= nil then
-            self.lua_runtime.onUnload()
-        end
+        self.lua_runtime.run_fn_if_exists("onUnload")
         love.audio.play(self.restart_sound)
     end
-    self.lua_runtime.env.onInit()
+    self.lua_runtime.run_fn_if_exists("onInit")
     self:set_sides(self.level_status.sides)
     self.status.pulse_delay = self.status.pulse_delay + self.level_status.pulse_initial_delay
     self.status.beat_pulse_delay = self.status.beat_pulse_delay + self.level_status.beat_pulse_initial_delay
     self.status.start()
     self.message_text = ""
     love.audio.play(self.go_sound)
-    self.lua_runtime.env.onLoad()
+    self.lua_runtime.run_fn_if_exists("onLoad")
 end
 
 function game:get_speed_mult_dm()
@@ -150,9 +150,7 @@ end
 
 function game:perform_player_swap(play_sound)
     self.player.player_swap()
-    if self.lua_runtime.env.onCursorSwap ~= nil then
-        self.lua_runtime.env.onCursorSwap()
-    end
+    self.lua_runtime.run_fn_if_exists("onCursorSwap")
     if play_sound then
         love.audio.play(self.level_status.swap_sound)
     end
@@ -164,9 +162,12 @@ end
 
 function game:refresh_music_pitch()
     -- TODO: account for config music speed mult
-    self.music.source:setPitch(
-        self.level_status.music_pitch * (self.level_status.sync_music_to_dm and self:get_music_dm_sync_factor() or 1)
-    )
+    if self.music.source ~= nil then
+        self.music.source:setPitch(
+            self.level_status.music_pitch
+                * (self.level_status.sync_music_to_dm and self:get_music_dm_sync_factor() or 1)
+        )
+    end
 end
 
 function game:get_swap_cooldown()
@@ -234,10 +235,7 @@ function game:update(frametime)
         self.style.compute_colors()
         self.player.update(focus, self.level_status.swap_enabled, frametime)
         if not self.status.has_died then
-            local prevent_player_input
-            if self.lua_runtime.env.onInput ~= nil then
-                prevent_player_input = self.lua_runtime.env.onInput(frametime, move, focus, swap)
-            end
+            local prevent_player_input = self.lua_runtime.run_fn_if_exists("onInput", frametime, move, focus, swap)
             if not prevent_player_input then
                 self.player.update_input_movement(move, self.level_status.player_speed_mult, focus, frametime)
                 if not self.player_now_ready_to_swap and self.player.is_ready_to_swap() then
@@ -288,20 +286,14 @@ function game:update(frametime)
                 end
                 self.must_change_sides = false
                 love.audio.play(self.level_status.level_up_sound)
-                if self.lua_runtime.env.onIncrement ~= nil then
-                    self.lua_runtime.env.onIncrement()
-                end
+                self.lua_runtime.run_fn_if_exists("onIncrement")
             end
 
             if not self.status.is_time_paused() then
-                if self.lua_runtime.env.onUpdate ~= nil then
-                    self.lua_runtime.env.onUpdate(frametime)
-                end
+                self.lua_runtime.run_fn_if_exists("onUpdate", frametime)
                 if self.main_timeline:update(self.status.get_time_tp()) and not self.must_change_sides then
                     self.main_timeline:clear()
-                    if self.lua_runtime.env.onStep ~= nil then
-                        self.lua_runtime.env.onStep()
-                    end
+                    self.lua_runtime.run_fn_if_exists("onStep")
                 end
             end
             self.custom_timelines.update(self.status.get_current_tp())
@@ -435,13 +427,15 @@ function game:draw(screen)
         -- TODO: don't do anything if shaders are disabled
         local shader = self.status.fragment_shaders[render_stage]
         if shader ~= nil then
-            if self.lua_runtime.env.onRenderStage ~= nil then
-                self.lua_runtime.env.onRenderStage(render_stage, love.timer.getDelta() * 60)
-            end
+            self.lua_runtime.run_fn_if_exists("onRenderStage", render_stage, love.timer.getDelta() * 60)
             if instanced then
                 love.graphics.setShader(shader.instance_shader)
             else
-                love.graphics.setShader(shader.shader)
+                if render_stage ~= 8 then
+                    love.graphics.setShader(shader.shader)
+                else
+                    love.graphics.setShader(shader.text_shader)
+                end
             end
         else
             love.graphics.setShader(no_shader)
@@ -583,7 +577,7 @@ function game:draw(screen)
     -- reset render stage shaders
     love.graphics.setShader()
 
-    -- TODO: draw flash if not disabled in config
+    -- TODO: only draw flash if not disabled in config
     if self.flash_color[4] ~= 0 then
         set_color(unpack(self.flash_color))
         love.graphics.rectangle("fill", 0, 0, self.width / zoom_factor, self.height / zoom_factor)

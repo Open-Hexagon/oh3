@@ -96,7 +96,10 @@ function assets.get_pack(name)
                 if pack_json == nil then
                     error("can't find dependency '" .. index_pack_id .. "' of '" .. pack_data.pack_id .. "'.")
                 end
-                assets.get_pack(pack_json.pack_name)
+                -- fix recursive dependencies
+                if pack_json.pack_name ~= name then
+                    assets.get_pack(pack_json.pack_name)
+                end
             end
         end
 
@@ -136,7 +139,13 @@ function assets.get_pack(name)
         pack_data.music = {}
         for contents in file_ext_read_iter(folder .. "/Music", ".json") do
             local music_json = json.decode_jsonc(contents)
-            music_json.source = love.audio.newSource(folder .. "/Music/" .. music_json.file_name, "stream")
+            if
+                not pcall(function()
+                    music_json.source = love.audio.newSource(folder .. "/Music/" .. music_json.file_name, "stream")
+                end)
+            then
+                log("Error: failed to load '" .. music_json.file_name .. "'")
+            end
             pack_data.music[music_json.id] = music_json
         end
 
@@ -151,13 +160,19 @@ function assets.get_pack(name)
             ]] .. code:gsub("void main", "void _old_wrapped_main")
                 :gsub("gl_FragCoord", "_new_wrap_pixel_coord")
                 :gsub("gl_FragColor", "_new_wrap_pixel_color")
+                :gsub("gl_TexCoord.0.", "VaryingTexCoord")
+                :gsub("texture", "Texel")
                 :gsub("gl_Color", "_new_wrap_original_pixel_color") .. [[
                 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
                     _new_wrap_original_pixel_color = color;
                     _new_wrap_pixel_coord = screen_coords;
                     _new_wrap_pixel_coord.y = love_ScreenSize.y - _new_wrap_pixel_coord.y;
                     _old_wrapped_main();
+                    #ifdef TEXT
+                    return _new_wrap_pixel_color * Texel(tex, VaryingTexCoord.xy);
+                    #else
                     return _new_wrap_pixel_color;
+                    #endif
                 }
             ]]
             -- remove lines starting with #version
@@ -199,10 +214,11 @@ function assets.get_pack(name)
                     if line:sub(pos, 6 + pos) == "uniform" then
                         local uni_string = line:sub(pos + 8)
                         local space_pos = uni_string:find(" ")
-                        local name = uni_string:sub(space_pos + 1)
+                        local uni_name = uni_string:sub(space_pos + 1)
                         -- in case it was optimized out
-                        if shader:hasUniform(name) then
-                            uniforms[name] = uni_string:sub(1, space_pos - 1)
+                        if shader:hasUniform(uni_name) then
+                            local uni_type = uni_string:sub(1, space_pos - 1)
+                            uniforms[uni_name] = uni_type
                         end
                     end
                 end
@@ -211,6 +227,7 @@ function assets.get_pack(name)
                 uniforms = uniforms,
                 shader = shader,
                 instance_shader = instance_shader,
+                text_shader = love.graphics.newShader("#define TEXT\n" .. new_code)
             }
         end
 

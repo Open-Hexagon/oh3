@@ -17,6 +17,7 @@ function lua_runtime.init_env(game)
     local assets = game.assets
     error_sound = assets.get_sound("error.ogg")
     lua_runtime.env = {
+        error = lua_runtime.error,
         assert = assert,
         pcall = pcall,
         xpcall = xpcall,
@@ -34,6 +35,7 @@ function lua_runtime.init_env(game)
         math = math,
     }
     env = lua_runtime.env
+    env._G = env
     local function make_accessors(prefix, name, t, f)
         env[prefix .. "_set" .. name] = function(value)
             t[f] = value
@@ -557,7 +559,7 @@ function lua_runtime.init_env(game)
         return get_shader_id(pack, filename)
     end
     env.shdr_getDependencyShaderId = function(disambiguator, name, author, filename)
-        return get_shader_id(assets.get_pack_from_metadata(disambiguator, name, author), filename)
+        return get_shader_id(assets.get_pack_from_metadata(disambiguator, author, name), filename)
     end
 
     local function check_valid_shader_id(id)
@@ -575,6 +577,7 @@ function lua_runtime.init_env(game)
                 if shader_type == uniform_type then
                     shaders[id].shader:send(name, value)
                     shaders[id].instance_shader:send(name, value)
+                    shaders[id].text_shader:send(name, value)
                 else
                     lua_runtime.error(
                         "Uniform type '"
@@ -659,6 +662,12 @@ function lua_runtime.init_env(game)
         lua_runtime.error("Attempt to unlock steam achievement '" .. achievement .. "' in compat mode")
     end
     log("initialized environment")
+end
+
+function lua_runtime.run_fn_if_exists(name, ...)
+    if env[name] ~= nil then
+        return env[name](...)
+    end
 end
 
 function lua_runtime.run_lua_file(path)
