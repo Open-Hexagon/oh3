@@ -5,74 +5,73 @@ local default_sounds = {
     death_sound = "death.ogg",
 }
 local level_status = {}
-level_status.__index = level_status
 
 -- takes sync music because unless overwritten it is defined by the global config file
-function level_status:reset(sync_music_to_dm, assets)
+function level_status.reset(sync_music_to_dm, assets)
     for sound, source in pairs(default_sounds) do
         if type(source) == "string" then
             default_sounds[sound] = assets.get_sound(source)
             source = default_sounds[sound]
         end
-        self[sound] = source
+        level_status[sound] = source
     end
-    self.tracked_variables = {}
-    self.score_overwritten = false
-    self.score_overwrite = ""
-    self.sync_music_to_dm = sync_music_to_dm
-    self.music_pitch = 1
-    self.speed_mult = 1
-    self.player_speed_mult = 1
-    self.speed_inc = 0
-    self.speed_max = 0
-    self.rotation_speed = 0
-    self.rotation_speed_inc = 0
-    self.rotation_speed_max = 0
-    self.delay_mult = 1
-    self.delay_inc = 0
-    self.delay_min = 0
-    self.delay_max = 0
-    self.fast_spin = 0
-    self.inc_time = 15
-    self.pulse_min = 75
-    self.pulse_max = 80
-    self.pulse_speed = 0
-    self.pulse_speed_r = 0
-    self.pulse_delay_max = 0
-    self.pulse_initial_delay = 0
-    self.swap_cooldown_mult = 1
-    self.beat_pulse_initial_delay = 0
-    self.beat_pulse_max = 0
-    self.beat_pulse_delay_max = 0
-    self.beat_pulse_speed_mult = 1
-    self.radius_min = 72
-    self.wall_skew_left = 0
-    self.wall_skew_right = 0
-    self.wall_angle_left = 0
-    self.wall_angle_right = 0
-    self.wall_spawn_distance = 1600
-    self.camera_shake = 0
-    self.sides = 6
-    self.sides_max = 6
-    self.sides_min = 6
-    self.swap_enabled = false
-    self.tutorial_mode = false
-    self._3D_required = false
-    self.shaders_required = false
-    self.inc_enabled = true
-    self.rnd_side_changes_enabled = true
-    self.darken_uneven_background_chunk = true
-    self.manual_pulse_control = false
-    self.manual_beat_pulse_control = false
-    self.current_increments = 0
+    level_status.tracked_variables = {}
+    level_status.score_overwritten = false
+    level_status.score_overwrite = ""
+    level_status.sync_music_to_dm = sync_music_to_dm
+    level_status.music_pitch = 1
+    level_status.speed_mult = 1
+    level_status.player_speed_mult = 1
+    level_status.speed_inc = 0
+    level_status.speed_max = 0
+    level_status.rotation_speed = 0
+    level_status.rotation_speed_inc = 0
+    level_status.rotation_speed_max = 0
+    level_status.delay_mult = 1
+    level_status.delay_inc = 0
+    level_status.delay_min = 0
+    level_status.delay_max = 0
+    level_status.fast_spin = 0
+    level_status.inc_time = 15
+    level_status.pulse_min = 75
+    level_status.pulse_max = 80
+    level_status.pulse_speed = 0
+    level_status.pulse_speed_r = 0
+    level_status.pulse_delay_max = 0
+    level_status.pulse_initial_delay = 0
+    level_status.swap_cooldown_mult = 1
+    level_status.beat_pulse_initial_delay = 0
+    level_status.beat_pulse_max = 0
+    level_status.beat_pulse_delay_max = 0
+    level_status.beat_pulse_speed_mult = 1
+    level_status.radius_min = 72
+    level_status.wall_skew_left = 0
+    level_status.wall_skew_right = 0
+    level_status.wall_angle_left = 0
+    level_status.wall_angle_right = 0
+    level_status.wall_spawn_distance = 1600
+    level_status.camera_shake = 0
+    level_status.sides = 6
+    level_status.sides_max = 6
+    level_status.sides_min = 6
+    level_status.swap_enabled = false
+    level_status.tutorial_mode = false
+    level_status.pseudo_3D_required = false
+    level_status.shaders_required = false
+    level_status.inc_enabled = true
+    level_status.rnd_side_changes_enabled = true
+    level_status.darken_uneven_background_chunk = true
+    level_status.manual_pulse_control = false
+    level_status.manual_beat_pulse_control = false
+    level_status.current_increments = 0
 end
 
-function level_status:has_speed_max_limit()
-    return self.speed_max > 0
+function level_status.has_speed_max_limit()
+    return level_status.speed_max > 0
 end
 
-function level_status:has_delay_max_limit()
-    return self.delay_max > 0
+function level_status.has_delay_max_limit()
+    return level_status.delay_max > 0
 end
 
 return level_status

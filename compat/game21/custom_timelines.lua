@@ -44,14 +44,14 @@ function custom_timelines.add_lua_functions(game)
     function lua.ct_stopTime(handle, duration)
         local timeline = custom_timelines.get(handle)
         timeline:append_do(function()
-            game.status:pause_time(duration / 60)
+            game.status.pause_time(duration / 60)
         end)
     end
 
     function lua.ct_stopTimeS(handle, duration)
         local timeline = custom_timelines.get(handle)
         timeline:append_do(function()
-            game.status:pause_time(duration)
+            game.status.pause_time(duration)
         end)
     end
 
@@ -68,7 +68,7 @@ function custom_timelines.add_lua_functions(game)
     function lua.ct_waitUntilS(handle, time)
         local timeline = custom_timelines.get(handle)
         timeline:append_wait_until_fn(function()
-            return game.status:get_level_start_tp() + time * 1000
+            return game.status.get_level_start_tp() + time * 1000
         end)
     end
 end

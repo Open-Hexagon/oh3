@@ -1,14 +1,14 @@
 local transform_hue = require("compat.game21.hue").transform
-local walls = {
-    _walls = {},
-}
+local walls = {}
+local _walls = {}
+local _level_status
 
-function walls:reset(level_status)
-    self._walls = {}
-    self._level_status = level_status
+function walls.reset(level_status)
+    _walls = {}
+    _level_status = level_status
 end
 
-function walls:wall(
+function walls.wall(
     speed_mult_dm,
     difficulty_mult,
     hue_modifier,
@@ -27,8 +27,8 @@ function walls:wall(
     acceleration = acceleration or 0
     min_speed = min_speed or 0
     max_speed = max_speed or 0
-    local distance = self._level_status.wall_spawn_distance
-    local div = math.pi / self._level_status.sides
+    local distance = _level_status.wall_spawn_distance
+    local div = math.pi / _level_status.sides
     local angle = div * 2 * side
     local sin, cos = math.sin, math.cos
     local vertices = {}
@@ -39,12 +39,12 @@ function walls:wall(
     set_vertex(angle - div, distance)
     set_vertex(angle + div, distance)
     set_vertex(
-        angle + div + self._level_status.wall_angle_left,
-        distance + thickness + self._level_status.wall_skew_left
+        angle + div + _level_status.wall_angle_left,
+        distance + thickness + _level_status.wall_skew_left
     )
     set_vertex(
-        angle - div + self._level_status.wall_angle_right,
-        distance + thickness + self._level_status.wall_skew_right
+        angle - div + _level_status.wall_angle_right,
+        distance + thickness + _level_status.wall_skew_right
     )
     if not curving then
         speed_mult = speed_mult * speed_mult_dm
@@ -60,15 +60,15 @@ function walls:wall(
         old_speed = speed_mult_dm, -- used for curving walls actual speed (only curve needs accel)
         curving = curving,
     }
-    self._walls[#self._walls + 1] = wall_table
+    _walls[#_walls + 1] = wall_table
 end
 
-function walls:update(frametime, radius)
+function walls.update(frametime, radius)
     local half_radius = 0.5 * radius
-    local outer_bounds = self._level_status.wall_spawn_distance * 1.1
+    local outer_bounds = _level_status.wall_spawn_distance * 1.1
     local del_queue = {}
-    for i = 1, #self._walls do
-        local wall = self._walls[i]
+    for i = 1, #_walls do
+        local wall = _walls[i]
         if wall.accel ~= 0 then
             wall.speed = wall.speed + wall.accel * frametime
             if wall.speed > wall.max_speed then
@@ -115,13 +115,13 @@ function walls:update(frametime, radius)
         end
     end
     for _, i in pairs(del_queue) do
-        table.remove(self._walls, i)
+        table.remove(_walls, i)
     end
 end
 
-function walls:draw(style, wallquads)
-    for i = 1, #self._walls do
-        local wall = self._walls[i]
+function walls.draw(style, wallquads)
+    for i = 1, #_walls do
+        local wall = _walls[i]
         if wall.hue_modifier == 0 then
             wallquads:add_quad(
                 wall.vertices[1],
@@ -132,7 +132,7 @@ function walls:draw(style, wallquads)
                 wall.vertices[6],
                 wall.vertices[7],
                 wall.vertices[8],
-                style:get_wall_color()
+                style.get_wall_color()
             )
         else
             wallquads:add_quad(
@@ -144,18 +144,18 @@ function walls:draw(style, wallquads)
                 wall.vertices[6],
                 wall.vertices[7],
                 wall.vertices[8],
-                transform_hue(wall.hue_modifier, style:get_wall_color())
+                transform_hue(wall.hue_modifier, style.get_wall_color())
             )
         end
     end
 end
 
-function walls:empty()
-    return #self._walls == 0
+function walls.empty()
+    return #_walls == 0
 end
 
-function walls:clear()
-    self._walls = {}
+function walls.clear()
+    _walls = {}
 end
 
 return walls

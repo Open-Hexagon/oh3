@@ -90,7 +90,8 @@ function assets.get_pack(name)
         if pack_data.pack_json.dependencies ~= nil then
             for i = 1, #pack_data.pack_json.dependencies do
                 local dependency = pack_data.pack_json.dependencies[i]
-                local index_pack_id = assets._build_pack_id(dependency.disambiguator, dependency.author, dependency.name)
+                local index_pack_id =
+                    assets._build_pack_id(dependency.disambiguator, dependency.author, dependency.name)
                 local pack_json = metadata_pack_json_map[index_pack_id]
                 if pack_json == nil then
                     error("can't find dependency '" .. index_pack_id .. "' of '" .. pack_data.pack_id .. "'.")

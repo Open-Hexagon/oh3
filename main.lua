@@ -1,7 +1,7 @@
 function love.run()
     -- load game for testing
     local game = require("compat.game21")
-    game:start("anniversary", "senseless vortex", 1)
+    game:start("cube", "pointless", 1)
 
     -- target frametime
     local frametime = 1 / 240
