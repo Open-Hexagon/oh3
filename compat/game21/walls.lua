@@ -38,14 +38,8 @@ function walls.wall(
     end
     set_vertex(angle - div, distance)
     set_vertex(angle + div, distance)
-    set_vertex(
-        angle + div + _level_status.wall_angle_left,
-        distance + thickness + _level_status.wall_skew_left
-    )
-    set_vertex(
-        angle - div + _level_status.wall_angle_right,
-        distance + thickness + _level_status.wall_skew_right
-    )
+    set_vertex(angle + div + _level_status.wall_angle_left, distance + thickness + _level_status.wall_skew_left)
+    set_vertex(angle - div + _level_status.wall_angle_right, distance + thickness + _level_status.wall_skew_right)
     if not curving then
         speed_mult = speed_mult * speed_mult_dm
     end

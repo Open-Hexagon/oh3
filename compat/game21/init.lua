@@ -471,7 +471,12 @@ function game:draw(screen)
     end
     for j = 1, depth do
         local i = depth - j
-        local offset = self.style.pseudo_3D_spacing * (i + 1) * self.style.pseudo_3D_perspective_mult * effect * 3.6 * 1.4
+        local offset = self.style.pseudo_3D_spacing
+            * (i + 1)
+            * self.style.pseudo_3D_perspective_mult
+            * effect
+            * 3.6
+            * 1.4
         self.layer_offsets[j] = self.layer_offsets[j] or {}
         self.layer_offsets[j][1] = offset * cos_rot
         self.layer_offsets[j][2] = offset * sin_rot

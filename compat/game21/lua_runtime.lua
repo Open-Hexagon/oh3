@@ -459,10 +459,6 @@ function lua_runtime.init_env(game)
     env.u_swapPlayer = function(play_sound)
         game:perform_player_swap(play_sound)
     end
-    -- deprecated functions
-    env.u_playSound = env.a_playSound
-    env.u_playPackSound = env.a_playPackSound
-    -- TODO: u_kill, u_eventKill (needs timeline)
 
     local function wall(
         hue_modifier,

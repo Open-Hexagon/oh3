@@ -153,9 +153,27 @@ function assets.get_pack(name)
             --       - samplerCube -> CubeImage
             --       - sampler3D -> VolumeImage
             -- might also need to change glsl version, can check hardware support with love.graphics.getSupported
-
-            -- not loading shaders for now so love doesn't complain (since there's no conversion yet)
-            --pack_data.shaders[filename] = love.graphics.newShader(code)
+            code = [[
+                vec4 _new_wrap_pixel_color;
+                vec4 _new_wrap_original_pixel_color;
+            ]] .. code:gsub("void main", "void _old_wrapped_main")
+                :gsub("gl_FragColor", "_new_wrap_pixel_color")
+                :gsub("gl_Color", "_new_wrap_original_pixel_color") .. [[
+                vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
+                    _new_wrap_original_pixel_color = color;
+                    _old_wrapped_main();
+                    return _new_wrap_pixel_color;
+                }
+            ]]
+            local new_code = ""
+            for line in code:gmatch("([^\n]*)\n?") do
+                if line:gsub(" ", ""):sub(1, 8) ~= "#version" then
+                    new_code = new_code .. line .. "\n"
+                end
+            end
+            print("---")
+            print(new_code)
+            pack_data.shaders[filename] = love.graphics.newShader(new_code)
         end
 
         -- styles
