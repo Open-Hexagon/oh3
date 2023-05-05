@@ -8,6 +8,10 @@ local file_cache = {}
 local env = lua_runtime.env
 
 function lua_runtime.error(msg)
+    if msg == nil then
+        -- no useful message, usually called as way to get out of a pcall
+        error()
+    end
     love.audio.play(error_sound)
     log("Error: " .. msg)
 end
@@ -17,6 +21,7 @@ function lua_runtime.init_env(game)
     local assets = game.assets
     error_sound = assets.get_sound("error.ogg")
     lua_runtime.env = {
+        next = next,
         error = lua_runtime.error,
         assert = assert,
         pcall = pcall,
@@ -154,13 +159,13 @@ function lua_runtime.init_env(game)
     make_accessors("s", "BGColorOffset", game.style, "bg_color_offset")
     make_accessors("s", "BGRotationOffset", game.style, "bg_rot_off")
     env.s_setCapColorMain = function()
-        game.style._cap_color = 1
+        game.style.set_cap_color(1)
     end
     env.s_setCapColorMainDarkened = function()
-        game.style._cap_color = 2
+        game.style.set_cap_color(2)
     end
     env.s_setCapColorByIndex = function(index)
-        game.style._cap_color = 4 + index
+        game.style.set_cap_color(4 + index)
     end
     env.s_getMainColor = function()
         return game.style.get_main_color()
