@@ -143,37 +143,75 @@ function assets.get_pack(name)
         -- shaders
         pack_data.shaders = {}
         for code, filename in file_ext_read_iter(folder .. "/Shaders", ".frag") do
-            -- TODO: convert shader code to work with love
-            --       - void main -> vec4 effect
-            --       - gl_FragColor -> return
-            --       - gl_FragCoord -> screen_coords param or love_PixelCoord
-            --       - texture -> Texel
-            --       - sampler2D -> Image
-            --       - sampler2DArray -> ArrayImage
-            --       - samplerCube -> CubeImage
-            --       - sampler3D -> VolumeImage
-            -- might also need to change glsl version, can check hardware support with love.graphics.getSupported
+            -- replace gl_ variables with love stuff
             code = [[
                 vec4 _new_wrap_pixel_color;
                 vec4 _new_wrap_original_pixel_color;
+                vec2 _new_wrap_pixel_coord;
             ]] .. code:gsub("void main", "void _old_wrapped_main")
+                :gsub("gl_FragCoord", "_new_wrap_pixel_coord")
                 :gsub("gl_FragColor", "_new_wrap_pixel_color")
                 :gsub("gl_Color", "_new_wrap_original_pixel_color") .. [[
                 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
                     _new_wrap_original_pixel_color = color;
+                    _new_wrap_pixel_coord = screen_coords;
+                    _new_wrap_pixel_coord.y = love_ScreenSize.y - _new_wrap_pixel_coord.y;
                     _old_wrapped_main();
                     return _new_wrap_pixel_color;
                 }
             ]]
+            -- remove lines starting with #version
             local new_code = ""
             for line in code:gmatch("([^\n]*)\n?") do
                 if line:gsub(" ", ""):sub(1, 8) ~= "#version" then
                     new_code = new_code .. line .. "\n"
                 end
             end
-            print("---")
-            print(new_code)
-            pack_data.shaders[filename] = love.graphics.newShader(new_code)
+            local shader = love.graphics.newShader(new_code)
+            -- compile the shader a second time but with 3d layer offset instance code
+            -- (since we don't know where the shader will be used yet and we don't wanted
+            -- to slow down the game with runtime compilation)
+            local instance_shader = love.graphics.newShader(
+                [[
+                    attribute vec2 instance_position;
+                    attribute vec4 instance_color;
+                    varying vec4 instance_color_out;
+
+                    vec4 position(mat4 transform_projection, vec4 vertex_position)
+                    {
+                        instance_color_out = instance_color / 255.0;
+                        vertex_position.xy += instance_position;
+                        return transform_projection * vertex_position;
+                    }
+                ]],
+                [[
+                    varying vec4 instance_color_out;
+                ]]
+                    .. new_code:gsub(
+                        "_new_wrap_original_pixel_color = color;",
+                        "_new_wrap_original_pixel_color = instance_color_out;"
+                    )
+            )
+            -- store uniforms
+            local uniforms = {}
+            for line in code:gmatch("([^;]*);?") do
+                for pos = 1, #line do
+                    if line:sub(pos, 6 + pos) == "uniform" then
+                        local uni_string = line:sub(pos + 8)
+                        local space_pos = uni_string:find(" ")
+                        local name = uni_string:sub(space_pos + 1)
+                        -- in case it was optimized out
+                        if shader:hasUniform(name) then
+                            uniforms[name] = uni_string:sub(1, space_pos - 1)
+                        end
+                    end
+                end
+            end
+            pack_data.shaders[filename] = {
+                uniforms = uniforms,
+                shader = shader,
+                instance_shader = instance_shader,
+            }
         end
 
         -- styles

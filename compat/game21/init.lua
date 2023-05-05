@@ -39,25 +39,25 @@ local game = {
     player_layer_colors = {},
     layer_shader = love.graphics.newShader(
         [[
-        attribute vec2 instance_position;
-        attribute vec4 instance_color;
-        varying vec4 instance_color_out;
+            attribute vec2 instance_position;
+            attribute vec4 instance_color;
+            varying vec4 instance_color_out;
 
-        vec4 position(mat4 transform_projection, vec4 vertex_position)
-        {
-            instance_color_out = instance_color / 255.0;
-            vertex_position.xy += instance_position;
-            return transform_projection * vertex_position;
-        }
-    ]],
+            vec4 position(mat4 transform_projection, vec4 vertex_position)
+            {
+                instance_color_out = instance_color / 255.0;
+                vertex_position.xy += instance_position;
+                return transform_projection * vertex_position;
+            }
+        ]],
         [[
-        varying vec4 instance_color_out;
+            varying vec4 instance_color_out;
 
-        vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
-        {
-            return instance_color_out;
-        }
-    ]]
+            vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
+            {
+                return instance_color_out;
+            }
+        ]]
     ),
 
     -- TODO: check if the inital values cause issues (may need the values from the canvas instead here)
@@ -431,8 +431,25 @@ function game:draw(screen)
     -- apply rotation
     love.graphics.rotate(-math.rad(self.current_rotation))
 
-    -- TODO: apply right shaders when rendering
+    local function set_render_stage(render_stage, no_shader, instanced)
+        -- TODO: don't do anything if shaders are disabled
+        local shader = self.status.fragment_shaders[render_stage]
+        if shader ~= nil then
+            if self.lua_runtime.env.onRenderStage ~= nil then
+                self.lua_runtime.env.onRenderStage(render_stage, love.timer.getDelta() * 60)
+            end
+            if instanced then
+                love.graphics.setShader(shader.instance_shader)
+            else
+                love.graphics.setShader(shader.shader)
+            end
+        else
+            love.graphics.setShader(no_shader)
+        end
+    end
+
     -- TODO: only draw background if not disabled in config
+    set_render_stage(0)
     self.style.draw_background(self.level_status.sides, self.level_status.darken_uneven_background_chunk, false)
 
     self.wall_quads:clear()
@@ -524,16 +541,21 @@ function game:draw(screen)
         self.player_tris:set_instance_attribute_array("instance_position", "float", 2, self.layer_offsets)
         self.player_tris:set_instance_attribute_array("instance_color", "float", 4, self.player_layer_colors)
 
-        love.graphics.setShader(self.layer_shader)
+        set_render_stage(1, self.layer_shader, true)
         self.wall_quads:draw_instanced(depth)
+        set_render_stage(2, self.layer_shader, true)
         self.pivot_quads:draw_instanced(depth)
+        set_render_stage(3, self.layer_shader, true)
         self.player_tris:draw_instanced(depth)
-        love.graphics.setShader()
     end
 
+    set_render_stage(4)
     self.wall_quads:draw()
+    set_render_stage(5)
     self.cap_tris:draw()
+    set_render_stage(6)
     self.pivot_quads:draw()
+    set_render_stage(7)
     self.player_tris:draw()
 
     -- TODO: draw particles, text, flash
@@ -541,6 +563,7 @@ function game:draw(screen)
     -- text and flash shouldn't be affected by rotation/pulse
     love.graphics.origin()
     love.graphics.scale(zoom_factor, zoom_factor)
+    set_render_stage(8)
     if self.message_text ~= "" then
         -- text
         -- TODO: offset_color = self.style.get_color(0)  -- black in bw mode
@@ -556,6 +579,9 @@ function game:draw(screen)
             self.height / zoom_factor / 5.5
         )
     end
+
+    -- reset render stage shaders
+    love.graphics.setShader()
 
     -- TODO: draw flash if not disabled in config
     if self.flash_color[4] ~= 0 then

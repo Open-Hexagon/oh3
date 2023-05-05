@@ -1,6 +1,6 @@
 local log = require("log")(...)
 local lua_runtime = {
-    env = nil,
+    env = {},
 }
 
 local error_sound
@@ -17,6 +17,7 @@ function lua_runtime.init_env(game)
     local assets = game.assets
     error_sound = assets.get_sound("error.ogg")
     lua_runtime.env = {
+        assert = assert,
         pcall = pcall,
         xpcall = xpcall,
         tonumber = tonumber,
@@ -129,7 +130,7 @@ function lua_runtime.init_env(game)
     -- Style functions
     make_accessors("s", "HueMin", game.style, "hue_min")
     make_accessors("s", "HueMax", game.style, "hue_max")
-    make_accessors("s", "HueInc", game.style, "hue_inc")
+    make_accessors("s", "HueInc", game.style, "hue_increment")
     make_accessors("s", "HueIncrement", game.style, "hue_increment")
     make_accessors("s", "PulseMin", game.style, "pulse_min")
     make_accessors("s", "PulseMax", game.style, "pulse_max")
@@ -219,7 +220,7 @@ function lua_runtime.init_env(game)
             love.audio.play(sound)
         end
     end
-    local function get_pack_sound(sound_id, cb)
+    local function get_pack_sound(sound_id)
         local sound = assets.get_pack_sound(pack, sound_id)
         if sound == nil then
             lua_runtime.error("Pack Sound with id '" .. sound_id .. "' doesn't exist!")
@@ -401,10 +402,10 @@ function lua_runtime.init_env(game)
         env.u_execScript = old
     end
     env.u_getWidth = function()
-        return game.height
+        return game.width
     end
     env.u_getHeight = function()
-        return game.width
+        return game.height
     end
     env.u_setFlashEffect = function(value)
         game.status.flash_effect = value
@@ -496,7 +497,7 @@ function lua_runtime.init_env(game)
     env.w_wallAcc = function(side, thickness, speed_mult, acceleration, min_speed, max_speed)
         wall(0, side, thickness, speed_mult, acceleration, min_speed, max_speed)
     end
-    env.w_wallModSpeedData = function(
+    env.w_wallHModSpeedData = function(
         hue_modifier,
         side,
         thickness,
@@ -508,7 +509,7 @@ function lua_runtime.init_env(game)
     )
         wall(hue_modifier, side, thickness, speed_mult, acceleration, min_speed, max_speed, ping_pong)
     end
-    env.w_wallModCurveData = function(
+    env.w_wallHModCurveData = function(
         hue_modifier,
         side,
         thickness,
@@ -528,6 +529,128 @@ function lua_runtime.init_env(game)
     for name, fn in pairs(game.custom_walls) do
         if name:sub(1, 3) == "cw_" then
             env[name] = fn
+        end
+    end
+
+    -- Shader functions
+    local shaders = {}
+    local loaded_filenames = {}
+    local function get_shader_id(pack_data, filename)
+        local loaded_pack_shaders = loaded_filenames[pack_data.path]
+        if loaded_pack_shaders ~= nil and loaded_pack_shaders[filename] ~= nil then
+            return loaded_pack_shaders[filename]
+        else
+            local shader = pack_data.shaders[filename]
+            if shader == nil then
+                lua_runtime.error("Shader '" .. filename .. "' does not exist!")
+                return -1
+            else
+                local id = #shaders + 1
+                shaders[id] = shader
+                loaded_filenames[pack_data.path] = loaded_filenames[pack_data.path] or {}
+                loaded_filenames[pack_data.path][filename] = id
+                return id
+            end
+        end
+    end
+    env.shdr_getShaderId = function(filename)
+        return get_shader_id(pack, filename)
+    end
+    env.shdr_getDependencyShaderId = function(disambiguator, name, author, filename)
+        return get_shader_id(assets.get_pack_from_metadata(disambiguator, name, author), filename)
+    end
+
+    local function check_valid_shader_id(id)
+        if id < 0 or id > #shaders then
+            lua_runtime.error("Invalid shader id: '" .. id .. "'")
+            return false
+        end
+        return true
+    end
+    local function set_uniform(id, uniform_type, name, value)
+        if check_valid_shader_id(id) then
+            local shader_type = shaders[id].uniforms[name]
+            -- would be nil if uniform didn't exist (not printing errors because of spam)
+            if shader_type ~= nil then
+                if shader_type == uniform_type then
+                    shaders[id].shader:send(name, value)
+                    shaders[id].instance_shader:send(name, value)
+                else
+                    lua_runtime.error(
+                        "Uniform type '"
+                            .. uniform_type
+                            .. "' does not match the type in the shader '"
+                            .. shader_type
+                            .. "'"
+                    )
+                end
+            end
+        end
+    end
+    -- making sure we don't need to create new tables all the time
+    local uniform_value = {}
+    env.shdr_setUniformF = function(id, name, a)
+        set_uniform(id, "float", name, a or 0)
+    end
+    env.shdr_setUniformFVec2 = function(id, name, a, b)
+        uniform_value[1] = a or 0
+        uniform_value[2] = b or 0
+        set_uniform(id, "vec2", name, uniform_value)
+    end
+    env.shdr_setUniformFVec3 = function(id, name, a, b, c)
+        uniform_value[1] = a or 0
+        uniform_value[2] = b or 0
+        uniform_value[3] = c or 0
+        set_uniform(id, "vec3", name, uniform_value)
+    end
+    env.shdr_setUniformFVec4 = function(id, name, a, b, c, d)
+        uniform_value[1] = a or 0
+        uniform_value[2] = b or 0
+        uniform_value[3] = c or 0
+        uniform_value[4] = d or 0
+        set_uniform(id, "vec4", name, uniform_value)
+    end
+    env.shdr_setUniformI = function(id, name, a)
+        set_uniform(id, "int", name, a or 0)
+    end
+    env.shdr_setUniformIVec2 = function(id, name, a, b)
+        uniform_value[1] = a or 0
+        uniform_value[2] = b or 0
+        set_uniform(id, "vec2", name, uniform_value)
+    end
+    env.shdr_setUniformIVec3 = function(id, name, a, b, c)
+        uniform_value[1] = a or 0
+        uniform_value[2] = b or 0
+        uniform_value[3] = c or 0
+        set_uniform(id, "vec3", name, uniform_value)
+    end
+    env.shdr_setUniformIVec4 = function(id, name, a, b, c, d)
+        uniform_value[1] = a or 0
+        uniform_value[2] = b or 0
+        uniform_value[3] = c or 0
+        uniform_value[4] = d or 0
+        set_uniform(id, "vec4", name, uniform_value)
+    end
+    env.shdr_resetAllActiveFragmentShaders = function()
+        for i = 0, 8 do
+            game.status.fragment_shaders[i] = nil
+        end
+    end
+    local function check_valid_render_stage(render_stage)
+        if render_stage < 0 or render_stage > 8 then
+            lua_runtime.error("Invalid render_stage '" .. render_stage .. "'")
+            return false
+        end
+        return true
+    end
+    env.shdr_resetActiveFragmentShader = function(render_stage)
+        if check_valid_render_stage(render_stage) then
+            game.status.fragment_shaders[render_stage] = nil
+        end
+    end
+    env.shdr_setActiveFragmentShader = function(render_stage, id)
+        if check_valid_render_stage(render_stage) and check_valid_shader_id(id) then
+            game.status.fragment_shaders[render_stage] = shaders[id]
         end
     end
 

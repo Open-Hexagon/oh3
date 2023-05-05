@@ -191,11 +191,13 @@ function style.compute_colors()
     style.calculate_color(_player_color_data)
     style.calculate_color(_text_color)
     style.calculate_color(_wall_color)
-    style.pseudo_3D_override_is_main = style.pseudo_3D_override_color[4] == 0
-    if style.pseudo_3D_override_is_main then
-        _current_3D_override_color = _main_color_data.result
-    else
-        _current_3D_override_color = style.pseudo_3D_override_color
+    _current_3D_override_color = style.pseudo_3D_override_color[4] == 0 and _main_color_data.result
+        or style.pseudo_3D_override_color
+    for i = 1, 4 do
+        if _current_3D_override_color[i] ~= _main_color_data.result[i] then
+            style.pseudo_3D_override_is_main = false
+            break
+        end
     end
     for i = 1, #_color_datas do
         style.calculate_color(_color_datas[i])
