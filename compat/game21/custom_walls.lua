@@ -6,19 +6,23 @@ local highest_handle = 0
 local function create_cw(deadly, collision)
     local handle
     if #free_handles == 0 then
-        handle = highest_handle + 1
-    else
-        handle = free_handles[1]
-        table.remove(free_handles, 1)
+        local reserve_size = 32 + highest_handle * 2
+        highest_handle = highest_handle + reserve_size
+        for i = 1, reserve_size do
+            free_handles[#free_handles + 1] = highest_handle - i + 1
+        end
     end
+    handle = free_handles[1]
+    table.remove(free_handles, 1)
     highest_handle = math.max(highest_handle, handle)
-    custom_walls[handle] = {
-        vertices = { 0, 0, 0, 0, 0, 0, 0, 0 },
-        colors = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-        collision = collision,
-        deadly = deadly,
-        killing_side = 0,
-    }
+    custom_walls[handle] = custom_walls[handle] or {}
+    local cw = custom_walls[handle]
+    cw.visible = true
+    cw.vertices = cw.vertices or { 0, 0, 0, 0, 0, 0, 0, 0 }
+    cw.colors = cw.colors or { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+    cw.collision = collision
+    cw.deadly = deadly
+    cw.killing_side = 0
     return handle
 end
 cws.cw_create = function()
@@ -37,12 +41,8 @@ local function is_valid_handle(handle)
 end
 cws.cw_destroy = function(handle)
     is_valid_handle(handle)
-    custom_walls[handle] = nil
-    if handle == highest_handle then
-        highest_handle = highest_handle - 1
-    else
-        free_handles[#free_handles + 1] = handle
-    end
+    custom_walls[handle].visible = false
+    free_handles[#free_handles + 1] = handle
 end
 cws.cw_setVertexPos = function(handle, vertex, x, y)
     is_valid_handle(handle)
@@ -158,7 +158,7 @@ end
 function cws.draw(wall_quads)
     for i = 1, highest_handle do
         local cw = custom_walls[i]
-        if cw ~= nil then
+        if cw ~= nil and cw.visible then
             wall_quads:add_quad(
                 cw.vertices[1],
                 cw.vertices[2],
