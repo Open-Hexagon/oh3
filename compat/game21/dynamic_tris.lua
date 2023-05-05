@@ -45,9 +45,11 @@ function tris:add_tris(x0, y0, x1, y1, x2, y2, r0, g0, b0, a0, r1, g1, b1, a1, r
     local vertex = self.vertices[vert_index - 2]
     vertex[1], vertex[2], vertex[5], vertex[6], vertex[7], vertex[8] = x0, y0, r0 / 255, g0 / 255, b0 / 255, a0 / 255
     vertex = self.vertices[vert_index - 1]
-    vertex[1], vertex[2], vertex[5], vertex[6], vertex[7], vertex[8] = x1, y1, (r1 or r0) / 255, (g1 or g0) / 255, (b1 or b0) / 255, (a1 or a0) / 255
+    vertex[1], vertex[2], vertex[5], vertex[6], vertex[7], vertex[8] =
+        x1, y1, (r1 or r0) / 255, (g1 or g0) / 255, (b1 or b0) / 255, (a1 or a0) / 255
     vertex = self.vertices[vert_index]
-    vertex[1], vertex[2], vertex[5], vertex[6], vertex[7], vertex[8] = x2, y2, (r2 or r0) / 255, (g2 or g0) / 255, (b2 or b0) / 255, (a2 or a0) / 255
+    vertex[1], vertex[2], vertex[5], vertex[6], vertex[7], vertex[8] =
+        x2, y2, (r2 or r0) / 255, (g2 or g0) / 255, (b2 or b0) / 255, (a2 or a0) / 255
 end
 
 function tris:clear()

@@ -1,27 +1,27 @@
 local log = require("log")(...)
 local json = require("extlibs.json.jsonc")
 
-local assets = {
-    loaded_packs = {},
-    pack_path = "Packs/",
-    metadata_pack_json_map = {},
-    folder_pack_json_map = {},
-    sound_mapping = {
-        ["beep.ogg"] = "click.ogg",
-        ["difficultyMultDown.ogg"] = "difficulty_mult_down.ogg",
-        ["difficultyMultUp.ogg"] = "difficulty_mult_up.ogg",
-        ["gameOver.ogg"] = "game_over.ogg",
-        ["levelUp.ogg"] = "level_up.ogg",
-        ["openHexagon.ogg"] = "open_hexagon.ogg",
-        ["personalBest.ogg"] = "personal_best.ogg",
-        ["swapBlip.ogg"] = "swap_blip.ogg",
-    },
-    audio_path = "assets/audio/",
-    cached_sounds = {},
-    loaded_fonts = {},
+local loaded_packs = {}
+local pack_path = "Packs/"
+local metadata_pack_json_map = {}
+local folder_pack_json_map = {}
+local sound_mapping = {
+    ["beep.ogg"] = "click.ogg",
+    ["difficultyMultDown.ogg"] = "difficulty_mult_down.ogg",
+    ["difficultyMultUp.ogg"] = "difficulty_mult_up.ogg",
+    ["gameOver.ogg"] = "game_over.ogg",
+    ["levelUp.ogg"] = "level_up.ogg",
+    ["openHexagon.ogg"] = "open_hexagon.ogg",
+    ["personalBest.ogg"] = "personal_best.ogg",
+    ["swapBlip.ogg"] = "swap_blip.ogg",
 }
+local audio_path = "assets/audio/"
+local cached_sounds = {}
+local loaded_fonts = {}
 
-function assets:_build_pack_id(disambiguator, author, name, version)
+local assets = {}
+
+function assets._build_pack_id(disambiguator, author, name, version)
     local pack_id = disambiguator .. "_" .. author .. "_" .. name
     if version ~= nil then
         pack_id = pack_id .. "_" .. math.floor(version)
@@ -30,10 +30,10 @@ function assets:_build_pack_id(disambiguator, author, name, version)
     return pack_id
 end
 
-function assets:init()
-    local pack_folders = love.filesystem.getDirectoryItems(self.pack_path)
+function assets.init()
+    local pack_folders = love.filesystem.getDirectoryItems(pack_path)
     for i = 1, #pack_folders do
-        local folder = self.pack_path .. pack_folders[i]
+        local folder = pack_path .. pack_folders[i]
         -- check if valid pack
         local files = love.filesystem.getDirectoryItems(folder)
         local function check_file(file)
@@ -56,24 +56,33 @@ function assets:init()
         end
         local pack_json = json.decode_jsonc(contents)
         pack_json.pack_id =
-            assets:_build_pack_id(pack_json.disambiguator, pack_json.author, pack_json.name, pack_json.version)
-        local index_pack_id = assets:_build_pack_id(pack_json.disambiguator, pack_json.author, pack_json.name)
+            assets._build_pack_id(pack_json.disambiguator, pack_json.author, pack_json.name, pack_json.version)
+        local index_pack_id = assets._build_pack_id(pack_json.disambiguator, pack_json.author, pack_json.name)
         pack_json.pack_name = pack_folders[i]
-        self.metadata_pack_json_map[index_pack_id] = pack_json
-        self.folder_pack_json_map[folder] = pack_json
+        metadata_pack_json_map[index_pack_id] = pack_json
+        folder_pack_json_map[folder] = pack_json
     end
 end
 
-function assets:get_pack(name)
-    if self.loaded_packs[name] == nil then
-        local folder = self.pack_path .. name
+function assets.get_pack_from_metadata(disambiguator, author, name)
+    local id = assets._build_pack_id(disambiguator, author, name)
+    local pack = metadata_pack_json_map[id]
+    if pack == nil then
+        error("Pack with id '" .. id .. "' not found.")
+    end
+    return assets.get_pack(pack.pack_name)
+end
+
+function assets.get_pack(name)
+    if loaded_packs[name] == nil then
+        local folder = pack_path .. name
 
         local pack_data = {
             path = folder,
         }
 
         -- pack metadata
-        pack_data.pack_json = self.folder_pack_json_map[folder]
+        pack_data.pack_json = folder_pack_json_map[folder]
         if pack_data.pack_json == nil then
             error(folder .. " doesn't exist or is not a valid pack!")
         end
@@ -81,12 +90,12 @@ function assets:get_pack(name)
         if pack_data.pack_json.dependencies ~= nil then
             for i = 1, #pack_data.pack_json.dependencies do
                 local dependency = pack_data.pack_json.dependencies[i]
-                local index_pack_id = self:_build_pack_id(dependency.disambiguator, dependency.author, dependency.name)
-                local pack_json = self.metadata_pack_json_map[index_pack_id]
+                local index_pack_id = assets._build_pack_id(dependency.disambiguator, dependency.author, dependency.name)
+                local pack_json = metadata_pack_json_map[index_pack_id]
                 if pack_json == nil then
                     error("can't find dependency '" .. index_pack_id .. "' of '" .. pack_data.pack_id .. "'.")
                 end
-                self:get_pack(pack_json.pack_name)
+                assets.get_pack(pack_json.pack_name)
             end
         end
 
@@ -143,7 +152,9 @@ function assets:get_pack(name)
             --       - samplerCube -> CubeImage
             --       - sampler3D -> VolumeImage
             -- might also need to change glsl version, can check hardware support with love.graphics.getSupported
-            pack_data.shaders[filename] = love.graphics.newShader(code)
+
+            -- not loading shaders for now so love doesn't complain (since there's no conversion yet)
+            --pack_data.shaders[filename] = love.graphics.newShader(code)
         end
 
         -- styles
@@ -157,36 +168,36 @@ function assets:get_pack(name)
         pack_data.sounds = love.filesystem.getDirectoryItems(folder .. "/Sounds")
         pack_data.cached_sounds = {}
 
-        self.loaded_packs[name] = pack_data
+        loaded_packs[name] = pack_data
     end
-    return self.loaded_packs[name]
+    return loaded_packs[name]
 end
 
-function assets:get_sound(id)
-    id = self.sound_mapping[id] or id
-    if self.cached_sounds[id] == nil then
-        self.cached_sounds[id] = love.audio.newSource(self.audio_path .. id, "static")
+function assets.get_sound(id)
+    id = sound_mapping[id] or id
+    if cached_sounds[id] == nil then
+        cached_sounds[id] = love.audio.newSource(audio_path .. id, "static")
     end
-    return self.cached_sounds[id]
+    return cached_sounds[id]
 end
 
-function assets:get_pack_sound(pack, id)
+function assets.get_pack_sound(pack, id)
     if pack.cached_sounds[id] == nil then
         pack.cached_sounds[id] = love.audio.newSource(pack.path .. "/Sounds/" .. id, "static")
     end
     return pack.cached_sounds[id]
 end
 
-function assets:get_font(name, size)
-    if self.loaded_fonts[name] == nil then
-        self.loaded_fonts[name] = {}
+function assets.get_font(name, size)
+    if loaded_fonts[name] == nil then
+        loaded_fonts[name] = {}
     end
-    if self.loaded_fonts[name][size] == nil then
-        self.loaded_fonts[name][size] = love.graphics.newFont("assets/font/" .. name, size)
+    if loaded_fonts[name][size] == nil then
+        loaded_fonts[name][size] = love.graphics.newFont("assets/font/" .. name, size)
     end
-    return self.loaded_fonts[name][size]
+    return loaded_fonts[name][size]
 end
 
-assets:init()
+assets.init()
 
 return assets

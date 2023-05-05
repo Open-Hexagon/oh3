@@ -3,7 +3,6 @@ local lua_runtime = {
     env = nil,
     assets = nil,
     file_cache = {},
-    error_sound = love.audio.newSource("assets/audio/error.ogg", "static"),
 }
 
 function lua_runtime:error(msg)
@@ -11,9 +10,9 @@ function lua_runtime:error(msg)
     log("Error: " .. msg)
 end
 
-function lua_runtime:init_env(game, pack_name)
+function lua_runtime:init_env(game, pack)
     local assets = game.assets
-    local pack = assets.loaded_packs[pack_name]
+    self.error_sound = assets.get_sound("error.ogg")
     self.env = {
         table = table,
         getmetatable = getmetatable,
@@ -204,7 +203,7 @@ function lua_runtime:init_env(game, pack_name)
         end
     end
     self.env.a_playSound = function(sound_id)
-        local sound = assets:get_sound(sound_id)
+        local sound = assets.get_sound(sound_id)
         if sound == nil then
             self:error("Sound with id '" .. sound_id .. "' doesn't exist!")
         else
@@ -212,7 +211,7 @@ function lua_runtime:init_env(game, pack_name)
         end
     end
     local function get_pack_sound(sound_id, cb)
-        local sound = assets:get_pack_sound(pack, sound_id)
+        local sound = assets.get_pack_sound(pack, sound_id)
         if sound == nil then
             self:error("Pack Sound with id '" .. sound_id .. "' doesn't exist!")
         else
@@ -384,12 +383,12 @@ function lua_runtime:init_env(game, pack_name)
         self:run_lua_file(pack.path .. "/Scripts/" .. path)
     end
     self.env.u_execDependencyScript = function(disambiguator, name, author, script)
-        local pname = assets.metadata_pack_json_map[assets:_build_pack_id(disambiguator, author, name)].pack_name
+        local dependency_pack = assets.get_pack_from_metadata(disambiguator, author, name)
         local old = self.env.u_execScript
         self.env.u_execScript = function(path)
-            self:run_lua_file(assets:get_pack(pname).path .. "/Scripts/" .. path)
+            self:run_lua_file(dependency_pack.path .. "/Scripts/" .. path)
         end
-        self:run_lua_file(assets:get_pack(pname).path .. "/Scripts/" .. script)
+        self:run_lua_file(dependency_pack.path .. "/Scripts/" .. script)
         self.env.u_execScript = old
     end
     self.env.u_getWidth = function()

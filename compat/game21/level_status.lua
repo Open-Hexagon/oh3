@@ -1,15 +1,19 @@
 local default_sounds = {
-    beep_sound = love.audio.newSource("assets/audio/click.ogg", "static"),
-    level_up_sound = love.audio.newSource("assets/audio/increment.ogg", "static"),
-    swap_sound = love.audio.newSource("assets/audio/swap.ogg", "static"),
-    death_sound = love.audio.newSource("assets/audio/death.ogg", "static"),
+    beep_sound = "click.ogg",
+    level_up_sound = "increment.ogg",
+    swap_sound = "swap.ogg",
+    death_sound = "death.ogg",
 }
 local level_status = {}
 level_status.__index = level_status
 
 -- takes sync music because unless overwritten it is defined by the global config file
-function level_status:reset(sync_music_to_dm)
+function level_status:reset(sync_music_to_dm, assets)
     for sound, source in pairs(default_sounds) do
+        if type(source) == "string" then
+            default_sounds[sound] = assets.get_sound(source)
+            source = default_sounds[sound]
+        end
         self[sound] = source
     end
     self.tracked_variables = {}

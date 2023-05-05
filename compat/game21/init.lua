@@ -14,11 +14,6 @@ local game = {
     music = nil,
     seed = nil,
     message_text = "",
-    go_sound = love.audio.newSource("assets/audio/go.ogg", "static"),
-    swap_blip_sound = love.audio.newSource("assets/audio/swap_blip.ogg", "static"),
-    level_up_sound = love.audio.newSource("assets/audio/level_up.ogg", "static"),
-    restart_sound = love.audio.newSource("assets/audio/restart.ogg", "static"),
-    select_sound = love.audio.newSource("assets/audio/select.ogg", "static"),
     last_move = 0,
     must_change_sides = false,
     current_rotation = 0,
@@ -42,7 +37,8 @@ local game = {
     pivot_layer_colors = {},
     wall_layer_colors = {},
     player_layer_colors = {},
-    layer_shader = love.graphics.newShader([[
+    layer_shader = love.graphics.newShader(
+        [[
         attribute vec2 instance_position;
         attribute vec4 instance_color;
         varying vec4 instance_color_out;
@@ -54,28 +50,34 @@ local game = {
             return transform_projection * vertex_position;
         }
     ]],
-    [[
+        [[
         varying vec4 instance_color_out;
 
         vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
         {
             return instance_color_out;
         }
-    ]]),
+    ]]
+    ),
 
     -- TODO: check if the inital values cause issues (may need the values from the canvas instead here)
     width = love.graphics.getWidth(),
     height = love.graphics.getHeight(),
 }
 
-game.message_font = game.assets:get_font("OpenSquare-Regular.ttf", 32)
+game.message_font = game.assets.get_font("OpenSquare-Regular.ttf", 32)
+game.go_sound = game.assets.get_sound("go.ogg")
+game.swap_blip_sound = game.assets.get_sound("swap_blip.ogg")
+game.level_up_sound = game.assets.get_sound("level_up.ogg")
+game.restart_sound = game.assets.get_sound("restart.ogg")
+game.select_sound = game.assets.get_sound("select.ogg")
 
 function game:start(pack_folder, level_id, difficulty_mult)
     -- TODO: put this somewhere else so it can be loaded for the menu
     --       or maybe not because it caches loaded packs anyway?
-    self.pack_data = self.assets:get_pack(pack_folder)
-    self.level_data = self.assets.loaded_packs[pack_folder].levels[level_id]
-    self.level_status:reset(true) -- TODO: get bool from config
+    self.pack_data = self.assets.get_pack(pack_folder)
+    self.level_data = self.pack_data.levels[level_id]
+    self.level_status:reset(true, self.assets) -- TODO: get bool from config
     self.style:select(self.pack_data.styles[self.level_data.styleId])
     self.style:compute_colors()
     self.difficulty_mult = difficulty_mult
@@ -117,7 +119,7 @@ function game:start(pack_folder, level_id, difficulty_mult)
     if not self.first_play and self.lua_runtime.env.onPreUnload ~= nil then
         self.lua_runtime.onPreUnload()
     end
-    self.lua_runtime:init_env(self, pack_folder)
+    self.lua_runtime:init_env(self, self.pack_data)
     self.lua_runtime:run_lua_file(self.pack_data.path .. "/" .. self.level_data.luaFile)
     self.running = true
     if self.first_play then
@@ -353,7 +355,8 @@ function game:update(frametime)
             self.level_status.rotation_speed = self.level_status.rotation_speed * 0.99
         end
 
-        self.status.pulse3D = self.status.pulse3D + self.style._3D_pulse_speed * self.status.pulse3D_direction * frametime
+        self.status.pulse3D = self.status.pulse3D
+            + self.style._3D_pulse_speed * self.status.pulse3D_direction * frametime
         if self.status.pulse3D > self.style._3D_pulse_max then
             self.status.pulse3D_direction = -1
         elseif self.status.pulse3D < self.style._3D_pulse_min then
@@ -418,8 +421,8 @@ function game:draw(screen)
     end
     -- TODO: only if 3d enabled in config
     local depth = self.style._3D_depth
-    local pulse_3d = self.status.pulse3D   -- TODO: config can disable pulse
-    local effect = self.style._3D_skew * pulse_3d    -- TODO: config 3d mult
+    local pulse_3d = self.status.pulse3D -- TODO: config can disable pulse
+    local effect = self.style._3D_skew * pulse_3d -- TODO: config 3d mult
     local rad_rot = math.rad(self.current_rotation + 90)
     local sin_rot = math.sin(rad_rot)
     local cos_rot = math.cos(rad_rot)
@@ -441,7 +444,15 @@ function game:draw(screen)
     self.pivot_quads:clear()
     self.cap_tris:clear()
     if self.status.started then
-        self.player:draw(self.level_status.sides, self.style, self.pivot_quads, self.player_tris, self.cap_tris, 1, true)
+        self.player:draw(
+            self.level_status.sides,
+            self.style,
+            self.pivot_quads,
+            self.player_tris,
+            self.cap_tris,
+            1,
+            true
+        )
     end
     love.graphics.setColor(1, 1, 1, 1)
 
