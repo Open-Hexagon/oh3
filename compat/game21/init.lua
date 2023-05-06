@@ -426,7 +426,6 @@ function game:perform_player_kill()
     self.player.kill(fatal)
     if not self.status.has_died then
         self.lua_runtime.run_fn_if_exists("onPreDeath")
-        love.audio.play(self.level_status.death_sound)
         if fatal then
             self.lua_runtime.run_fn_if_exists("onDeath")
             -- TODO: death_shakeCamera
@@ -434,6 +433,7 @@ function game:perform_player_kill()
             -- TODO: death_flashEffect
             self.status.has_died = true
         end
+        love.audio.play(self.level_status.death_sound)
     end
 end
 

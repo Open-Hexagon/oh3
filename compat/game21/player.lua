@@ -78,7 +78,6 @@ end
 local function draw_pivot(sides, style, pivotquads, cap_tris)
     local div = math.pi / sides
     local p_radius = _radius * 0.75
-    local sin, cos = math.sin, math.cos
     for i = 0, sides - 1 do
         local s_angle = div * 2 * i
         local p1_x, p1_y = extra_math.get_orbit(_start_pos, s_angle - div, p_radius)
@@ -114,14 +113,10 @@ function player.draw(sides, style, pivotquads, playertris, cap_tris, angle_tilt_
     end
     local tilted_angle = _angle + (_curr_tilted_angle * math.rad(24) * angle_tilt_intensity)
     local deg100 = math.rad(100)
-    local cos, sin = math.cos, math.sin
     local distance = _size + _triangle_width
-    local p_left_x = cos(tilted_angle - deg100) * distance + _pos[1]
-    local p_left_y = sin(tilted_angle - deg100) * distance + _pos[2]
-    local p_right_x = cos(tilted_angle + deg100) * distance + _pos[1]
-    local p_right_y = sin(tilted_angle + deg100) * distance + _pos[2]
-    local pos_x = cos(tilted_angle) * _size + _pos[1]
-    local pos_y = sin(tilted_angle) * _size + _pos[2]
+    local p_left_x, p_left_y = extra_math.get_orbit(_pos, tilted_angle - deg100, distance)
+    local p_right_x, p_right_y = extra_math.get_orbit(_pos, tilted_angle + deg100, distance)
+    local pos_x, pos_y = extra_math.get_orbit(_pos, tilted_angle, _size)
     if swap_blinking_effect then
         get_color_adjusted_for_swap(_color)
     else
@@ -139,8 +134,7 @@ function player.kill(fatal)
     if fatal then
         _dead = true
         if not _just_swapped and math.sqrt((_pos[1] - _last_pos[1]) ^ 2 + (_pos[2] - _last_pos[2]) ^ 2) < 24 then
-            _pos[1] = -math.cos(_angle) * _size + _last_pos[1]
-            _pos[2] = -math.sin(_angle) * _size + _last_pos[2]
+            extra_math.get_orbit(_last_pos, _angle, _size, _pos)
         end
     end
 end
@@ -358,13 +352,12 @@ end
 
 function player.update_position(radius)
     _radius = radius
-    local sin, cos = math.sin, math.cos
     extra_math.get_orbit(_start_pos, _angle, _radius, _pos)
     _pre_push_pos[1] = _pos[1]
     _pre_push_pos[2] = _pos[2]
     extra_math.get_orbit(_start_pos, _last_angle, _radius, _last_pos)
-    local pos_diff_x = _last_pos[1] - _start_pos[1] - cos(_last_angle + math.rad(_current_speed)) * _radius
-    local pos_diff_y = _last_pos[2] - _start_pos[2] - sin(_last_angle + math.rad(_current_speed)) * _radius
+    local pos_diff_x = _last_pos[1] - _start_pos[1] - math.cos(_last_angle + math.rad(_current_speed)) * _radius
+    local pos_diff_y = _last_pos[2] - _start_pos[2] - math.sin(_last_angle + math.rad(_current_speed)) * _radius
     _max_safe_distance = pos_diff_x ^ 2 + pos_diff_y ^ 2 + 32
 end
 
