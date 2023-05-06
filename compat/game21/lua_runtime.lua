@@ -666,6 +666,25 @@ function lua_runtime.init_env(game)
     env.steam_unlockAchievement = function(achievement)
         lua_runtime.error("Attempt to unlock steam achievement '" .. achievement .. "' in compat mode")
     end
+
+    -- make sure no malicious code is required in
+    local safe_modules = {
+        ["bit"] = true
+    }
+    env.require = function(modname)
+        if safe_modules[modname] then
+            return require(modname)
+        else
+            lua_runtime.error("Script attempted to require potentially dangerous module: '" .. modname .. "'")
+        end
+    end
+
+    -- restrict io operations
+    env.io = {
+        open = function(filename, mode)
+            return io.open(filename, mode == "rb" and mode or "r")
+        end
+    }
     log("initialized environment")
 end
 
