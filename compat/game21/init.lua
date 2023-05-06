@@ -343,7 +343,12 @@ function game:update(frametime)
 
             self.player.update_position(self.status.radius)
             self.walls.update(frametime, self.status.radius)
-            self:update_collisions(move, frametime)
+            if
+                self.walls.handle_collision(move, frametime, self.player, self.status.radius)
+                or self.custom_walls.handle_collision(move, self.status.radius, self.player, frametime)
+            then
+                self:perform_player_kill()
+            end
         else
             self.level_status.rotation_speed = self.level_status.rotation_speed * 0.99
         end
@@ -392,35 +397,6 @@ function game:update(frametime)
         -- TODO: if shaders off but required invalidate score
     end
     -- TODO: update custom walls
-end
-
-function game:update_collisions(move, frametime)
-    local collided = false
-    local radius_squared = self.status.radius ^ 2 + 8
-    for wall in self.walls.iter() do
-        if extra_math.point_in_polygon(wall.vertices, self.player.get_position()) then
-            if self.player.get_just_swapped() then
-                self:perform_player_kill()
-                -- TODO: unlock a22_swapdeath
-            elseif self.player.wall_push(move, self.status.radius, wall, radius_squared, frametime) then
-                self:perform_player_kill()
-            end
-            collided = true
-        end
-    end
-    if collided then
-        local p_pos_x, p_pos_y = self.player.get_position()
-        for wall in self.walls.iter() do
-            if extra_math.point_in_polygon(wall.vertices, p_pos_x, p_pos_y) then
-                -- TODO: unlock a22_swapdeath if just swapped
-                self:perform_player_kill()
-            end
-        end
-    end
-    if self.custom_walls.handle_collision(move, self.status.radius, self.player, frametime) then
-        self:perform_player_kill()
-        -- TODO: unlock a22_swapdeath if just swapped
-    end
 end
 
 function game:perform_player_kill()

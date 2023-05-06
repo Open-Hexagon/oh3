@@ -1,3 +1,4 @@
+local extra_math = require("compat.game21.math")
 local transform_hue = require("compat.game21.hue").transform
 local walls = {}
 local _walls = {}
@@ -158,6 +159,30 @@ end
 
 function walls.clear()
     _walls = {}
+end
+
+function walls.handle_collision(move, frametime, player, radius)
+    local collided = false
+    local radius_squared = radius ^ 2 + 8
+    for wall in walls.iter() do
+        if extra_math.point_in_polygon(wall.vertices, player.get_position()) then
+            if player.get_just_swapped() then
+                return true
+            elseif player.wall_push(move, radius, wall, radius_squared, frametime) then
+                return true
+            end
+            collided = true
+        end
+    end
+    if collided then
+        local p_pos_x, p_pos_y = player.get_position()
+        for wall in walls.iter() do
+            if extra_math.point_in_polygon(wall.vertices, p_pos_x, p_pos_y) then
+                return true
+            end
+        end
+    end
+    return false
 end
 
 return walls

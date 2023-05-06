@@ -34,7 +34,7 @@ local _curr_tilted_angle
 local _color
 local _death_effect_color
 -- prevent constant table creation during custom wall collisions
-local _collision_polygon = {0, 0, 0, 0, 0, 0, 0, 0}
+local _collision_polygon = { 0, 0, 0, 0, 0, 0, 0, 0 }
 
 function player.reset(swap_cooldown, size, speed, focus_speed)
     _start_pos = { 0, 0 }
@@ -306,9 +306,23 @@ function player.cw_push(movement_dir, radius, wall, radius_squared, frametime)
             if extra_math.point_in_polygon(_collision_polygon, unpack(_last_pos)) then
                 local vert_i = i * 2 + 1
                 local vert_j = j * 2 + 1
-                local i1_x, i1_y = get_closest_line_circle_intersection(_last_pos, wall.old_vertices[vert_i], wall.old_vertices[vert_i + 1], wall.old_vertices[vert_j], wall.old_vertices[vert_j + 1], radius_squared)
+                local i1_x, i1_y = get_closest_line_circle_intersection(
+                    _last_pos,
+                    wall.old_vertices[vert_i],
+                    wall.old_vertices[vert_i + 1],
+                    wall.old_vertices[vert_j],
+                    wall.old_vertices[vert_j + 1],
+                    radius_squared
+                )
                 if i1_x ~= nil then
-                    local i2_x, i2_y = get_closest_line_circle_intersection(_last_pos, wall.vertices[vert_i], wall.vertices[vert_i + 1], wall.vertices[vert_j], wall.vertices[vert_j + 1], radius_squared)
+                    local i2_x, i2_y = get_closest_line_circle_intersection(
+                        _last_pos,
+                        wall.vertices[vert_i],
+                        wall.vertices[vert_i + 1],
+                        wall.vertices[vert_j],
+                        wall.vertices[vert_j + 1],
+                        radius_squared
+                    )
                     if i2_x ~= nil then
                         push_vel_x = i2_x - i1_x
                         push_vel_y = i2_y - i1_y
