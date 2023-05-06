@@ -33,6 +33,8 @@ local _dead_effect_timer
 local _curr_tilted_angle
 local _color
 local _death_effect_color
+-- prevent constant table creation during custom wall collisions
+local _collision_polygon = {0, 0, 0, 0, 0, 0, 0, 0}
 
 function player.reset(swap_cooldown, size, speed, focus_speed)
     _start_pos = { 0, 0 }
@@ -148,6 +150,37 @@ local function get_normalized(x, y)
     return x / mag, y / mag
 end
 
+local function get_line_circle_intersection(p1_x, p1_y, p2_x, p2_y, radius_squared)
+    local dx = p2_x - p1_x
+    local dy = p2_y - p1_y
+    local a = dx * dx + dy * dy
+    local b = 2 * (dx * p1_x + dy * p1_y)
+    local c = p1_x * p1_x + p1_y * p1_y - radius_squared
+    local delta = b * b - 4 * a * c
+
+    -- No intersections.
+    if delta < 0 then
+        return 0
+    end
+
+    local t
+    local two_a = a * 2
+
+    -- one intersection
+    if delta < 1.0e-4 then
+        t = -b / two_a
+        return 1, p1_x + t * dx, p1_y + t * dy
+    end
+
+    -- two intersections
+    local sqrt_delta = math.sqrt(delta)
+    t = (-b + sqrt_delta) / two_a
+    local x = p1_x + t * dx
+    local y = p1_y + t * dy
+    t = (-b - sqrt_delta) / two_a
+    return 2, x, y, p1_x + t * dx, p1_y + t * dy
+end
+
 function player.check_wall_collision_escape(wall, pos_x, pos_y, radius_squared)
     local saved = false
     local vec1_x, vec1_y
@@ -165,48 +198,16 @@ function player.check_wall_collision_escape(wall, pos_x, pos_y, radius_squared)
             safe_distance = temp_distance
         end
     end
-    local function get_line_circle_intersection(p1_x, p1_y, p2_x, p2_y)
-        local dx = p2_x - p1_x
-        local dy = p2_y - p1_y
-        local a = dx * dx + dy * dy
-        local b = 2 * (dx * p1_x + dy * p1_y)
-        local c = p1_x * p1_x + p1_y * p1_y - radius_squared
-        local delta = b * b - 4 * a * c
-
-        -- No intersections.
-        if delta < 0 then
-            return 0
-        end
-
-        local t
-        local two_a = a * 2
-
-        -- one intersection
-        if delta < 1.0e-4 then
-            t = -b / two_a
-            vec1_x = p1_x + t * dx
-            vec1_y = p1_y + t * dy
-            return 1
-        end
-
-        -- two intersections
-        local sqrt_delta = math.sqrt(delta)
-        t = (-b + sqrt_delta) / two_a
-        vec1_x = p1_x + t * dx
-        vec1_y = p1_y + t * dy
-        t = (-b - sqrt_delta) / two_a
-        vec2_x = p1_x + t * dx
-        vec2_y = p1_y + t * dy
-        return 2
-    end
+    local result_count
     for i = 0, 3, vx_increment do
         local j = (i + 3) % 4
         if j ~= killing_side then
-            local result_count = get_line_circle_intersection(
+            result_count, vec1_x, vec1_y, vec2_x, vec2_y = get_line_circle_intersection(
                 wall.vertices[i * 2 + 1],
                 wall.vertices[i * 2 + 2],
                 wall.vertices[j * 2 + 1],
-                wall.vertices[j * 2 + 2]
+                wall.vertices[j * 2 + 2],
+                radius_squared
             )
             if result_count == 1 then
                 assign_result()
@@ -271,8 +272,88 @@ function player.wall_push(movement_dir, radius, wall, radius_squared, frametime)
     return is_in
 end
 
-function player.cw_push(movement_dir, radius, custom_wall, radius_squared, frametime)
-    -- TODO
+local function get_closest_line_circle_intersection(pos, p1_x, p1_y, p2_x, p2_y, radius_squared)
+    local result_count, v1_x, v1_y, v2_x, v2_y = get_line_circle_intersection(p1_x, p1_y, p2_x, p2_y, radius_squared)
+    if result_count == 1 then
+        return v1_x, v1_y
+    elseif result_count == 2 then
+        if (v1_x - pos[1]) ^ 2 + (v1_y - pos[2]) ^ 2 > (v2_x - pos[1]) ^ 2 + (v2_y - pos[2]) then
+            return v2_x, v2_y
+        else
+            return v1_x, v1_y
+        end
+    else
+        return
+    end
+end
+
+function player.cw_push(movement_dir, radius, wall, radius_squared, frametime)
+    if _dead then
+        return false
+    end
+    local push_vel_x, push_vel_y = 0, 0
+    local push_dot_threshold = 0.15
+    for i = 0, 3 do
+        local j = (i - 1) % 4
+        if j ~= wall.killing_side then
+            _collision_polygon[1] = wall.vertices[1]
+            _collision_polygon[2] = wall.vertices[2]
+            for k = 3, 6 do
+                _collision_polygon[k] = wall.old_vertices[k]
+            end
+            _collision_polygon[7] = wall.vertices[7]
+            _collision_polygon[8] = wall.vertices[8]
+            if extra_math.point_in_polygon(_collision_polygon, unpack(_last_pos)) then
+                local vert_i = i * 2 + 1
+                local vert_j = j * 2 + 1
+                local i1_x, i1_y = get_closest_line_circle_intersection(_last_pos, wall.old_vertices[vert_i], wall.old_vertices[vert_i + 1], wall.old_vertices[vert_j], wall.old_vertices[vert_j + 1], radius_squared)
+                if i1_x ~= nil then
+                    local i2_x, i2_y = get_closest_line_circle_intersection(_last_pos, wall.vertices[vert_i], wall.vertices[vert_i + 1], wall.vertices[vert_j], wall.vertices[vert_j + 1], radius_squared)
+                    if i2_x ~= nil then
+                        push_vel_x = i2_x - i1_x
+                        push_vel_y = i2_y - i1_y
+                        local n_push_vel_x, n_push_vel_y = get_normalized(push_vel_x, push_vel_y)
+                        local n_last_pos_x, n_last_pos_y = get_normalized(unpack(_last_pos))
+                        if math.abs(n_push_vel_x * n_last_pos_x + n_push_vel_y + n_last_pos_y) > push_dot_threshold then
+                            push_vel_x = 0
+                            push_vel_y = 0
+                        end
+                    end
+                end
+                break
+            end
+        end
+    end
+    if movement_dir == 0 and not _forced_move then
+        local nx, ny = get_normalized(_pos[1] - _pre_push_pos[1], _pos[2] - _pre_push_pos[2])
+        _pos[1] = _pos[1] + push_vel_x + nx * 2 * collision_padding
+        _pos[2] = _pos[2] + push_vel_y + ny * 2 * collision_padding
+        _angle = math.atan2(_pos[2], _pos[1])
+        player.update_position(radius)
+        return extra_math.point_in_polygon(wall.vertices, unpack(_pos))
+    end
+    local test_pos_x = _last_pos[1] + push_vel_x
+    local test_pos_y = _last_pos[2] + push_vel_y
+    local is_in = extra_math.point_in_polygon(wall.vertices, test_pos_x, test_pos_y)
+    if is_in then
+        _pre_push_pos[1], _pre_push_pos[2] = test_pos_x, test_pos_y
+        local saved
+        saved, test_pos_x, test_pos_y = player.check_wall_collision_escape(wall, test_pos_x, test_pos_y, radius_squared)
+        local nx, ny = get_normalized(test_pos_x - _pre_push_pos[1], test_pos_y - _pre_push_pos[2])
+        is_in = saved
+        if saved then
+            _pos[1] = test_pos_x + nx * collision_padding
+            _pos[2] = test_pos_y + ny * collision_padding
+            _angle = math.atan2(_pos[2], _pos[1])
+            player.update_position(radius)
+        end
+    else
+        _pos[1] = test_pos_x
+        _pos[2] = test_pos_y
+        _angle = math.atan2(_pos[2], _pos[1])
+        player.update_position(radius)
+    end
+    return is_in
 end
 
 local function move_towards(value, target, step)

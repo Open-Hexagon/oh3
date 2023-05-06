@@ -1,3 +1,4 @@
+local extra_math = require("compat.game21.math")
 local custom_walls = {}
 local free_handles = {}
 local cws = {}
@@ -18,6 +19,7 @@ local function create_cw(deadly, collision)
     custom_walls[handle] = custom_walls[handle] or {}
     local cw = custom_walls[handle]
     cw.visible = true
+    cw.old_vertices = cw.old_vertices or { 0, 0, 0, 0, 0, 0, 0, 0 }
     cw.vertices = cw.vertices or { 0, 0, 0, 0, 0, 0, 0, 0 }
     cw.colors = cw.colors or { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
     cw.collision = collision
@@ -155,22 +157,84 @@ cws.cw_clear = function()
     free_handles = {}
     highest_handle = 0
 end
-function cws.draw(wall_quads)
-    for i = 1, highest_handle do
-        local cw = custom_walls[i]
-        if cw ~= nil and cw.visible then
-            wall_quads:add_quad(
-                cw.vertices[1],
-                cw.vertices[2],
-                cw.vertices[3],
-                cw.vertices[4],
-                cw.vertices[5],
-                cw.vertices[6],
-                cw.vertices[7],
-                cw.vertices[8],
-                unpack(cw.colors)
-            )
+function cws.iter()
+    local index = 0
+    return function()
+        index = index + 1
+        while custom_walls[index] == nil or not custom_walls[index].visible do
+            index = index + 1
+            if index > highest_handle then
+                return
+            end
         end
+        return custom_walls[index]
+    end
+end
+
+function cws.handle_collision(movement, radius, player, frametime)
+    local radius_squared = radius ^ 2
+    do
+        local collided
+        for cw in cws.iter() do
+            if cw.collision and extra_math.point_in_polygon(cw.vertices, player:get_position()) then
+                if
+                    player.get_just_swapped()
+                    or cw.deadly
+                    or player.cw_push(movement, radius, cw, radius_squared, frametime)
+                then
+                    return true
+                end
+                collided = true
+            end
+        end
+        if not collided then
+            return false
+        end
+    end
+    do
+        local collided
+        for cw in cws.iter() do
+            if cw.collision and extra_math.point_in_polygon(cw.vertices, player:get_position()) then
+                if player.cw_push(movement, radius, cw, radius_squared, frametime) then
+                    return true
+                end
+                collided = true
+            end
+        end
+        if not collided then
+            return false
+        end
+    end
+    local p_pos_x, p_pos_y = player:get_position()
+    for cw in cws.iter() do
+        if cw.collision and extra_math.point_in_polygon(cw.vertices, p_pos_x, p_pos_y) then
+            return true
+        end
+    end
+    -- update old vertices (only required for collisions)
+    for cw in cws.iter() do
+        if cw.collision then
+            for i = 1, 8 do
+                cw.old_vertices[i] = cw.vertices[i]
+            end
+        end
+    end
+    return false
+end
+
+function cws.draw(wall_quads)
+    for cw in cws.iter() do
+        wall_quads:add_quad(
+            cw.vertices[1],
+            cw.vertices[2],
+            cw.vertices[3],
+            cw.vertices[4],
+            cw.vertices[5],
+            cw.vertices[6],
+            cw.vertices[7],
+            cw.vertices[8],
+            unpack(cw.colors)
+        )
     end
 end
 return cws

@@ -397,9 +397,8 @@ end
 function game:update_collisions(move, frametime)
     local collided = false
     local radius_squared = self.status.radius ^ 2 + 8
-    local p_pos_x, p_pos_y = self.player.get_position()
     for wall in self.walls.iter() do
-        if extra_math.point_in_polygon(wall.vertices, p_pos_x, p_pos_y) then
+        if extra_math.point_in_polygon(wall.vertices, self.player.get_position()) then
             if self.player.get_just_swapped() then
                 self:perform_player_kill()
                 -- TODO: unlock a22_swapdeath
@@ -410,13 +409,17 @@ function game:update_collisions(move, frametime)
         end
     end
     if collided then
-        p_pos_x, p_pos_y = self.player.get_position()
+        local p_pos_x, p_pos_y = self.player.get_position()
         for wall in self.walls.iter() do
             if extra_math.point_in_polygon(wall.vertices, p_pos_x, p_pos_y) then
                 -- TODO: unlock a22_swapdeath if just swapped
                 self:perform_player_kill()
             end
         end
+    end
+    if self.custom_walls.handle_collision(move, self.status.radius, self.player, frametime) then
+        self:perform_player_kill()
+        -- TODO: unlock a22_swapdeath if just swapped
     end
 end
 
