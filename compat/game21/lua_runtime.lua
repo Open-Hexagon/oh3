@@ -684,7 +684,11 @@ function lua_runtime.run_lua_file(path)
         error("attempted to load a lua file without initializing the environment")
     else
         if file_cache[path] == nil then
-            file_cache[path] = loadfile(path)
+            local error_msg
+            file_cache[path], error_msg = loadfile(path)
+            if file_cache[path] == nil then
+                error("Failed to load '" .. path .. "': " .. error_msg)
+            end
         end
         local lua_file = file_cache[path]
         setfenv(lua_file, env)
