@@ -81,14 +81,10 @@ local function draw_pivot(sides, style, pivotquads, cap_tris)
     local sin, cos = math.sin, math.cos
     for i = 0, sides - 1 do
         local s_angle = div * 2 * i
-        local p1_x, p1_y = _start_pos[1] + cos(s_angle - div) * p_radius, _start_pos[2] + sin(s_angle - div) * p_radius
-        local p2_x, p2_y = _start_pos[1] + cos(s_angle + div) * p_radius, _start_pos[2] + sin(s_angle + div) * p_radius
-        local p3_x, p3_y =
-            _start_pos[1] + cos(s_angle + div) * (p_radius + base_thickness),
-            _start_pos[2] + sin(s_angle + div) * (p_radius + base_thickness)
-        local p4_x, p4_y =
-            _start_pos[1] + cos(s_angle - div) * (p_radius + base_thickness),
-            _start_pos[2] + sin(s_angle - div) * (p_radius + base_thickness)
+        local p1_x, p1_y = extra_math.get_orbit(_start_pos, s_angle - div, p_radius)
+        local p2_x, p2_y = extra_math.get_orbit(_start_pos, s_angle + div, p_radius)
+        local p3_x, p3_y = extra_math.get_orbit(_start_pos, s_angle + div, p_radius + base_thickness)
+        local p4_x, p4_y = extra_math.get_orbit(_start_pos, s_angle - div, p_radius + base_thickness)
         pivotquads:add_quad(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y, style.get_main_color())
         cap_tris:add_tris(p1_x, p1_y, p2_x, p2_y, _start_pos[1], _start_pos[2], style.get_cap_color_result())
     end
@@ -265,15 +261,19 @@ function player.wall_push(movement_dir, radius, wall, radius_squared, frametime)
         local saved
         saved, test_pos_x, test_pos_y = player.check_wall_collision_escape(wall, test_pos_x, test_pos_y, radius_squared)
         local nx, ny = get_normalized(test_pos_x - _pre_push_pos[1], test_pos_y - _pre_push_pos[2])
-        _pos[1] = test_pos_x + nx * collision_padding
-        _pos[2] = test_pos_y + ny * collision_padding
         is_in = saved
+        if saved then
+            _pos[1] = test_pos_x + nx * collision_padding
+            _pos[2] = test_pos_y + ny * collision_padding
+            _angle = math.atan2(_pos[2], _pos[1])
+            player.update_position(radius)
+        end
     else
         _pos[1] = test_pos_x
         _pos[2] = test_pos_y
+        _angle = math.atan2(_pos[2], _pos[1])
+        player.update_position(radius)
     end
-    _angle = math.atan2(_pos[2], _pos[1])
-    player.update_position(radius)
     return is_in
 end
 
