@@ -16,12 +16,8 @@ end
 ---@param b number
 ---@return number
 function extmath.clamp(t, a, b)
-    if t < a then
-        return a
-    end
-    if t > b then
-        return b
-    end
+    if t < a then return a end
+    if t > b then return b end
     return t
 end
 
@@ -33,16 +29,15 @@ do
     ---@param y number
     ---@return number
     function extmath.alpha_max_beta_min(x, y)
+        x, y = math.abs(x), math.abs(y)
         local min, max
         if x < y then
-            min, max = math.abs(x), math.abs(y)
+            min, max = x, y
         else
-            min, max = math.abs(y), math.abs(x)
+            min, max = y, x
         end
         local z = alpha * max + beta * min
-        if max < z then
-            return z
-        end
+        if max < z then return z end
         return max
     end
 end

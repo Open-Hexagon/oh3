@@ -15,7 +15,7 @@ function settings.handle_event(name, a, b, c, d, e, f)
             stack.push(hud)
         end
     elseif name == "mousereleased" then
-        
+
     end
 end
 

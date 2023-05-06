@@ -1,4 +1,5 @@
 local extmath = require "extmath"
+local ease = require "anim.ease"
 
 ---@class Signal
 ---@alias signalparam number|function|table|Signal
@@ -24,9 +25,7 @@ Waveform.__call = get_value
 function Waveform:update(dt)
     if self.suspended then return end
     self.t = self.t + self.freq() * dt
-    if self.t >= 1 then
-        self.t = self.t - 1
-    end
+    if self.t >= 1 then self.t = self.t - 1 end
     self.value = self.curve(self.t)
 end
 
@@ -85,14 +84,14 @@ Queue.__call = get_value
 ---Adds a keyframe event
 ---@param duration number Event duration
 ---@param value number Target value
----@param ease function Easing function
-function Queue:keyframe(duration, value, ease)
+---@param easing? function Easing function
+function Queue:keyframe(duration, value, easing)
     ---@type Event
     local newevent = {
         type = KEYFRAME_EVENT,
         value = value,
-        fn = ease,
-        freq = 1 / duration
+        fn = easing or ease.linear,
+        freq = 1 / duration,
     }
     self.last_event.next = newevent
     self.last_event = newevent
@@ -106,7 +105,7 @@ function Queue:waveform(duration, curve)
     local newevent = {
         type = WAVEFORM_EVENT,
         fn = curve,
-        freq = 1 / duration
+        freq = 1 / duration,
     }
     self.last_event.next = newevent
     self.last_event = newevent
@@ -118,7 +117,7 @@ function Queue:wait(duration)
     ---@type Event
     local newevent = {
         type = WAIT_EVENT,
-        freq = 1 / duration
+        freq = 1 / duration,
     }
     self.last_event.next = newevent
     self.last_event = newevent
@@ -130,7 +129,7 @@ function Queue:set_value(value)
     ---@type Event
     local newevent = {
         type = SET_VALUE_EVENT,
-        value = value
+        value = value,
     }
     self.last_event.next = newevent
     self.last_event = newevent
@@ -142,7 +141,7 @@ function Queue:call(fn)
     ---@type Event
     local newevent = {
         type = CALL_EVENT,
-        fn = fn
+        fn = fn,
     }
     self.last_event.next = newevent
     self.last_event = newevent
@@ -161,11 +160,8 @@ function Queue:update(dt)
         self.t = self.t + self.current_event.next.freq * dt
         if self.t < 1 then
             if self.processing == KEYFRAME_EVENT then
-                self.value = extmath.lerp(
-                    self.start_value,
-                    self.current_event.next.value,
-                    self.current_event.next.fn(self.t)
-                )
+                self.value =
+                    extmath.lerp(self.start_value, self.current_event.next.value, self.current_event.next.fn(self.t))
             elseif self.processing == WAVEFORM_EVENT then
                 self.value = self.current_event.next.fn(self.t)
             end
@@ -198,11 +194,7 @@ function Queue:update(dt)
     self.processing = self.current_event.next.type
     if self.processing == KEYFRAME_EVENT then
         self.start_value = self.value
-        self.value = extmath.lerp(
-            self.start_value,
-            self.current_event.next.value,
-            self.current_event.next.fn(self.t)
-        )
+        self.value = extmath.lerp(self.start_value, self.current_event.next.value, self.current_event.next.fn(self.t))
     elseif self.processing == WAVEFORM_EVENT then
         self.value = self.current_event.next.fn(self.t)
     end
@@ -221,9 +213,7 @@ end
 -- Square wave function with period 1 and amplitude 1 at value <x> with duty cycle <d>
 local square = function(x, d)
     local _, frac = math.modf(x)
-    if x < 0 then
-        frac = 1 + frac
-    end
+    if x < 0 then frac = 1 + frac end
     return -extmath.sgn(frac - extmath.clamp(d, 0, 1))
 end
 
@@ -243,7 +233,6 @@ local sawtooth = function(x)
     return 2 * (x - math.floor(0.5 + x))
 end
 
-
 local M = {}
 
 ---Create a new signal.
@@ -252,11 +241,9 @@ local M = {}
 ---@param value signalparam
 ---@return Signal|function
 function M.new_signal(value)
-    if type(value) == "number" then
-        return function()
-            return value
-        end
-    end
+    if type(value) == "number" then return function()
+        return value
+    end end
     return value
 end
 
@@ -270,7 +257,7 @@ function M.new_waveform(freq, curve)
         freq = M.new_signal(freq),
         curve = curve,
         suspended = false,
-        value = 0
+        value = 0,
     }, Waveform)
     signals[newinst] = true
     return newinst
@@ -286,7 +273,7 @@ function M.new_lerp(a, b, t)
         a = M.new_signal(a),
         b = M.new_signal(b),
         t = M.new_signal(t),
-        value = 0
+        value = 0,
     }, Lerp)
     signals[newinst] = true
     return newinst
@@ -300,7 +287,7 @@ function M.new_sum(a, b)
     local newinst = setmetatable({
         a = M.new_signal(a),
         b = M.new_signal(b),
-        value = 0
+        value = 0,
     }, Sum)
     signals[newinst] = true
     return newinst
@@ -312,7 +299,8 @@ function M.new_queue()
         t = 1,
         current_event = dummy_event,
         last_event = dummy_event,
-        value = 0
+        suspended = false,
+        value = 0,
     }, Queue)
     signals[newinst] = true
     return newinst

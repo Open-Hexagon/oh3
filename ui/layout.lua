@@ -1,12 +1,5 @@
 local signal = require "anim.signal"
 
-local Grid = {}
-Grid.__index = Grid
-
-function Grid:resize()
-
-end
-
 local layout = {}
 
 do
@@ -36,13 +29,6 @@ do
     layout.CENTER_Y = function()
         return layout.center_x
     end
-end
-
-function layout.new_grid(x, y)
-    local newinst = setmetatable({
-
-    }, Grid)
-    return newinst
 end
 
 function layout.resize()

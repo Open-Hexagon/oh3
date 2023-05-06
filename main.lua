@@ -1,5 +1,5 @@
-local ui = require "ui"
-local signal = require "anim.signal"
+local ui = require("ui")
+local signal = require("anim.signal")
 
 function love.load(arg)
     ui.load()
@@ -20,7 +20,6 @@ function love.run()
     -- (Some Lua language servers don't know that the love.arg field exists)
     ---@diagnostic disable-next-line: undefined-field
     love.load(love.arg.parseGameArguments(arg))
-
 
     -- enforce aspect ratio by rendering to canvas
     local aspect_ratio = 16 / 9
@@ -48,7 +47,7 @@ function love.run()
             else
                 ui.handle_event(name, a, b, c, d, e, f)
             end
-            --print(name, a, b, c, d, e, f)
+            print(name, a, b, c, d, e, f)
         end
 
         local current_time = love.timer.getTime()

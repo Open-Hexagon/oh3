@@ -2,7 +2,7 @@
 -- This module oversees the rest of the ui systems
 
 local stack = require "ui.stack"
-local base = require "ui.base"
+local base = require "ui.screens.title"
 local background = require "ui.background"
 local layout = require "ui.layout"
 
