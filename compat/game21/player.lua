@@ -1,6 +1,7 @@
 local player = {}
 
 local timer = require("compat.game21.timer")
+local extra_math = require("compat.game21.math")
 local get_color_from_hue = require("compat.game21.hue").get_color
 
 local base_thickness = 5
@@ -98,17 +99,12 @@ local function draw_death_effect(quads)
     local d_radius = _hue / 8
     local thickness = _hue / 20
     get_color_from_hue((360 - _hue) / 360, _death_effect_color)
-    local sin, cos = math.sin, math.cos
     for i = 0, 5 do
         local s_angle = div * 2 * i
-        local p1_x, p1_y = _pos[1] + cos(s_angle - div) * d_radius, _pos[2] + sin(s_angle - div) * d_radius
-        local p2_x, p2_y = _pos[1] + cos(s_angle + div) * d_radius, _pos[2] + sin(s_angle + div) * d_radius
-        local p3_x, p3_y =
-            _pos[1] + cos(s_angle + div) * (d_radius + thickness),
-            _pos[2] + sin(s_angle + div) * (d_radius + base_thickness)
-        local p4_x, p4_y =
-            _pos[1] + cos(s_angle - div) * (d_radius + thickness),
-            _pos[2] + sin(s_angle - div) * (d_radius + base_thickness)
+        local p1_x, p1_y = extra_math.get_orbit(_pos, s_angle - div, d_radius)
+        local p2_x, p2_y = extra_math.get_orbit(_pos, s_angle + div, d_radius)
+        local p3_x, p3_y = extra_math.get_orbit(_pos, s_angle + div, d_radius + thickness)
+        local p4_x, p4_y = extra_math.get_orbit(_pos, s_angle - div, d_radius + thickness)
         quads:add_quad(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y, unpack(_death_effect_color))
     end
 end
@@ -117,7 +113,7 @@ function player.draw(sides, style, pivotquads, playertris, cap_tris, angle_tilt_
     -- TODO: 255, 255, 255, normal a if bw mode
     _color[1], _color[2], _color[3], _color[4] = style.get_player_color()
     draw_pivot(sides, style, pivotquads, cap_tris)
-    if not _dead_effect_timer.running then
+    if _dead_effect_timer.running then
         draw_death_effect(pivotquads)
     end
     local tilted_angle = _angle + (_curr_tilted_angle * math.rad(24) * angle_tilt_intensity)
@@ -154,13 +150,131 @@ function player.kill(fatal)
 end
 
 local collision_padding = 0.5
-
-function player.check_wall_collision_escape(wall, pos, radius_squared)
-    -- TODO
+local function get_normalized(x, y)
+    if x == 0 and y == 0 then
+        return 0, 0
+    end
+    local mag = math.sqrt(x * x + y * y)
+    return x / mag, y / mag
 end
 
-function player.wall_push(movement_dir, radius, wall, center_pos, radius_squared, frametime)
-    -- TODO
+function player.check_wall_collision_escape(wall, pos_x, pos_y, radius_squared)
+    local saved = false
+    local vec1_x, vec1_y
+    local vec2_x, vec2_y
+    local temp_distance
+    local safe_distance = _max_safe_distance
+    local vx_increment = wall.speed == nil and 1 or 2
+    local killing_side = wall.killing_side or 0
+    local function assign_result()
+        temp_distance = (vec1_x - _pos[1]) ^ 2 + (vec1_y - _pos[2]) ^ 2
+        if temp_distance < safe_distance then
+            pos_x = vec1_x
+            pos_y = vec1_y
+            saved = true
+            safe_distance = temp_distance
+        end
+    end
+    local function get_line_circle_intersection(p1_x, p1_y, p2_x, p2_y)
+        local dx = p2_x - p1_x
+        local dy = p2_y - p1_y
+        local a = dx * dx + dy * dy
+        local b = 2 * (dx * p1_x + dy * p1_y)
+        local c = p1_x * p1_x + p1_y * p1_y - radius_squared
+        local delta = b * b - 4 * a * c
+
+        -- No intersections.
+        if delta < 0 then
+            return 0
+        end
+
+        local t
+        local two_a = a * 2
+
+        -- one intersection
+        if delta < 1.0e-4 then
+            t = -b / two_a
+            vec1_x = p1_x + t * dx
+            vec1_y = p1_y + t * dy
+            return 1
+        end
+
+        -- two intersections
+        local sqrt_delta = math.sqrt(delta)
+        t = (-b + sqrt_delta) / two_a
+        vec1_x = p1_x + t * dx
+        vec1_y = p1_y + t * dy
+        t = (-b - sqrt_delta) / two_a
+        vec2_x = p1_x + t * dx
+        vec2_y = p1_y + t * dy
+        return 2
+    end
+    for i = 0, 3, vx_increment do
+        local j = (i + 3) % 4
+        if j ~= killing_side then
+            local result_count = get_line_circle_intersection(
+                wall.vertices[i * 2 + 1],
+                wall.vertices[i * 2 + 2],
+                wall.vertices[j * 2 + 1],
+                wall.vertices[j * 2 + 2]
+            )
+            if result_count == 1 then
+                assign_result()
+            elseif result_count == 2 then
+                if (vec1_x - pos_x) ^ 2 + (vec1_y - pos_y) ^ 2 > (vec2_x - pos_x) ^ 2 + (vec2_y - pos_y) ^ 2 then
+                    vec1_x = vec2_x
+                    vec1_y = vec2_y
+                end
+                assign_result()
+            end
+        end
+    end
+    return saved, pos_x, pos_y
+end
+
+function player.wall_push(movement_dir, radius, wall, radius_squared, frametime)
+    if _dead then
+        return false
+    end
+    local test_pos_x = _pos[1]
+    local test_pos_y = _pos[2]
+    local push_vel_x = 0
+    local push_vel_y = 0
+    if wall.curving and wall.speed ~= 0 and (wall.speed > 0 and 1 or -1) ~= movement_dir then
+        local angle = wall.speed / 60 * frametime
+        local sin, cos = math.sin(angle), math.cos(angle)
+        local x, y = test_pos_x, test_pos_y
+        test_pos_x = x * cos - y * sin
+        test_pos_y = x * sin + y * cos
+        push_vel_x = test_pos_x - _pos[1]
+        push_vel_y = test_pos_y - _pos[2]
+    end
+    if movement_dir == 0 and not _forced_move then
+        local nx, ny = get_normalized(test_pos_x - _pre_push_pos[1], test_pos_y - _pre_push_pos[2])
+        _pos[1] = test_pos_x + nx * 2 * collision_padding
+        _pos[2] = test_pos_y + ny * 2 * collision_padding
+        _angle = math.atan2(_pos[2], _pos[1])
+        player.update_position(radius)
+        return extra_math.point_in_polygon(wall.vertices, unpack(_pos))
+    end
+    test_pos_x = _last_pos[1] + push_vel_x
+    test_pos_y = _last_pos[2] + push_vel_y
+    local is_in = extra_math.point_in_polygon(wall.vertices, test_pos_x, test_pos_y)
+    if is_in then
+        _pre_push_pos[1], _pre_push_pos[2] = test_pos_x, test_pos_y
+        local saved
+        saved, test_pos_x, test_pos_y = player.check_wall_collision_escape(wall, test_pos_x, test_pos_y, radius_squared)
+        local nx, ny = get_normalized(test_pos_x - _pre_push_pos[1], test_pos_y - _pre_push_pos[2])
+        _pos[1] = test_pos_x + nx * collision_padding
+        _pos[2] = test_pos_y + ny * collision_padding
+        is_in = saved
+    else
+        _pos[1] = test_pos_x
+        _pos[2] = test_pos_y
+    end
+    _angle = math.atan2(_pos[2], _pos[1])
+    player.update_position(radius)
+    return is_in
 end
 
 function player.cw_push(movement_dir, radius, custom_wall, radius_squared, frametime)
@@ -245,10 +359,10 @@ end
 function player.update_position(radius)
     _radius = radius
     local sin, cos = math.sin, math.cos
-    _pos[1] = cos(_angle) * _radius + _start_pos[1]
-    _pos[2] = sin(_angle) * _radius + _start_pos[2]
+    extra_math.get_orbit(_start_pos, _angle, _radius, _pos)
     _pre_push_pos[1] = _pos[1]
     _pre_push_pos[2] = _pos[2]
+    extra_math.get_orbit(_start_pos, _last_angle, _radius, _last_pos)
     local pos_diff_x = _last_pos[1] - _start_pos[1] - cos(_last_angle + math.rad(_current_speed)) * _radius
     local pos_diff_y = _last_pos[2] - _start_pos[2] - sin(_last_angle + math.rad(_current_speed)) * _radius
     _max_safe_distance = pos_diff_x ^ 2 + pos_diff_y ^ 2 + 32

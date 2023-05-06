@@ -8,6 +8,14 @@ function walls.reset(level_status)
     _level_status = level_status
 end
 
+function walls.iter()
+    local index = 0
+    return function()
+        index = index + 1
+        return _walls[index]
+    end
+end
+
 function walls.wall(
     speed_mult_dm,
     difficulty_mult,

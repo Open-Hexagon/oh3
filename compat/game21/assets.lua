@@ -227,7 +227,7 @@ function assets.get_pack(name)
                 uniforms = uniforms,
                 shader = shader,
                 instance_shader = instance_shader,
-                text_shader = love.graphics.newShader("#define TEXT\n" .. new_code)
+                text_shader = love.graphics.newShader("#define TEXT\n" .. new_code),
             }
         end
 

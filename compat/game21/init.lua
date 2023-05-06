@@ -3,6 +3,7 @@ local Timeline = require("compat.game21.timeline")
 local Quads = require("compat.game21.dynamic_quads")
 local Tris = require("compat.game21.dynamic_tris")
 local set_color = require("compat.game21.color_transform")
+local extra_math = require("compat.game21.math")
 local game = {
     assets = require("compat.game21.assets"),
     lua_runtime = require("compat.game21.lua_runtime"),
@@ -342,7 +343,7 @@ function game:update(frametime)
 
             self.player.update_position(self.status.radius)
             self.walls.update(frametime, self.status.radius)
-            -- TODO: update custom walls
+            self:update_collisions(move, frametime)
         else
             self.level_status.rotation_speed = self.level_status.rotation_speed * 0.99
         end
@@ -389,6 +390,50 @@ function game:update(frametime)
         end
         -- TODO: if 3d off but required invalidate score
         -- TODO: if shaders off but required invalidate score
+    end
+    -- TODO: update custom walls
+end
+
+function game:update_collisions(move, frametime)
+    local collided = false
+    local radius_squared = self.status.radius ^ 2 + 8
+    local p_pos_x, p_pos_y = self.player.get_position()
+    for wall in self.walls.iter() do
+        if extra_math.point_in_polygon(wall.vertices, p_pos_x, p_pos_y) then
+            if self.player.get_just_swapped() then
+                self:perform_player_kill()
+                -- TODO: unlock a22_swapdeath
+            elseif self.player.wall_push(move, self.status.radius, wall, radius_squared, frametime) then
+                self:perform_player_kill()
+            end
+            collided = true
+        end
+    end
+    if collided then
+        p_pos_x, p_pos_y = self.player.get_position()
+        for wall in self.walls.iter() do
+            if extra_math.point_in_polygon(wall.vertices, p_pos_x, p_pos_y) then
+                -- TODO: unlock a22_swapdeath if just swapped
+                self:perform_player_kill()
+            end
+        end
+    end
+end
+
+function game:perform_player_kill()
+    -- TODO: fatal = not invincible and not self.level_status.tutorial_mode
+    local fatal = false
+    self.player.kill(fatal)
+    if not self.status.has_died then
+        self.lua_runtime.run_fn_if_exists("onPreDeath")
+        love.audio.play(self.level_status.death_sound)
+        if fatal then
+            self.lua_runtime.run_fn_if_exists("onDeath")
+            -- TODO: death_shakeCamera
+            love.audio.stop()
+            -- TODO: death_flashEffect
+            self.status.has_died = true
+        end
     end
 end
 
