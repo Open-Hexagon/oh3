@@ -2,10 +2,6 @@ local stack = require "ui.stack"
 
 local hud = {}
 
-function hud.update(dt)
-
-end
-
 function hud.draw()
     love.graphics.print("Here's another overlay", 0, 60)
 end

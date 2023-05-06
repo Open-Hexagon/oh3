@@ -6,6 +6,10 @@ local ease = {}
 -- These output values from 0 to 1, and work best when paired with linear interpolation (lerp).
 -- All formulas are referenced from easings.net.
 
+function ease.linear(x)
+    return x
+end
+
 -- Sine
 function ease.in_sine(x)
     return 1 - math.cos((extmath.clamp(x, 0, 1) * math.pi) / 2)

@@ -3,10 +3,20 @@ local settings = require "ui.overlay.settings"
 local textbox = require "ui.element.textbox"
 local layout = require "ui.layout"
 local signal = require "anim.signal"
+local ease = require "anim.ease"
 
-local lefttab = signal.new_sum(layout.LEFT, signal.new_waveform(1 / 4, function(t)
-    return 100 + 50 * math.sin(2 * math.pi * t)
-end))
+local queue = signal.new_queue()
+queue:call(function() print("Start at 200") end)
+queue:set_value(200)
+queue:call(function() print("In 0.5s, target 400, ease out_quad") end)
+queue:keyframe(0.5, 400, ease.out_quad)
+queue:call(function() print("In 2s, target 300, ease out_bounce") end)
+queue:keyframe(2, 300, ease.out_bounce)
+queue:call(function() print("In 1.5s, target 600, ease out_elastic") end)
+queue:keyframe(1.5, 600, ease.out_elastic)
+queue:call(function() print("Done") end)
+
+local lefttab = signal.new_sum(layout.LEFT, queue)
 local leftbar = signal.new_sum(lefttab, 100)
 local rightbar = signal.new_sum(layout.RIGHT, -50)
 
@@ -44,13 +54,6 @@ local rbar = textbox.new(
 local screen = "main_menu"
 
 local base = {}
-
-function base.update(dt)
-
-end
-
-function base.resize()
-end
 
 function base.draw()
     love.graphics.setColor(0.5, 0.5, 0.5, 1)

@@ -13,10 +13,6 @@ function ui.load()
     stack.push(base)
 end
 
-function ui.update(dt)
-    stack.update(dt)
-end
-
 function ui.draw()
     stack.draw()
 end

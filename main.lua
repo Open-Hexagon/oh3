@@ -13,7 +13,6 @@ end
 
 function love.update(dt)
     signal.update(dt)
-    ui.update(dt)
 end
 
 function love.run()
@@ -49,7 +48,7 @@ function love.run()
             else
                 ui.handle_event(name, a, b, c, d, e, f)
             end
-            print(name, a, b, c, d, e, f)
+            --print(name, a, b, c, d, e, f)
         end
 
         local current_time = love.timer.getTime()

@@ -3,10 +3,6 @@ local hud = require "ui.overlay.hud"
 
 local settings = {}
 
-function settings.update(dt)
-
-end
-
 function settings.draw()
     love.graphics.print("This is the settings overlay", 0, 30)
 end
