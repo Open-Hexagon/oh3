@@ -8,10 +8,6 @@ local file_cache = {}
 local env = lua_runtime.env
 
 function lua_runtime.error(msg)
-    if msg == nil then
-        -- no useful message, usually called as way to get out of a pcall
-        error()
-    end
     love.audio.play(error_sound)
     log("Error: " .. msg)
 end
@@ -22,7 +18,7 @@ function lua_runtime.init_env(game)
     error_sound = assets.get_sound("error.ogg")
     lua_runtime.env = {
         next = next,
-        error = lua_runtime.error,
+        error = error,
         assert = assert,
         pcall = pcall,
         xpcall = xpcall,
@@ -669,9 +665,13 @@ function lua_runtime.init_env(game)
     log("initialized environment")
 end
 
+local function run_fn(name, ...)
+    return env[name](...)
+end
+
 function lua_runtime.run_fn_if_exists(name, ...)
     if env[name] ~= nil then
-        return env[name](...)
+        xpcall(run_fn, lua_runtime.error, name, ...)
     end
 end
 
