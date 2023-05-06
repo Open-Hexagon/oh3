@@ -149,6 +149,28 @@ function game:get_speed_mult_dm()
     return result < self.level_status.speed_max and result or self.level_status.speed_max
 end
 
+function game:perform_player_kill()
+    -- TODO: fatal = not invincible and not self.level_status.tutorial_mode
+    local fatal = false
+    self.player.kill(fatal)
+    self:death()
+end
+
+function game:death(force)
+    if not self.status.has_died then
+        self.lua_runtime.run_fn_if_exists("onPreDeath")
+        -- TODO: or invincible
+        if force or not (self.level_status.tutorial_mode or true) then
+            self.lua_runtime.run_fn_if_exists("onDeath")
+            -- TODO: death_shakeCamera
+            love.audio.stop()
+            -- TODO: death_flashEffect
+            self.status.has_died = true
+        end
+        love.audio.play(self.level_status.death_sound)
+    end
+end
+
 function game:perform_player_swap(play_sound)
     self.player.player_swap()
     self.lua_runtime.run_fn_if_exists("onCursorSwap")
@@ -397,23 +419,6 @@ function game:update(frametime)
         -- TODO: if shaders off but required invalidate score
     end
     -- TODO: update custom walls
-end
-
-function game:perform_player_kill()
-    -- TODO: fatal = not invincible and not self.level_status.tutorial_mode
-    local fatal = false
-    self.player.kill(fatal)
-    if not self.status.has_died then
-        self.lua_runtime.run_fn_if_exists("onPreDeath")
-        if fatal then
-            self.lua_runtime.run_fn_if_exists("onDeath")
-            -- TODO: death_shakeCamera
-            love.audio.stop()
-            -- TODO: death_flashEffect
-            self.status.has_died = true
-        end
-        love.audio.play(self.level_status.death_sound)
-    end
 end
 
 function game:draw(screen)

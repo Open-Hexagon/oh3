@@ -126,7 +126,7 @@ function lua_runtime.init_env(game)
         end
     end
     env.l_getOfficial = function()
-        -- TODO
+        -- TODO: get official mode from config
         return false
     end
 
@@ -267,7 +267,9 @@ function lua_runtime.init_env(game)
         game.main_timeline:clear()
     end
     env.t_kill = function()
-        -- TODO
+        game.main_timeline:append_do(function()
+            game:death(true)
+        end)
     end
     env.t_wait = function(duration)
         game.main_timeline:append_wait_for_sixths(duration)
@@ -288,7 +290,9 @@ function lua_runtime.init_env(game)
         game.event_timeline:append_do(fn)
     end
     env.e_kill = function()
-        -- TODO
+        game.event_timeline:append_do(function()
+            game:death(true)
+        end)
     end
     env.e_stopTime = function(duration)
         game.event_timeline:append_do(function()

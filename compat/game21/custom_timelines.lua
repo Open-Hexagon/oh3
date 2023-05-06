@@ -38,7 +38,10 @@ function custom_timelines.add_lua_functions(game)
     end
 
     function lua.ct_kill(handle)
-        -- TODO
+        local timeline = custom_timelines.get(handle)
+        timeline:append_do(function()
+            game:death(true)
+        end)
     end
 
     function lua.ct_stopTime(handle, duration)
