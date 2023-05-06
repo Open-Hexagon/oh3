@@ -454,7 +454,7 @@ function lua_runtime.init_env(game)
         return game:get_speed_mult_dm()
     end
     env.u_getDelayMultDM = function()
-        local result = game.level_status.delay_mult * math.pow(game.difficulty_mult, 0.1)
+        local result = game.level_status.delay_mult / math.pow(game.difficulty_mult, 0.1)
         if not game.level_status.has_delay_max_limit() then
             return result
         end
