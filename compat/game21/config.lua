@@ -30,6 +30,7 @@ add_property("shaders", true, false)
 add_property("invincible", false, false)
 add_property("black_and_white", false, false)
 add_property("camera_shake_mult", 1, true)
+add_property("text_scale", 1, true)
 
 function config.set_defaults()
     for name, values in pairs(properties) do

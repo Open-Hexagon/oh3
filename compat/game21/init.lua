@@ -67,7 +67,7 @@ local game = {
     height = love.graphics.getHeight(),
 }
 
-game.message_font = game.assets.get_font("OpenSquare-Regular.ttf", 32)
+game.message_font = game.assets.get_font("OpenSquare-Regular.ttf", 32 * game.config.get("text_scale"))
 game.go_sound = game.assets.get_sound("go.ogg")
 game.swap_blip_sound = game.assets.get_sound("swap_blip.ogg")
 game.level_up_sound = game.assets.get_sound("level_up.ogg")
@@ -626,7 +626,6 @@ function game:draw(screen)
             r, g, b = 255, 255, 255
         end
         set_color(r, g, b, a)
-        -- TODO: config text scale (maybe we won't have that settings since we'll have ui scale?)
         love.graphics.print(
             self.message_text,
             game.message_font,
