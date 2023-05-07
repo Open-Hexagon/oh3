@@ -163,10 +163,16 @@ function assets.get_pack(name)
                 :gsub("gl_TexCoord.0.", "VaryingTexCoord")
                 :gsub("texture", "Texel")
                 :gsub("gl_Color", "_new_wrap_original_pixel_color") .. [[
+
+                //globinit
+
                 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
                     _new_wrap_original_pixel_color = color;
                     _new_wrap_pixel_coord = screen_coords;
                     _new_wrap_pixel_coord.y = love_ScreenSize.y - _new_wrap_pixel_coord.y;
+                    #ifdef INITVARS
+                    _new_wrap_init_glob_vars();
+                    #endif
                     _old_wrapped_main();
                     #ifdef TEXT
                     return _new_wrap_pixel_color * Texel(tex, VaryingTexCoord.xy);
@@ -177,10 +183,60 @@ function assets.get_pack(name)
             ]]
             -- remove lines starting with #version
             local new_code = ""
+            local block_depth = 0
+            local need_to_initialize_later = {}
             for line in code:gmatch("([^\n]*)\n?") do
-                if line:gsub(" ", ""):sub(1, 8) ~= "#version" then
+                local _, open_count = line:gsub("{", "")
+                local _, close_count = line:gsub("}", "")
+                block_depth = block_depth + open_count - close_count
+                if block_depth == 0 and line:match("=") ~= nil then
+                    local new_line = ""
+                    for statement in line:gmatch("([^;]*);?") do
+                        if statement:gsub(" ", "") ~= "" then
+                            local key, key_index
+                            for i = 1, #statement do
+                                if key == nil then
+                                    if statement:sub(i, i) == "=" then
+                                        key = statement:sub(1, i - 1)
+                                        key_index = i
+                                    end
+                                end
+                            end
+                            if key == nil then
+                                new_line = new_line .. statement .. ";"
+                            else
+                                local value = statement:sub(key_index + 1)
+                                need_to_initialize_later[key] = value
+                                new_line = new_line .. key .. ";"
+                            end
+                        end
+                    end
+                    line = new_line
+                end
+                local has_version = line:gsub(" ", ""):sub(1, 8) == "#version"
+                if not has_version then
                     new_code = new_code .. line .. "\n"
                 end
+            end
+            if next(need_to_initialize_later) ~= nil then
+                local add_to_top = "#define INITVARS\n\nvoid _new_wrap_init_glob_vars() {"
+                for variable, value in pairs(need_to_initialize_later) do
+                    local space_index = 1
+                    local first = true
+                    for i = 1, #variable do
+                        if variable:sub(i, i) == " " then
+                            if not first then
+                                space_index = i
+                                break
+                            end
+                        else
+                            first = false
+                        end
+                    end
+                    add_to_top = add_to_top .. "\n    " .. variable:sub(space_index + 1) .. "=" .. value .. ";"
+                end
+                add_to_top = add_to_top .. "\n}\n"
+                new_code = new_code:gsub("//globinit\n", add_to_top)
             end
             local shader = love.graphics.newShader(new_code)
             -- compile the shader a second time but with 3d layer offset instance code
