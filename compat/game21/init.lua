@@ -160,7 +160,10 @@ function game:death(force)
             self.lua_runtime.run_fn_if_exists("onDeath")
             self.status.camera_shake = 45 * self.config.get("camera_shake_mult")
             love.audio.stop()
-            -- TODO: death_flashEffect
+            self.flash_color[1] = 255
+            self.flash_color[2] = 255
+            self.flash_color[3] = 255
+            self.status.flash_effect = 255
             self.status.has_died = true
         end
         love.audio.play(self.level_status.death_sound)
@@ -606,7 +609,7 @@ function game:draw(screen)
 
     -- TODO: draw particles, text, flash
 
-    -- text and flash shouldn't be affected by rotation/pulse
+    -- text shouldn't be affected by rotation/pulse
     love.graphics.origin()
     love.graphics.scale(zoom_factor, zoom_factor)
     love.graphics.translate(unpack(self.death_shake_translate))
@@ -632,6 +635,9 @@ function game:draw(screen)
     -- reset render stage shaders
     love.graphics.setShader()
 
+    -- flash shouldnt be affected by rotation/pulse/camera_shake
+    love.graphics.origin()
+    love.graphics.scale(zoom_factor, zoom_factor)
     if self.flash_color[4] ~= 0 and self.config.get("flash") then
         set_color(unpack(self.flash_color))
         love.graphics.rectangle("fill", 0, 0, self.width / zoom_factor, self.height / zoom_factor)
