@@ -24,13 +24,13 @@ end
 
 function Entry:select()
     -- self.offset:stop()
-    self.offset:keyframe(0.1, -50, ease.out_sine)
+    self.offset:keyframe(0.1, -50, ease.out_back)
     self.selected = true
 end
 
 function Entry:deselect()
     -- self.offset:stop()
-    self.offset:keyframe(0.1, 0, ease.out_sine)
+    self.offset:keyframe(0.1, 0, ease.out_back)
     self.selected = false
 end
 

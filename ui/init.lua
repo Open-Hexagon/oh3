@@ -9,8 +9,9 @@ local layout = require "ui.layout"
 local ui = {}
 
 function ui.load()
+    background.load()
+
     stack.push(background)
-    stack.push(base)
 end
 
 function ui.draw()

@@ -1,10 +1,31 @@
 local extmath = require "extmath"
 local ease = require "anim.ease"
 
+local signals = setmetatable({}, { __mode = "k" })
+local persistent = {}
+
 ---@class Signal
+local Signal = {}
+Signal.__index = Signal
+
+---Turns on persistence, preventing the signal from being garbage collected.
+function Signal:persist()
+    persistent[self] = true
+end
+
+---Turns off persistence
+function Signal:no_persist()
+    persistent[self] = true
+end
+
+---Makes the signal module forget about this signal
+function Signal:release()
+    signals[self] = nil
+    persistent[self] = nil
+end
+
 ---@alias signalparam number|function|table|Signal
 
-local signals = setmetatable({}, { __mode = "k" })
 
 local get_value = function(this)
     return this.value
@@ -16,7 +37,7 @@ end
 ---@field private t number
 ---@field private value number
 ---@field private suspended boolean
-local Waveform = {}
+local Waveform = setmetatable({}, Signal)
 Waveform.__index = Waveform
 Waveform.__call = get_value
 
@@ -43,7 +64,7 @@ end
 ---@field private a Signal
 ---@field private b Signal
 ---@field private t Signal
-local Lerp = {}
+local Lerp = setmetatable({}, Signal)
 Lerp.__index = Lerp
 Lerp.__call = get_value
 
@@ -54,7 +75,7 @@ end
 ---@class Sum:Signal
 ---@field private a Signal
 ---@field private b Signal
-local Sum = {}
+local Sum = setmetatable({}, Signal)
 Sum.__index = Sum
 Sum.__call = get_value
 
@@ -77,7 +98,7 @@ local KEYFRAME_EVENT, WAVEFORM_EVENT, WAIT_EVENT, SET_VALUE_EVENT, CALL_EVENT = 
 ---@field private value number
 ---@field private processing `KEYFRAME_EVENT`|`WAVEFORM_EVENT`|`WAIT_EVENT`|nil
 ---@field private start_value number
-local Queue = {}
+local Queue = setmetatable({}, Signal)
 Queue.__index = Queue
 Queue.__call = get_value
 
@@ -150,6 +171,8 @@ end
 ---Stops the queue and deletes all events. The value remains at its last value.
 function Queue:stop()
     self.current_event = self.last_event
+    self.processing = nil
+    self.t = 1
 end
 
 ---Updates the signal.
@@ -250,7 +273,7 @@ end
 ---Creates a new looping signal with frequency `freq` defined by the function `curve`.
 ---@param freq signalparam Waveform frequency
 ---@param curve function A function that accepts one argument ranging from [0, 1] and returns a number.
----@return Signal
+---@return Waveform
 function M.new_waveform(freq, curve)
     local newinst = setmetatable({
         t = 0,
@@ -267,7 +290,7 @@ end
 ---@param a signalparam
 ---@param b signalparam
 ---@param t signalparam
----@return Signal
+---@return Lerp
 function M.new_lerp(a, b, t)
     local newinst = setmetatable({
         a = M.new_signal(a),
@@ -282,7 +305,7 @@ end
 ---Creates a new signal that is the sum of two signals `a` and `b`.
 ---@param a signalparam
 ---@param b signalparam
----@return Signal
+---@return Sum
 function M.new_sum(a, b)
     local newinst = setmetatable({
         a = M.new_signal(a),
@@ -293,14 +316,17 @@ function M.new_sum(a, b)
     return newinst
 end
 
-function M.new_queue()
+---Creates a new queue signal
+---@param value number? Starting value
+---@return Queue
+function M.new_queue(value)
     local dummy_event = {}
     local newinst = setmetatable({
         t = 1,
         current_event = dummy_event,
         last_event = dummy_event,
         suspended = false,
-        value = 0,
+        value = value or 0,
     }, Queue)
     signals[newinst] = true
     return newinst

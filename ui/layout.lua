@@ -27,7 +27,7 @@ do
 
     ---A signal that outputs the Y coordinate of the CENTER edge of the screen.
     layout.CENTER_Y = function()
-        return layout.center_x
+        return layout.center_y
     end
 end
 
