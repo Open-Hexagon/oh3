@@ -3,8 +3,8 @@ local Timeline = require("compat.game21.timeline")
 local Quads = require("compat.game21.dynamic_quads")
 local Tris = require("compat.game21.dynamic_tris")
 local set_color = require("compat.game21.color_transform")
-local extra_math = require("compat.game21.math")
 local game = {
+    config = require("compat.game21.config"),
     assets = require("compat.game21.assets"),
     lua_runtime = require("compat.game21.lua_runtime"),
     level_status = require("compat.game21.level_status"),
@@ -74,11 +74,9 @@ game.restart_sound = game.assets.get_sound("restart.ogg")
 game.select_sound = game.assets.get_sound("select.ogg")
 
 function game:start(pack_folder, level_id, difficulty_mult)
-    -- TODO: put this somewhere else so it can be loaded for the menu
-    --       or maybe not because it caches loaded packs anyway?
     self.pack_data = self.assets.get_pack(pack_folder)
     self.level_data = self.pack_data.levels[level_id]
-    self.level_status.reset(true, self.assets) -- TODO: get bool from config
+    self.level_status.reset(self.config.get("sync_music_to_dm"), self.assets)
     self.style.select(self.pack_data.styles[self.level_data.styleId])
     self.style.compute_colors()
     self.difficulty_mult = difficulty_mult
@@ -112,8 +110,7 @@ function game:start(pack_folder, level_id, difficulty_mult)
     self.walls.reset(self.level_status)
     self.custom_walls.cw_clear()
 
-    -- TODO: get player size, speed and focus speed from config
-    self.player.reset(self:get_swap_cooldown(), 7.3, 9.45, 4.625)
+    self.player.reset(self:get_swap_cooldown(), self.config.get("player_size"), self.config.get("player_speed"), self.config.get("player_focus_speed"))
 
     self.flash_color = { 255, 255, 255, 0 }
 
@@ -150,8 +147,7 @@ function game:get_speed_mult_dm()
 end
 
 function game:perform_player_kill()
-    -- TODO: fatal = not invincible and not self.level_status.tutorial_mode
-    local fatal = false
+    local fatal = not self.config.get("invincible") and not self.level_status.tutorial_mode
     self.player.kill(fatal)
     self:death()
 end
@@ -159,8 +155,7 @@ end
 function game:death(force)
     if not self.status.has_died then
         self.lua_runtime.run_fn_if_exists("onPreDeath")
-        -- TODO: or invincible
-        if force or not (self.level_status.tutorial_mode or true) then
+        if force or not (self.level_status.tutorial_mode or self.config.get("invincible")) then
             self.lua_runtime.run_fn_if_exists("onDeath")
             -- TODO: death_shakeCamera
             love.audio.stop()
@@ -184,12 +179,14 @@ function game:get_music_dm_sync_factor()
 end
 
 function game:refresh_music_pitch()
-    -- TODO: account for config music speed mult
     if self.music.source ~= nil then
-        self.music.source:setPitch(
-            self.level_status.music_pitch
+        local pitch = self.level_status.music_pitch * self.config.get("music_speed_mult")
                 * (self.level_status.sync_music_to_dm and self:get_music_dm_sync_factor() or 1)
-        )
+        if pitch < 0 then
+            -- pitch can't be 0, setting it to almost 0, not sure if this could cause issues
+            pitch = 0e-10
+        end
+        self.music.source:setPitch(pitch)
     end
 end
 
@@ -236,11 +233,10 @@ function game:update(frametime)
     -- TODO: effect timeline
 
     -- update input
-    -- TODO: get keybinds from config
-    local focus = love.keyboard.isDown("lshift")
-    local swap = love.keyboard.isDown("space")
-    local cw = love.keyboard.isDown("right")
-    local ccw = love.keyboard.isDown("left")
+    local focus = love.keyboard.isDown(self.config.get("key_focus"))
+    local swap = love.keyboard.isDown(self.config.get("key_swap"))
+    local cw = love.keyboard.isDown(self.config.get("key_right"))
+    local ccw = love.keyboard.isDown(self.config.get("key_left"))
     local move
     if cw and not ccw then
         move = 1
@@ -263,8 +259,9 @@ function game:update(frametime)
                 self.player.update_input_movement(move, self.level_status.player_speed_mult, focus, frametime)
                 if not self.player_now_ready_to_swap and self.player.is_ready_to_swap() then
                     self.player_now_ready_to_swap = true
-                    -- TODO: only play swap sound if enabled in config
-                    love.audio.play(self.swap_blip_sound)
+                    if self.config.get("play_swap_sound") then
+                        love.audio.play(self.swap_blip_sound)
+                    end
                 end
                 if self.level_status.swap_enabled and swap and self.player.is_ready_to_swap() then
                     -- TODO: swap particles
@@ -321,23 +318,23 @@ function game:update(frametime)
             end
             self.custom_timelines.update(self.status.get_current_tp())
 
-            -- TODO: only if beatpulse not disabled in config
-            if not self.level_status.manual_beat_pulse_control then
-                if self.status.beat_pulse_delay <= 0 then
-                    self.status.beat_pulse = self.level_status.beat_pulse_max
-                    self.status.beat_pulse_delay = self.level_status.beat_pulse_delay_max
-                else
-                    self.status.beat_pulse_delay = self.status.beat_pulse_delay
-                        - frametime * self:get_music_dm_sync_factor()
-                end
-                if self.status.beat_pulse > 0 then
-                    self.status.beat_pulse = self.status.beat_pulse
-                        - 2 * frametime * self:get_music_dm_sync_factor() * self.level_status.beat_pulse_speed_mult
+            if self.config.get("beatpulse") then
+                if not self.level_status.manual_beat_pulse_control then
+                    if self.status.beat_pulse_delay <= 0 then
+                        self.status.beat_pulse = self.level_status.beat_pulse_max
+                        self.status.beat_pulse_delay = self.level_status.beat_pulse_delay_max
+                    else
+                        self.status.beat_pulse_delay = self.status.beat_pulse_delay
+                            - frametime * self:get_music_dm_sync_factor()
+                    end
+                    if self.status.beat_pulse > 0 then
+                        self.status.beat_pulse = self.status.beat_pulse
+                            - 2 * frametime * self:get_music_dm_sync_factor() * self.level_status.beat_pulse_speed_mult
+                    end
                 end
             end
-            -- TODO: 75 instead of radius min if beatpulse disabled in config
-            self.status.radius = self.level_status.radius_min * (self.status.pulse / self.level_status.pulse_min)
-                + self.status.beat_pulse
+            local radius_min = self.config.get("beatpulse") and self.level_status.radius_min or 75
+            self.status.radius = radius_min * (self.status.pulse / self.level_status.pulse_min) + self.status.beat_pulse
 
             if not self.level_status.manual_pulse_control then
                 if self.status.pulse_delay <= 0 then
@@ -360,8 +357,9 @@ function game:update(frametime)
                 self.status.pulse_delay = self.status.pulse_delay - frametime * self:get_music_dm_sync_factor()
             end
 
-            -- TODO: only if not black and white
-            self.style.update(frametime, math.pow(self.difficulty_mult, 0.8))
+            if not self.config.get("black_and_white") then
+                self.style.update(frametime, math.pow(self.difficulty_mult, 0.8))
+            end
 
             self.player.update_position(self.status.radius)
             self.walls.update(frametime, self.status.radius)
@@ -415,10 +413,16 @@ function game:update(frametime)
             -- so currently the only possebility is "mustRestart"
             self:start(self.pack_data.path, self.level_data.id, self.difficulty_mult)
         end
-        -- TODO: if 3d off but required invalidate score
-        -- TODO: if shaders off but required invalidate score
+        -- supress empty block warning for now
+        --- @diagnostic disable
+        if self.level_status.pseudo_3D_required and not self.config.get("3D_enabled") then
+            -- TODO: invalidate score
+        end
+        if self.level_status.shaders_required and not self.config.get("shaders") then
+            -- TODO: invalidate score
+        end
+        --- @diagnostic enable
     end
-    -- TODO: update custom walls
 end
 
 function game:draw(screen)
@@ -440,46 +444,50 @@ function game:draw(screen)
             )
         end
     end
-    -- TODO: only if 3d enabled in config
-    local depth = self.style.pseudo_3D_depth
-    local pulse_3d = self.status.pulse3D -- TODO: config can disable pulse
-    local effect = self.style.pseudo_3D_skew * pulse_3d -- TODO: config 3d mult
-    local rad_rot = math.rad(self.current_rotation + 90)
-    local sin_rot = math.sin(rad_rot)
-    local cos_rot = math.cos(rad_rot)
-    love.graphics.scale(1, 1 / (1 + effect))
+    local depth, pulse_3d, effect, rad_rot, sin_rot, cos_rot
+    if self.config.get("3D_enabled") then
+        depth = self.style.pseudo_3D_depth
+        pulse_3d = self.config.get("pulse") and self.status.pulse3D or 1
+        effect = self.style.pseudo_3D_skew * pulse_3d * self.config.get("3D_multiplier")
+        rad_rot = math.rad(self.current_rotation + 90)
+        sin_rot = math.sin(rad_rot)
+        cos_rot = math.cos(rad_rot)
+        love.graphics.scale(1, 1 / (1 + effect))
+    end
 
     -- apply rotation
     love.graphics.rotate(-math.rad(self.current_rotation))
 
     local function set_render_stage(render_stage, no_shader, instanced)
-        -- TODO: don't do anything if shaders are disabled
-        local shader = self.status.fragment_shaders[render_stage]
-        if shader ~= nil then
-            self.lua_runtime.run_fn_if_exists("onRenderStage", render_stage, love.timer.getDelta() * 60)
-            if instanced then
-                love.graphics.setShader(shader.instance_shader)
-            else
-                if render_stage ~= 8 then
-                    love.graphics.setShader(shader.shader)
+        if self.config.get("shaders") then
+            local shader = self.status.fragment_shaders[render_stage]
+            if shader ~= nil then
+                self.lua_runtime.run_fn_if_exists("onRenderStage", render_stage, love.timer.getDelta() * 60)
+                if instanced then
+                    love.graphics.setShader(shader.instance_shader)
                 else
-                    love.graphics.setShader(shader.text_shader)
+                    if render_stage ~= 8 then
+                        love.graphics.setShader(shader.shader)
+                    else
+                        love.graphics.setShader(shader.text_shader)
+                    end
                 end
+            else
+                love.graphics.setShader(no_shader)
             end
-        else
-            love.graphics.setShader(no_shader)
         end
     end
 
-    -- TODO: only draw background if not disabled in config
-    set_render_stage(0)
-    self.style.draw_background(self.level_status.sides, self.level_status.darken_uneven_background_chunk, false)
+    local black_and_white = self.config.get("black_and_white")
+    if self.config.get("background") then
+        set_render_stage(0)
+        self.style.draw_background(self.level_status.sides, self.level_status.darken_uneven_background_chunk, black_and_white)
+    end
 
     self.wall_quads:clear()
-    self.walls.draw(self.style, self.wall_quads)
+    self.walls.draw(self.style, self.wall_quads, black_and_white)
     self.custom_walls.draw(self.wall_quads)
 
-    -- TODO: get tilt intensity and swap blink effect from config
     self.player_tris:clear()
     self.pivot_quads:clear()
     self.cap_tris:clear()
@@ -490,86 +498,91 @@ function game:draw(screen)
             self.pivot_quads,
             self.player_tris,
             self.cap_tris,
-            1,
-            true
+            self.config.get("player_tilt_intensity"),
+            self.config.get("swap_blinking_effect"),
+            black_and_white
         )
     end
     love.graphics.setColor(1, 1, 1, 1)
 
-    -- TODO: only if 3d enabled in config
-    local function adjust_alpha(a, i)
-        if self.style.pseudo_3D_alpha_mult == 0 then
-            return a
+    if self.config.get("3D_enabled") then
+        local function adjust_alpha(a, i)
+            if self.style.pseudo_3D_alpha_mult == 0 then
+                return a
+            end
+            local new_alpha = (a / self.style.pseudo_3D_alpha_mult) - i * self.style.pseudo_3D_alpha_falloff
+            if new_alpha > 255 then
+                return 255
+            elseif new_alpha < 0 then
+                return 0
+            end
+            return new_alpha
         end
-        local new_alpha = (a / self.style.pseudo_3D_alpha_mult) - i * self.style.pseudo_3D_alpha_falloff
-        if new_alpha > 255 then
-            return 255
-        elseif new_alpha < 0 then
-            return 0
-        end
-        return new_alpha
-    end
-    for j = 1, depth do
-        local i = depth - j
-        local offset = self.style.pseudo_3D_spacing
-            * (i + 1)
-            * self.style.pseudo_3D_perspective_mult
-            * effect
-            * 3.6
-            * 1.4
-        self.layer_offsets[j] = self.layer_offsets[j] or {}
-        self.layer_offsets[j][1] = offset * cos_rot
-        self.layer_offsets[j][2] = offset * sin_rot
-        local r, g, b, a = self.style.get_3D_override_color()
-        -- TODO: set to 255 / 1.4 if bw mode (alpha stays)
-        r = r / self.style.pseudo_3D_darken_mult
-        g = g / self.style.pseudo_3D_darken_mult
-        b = b / self.style.pseudo_3D_darken_mult
-        a = adjust_alpha(a, i)
-        self.pivot_layer_colors[j] = self.pivot_layer_colors[j] or {}
-        self.pivot_layer_colors[j][1] = r
-        self.pivot_layer_colors[j][2] = g
-        self.pivot_layer_colors[j][3] = b
-        self.pivot_layer_colors[j][4] = a
-        if self.style.pseudo_3D_override_is_main then
-            r, g, b, a = self.style.get_wall_color()
+        for j = 1, depth do
+            local i = depth - j
+            local offset = self.style.pseudo_3D_spacing
+                * (i + 1)
+                * self.style.pseudo_3D_perspective_mult
+                * effect
+                * 3.6
+                * 1.4
+            self.layer_offsets[j] = self.layer_offsets[j] or {}
+            self.layer_offsets[j][1] = offset * cos_rot
+            self.layer_offsets[j][2] = offset * sin_rot
+            local r, g, b, a = self.style.get_3D_override_color()
+            if black_and_white then
+                r, g, b = 255, 255, 255
+                self.style.pseudo_3D_override_is_main = false
+            end
             r = r / self.style.pseudo_3D_darken_mult
             g = g / self.style.pseudo_3D_darken_mult
             b = b / self.style.pseudo_3D_darken_mult
             a = adjust_alpha(a, i)
+            self.pivot_layer_colors[j] = self.pivot_layer_colors[j] or {}
+            self.pivot_layer_colors[j][1] = r
+            self.pivot_layer_colors[j][2] = g
+            self.pivot_layer_colors[j][3] = b
+            self.pivot_layer_colors[j][4] = a
+            if self.style.pseudo_3D_override_is_main then
+                r, g, b, a = self.style.get_wall_color()
+                r = r / self.style.pseudo_3D_darken_mult
+                g = g / self.style.pseudo_3D_darken_mult
+                b = b / self.style.pseudo_3D_darken_mult
+                a = adjust_alpha(a, i)
+            end
+            self.wall_layer_colors[j] = self.wall_layer_colors[j] or {}
+            self.wall_layer_colors[j][1] = r
+            self.wall_layer_colors[j][2] = g
+            self.wall_layer_colors[j][3] = b
+            self.wall_layer_colors[j][4] = a
+            if self.style.pseudo_3D_override_is_main then
+                r, g, b, a = self.style.get_player_color()
+                r = r / self.style.pseudo_3D_darken_mult
+                g = g / self.style.pseudo_3D_darken_mult
+                b = b / self.style.pseudo_3D_darken_mult
+                a = adjust_alpha(a, i)
+            end
+            self.player_layer_colors[j] = self.player_layer_colors[j] or {}
+            self.player_layer_colors[j][1] = r
+            self.player_layer_colors[j][2] = g
+            self.player_layer_colors[j][3] = b
+            self.player_layer_colors[j][4] = a
         end
-        self.wall_layer_colors[j] = self.wall_layer_colors[j] or {}
-        self.wall_layer_colors[j][1] = r
-        self.wall_layer_colors[j][2] = g
-        self.wall_layer_colors[j][3] = b
-        self.wall_layer_colors[j][4] = a
-        if self.style.pseudo_3D_override_is_main then
-            r, g, b, a = self.style.get_player_color()
-            r = r / self.style.pseudo_3D_darken_mult
-            g = g / self.style.pseudo_3D_darken_mult
-            b = b / self.style.pseudo_3D_darken_mult
-            a = adjust_alpha(a, i)
-        end
-        self.player_layer_colors[j] = self.player_layer_colors[j] or {}
-        self.player_layer_colors[j][1] = r
-        self.player_layer_colors[j][2] = g
-        self.player_layer_colors[j][3] = b
-        self.player_layer_colors[j][4] = a
-    end
-    if depth > 0 then
-        self.wall_quads:set_instance_attribute_array("instance_position", "float", 2, self.layer_offsets)
-        self.wall_quads:set_instance_attribute_array("instance_color", "float", 4, self.wall_layer_colors)
-        self.pivot_quads:set_instance_attribute_array("instance_position", "float", 2, self.layer_offsets)
-        self.pivot_quads:set_instance_attribute_array("instance_color", "float", 4, self.pivot_layer_colors)
-        self.player_tris:set_instance_attribute_array("instance_position", "float", 2, self.layer_offsets)
-        self.player_tris:set_instance_attribute_array("instance_color", "float", 4, self.player_layer_colors)
+        if depth > 0 then
+            self.wall_quads:set_instance_attribute_array("instance_position", "float", 2, self.layer_offsets)
+            self.wall_quads:set_instance_attribute_array("instance_color", "float", 4, self.wall_layer_colors)
+            self.pivot_quads:set_instance_attribute_array("instance_position", "float", 2, self.layer_offsets)
+            self.pivot_quads:set_instance_attribute_array("instance_color", "float", 4, self.pivot_layer_colors)
+            self.player_tris:set_instance_attribute_array("instance_position", "float", 2, self.layer_offsets)
+            self.player_tris:set_instance_attribute_array("instance_color", "float", 4, self.player_layer_colors)
 
-        set_render_stage(1, self.layer_shader, true)
-        self.wall_quads:draw_instanced(depth)
-        set_render_stage(2, self.layer_shader, true)
-        self.pivot_quads:draw_instanced(depth)
-        set_render_stage(3, self.layer_shader, true)
-        self.player_tris:draw_instanced(depth)
+            set_render_stage(1, self.layer_shader, true)
+            self.wall_quads:draw_instanced(depth)
+            set_render_stage(2, self.layer_shader, true)
+            self.pivot_quads:draw_instanced(depth)
+            set_render_stage(3, self.layer_shader, true)
+            self.player_tris:draw_instanced(depth)
+        end
     end
 
     set_render_stage(4)
@@ -591,9 +604,11 @@ function game:draw(screen)
         -- text
         -- TODO: offset_color = self.style.get_color(0)  -- black in bw mode
         -- TODO: draw outlines (if not disabled in config)
-        -- TODO: bw: text color = white apart from alpha which is gotten from style
-        set_color(self.style.get_text_color())
-        -- have to split into lines as love doesn't align text the same way as sfml otherwise
+        local r, g, b, a = self.style.get_text_color()
+        if black_and_white then
+            r, g, b = 255, 255, 255
+        end
+        set_color(r, g, b, a)
         -- TODO: config text scale (maybe we won't have that settings since we'll have ui scale?)
         love.graphics.print(
             self.message_text,
@@ -606,8 +621,7 @@ function game:draw(screen)
     -- reset render stage shaders
     love.graphics.setShader()
 
-    -- TODO: only draw flash if not disabled in config
-    if self.flash_color[4] ~= 0 then
+    if self.flash_color[4] ~= 0 and self.config.get("flash") then
         set_color(unpack(self.flash_color))
         love.graphics.rectangle("fill", 0, 0, self.width / zoom_factor, self.height / zoom_factor)
     end

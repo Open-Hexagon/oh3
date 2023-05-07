@@ -126,8 +126,7 @@ function lua_runtime.init_env(game)
         end
     end
     env.l_getOfficial = function()
-        -- TODO: get official mode from config
-        return false
+        return game.config.get("official_mode")
     end
 
     -- Style functions
@@ -316,17 +315,18 @@ function lua_runtime.init_env(game)
         end)
     end
     local function add_message(message, duration, sound_toggle)
-        -- TODO: don't do anything if messages disabled in config
-        game.message_timeline:append_do(function()
-            if sound_toggle then
-                love.audio.play(game.level_status.beep_sound)
-            end
-            game.message_text = message:upper()
-        end)
-        game.message_timeline:append_wait_for_sixths(duration)
-        game.message_timeline:append_do(function()
-            game.message_text = ""
-        end)
+        if game.config.get("messages") then
+            game.message_timeline:append_do(function()
+                if sound_toggle then
+                    love.audio.play(game.level_status.beep_sound)
+                end
+                game.message_text = message:upper()
+            end)
+            game.message_timeline:append_wait_for_sixths(duration)
+            game.message_timeline:append_do(function()
+                game.message_text = ""
+            end)
+        end
     end
     env.e_messageAdd = function(message, duration)
         game.event_timeline:append_do(function()

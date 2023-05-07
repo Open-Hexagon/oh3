@@ -77,7 +77,13 @@ local function get_color_adjusted_for_swap(color)
     end
 end
 
-local function draw_pivot(sides, style, pivotquads, cap_tris)
+local function draw_pivot(sides, style, pivotquads, cap_tris, black_and_white)
+    local pr, pg, pb, pa = style.get_main_color()
+    local cr, cg, cb, ca = style.get_cap_color_result()
+    if black_and_white then
+        cr, cg, cb, ca = 0, 0, 0, 0
+        pr, pg, pb = 255, 255, 255
+    end
     local div = math.pi / sides
     local p_radius = _radius * 0.75
     for i = 0, sides - 1 do
@@ -86,8 +92,8 @@ local function draw_pivot(sides, style, pivotquads, cap_tris)
         local p2_x, p2_y = extra_math.get_orbit(_start_pos, s_angle + div, p_radius)
         local p3_x, p3_y = extra_math.get_orbit(_start_pos, s_angle + div, p_radius + base_thickness)
         local p4_x, p4_y = extra_math.get_orbit(_start_pos, s_angle - div, p_radius + base_thickness)
-        pivotquads:add_quad(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y, style.get_main_color())
-        cap_tris:add_tris(p1_x, p1_y, p2_x, p2_y, _start_pos[1], _start_pos[2], style.get_cap_color_result())
+        pivotquads:add_quad(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y, pr, pg, pb, pa)
+        cap_tris:add_tris(p1_x, p1_y, p2_x, p2_y, _start_pos[1], _start_pos[2], cr, cg, cb, ca)
     end
 end
 
@@ -106,10 +112,12 @@ local function draw_death_effect(quads)
     end
 end
 
-function player.draw(sides, style, pivotquads, playertris, cap_tris, angle_tilt_intensity, swap_blinking_effect)
-    -- TODO: 255, 255, 255, normal a if bw mode
+function player.draw(sides, style, pivotquads, playertris, cap_tris, angle_tilt_intensity, swap_blinking_effect, black_and_white)
     _color[1], _color[2], _color[3], _color[4] = style.get_player_color()
-    draw_pivot(sides, style, pivotquads, cap_tris)
+    if black_and_white then
+        _color[1], _color[2], _color[3] = 255, 255, 255
+    end
+    draw_pivot(sides, style, pivotquads, cap_tris, black_and_white)
     if _dead_effect_timer.running then
         draw_death_effect(pivotquads)
     end

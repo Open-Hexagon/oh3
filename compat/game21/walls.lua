@@ -122,7 +122,11 @@ function walls.update(frametime, radius)
     end
 end
 
-function walls.draw(style, wallquads)
+function walls.draw(style, wallquads, black_and_white)
+    local r, g, b, a = style.get_wall_color()
+    if black_and_white then
+        r, g, b = 255, 255, 255
+    end
     for i = 1, #_walls do
         local wall = _walls[i]
         if wall.hue_modifier == 0 then
@@ -135,7 +139,7 @@ function walls.draw(style, wallquads)
                 wall.vertices[6],
                 wall.vertices[7],
                 wall.vertices[8],
-                style.get_wall_color()
+                r, g, b, a
             )
         else
             wallquads:add_quad(
@@ -147,7 +151,7 @@ function walls.draw(style, wallquads)
                 wall.vertices[6],
                 wall.vertices[7],
                 wall.vertices[8],
-                transform_hue(wall.hue_modifier, style.get_wall_color())
+                transform_hue(wall.hue_modifier, r, g, b)
             )
         end
     end
