@@ -71,6 +71,8 @@ game.swap_blip_sound = game.assets.get_sound("swap_blip.ogg")
 game.level_up_sound = game.assets.get_sound("level_up.ogg")
 game.restart_sound = game.assets.get_sound("restart.ogg")
 game.select_sound = game.assets.get_sound("select.ogg")
+game.small_circle = game.assets.get_image("smallCircle.png")
+local trail_origin_offset = {game.small_circle:getWidth() / 2, game.small_circle:getHeight() / 2}
 
 function game:start(pack_folder, level_id, difficulty_mult)
     self.pack_data = self.assets.get_pack(pack_folder)
@@ -140,6 +142,8 @@ function game:start(pack_folder, level_id, difficulty_mult)
     self.message_text = ""
     love.audio.play(self.go_sound)
     self.lua_runtime.run_fn_if_exists("onLoad")
+
+    self.trail_particle_data = nil
 end
 
 function game:get_speed_mult_dm()
@@ -226,7 +230,28 @@ function game:increment_difficulty()
     self.status.fast_spin = self.level_status.fast_spin
 end
 
+function game:reset_trail_particles(frametime)
+    -- trail particle dies once alpha <= 3 and adding one more in case there's a remainder
+    self.trail_particle_count = (self.config.get("player_trail_alpha") - 3) / (self.config.get("player_trail_decay") * frametime) + 1
+    self.trail_particles = love.graphics.newSpriteBatch(self.small_circle, self.trail_particle_count, "stream")
+    self.trail_particle_data = {}
+    self.current_trail_index = 1
+    for _ = 1, self.trail_particle_count do
+        self.trail_particle_data[#self.trail_particle_data+1] = {
+            id = self.trail_particles:add(0, 0, 0, 0, 0),
+            color = {0, 0, 0, 0},
+            x = 0,
+            y = 0,
+            scale = 0,
+            angle = 0
+        }
+    end
+end
+
 function game:update(frametime)
+    if self.trail_particle_data == nil then
+        self:reset_trail_particles(frametime)
+    end
     frametime = frametime * 60
     -- TODO: don't update if debug pause
 
@@ -426,7 +451,43 @@ function game:update(frametime)
             math.random(math.abs(self.level_status.rotation_speed * 1000))
         end
 
-        -- TODO: update particles (trail and swap)
+        if self.config.get("show_player_trail") and self.status.show_player_trail then
+            for i = 1, #self.trail_particle_data do
+                local data = self.trail_particle_data[i]
+                data.color[4] = data.color[4] - self.config.get("player_trail_decay") / 255 * frametime
+                data.scale = data.scale * 0.98
+                local distance = self.status.radius + 2.4
+                data.x, data.y = math.cos(data.angle) * distance, math.sin(data.angle) * distance
+                if data.color[4] <= 3 / 255 then
+                    data.scale = 0
+                end
+                self.trail_particles:setColor(unpack(data.color))
+                self.trail_particles:set(data.id, data.x, data.y, data.angle, data.scale, data.scale, unpack(trail_origin_offset))
+            end
+            if self.player.has_changed_angle() then
+                local data = self.trail_particle_data[game.current_trail_index]
+                data.x, data.y = self.player.get_position()
+                data.color[1], data.color[2], data.color[3] = self.style.get_player_color()
+                if self.config.get("black_and_white") then
+                    data.color[1], data.color[2], data.color[3] = 1, 1, 1
+                else
+                    if self.config.get("player_trail_has_swap_color") then
+                        self.player.get_color_adjusted_for_swap(data.color)
+                    else
+                        self.player.get_color(data.color)
+                    end
+                    for i = 1, 3 do
+                        data.color[i] = data.color[i] / 255
+                    end
+                end
+                data.color[4] = self.config.get("player_trail_alpha") / 255
+                data.scale = self.config.get("player_trail_scale")
+                data.angle = self.player.get_player_angle()
+                self.trail_particles:setColor(unpack(data.color))
+                self.trail_particles:set(data.id, data.x, data.y, data.angle, data.scale, data.scale, unpack(trail_origin_offset))
+                game.current_trail_index = game.current_trail_index % #game.trail_particle_data + 1
+            end
+        end
 
         if self.status.must_state_change ~= "none" then
             -- other values are "mustRestart" or "mustReplay"
@@ -608,6 +669,11 @@ function game:draw(screen)
             set_render_stage(3, self.layer_shader, true)
             self.player_tris:draw_instanced(depth)
         end
+    end
+
+    if self.config.get("show_player_trail") and self.status.show_player_trail then
+        love.graphics.setShader()
+        love.graphics.draw(self.trail_particles)
     end
 
     set_render_stage(4)

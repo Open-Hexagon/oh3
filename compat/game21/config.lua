@@ -31,6 +31,11 @@ add_property("invincible", false, false)
 add_property("black_and_white", false, false)
 add_property("camera_shake_mult", 1, true)
 add_property("text_scale", 1, true)
+add_property("show_player_trail", false, true)
+add_property("player_trail_decay", 3, true)
+add_property("player_trail_scale", 0.9, true)
+add_property("player_trail_alpha", 35, true)
+add_property("player_trail_has_swap_color", true, true)
 
 function config.set_defaults()
     for name, values in pairs(properties) do

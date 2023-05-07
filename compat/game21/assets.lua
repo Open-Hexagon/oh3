@@ -18,6 +18,7 @@ local sound_mapping = {
 local audio_path = "assets/audio/"
 local cached_sounds = {}
 local loaded_fonts = {}
+local loaded_images = {}
 
 local assets = {}
 
@@ -398,6 +399,13 @@ function assets.get_font(name, size)
         loaded_fonts[name][size] = love.graphics.newFont("assets/font/" .. name, size)
     end
     return loaded_fonts[name][size]
+end
+
+function assets.get_image(name)
+    if loaded_images[name] == nil then
+        loaded_images[name] = love.graphics.newImage("assets/image/" .. name)
+    end
+    return loaded_images[name]
 end
 
 assets.init()

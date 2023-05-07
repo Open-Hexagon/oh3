@@ -63,17 +63,17 @@ function player.reset(swap_cooldown, size, speed, focus_speed)
     _death_effect_color = { 0, 0, 0, 0 }
 end
 
-local function get_color(color)
+function player.get_color(color)
     if _dead_effect_timer.running then
         get_color_from_hue(_hue / 360, color)
     end
 end
 
-local function get_color_adjusted_for_swap(color)
+function player.get_color_adjusted_for_swap(color)
     if not _swap_timer.running and not _dead then
         get_color_from_hue(math.fmod(_swap_blink_timer.current / 12, 0.2), color)
     else
-        get_color(color)
+        player.get_color(color)
     end
 end
 
@@ -137,9 +137,9 @@ function player.draw(
     local p_right_x, p_right_y = extra_math.get_orbit(_pos, tilted_angle + deg100, distance)
     local pos_x, pos_y = extra_math.get_orbit(_pos, tilted_angle, _size)
     if swap_blinking_effect then
-        get_color_adjusted_for_swap(_color)
+        player.get_color_adjusted_for_swap(_color)
     else
-        get_color(_color)
+        player.get_color(_color)
     end
     playertris:add_tris(pos_x, pos_y, p_left_x, p_left_y, p_right_x, p_right_y, unpack(_color))
 end
