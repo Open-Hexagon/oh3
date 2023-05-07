@@ -38,6 +38,7 @@ local game = {
     pivot_layer_colors = {},
     wall_layer_colors = {},
     player_layer_colors = {},
+    death_shake_translate = {0, 0},
     layer_shader = love.graphics.newShader(
         [[
             attribute vec2 instance_position;
@@ -157,7 +158,7 @@ function game:death(force)
         self.lua_runtime.run_fn_if_exists("onPreDeath")
         if force or not (self.level_status.tutorial_mode or self.config.get("invincible")) then
             self.lua_runtime.run_fn_if_exists("onDeath")
-            -- TODO: death_shakeCamera
+            self.status.camera_shake = 45 * self.config.get("camera_shake_mult")
             love.audio.stop()
             -- TODO: death_flashEffect
             self.status.has_died = true
@@ -396,7 +397,15 @@ function game:update(frametime)
             self.status.fast_spin = self.status.fast_spin - frametime
         end
         self.current_rotation = self.current_rotation + next_rotation * frametime
-        -- TODO: update camera shake (the one for death, totally independant from the level_status one)
+
+        if self.status.camera_shake <= 0 then
+            self.death_shake_translate[1] = 0
+            self.death_shake_translate[2] = 0
+        else
+            self.status.camera_shake = self.status.camera_shake - frametime
+            self.death_shake_translate[1] = (1 - math.random() * 2) * self.status.camera_shake
+            self.death_shake_translate[2] = (1 - math.random() * 2) * self.status.camera_shake
+        end
 
         if not self.status.has_died then
             math.random(math.abs(self.status.pulse * 1000))
@@ -432,8 +441,9 @@ function game:draw(screen)
     -- do the resize adjustment the old game did after already enforcing our aspect ratio
     local zoom_factor = 1 / math.max(1024 / self.width, 768 / self.height)
     -- apply pulse as well
-    local p = self.status.pulse / self.level_status.pulse_min
+    local p = self.config.get("pulse") and self.status.pulse / self.level_status.pulse_min or 1
     love.graphics.scale(zoom_factor / p, zoom_factor / p)
+    love.graphics.translate(unpack(self.death_shake_translate))
 
     if not self.status.has_died then
         if self.level_status.camera_shake > 0 then
@@ -599,6 +609,7 @@ function game:draw(screen)
     -- text and flash shouldn't be affected by rotation/pulse
     love.graphics.origin()
     love.graphics.scale(zoom_factor, zoom_factor)
+    love.graphics.translate(unpack(self.death_shake_translate))
     set_render_stage(8)
     if self.message_text ~= "" then
         -- text
