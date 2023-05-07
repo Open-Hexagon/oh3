@@ -186,6 +186,16 @@ function assets.get_pack(name)
             local block_depth = 0
             local need_to_initialize_later = {}
             for line in code:gmatch("([^\n]*)\n?") do
+                do
+                    local new_line = ""
+                    for i = 1, #line do
+                        if line:sub(i, i + 1) == "//" then
+                            break
+                        end
+                        new_line = new_line .. line:sub(i, i)
+                    end
+                    line = new_line
+                end
                 local _, open_count = line:gsub("{", "")
                 local _, close_count = line:gsub("}", "")
                 block_depth = block_depth + open_count - close_count
@@ -202,7 +212,7 @@ function assets.get_pack(name)
                                     end
                                 end
                             end
-                            if key == nil then
+                            if key == nil or key:match("const ") ~= nil then
                                 new_line = new_line .. statement .. ";"
                             else
                                 local value = statement:sub(key_index + 1)
