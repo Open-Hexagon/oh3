@@ -202,7 +202,7 @@ function lua_runtime.init_env(game)
         else
             game.music = music
             game:refresh_music_pitch()
-            game.music.source:seek(game.music.segments[segment + 1])
+            game.music.source:seek(game.music.segments[segment + 1].time)
         end
     end
     env.a_setMusicSeconds = function(music_id, seconds)
@@ -278,7 +278,7 @@ function lua_runtime.init_env(game)
         game.main_timeline:append_wait_for_seconds(duration)
     end
     env.t_waitUntilS = function(time)
-        game.main_timeline:append_wait_for_until_fn(function()
+        game.main_timeline:append_wait_until_fn(function()
             return game.status.get_level_start_tp() + time * 1000
         end)
     end
@@ -652,11 +652,13 @@ function lua_runtime.init_env(game)
         return true
     end
     env.shdr_resetActiveFragmentShader = function(render_stage)
+        render_stage = render_stage or 0
         if check_valid_render_stage(render_stage) then
             game.status.fragment_shaders[render_stage] = nil
         end
     end
     env.shdr_setActiveFragmentShader = function(render_stage, id)
+        render_stage = render_stage or 0
         if check_valid_render_stage(render_stage) and check_valid_shader_id(id) then
             game.status.fragment_shaders[render_stage] = shaders[id]
         end

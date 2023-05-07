@@ -7,6 +7,7 @@ function custom_timelines.reset()
 end
 
 function custom_timelines.get(id)
+    id = id or 1
     if timelines[id] == nil then
         error("Invalid custom timeline '" .. id .. "'")
     end
