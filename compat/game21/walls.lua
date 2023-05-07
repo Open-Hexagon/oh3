@@ -139,7 +139,10 @@ function walls.draw(style, wallquads, black_and_white)
                 wall.vertices[6],
                 wall.vertices[7],
                 wall.vertices[8],
-                r, g, b, a
+                r,
+                g,
+                b,
+                a
             )
         else
             wallquads:add_quad(

@@ -38,7 +38,7 @@ local game = {
     pivot_layer_colors = {},
     wall_layer_colors = {},
     player_layer_colors = {},
-    death_shake_translate = {0, 0},
+    death_shake_translate = { 0, 0 },
     layer_shader = love.graphics.newShader(
         [[
             attribute vec2 instance_position;
@@ -61,8 +61,6 @@ local game = {
             }
         ]]
     ),
-
-    -- TODO: check if the inital values cause issues (may need the values from the canvas instead here)
     width = love.graphics.getWidth(),
     height = love.graphics.getHeight(),
 }
@@ -111,7 +109,12 @@ function game:start(pack_folder, level_id, difficulty_mult)
     self.walls.reset(self.level_status)
     self.custom_walls.cw_clear()
 
-    self.player.reset(self:get_swap_cooldown(), self.config.get("player_size"), self.config.get("player_speed"), self.config.get("player_focus_speed"))
+    self.player.reset(
+        self:get_swap_cooldown(),
+        self.config.get("player_size"),
+        self.config.get("player_speed"),
+        self.config.get("player_focus_speed")
+    )
 
     self.flash_color = { 255, 255, 255, 0 }
 
@@ -184,7 +187,9 @@ end
 
 function game:refresh_music_pitch()
     if self.music.source ~= nil then
-        local pitch = self.level_status.music_pitch * self.config.get("music_speed_mult") * (self.level_status.sync_music_to_dm and self:get_music_dm_sync_factor() or 1)
+        local pitch = self.level_status.music_pitch
+            * self.config.get("music_speed_mult")
+            * (self.level_status.sync_music_to_dm and self:get_music_dm_sync_factor() or 1)
         if pitch ~= pitch then
             -- pitch is NaN, happens with negative difficulty mults
             pitch = 1
@@ -221,7 +226,6 @@ function game:increment_difficulty()
     self.status.fast_spin = self.level_status.fast_spin
 end
 
--- TODO: (not sure where) music restart
 function game:update(frametime)
     frametime = frametime * 60
     -- TODO: don't update if debug pause
@@ -236,8 +240,6 @@ function game:update(frametime)
         self.status.flash_effect = 255
     end
     self.flash_color[4] = self.status.flash_effect
-
-    -- TODO: effect timeline
 
     -- update input
     local focus = love.keyboard.isDown(self.config.get("key_focus"))
@@ -336,7 +338,10 @@ function game:update(frametime)
                     end
                     if self.status.beat_pulse > 0 then
                         self.status.beat_pulse = self.status.beat_pulse
-                            - 2 * frametime * self:get_music_dm_sync_factor() * self.level_status.beat_pulse_speed_mult
+                            - 2
+                                * frametime
+                                * self:get_music_dm_sync_factor()
+                                * self.level_status.beat_pulse_speed_mult
                     end
                 end
             end
@@ -497,7 +502,11 @@ function game:draw(screen)
     local black_and_white = self.config.get("black_and_white")
     if self.config.get("background") then
         set_render_stage(0)
-        self.style.draw_background(self.level_status.sides, self.level_status.darken_uneven_background_chunk, black_and_white)
+        self.style.draw_background(
+            self.level_status.sides,
+            self.level_status.darken_uneven_background_chunk,
+            black_and_white
+        )
     end
 
     self.wall_quads:clear()
@@ -610,7 +619,7 @@ function game:draw(screen)
     set_render_stage(7)
     self.player_tris:draw()
 
-    -- TODO: draw particles, text, flash
+    -- TODO: draw particles
 
     -- text shouldn't be affected by rotation/pulse
     love.graphics.origin()

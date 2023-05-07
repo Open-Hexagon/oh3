@@ -3,7 +3,7 @@ local settings = {}
 local properties = {}
 
 local function add_property(name, default, can_change_in_offical)
-    properties[name] = {default = default, can_change_in_offical = can_change_in_offical}
+    properties[name] = { default = default, can_change_in_offical = can_change_in_offical }
 end
 
 add_property("official_mode", true, false)

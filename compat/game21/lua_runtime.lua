@@ -671,7 +671,7 @@ function lua_runtime.init_env(game)
 
     -- make sure no malicious code is required in
     local safe_modules = {
-        ["bit"] = true
+        ["bit"] = true,
     }
     env.require = function(modname)
         if safe_modules[modname] then
@@ -685,7 +685,7 @@ function lua_runtime.init_env(game)
     env.io = {
         open = function(filename, mode)
             return io.open(filename, mode == "rb" and mode or "r")
-        end
+        end,
     }
     log("initialized environment")
 end

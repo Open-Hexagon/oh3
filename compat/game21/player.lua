@@ -112,7 +112,16 @@ local function draw_death_effect(quads)
     end
 end
 
-function player.draw(sides, style, pivotquads, playertris, cap_tris, angle_tilt_intensity, swap_blinking_effect, black_and_white)
+function player.draw(
+    sides,
+    style,
+    pivotquads,
+    playertris,
+    cap_tris,
+    angle_tilt_intensity,
+    swap_blinking_effect,
+    black_and_white
+)
     _color[1], _color[2], _color[3], _color[4] = style.get_player_color()
     if black_and_white then
         _color[1], _color[2], _color[3] = 255, 255, 255

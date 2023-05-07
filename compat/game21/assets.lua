@@ -268,7 +268,7 @@ function assets.get_pack(name)
                                     new_line = new_line .. statement .. ";"
                                 else
                                     local value = statement:sub(key_index + 1)
-                                    need_to_initialize_later[#need_to_initialize_later+1] = {key, value}
+                                    need_to_initialize_later[#need_to_initialize_later + 1] = { key, value }
                                     new_line = new_line .. key .. ";"
                                 end
                             end
