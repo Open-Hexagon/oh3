@@ -100,7 +100,7 @@ function game:start(pack_folder, level_id, difficulty_mult)
     end
 
     -- initialize random seed
-    -- TODO: replays (need to read random seed from there)
+    -- TODO: replays (need to read random seed from file)
     self.seed = math.floor(love.timer.getTime() * 1000)
     math.randomseed(self.seed)
     math.random()
@@ -184,11 +184,14 @@ end
 
 function game:refresh_music_pitch()
     if self.music.source ~= nil then
-        local pitch = self.level_status.music_pitch * self.config.get("music_speed_mult")
-                * (self.level_status.sync_music_to_dm and self:get_music_dm_sync_factor() or 1)
+        local pitch = self.level_status.music_pitch * self.config.get("music_speed_mult") * (self.level_status.sync_music_to_dm and self:get_music_dm_sync_factor() or 1)
+        if pitch ~= pitch then
+            -- pitch is NaN, happens with negative difficulty mults
+            pitch = 1
+        end
         if pitch < 0 then
             -- pitch can't be 0, setting it to almost 0, not sure if this could cause issues
-            pitch = 0e-10
+            pitch = 0.001
         end
         self.music.source:setPitch(pitch)
     end
