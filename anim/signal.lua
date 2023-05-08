@@ -83,6 +83,17 @@ function Sum:update()
     self.value = self.a() + self.b()
 end
 
+---@class Product:Signal
+---@field private a Signal
+---@field private b Signal
+local Product = setmetatable({}, Signal)
+Product.__index = Product
+Product.__call = get_value
+
+function Product:update()
+    self.value = self.a() * self.b()
+end
+
 local KEYFRAME_EVENT, WAVEFORM_EVENT, WAIT_EVENT, SET_VALUE_EVENT, CALL_EVENT = 1, 2, 3, 4, 5
 
 ---@class Event
@@ -316,6 +327,20 @@ function M.new_sum(a, b)
     return newinst
 end
 
+---Creates a new signal that is the product of two signals `a` and `b`.
+---@param a signalparam
+---@param b signalparam
+---@return Product
+function M.new_product(a, b)
+    local newinst = setmetatable({
+        a = M.new_signal(a),
+        b = M.new_signal(b),
+        value = 0,
+    }, Product)
+    signals[newinst] = true
+    return newinst
+end
+
 ---Creates a new queue signal
 ---@param value number? Starting value
 ---@return Queue
@@ -329,6 +354,25 @@ function M.new_queue(value)
         value = value or 0,
     }, Queue)
     signals[newinst] = true
+    return newinst
+end
+
+local function get_wrapped_value(this)
+    return this._output()
+end
+
+---Wraps composed signals
+---@overload fun(output:Signal, input:Waveform): Waveform
+---@overload fun(output:Signal, input:Lerp): Lerp
+---@overload fun(output:Signal, input:Sum): Sum
+---@overload fun(output:Signal, input:Queue): Queue
+function M.wrap(output, input)
+    local newinst = setmetatable({
+        _output = output
+    }, {
+        __index = input,
+        __call = get_wrapped_value
+    })
     return newinst
 end
 

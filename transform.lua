@@ -28,4 +28,9 @@ function transform.stretch(x, y, ...)
     return unpack(p)
 end
 
+function transform.rotate(r, x, y)
+    local cos, sin = math.cos(r), math.sin(r)
+    return x * cos - y * sin, x * sin + y * cos
+end
+
 return transform

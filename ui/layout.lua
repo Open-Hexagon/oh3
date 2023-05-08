@@ -20,6 +20,16 @@ do
         return layout.height
     end
 
+    ---A signal that outputs the larger screen dimension.
+    layout.MAJOR = function()
+        return layout.major
+    end
+
+    ---A signal that outputs the smaller screen dimension.
+    layout.MINOR = function()
+        return layout.minor
+    end
+
     ---A signal that outputs the X coordinate of the CENTER of the screen.
     layout.CENTER_X = function()
         return layout.center_x
@@ -34,6 +44,11 @@ end
 function layout.resize()
     layout.width, layout.height = love.graphics.getDimensions()
     layout.center_x, layout.center_y = layout.width * 0.5, layout.height * 0.5
+    if layout.width < layout.height then
+        layout.minor, layout.major = layout.width, layout.height
+    else
+        layout.minor, layout.major = layout.height, layout.width
+    end
 end
 
 return layout
