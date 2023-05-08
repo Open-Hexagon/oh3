@@ -3,6 +3,7 @@ local Timeline = require("compat.game21.timeline")
 local Quads = require("compat.game21.dynamic_quads")
 local Tris = require("compat.game21.dynamic_tris")
 local set_color = require("compat.game21.color_transform")
+local Particles = require("compat.game21.particles")
 local game = {
     config = require("compat.game21.config"),
     assets = require("compat.game21.assets"),
@@ -39,6 +40,8 @@ local game = {
     wall_layer_colors = {},
     player_layer_colors = {},
     death_shake_translate = { 0, 0 },
+    current_trail_color = { 0, 0, 0, 0 },
+    swap_particle_info = { x = 0, y = 0, angle = 0 },
     layer_shader = love.graphics.newShader(
         [[
             attribute vec2 instance_position;
@@ -72,7 +75,22 @@ game.level_up_sound = game.assets.get_sound("level_up.ogg")
 game.restart_sound = game.assets.get_sound("restart.ogg")
 game.select_sound = game.assets.get_sound("select.ogg")
 game.small_circle = game.assets.get_image("smallCircle.png")
-local trail_origin_offset = {game.small_circle:getWidth() / 2, game.small_circle:getHeight() / 2}
+game.trail_particles = Particles:new(game.small_circle, function(p, frametime)
+    p.color[4] = p.color[4] - game.trail_particles.alpha_decay / 255 * frametime
+    p.scale = p.scale * 0.98
+    local distance = game.status.radius + 2.4
+    p.x, p.y = math.cos(p.angle) * distance, math.sin(p.angle) * distance
+    return p.color[4] <= 3 / 255
+end, game.config.get("player_trail_alpha"), game.config.get("player_trail_decay"))
+game.swap_particles = Particles:new(game.small_circle, function(p, frametime)
+    p.color[4] = p.color[4] - 3.5 / 255 * frametime
+    p.scale = p.scale * 0.98
+    p.x = p.x + math.cos(p.angle) * p.speed_mult * frametime
+    p.y = p.y + math.sin(p.angle) * p.speed_mult * frametime
+    return p.color[4] <= 3 / 255
+end)
+game.spawn_swap_particles_ready = false
+game.must_spawn_swap_particles = false
 
 function game:start(pack_folder, level_id, difficulty_mult)
     self.pack_data = self.assets.get_pack(pack_folder)
@@ -143,7 +161,8 @@ function game:start(pack_folder, level_id, difficulty_mult)
     love.audio.play(self.go_sound)
     self.lua_runtime.run_fn_if_exists("onLoad")
 
-    self.trail_particle_data = nil
+    self.trail_particles:reset()
+    self.swap_particles:reset(30)
 end
 
 function game:get_speed_mult_dm()
@@ -230,28 +249,7 @@ function game:increment_difficulty()
     self.status.fast_spin = self.level_status.fast_spin
 end
 
-function game:reset_trail_particles(frametime)
-    -- trail particle dies once alpha <= 3 and adding one more in case there's a remainder
-    self.trail_particle_count = (self.config.get("player_trail_alpha") - 3) / (self.config.get("player_trail_decay") * frametime) + 1
-    self.trail_particles = love.graphics.newSpriteBatch(self.small_circle, self.trail_particle_count, "stream")
-    self.trail_particle_data = {}
-    self.current_trail_index = 1
-    for _ = 1, self.trail_particle_count do
-        self.trail_particle_data[#self.trail_particle_data+1] = {
-            id = self.trail_particles:add(0, 0, 0, 0, 0),
-            color = {0, 0, 0, 0},
-            x = 0,
-            y = 0,
-            scale = 0,
-            angle = 0
-        }
-    end
-end
-
 function game:update(frametime)
-    if self.trail_particle_data == nil then
-        self:reset_trail_particles(frametime)
-    end
     frametime = frametime * 60
     -- TODO: don't update if debug pause
 
@@ -292,13 +290,20 @@ function game:update(frametime)
             if not prevent_player_input then
                 self.player.update_input_movement(move, self.level_status.player_speed_mult, focus, frametime)
                 if not self.player_now_ready_to_swap and self.player.is_ready_to_swap() then
+                    self.must_spawn_swap_particles = true
+                    self.spawn_swap_particles_ready = true
+                    self.swap_particle_info.x, self.swap_particle_info.y = self.player.get_position()
+                    self.swap_particle_info.angle = self.player.get_player_angle()
                     self.player_now_ready_to_swap = true
                     if self.config.get("play_swap_sound") then
                         love.audio.play(self.swap_blip_sound)
                     end
                 end
                 if self.level_status.swap_enabled and swap and self.player.is_ready_to_swap() then
-                    -- TODO: swap particles
+                    self.must_spawn_swap_particles = true
+                    self.spawn_swap_particles_ready = false
+                    self.swap_particle_info.x, self.swap_particle_info.y = self.player.get_position()
+                    self.swap_particle_info.angle = self.player.get_player_angle()
                     self:perform_player_swap(true)
                     self.player.reset_swap(self:get_swap_cooldown())
                     self.player.set_just_swapped(true)
@@ -451,41 +456,63 @@ function game:update(frametime)
             math.random(math.abs(self.level_status.rotation_speed * 1000))
         end
 
-        if self.config.get("show_player_trail") and self.status.show_player_trail then
-            for i = 1, #self.trail_particle_data do
-                local data = self.trail_particle_data[i]
-                data.color[4] = data.color[4] - self.config.get("player_trail_decay") / 255 * frametime
-                data.scale = data.scale * 0.98
-                local distance = self.status.radius + 2.4
-                data.x, data.y = math.cos(data.angle) * distance, math.sin(data.angle) * distance
-                if data.color[4] <= 3 / 255 then
-                    data.scale = 0
-                end
-                self.trail_particles:setColor(unpack(data.color))
-                self.trail_particles:set(data.id, data.x, data.y, data.angle, data.scale, data.scale, unpack(trail_origin_offset))
+        -- update trail color (also used for swap particles)
+        self.current_trail_color[1], self.current_trail_color[2], self.current_trail_color[3] =
+            self.style.get_player_color()
+        if self.config.get("black_and_white") then
+            self.current_trail_color[1], self.current_trail_color[2], self.current_trail_color[3] = 255, 255, 255
+        else
+            if self.config.get("player_trail_has_swap_color") then
+                self.player.get_color_adjusted_for_swap(self.current_trail_color)
+            else
+                self.player.get_color(self.current_trail_color)
             end
+        end
+        self.current_trail_color[4] = self.config.get("player_trail_alpha")
+
+        if self.config.get("show_player_trail") and self.status.show_player_trail then
+            self.trail_particles:update(frametime)
             if self.player.has_changed_angle() then
-                local data = self.trail_particle_data[game.current_trail_index]
-                data.x, data.y = self.player.get_position()
-                data.color[1], data.color[2], data.color[3] = self.style.get_player_color()
-                if self.config.get("black_and_white") then
-                    data.color[1], data.color[2], data.color[3] = 1, 1, 1
-                else
-                    if self.config.get("player_trail_has_swap_color") then
-                        self.player.get_color_adjusted_for_swap(data.color)
-                    else
-                        self.player.get_color(data.color)
+                local x, y = self.player.get_position()
+                self.trail_particles:emit(
+                    x,
+                    y,
+                    self.config.get("player_trail_scale"),
+                    self.player.get_player_angle(),
+                    unpack(self.current_trail_color)
+                )
+            end
+        end
+
+        if self.config.get("show_swap_particles") then
+            self.swap_particles:update(frametime)
+            if self.must_spawn_swap_particles then
+                self.must_spawn_swap_particles = false
+                local function spawn_particle(expand, speed_mult, scale_mult, alpha)
+                    self.swap_particles.spawn_alpha = alpha
+                    self.swap_particles:emit(
+                        self.swap_particle_info.x,
+                        self.swap_particle_info.y,
+                        (love.math.random() * 0.7 + 0.65) * scale_mult,
+                        self.swap_particle_info.angle + (love.math.random() * 2 - 1) * expand,
+                        self.current_trail_color[1],
+                        self.current_trail_color[2],
+                        self.current_trail_color[3],
+                        (love.math.random() * 9.9 + 0.1) * speed_mult
+                    )
+                end
+                if self.spawn_swap_particles_ready then
+                    for _ = 1, 14 do
+                        spawn_particle(3.14, 1.3, 0.4, 140)
                     end
-                    for i = 1, 3 do
-                        data.color[i] = data.color[i] / 255
+                else
+                    for _ = 1, 20 do
+                        spawn_particle(0.45, 1, 1, 45)
+                    end
+                    for _ = 1, 10 do
+                        spawn_particle(3.14, 0.45, 0.75, 35)
                     end
                 end
-                data.color[4] = self.config.get("player_trail_alpha") / 255
-                data.scale = self.config.get("player_trail_scale")
-                data.angle = self.player.get_player_angle()
-                self.trail_particles:setColor(unpack(data.color))
-                self.trail_particles:set(data.id, data.x, data.y, data.angle, data.scale, data.scale, unpack(trail_origin_offset))
-                game.current_trail_index = game.current_trail_index % #game.trail_particle_data + 1
             end
         end
 
@@ -673,7 +700,12 @@ function game:draw(screen)
 
     if self.config.get("show_player_trail") and self.status.show_player_trail then
         love.graphics.setShader()
-        love.graphics.draw(self.trail_particles)
+        love.graphics.draw(self.trail_particles.batch)
+    end
+
+    if self.config.get("show_swap_particles") then
+        love.graphics.setShader()
+        love.graphics.draw(self.swap_particles.batch)
     end
 
     set_render_stage(4)
@@ -684,8 +716,6 @@ function game:draw(screen)
     self.pivot_quads:draw()
     set_render_stage(7)
     self.player_tris:draw()
-
-    -- TODO: draw particles
 
     -- text shouldn't be affected by rotation/pulse
     love.graphics.origin()

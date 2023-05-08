@@ -36,6 +36,7 @@ add_property("player_trail_decay", 3, true)
 add_property("player_trail_scale", 0.9, true)
 add_property("player_trail_alpha", 35, true)
 add_property("player_trail_has_swap_color", true, true)
+add_property("show_swap_particles", true, true)
 
 function config.set_defaults()
     for name, values in pairs(properties) do
