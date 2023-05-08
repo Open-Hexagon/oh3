@@ -27,7 +27,6 @@ function status.reset_all_data()
     status.fast_spin = 0
     status.camera_shake = 0
     status.has_died = false
-    status.must_state_change = "none"
     status.score_invalid = false
     status.invalid_reason = ""
     status.started = false

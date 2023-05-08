@@ -12,9 +12,9 @@ function lua_runtime.error(msg)
     log("Error: " .. msg)
 end
 
-function lua_runtime.init_env(game)
+function lua_runtime.init_env(game, public)
     local pack = game.pack_data
-    local assets = game.assets
+    local assets = public.assets
     error_sound = assets.get_sound("error.ogg")
     lua_runtime.env = {
         next = next,
@@ -126,7 +126,7 @@ function lua_runtime.init_env(game)
         end
     end
     env.l_getOfficial = function()
-        return game.config.get("official_mode")
+        return public.config.get("official_mode")
     end
 
     -- Style functions
@@ -200,7 +200,7 @@ function lua_runtime.init_env(game)
             lua_runtime.error("Music with id '" .. music_id .. "' doesn't exist!")
         else
             game.music = music
-            game:refresh_music_pitch()
+            game.refresh_music_pitch()
             game.music.source:seek(game.music.segments[segment + 1].time)
         end
     end
@@ -210,7 +210,7 @@ function lua_runtime.init_env(game)
             lua_runtime.error("Music with id '" .. music_id .. "' doesn't exist!")
         else
             game.music = music
-            game:refresh_music_pitch()
+            game.refresh_music_pitch()
             game.music.source:seek(seconds)
         end
     end
@@ -241,7 +241,7 @@ function lua_runtime.init_env(game)
     end
     env.a_setMusicPitch = function(pitch)
         game.level_status.music_pitch = pitch
-        game:refresh_music_pitch()
+        game.refresh_music_pitch()
     end
     env.a_overrideBeepSound = function(filename)
         game.level_status.beep_sound = get_pack_sound(filename) or game.level_status.beep_sound
@@ -267,7 +267,7 @@ function lua_runtime.init_env(game)
     end
     env.t_kill = function()
         game.main_timeline:append_do(function()
-            game:death(true)
+            game.death(true)
         end)
     end
     env.t_wait = function(duration)
@@ -290,7 +290,7 @@ function lua_runtime.init_env(game)
     end
     env.e_kill = function()
         game.event_timeline:append_do(function()
-            game:death(true)
+            game.death(true)
         end)
     end
     env.e_stopTime = function(duration)
@@ -315,7 +315,7 @@ function lua_runtime.init_env(game)
         end)
     end
     local function add_message(message, duration, sound_toggle)
-        if game.config.get("messages") then
+        if public.config.get("messages") then
             game.message_timeline:append_do(function()
                 if sound_toggle then
                     love.audio.play(game.level_status.beep_sound)
@@ -449,13 +449,13 @@ function lua_runtime.init_env(game)
         return game.status.fast_spin > 0
     end
     env.u_forceIncrement = function()
-        game:increment_difficulty()
+        game.increment_difficulty()
     end
     env.u_getDifficultyMult = function()
         return game.difficulty_mult
     end
     env.u_getSpeedMultDM = function()
-        return game:get_speed_mult_dm()
+        return game.get_speed_mult_dm()
     end
     env.u_getDelayMultDM = function()
         local result = game.level_status.delay_mult / math.pow(game.difficulty_mult, 0.1)
@@ -465,7 +465,7 @@ function lua_runtime.init_env(game)
         return result < game.level_status.delay_max and result or game.level_status.delay_max
     end
     env.u_swapPlayer = function(play_sound)
-        game:perform_player_swap(play_sound)
+        game.perform_player_swap(play_sound)
     end
 
     local function wall(
@@ -481,7 +481,7 @@ function lua_runtime.init_env(game)
     )
         game.main_timeline:append_do(function()
             game.walls.wall(
-                game:get_speed_mult_dm(),
+                game.get_speed_mult_dm(),
                 game.difficulty_mult,
                 hue_modifier,
                 side,

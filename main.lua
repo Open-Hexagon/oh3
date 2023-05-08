@@ -1,7 +1,7 @@
 function love.run()
     -- load game for testing
     local game = require("compat.game21")
-    game:start("cube", "pointless", 5)
+    game.start("cube", "pointless", 5)
 
     -- target frametime
     local frametime = 1 / 240
@@ -51,7 +51,7 @@ function love.run()
                 end
             end
             if game.running then
-                game:update(frametime)
+                game.update(frametime)
             end
         end
         if love.graphics.isActive() then
@@ -67,7 +67,7 @@ function love.run()
                 love.graphics.clear(0, 0, 0, 1)
                 -- make (0, 0) be the center
                 love.graphics.translate(screen:getWidth() / 2, screen:getHeight() / 2)
-                game:draw(screen)
+                game.draw(screen)
                 love.graphics.setCanvas()
                 -- render the canvas in the middle of the window
                 love.graphics.origin()
