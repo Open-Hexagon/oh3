@@ -549,7 +549,6 @@ function lua_runtime.init_env(game, public)
         return game.player.set_player_angle(angle)
     end
     env.u_isMouseButtonPressed = function(button)
-        -- TODO: check if sfml button numbers correspond to love ones
         return love.mouse.isDown(button)
     end
     env.u_isFastSpinning = function()
