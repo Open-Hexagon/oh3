@@ -1,10 +1,38 @@
 local input = require("input")
+local Replay = require("replay")
+-- load game for testing
+local game = require("compat.game21")
+game.set_input_handler(input)
+
+local function record_replay()
+    game.seed = math.floor(love.timer.getTime() * 1000)
+    math.randomseed(game.seed)
+    math.random()
+    input.replay = Replay:new()
+    input.replay:set_game_data(game.config.get_all(), true, game.seed, "cube", "pointless", {difficulty_mult = 5})
+    input.record_start()
+    game.start("cube", "pointless", 5)
+end
+
+local function replay_replay(file)
+    input.replay = Replay:new(file)
+    local replay = input.replay
+    -- TODO: save and restore config later
+    for name, value in pairs(replay.data.config) do
+        game.config.set(name, value)
+    end
+    game.seed = replay.seed
+    math.randomseed(game.seed)
+    math.random()
+    input.replay_start()
+    game.start(replay.pack_id, replay.level_id, replay.data.level_settings.difficulty_mult)
+end
 
 function love.run()
-    -- load game for testing
-    local game = require("compat.game21")
-    game.set_input_handler(input)
-    game.start("cube", "pointless", 5)
+    -- uncomment these to record/replay a replay (make sure to uncomment the save call below as well when recording)
+    replay_replay("test.ohr.z")
+    --record_replay()
+    --game.start("cube", "pointless", 5)
 
     -- target frametime
     local frametime = 1 / 240
@@ -28,6 +56,8 @@ function love.run()
             love.event.pump()
             for name, a, b, c, d, e, f in love.event.poll() do
                 if name == "quit" then
+                    -- TODO: do this somewhere else
+                    --input.replay:save("test.ohr.z")
                     return a or 0
                 end
                 if name == "resize" then
@@ -54,6 +84,7 @@ function love.run()
                 end
             end
             if game.running then
+                input.update()
                 game.update(frametime)
             end
         end

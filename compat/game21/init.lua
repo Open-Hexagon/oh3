@@ -120,12 +120,6 @@ function public.start(pack_folder, level_id, difficulty_mult)
         love.audio.play(game.music.source)
     end
 
-    -- initialize random seed
-    -- TODO: replays (need to read random seed from file)
-    game.seed = math.floor(love.timer.getTime() * 1000)
-    math.randomseed(game.seed)
-    math.random()
-
     game.event_timeline:clear()
     game.message_timeline:clear()
     game.custom_timelines:reset()

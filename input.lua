@@ -1,19 +1,12 @@
-local Replay = require("replay")
-
 -- wrapper for game inputs to automate replay recording
 local input = {
-    custom_keybinds = {}
+    custom_keybinds = {},
+    replay = nil,
 }
-local replay
 local recording = false
 local input_state = {}
 local time = 0
 local replaying = false
-
----creates a new replay file to store inputs in
-function input.new_replay()
-    replay = Replay:new()
-end
 
 ---starts recording all new inputs
 function input.record_start()
@@ -28,11 +21,9 @@ function input.record_stop()
     recording = false
 end
 
----start replaying a replay object
----@param replay_obj Replay
-function input.replay_start(replay_obj)
+---start replaying the active replay
+function input.replay_start()
     input.record_stop()
-    replay = replay_obj
     replaying = true
     time = 0
     input_state = {}
@@ -50,7 +41,7 @@ function input.update()
     end
     if replaying then
         time = time + 1
-        local state_changes = replay:get_key_state_changes(time)
+        local state_changes = input.replay:get_key_state_changes(time)
         if state_changes ~= nil then
             for i = 1, #state_changes, 2 do
                 input_state[state_changes[i]] = state_changes[i + 1]
@@ -81,12 +72,12 @@ function input.get(key)
         state = love.keyboard.isDown(key_name)
     end
     if recording then
-        if replay == nil then
+        if input.replay == nil then
             error("attempted to record input without active replay")
         end
         if input_state[key] ~= state then
             input_state[key] = state
-            replay:record_input(key, state, time)
+            input.replay:record_input(key, state, time)
         end
     end
     return state

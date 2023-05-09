@@ -58,6 +58,10 @@ function config.get(name)
     end
 end
 
+function config.get_all()
+    return settings
+end
+
 config.set_defaults()
 -- TODO: load from file / get whatever the user set in the ui
 
