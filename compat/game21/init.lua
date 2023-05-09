@@ -105,6 +105,10 @@ end
 local spawn_swap_particles_ready = false
 local must_spawn_swap_particles = false
 
+---starts a new game
+---@param pack_folder string
+---@param level_id string
+---@param difficulty_mult number
 function public.start(pack_folder, level_id, difficulty_mult)
     game.pack_data = public.assets.get_pack(pack_folder)
     game.level_data = game.pack_data.levels[level_id]
@@ -265,6 +269,8 @@ function game.increment_difficulty()
     game.status.fast_spin = game.level_status.fast_spin
 end
 
+---update the game
+---@param frametime number (in seconds)
 function public.update(frametime)
     game.input.update()
     frametime = frametime * 60
@@ -544,6 +550,8 @@ function public.update(frametime)
     end
 end
 
+---draw the game to the current canvas
+---@param screen love.Canvas
 function public.draw(screen)
     -- for lua access
     game.width, game.height = screen:getDimensions()
@@ -762,6 +770,8 @@ function public.draw(screen)
     end
 end
 
+---give the game an input handler that is capable of replaying or recording inputs
+---@param input table
 function public.set_input_handler(input)
     game.input = input
     input.custom_keybinds = {
@@ -772,6 +782,8 @@ function public.set_input_handler(input)
     }
 end
 
+---get the current score (gets the custom score if one exists)
+---@return integer
 function public.get_score()
     if game.level_status.score_overwritten then
         return game.status.get_custom_score()
@@ -780,6 +792,7 @@ function public.get_score()
     end
 end
 
+---runs the game until the player dies without caring about real time
 function public.run_game_until_death()
     while not game.status.has_died do
         -- TODO: timescale
