@@ -107,7 +107,7 @@ local keycode_conversion = {
     [97] = "f13",
     [98] = "f14",
     [99] = "f15",
-    [100] = "pause"
+    [100] = "pause",
 }
 
 function lua_runtime.error(msg)

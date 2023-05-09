@@ -20,11 +20,7 @@ if _VERSION == "Lua 5.1" or _VERSION == "Lua 5.2" then
         elseif c <= 0x7ff then
             return string_char(math_floor(c / 64) + 192, c % 64 + 128)
         elseif c <= 0xffff then
-            return string_char(
-                math_floor(c / 4096) + 224,
-                math_floor(c % 4096 / 64) + 128,
-                c % 64 + 128
-            )
+            return string_char(math_floor(c / 4096) + 224, math_floor(c % 4096 / 64) + 128, c % 64 + 128)
         elseif c <= 0x10ffff then
             return string_char(
                 math_floor(c / 262144) + 240,
@@ -39,12 +35,12 @@ else
     utf8_char = utf8.char
 end
 
-local json = require "extlibs.json.json"
+local json = require("extlibs.json.json")
 
 local encode_escape_map = {
-    ["\""] = "\\\"",
+    ['"'] = '\\"',
     ["\\"] = "\\\\",
-    ["/"]  = "\\/",
+    ["/"] = "\\/",
     ["\b"] = "\\b",
     ["\f"] = "\\f",
     ["\n"] = "\\n",
@@ -91,11 +87,15 @@ local function get_word()
 end
 
 local function skip_comment(b)
-    if b ~= 47 --[[ '/' ]] then
+    if
+        b ~= 47 --[[ '/' ]]
+    then
         return
     end
     local c = string_byte(statusBuf, statusPos + 1)
-    if c == 42 --[[ '*' ]] then
+    if
+        c == 42 --[[ '*' ]]
+    then
         -- block comment
         local pos = string_find(statusBuf, "*/", statusPos)
         if pos then
@@ -104,7 +104,9 @@ local function skip_comment(b)
             statusPos = #statusBuf + 1
         end
         return true
-    elseif c == 47 --[[ '/' ]] then
+    elseif
+        c == 47 --[[ '/' ]]
+    then
         -- line comment
         local pos = string_find(statusBuf, "[\r\n]", statusPos)
         if pos then
@@ -144,19 +146,23 @@ local function decode_string()
     while true do
         i = string_find(statusBuf, '[%z\1-\31\\"]', i)
         if not i then
-            decode_error "expected closing quote for string"
+            decode_error("expected closing quote for string")
         end
         local x = string_byte(statusBuf, i)
         if x < 32 then
             statusPos = i
-            decode_error "control character in string"
+            decode_error("control character in string")
         end
-        if x == 34 --[[ '"' ]] then
+        if
+            x == 34 --[[ '"' ]]
+        then
             local s = string_sub(statusBuf, statusPos + 1, i - 1)
             if has_unicode_escape then
-                s = string_gsub(string_gsub(s
-                , "\\u([dD][89aAbB]%x%x)\\u([dD][c-fC-F]%x%x)", decode_unicode_surrogate)
-                , "\\u(%x%x%x%x)", decode_unicode_escape)
+                s = string_gsub(
+                    string_gsub(s, "\\u([dD][89aAbB]%x%x)\\u([dD][c-fC-F]%x%x)", decode_unicode_surrogate),
+                    "\\u(%x%x%x%x)",
+                    decode_unicode_escape
+                )
             end
             if has_escape then
                 s = string_gsub(s, "\\.", decode_escape_map)
@@ -166,17 +172,19 @@ local function decode_string()
         end
         --assert(x == 92 --[[ "\\" ]])
         local nx = string_byte(statusBuf, i + 1)
-        if nx == 117 --[[ "u" ]] then
+        if
+            nx == 117 --[[ "u" ]]
+        then
             if not string_match(statusBuf, "^%x%x%x%x", i + 2) then
                 statusPos = i
-                decode_error "invalid unicode escape in string"
+                decode_error("invalid unicode escape in string")
             end
             has_unicode_escape = true
             i = i + 6
         else
             if not decode_escape_set[nx] then
                 statusPos = i
-                decode_error("invalid escape char '"..(nx and string_char(nx) or "<eol>").."' in string")
+                decode_error("invalid escape char '" .. (nx and string_char(nx) or "<eol>") .. "' in string")
             end
             has_escape = true
             i = i + 2
@@ -186,13 +194,15 @@ end
 
 local function decode_number()
     local num, c = string_match(statusBuf, "^([0-9]+%.?[0-9]*)([eE]?)", statusPos)
-    if not num or string_byte(num, -1) == 0x2E --[[ "." ]] then
-        decode_error("invalid number '"..get_word().."'")
+    if
+        not num or string_byte(num, -1) == 0x2E --[[ "." ]]
+    then
+        decode_error("invalid number '" .. get_word() .. "'")
     end
     if c ~= "" then
         num = string_match(statusBuf, "^([^eE]*[eE][-+]?[0-9]+)[ \t\r\n%]},/]", statusPos)
         if not num then
-            decode_error("invalid number '"..get_word().."'")
+            decode_error("invalid number '" .. get_word() .. "'")
         end
     end
     statusPos = statusPos + #num
@@ -201,13 +211,17 @@ end
 
 local function decode_number_zero()
     local num, c = string_match(statusBuf, "^(.%.?[0-9]*)([eE]?)", statusPos)
-    if not num or string_byte(num, -1) == 0x2E --[[ "." ]] or string_match(statusBuf, "^.[0-9]+", statusPos) then
-        decode_error("invalid number '"..get_word().."'")
+    if
+        not num
+        or string_byte(num, -1) == 0x2E --[[ "." ]]
+        or string_match(statusBuf, "^.[0-9]+", statusPos)
+    then
+        decode_error("invalid number '" .. get_word() .. "'")
     end
     if c ~= "" then
         num = string_match(statusBuf, "^([^eE]*[eE][-+]?[0-9]+)[ \t\r\n%]},/]", statusPos)
         if not num then
-            decode_error("invalid number '"..get_word().."'")
+            decode_error("invalid number '" .. get_word() .. "'")
         end
     end
     statusPos = statusPos + #num
@@ -224,12 +238,12 @@ local function decode_number_negative()
             return -decode_number()
         end
     end
-    decode_error("invalid number '"..get_word().."'")
+    decode_error("invalid number '" .. get_word() .. "'")
 end
 
 local function decode_true()
     if string_sub(statusBuf, statusPos, statusPos + 3) ~= "true" then
-        decode_error("invalid literal '"..get_word().."'")
+        decode_error("invalid literal '" .. get_word() .. "'")
     end
     statusPos = statusPos + 4
     return true
@@ -237,7 +251,7 @@ end
 
 local function decode_false()
     if string_sub(statusBuf, statusPos, statusPos + 4) ~= "false" then
-        decode_error("invalid literal '"..get_word().."'")
+        decode_error("invalid literal '" .. get_word() .. "'")
     end
     statusPos = statusPos + 5
     return false
@@ -245,7 +259,7 @@ end
 
 local function decode_null()
     if string_sub(statusBuf, statusPos, statusPos + 3) ~= "null" then
-        decode_error("invalid literal '"..get_word().."'")
+        decode_error("invalid literal '" .. get_word() .. "'")
     end
     statusPos = statusPos + 4
     return json.null
@@ -255,7 +269,9 @@ local function decode_array()
     statusPos = statusPos + 1
     local res = {}
     local chr = next_byte()
-    if chr == 93 --[[ ']' ]] then
+    if
+        chr == 93 --[[ ']' ]]
+    then
         statusPos = statusPos + 1
         return res
     end
@@ -269,7 +285,9 @@ local function decode_object()
     statusPos = statusPos + 1
     local res = {}
     local chr = next_byte()
-    if chr == 125 --[[ ']' ]] then
+    if
+        chr == 125 --[[ ']' ]]
+    then
         statusPos = statusPos + 1
         return json.createEmptyObject()
     end
@@ -280,26 +298,26 @@ local function decode_object()
 end
 
 local decode_uncompleted_map = {
-    [string_byte '"'] = decode_string,
-    [string_byte "0"] = decode_number_zero,
-    [string_byte "1"] = decode_number,
-    [string_byte "2"] = decode_number,
-    [string_byte "3"] = decode_number,
-    [string_byte "4"] = decode_number,
-    [string_byte "5"] = decode_number,
-    [string_byte "6"] = decode_number,
-    [string_byte "7"] = decode_number,
-    [string_byte "8"] = decode_number,
-    [string_byte "9"] = decode_number,
-    [string_byte "-"] = decode_number_negative,
-    [string_byte "t"] = decode_true,
-    [string_byte "f"] = decode_false,
-    [string_byte "n"] = decode_null,
-    [string_byte "["] = decode_array,
-    [string_byte "{"] = decode_object,
+    [string_byte('"')] = decode_string,
+    [string_byte("0")] = decode_number_zero,
+    [string_byte("1")] = decode_number,
+    [string_byte("2")] = decode_number,
+    [string_byte("3")] = decode_number,
+    [string_byte("4")] = decode_number,
+    [string_byte("5")] = decode_number,
+    [string_byte("6")] = decode_number,
+    [string_byte("7")] = decode_number,
+    [string_byte("8")] = decode_number,
+    [string_byte("9")] = decode_number,
+    [string_byte("-")] = decode_number_negative,
+    [string_byte("t")] = decode_true,
+    [string_byte("f")] = decode_false,
+    [string_byte("n")] = decode_null,
+    [string_byte("[")] = decode_array,
+    [string_byte("{")] = decode_object,
 }
 local function unexpected_character()
-    decode_error("unexpected character '"..string_sub(statusBuf, statusPos, statusPos).."'")
+    decode_error("unexpected character '" .. string_sub(statusBuf, statusPos, statusPos) .. "'")
 end
 local function unexpected_eol()
     decode_error("unexpected character '<eol>'")
@@ -319,11 +337,13 @@ local function decode_item()
     local top = statusTop
     local ref = statusRef[top]
     if statusAry[top] then
-        ref[#ref+1] = decode()
+        ref[#ref + 1] = decode()
     else
         local key = decode_string()
-        if next_byte() ~= 58 --[[ ':' ]] then
-            decode_error "expected ':'"
+        if
+            next_byte() ~= 58 --[[ ':' ]]
+        then
+            decode_error("expected ':'")
         end
         statusPos = statusPos + 1
         ref[key] = decode()
@@ -332,19 +352,37 @@ local function decode_item()
         repeat
             local chr = next_byte()
             statusPos = statusPos + 1
-            if chr == 44 --[[ "," ]] then
+            if
+                chr == 44 --[[ "," ]]
+            then
                 local c = next_byte()
                 if statusAry[statusTop] then
-                    if c ~= 93 --[[ "]" ]] then return end
+                    if
+                        c ~= 93 --[[ "]" ]]
+                    then
+                        return
+                    end
                 else
-                    if c ~= 125 --[[ "}" ]] then return end
+                    if
+                        c ~= 125 --[[ "}" ]]
+                    then
+                        return
+                    end
                 end
                 statusPos = statusPos + 1
             else
                 if statusAry[statusTop] then
-                    if chr ~= 93 --[[ "]" ]] then decode_error "expected ']' or ','" end
+                    if
+                        chr ~= 93 --[[ "]" ]]
+                    then
+                        decode_error("expected ']' or ','")
+                    end
                 else
-                    if chr ~= 125 --[[ "}" ]] then decode_error "expected '}' or ','" end
+                    if
+                        chr ~= 125 --[[ "}" ]]
+                    then
+                        decode_error("expected '}' or ','")
+                    end
                 end
             end
             statusTop = statusTop - 1
@@ -354,7 +392,7 @@ end
 
 function json.decode_jsonc(str)
     if type(str) ~= "string" then
-        error("expected argument of type string, got "..type(str))
+        error("expected argument of type string, got " .. type(str))
     end
     statusBuf = str
     statusPos = 1
@@ -367,7 +405,7 @@ function json.decode_jsonc(str)
         decode_item()
     end
     if string_find(statusBuf, "[^ \t\r\n]", statusPos) then
-        decode_error "trailing garbage"
+        decode_error("trailing garbage")
     end
     return res
 end

@@ -1,4 +1,4 @@
-local json = require "json"
+local json = require("json")
 local type = type
 local next = next
 local error = error
@@ -34,7 +34,7 @@ local defaultOpt = {
 defaultOpt.__index = defaultOpt
 
 local function encode_newline()
-    statusBuilder[#statusBuilder+1] = statusOpt.newline..string_rep(statusOpt.indent, statusDep)
+    statusBuilder[#statusBuilder + 1] = statusOpt.newline .. string_rep(statusOpt.indent, statusDep)
 end
 
 local encode_map = {}
@@ -45,12 +45,12 @@ end
 
 local function encode(v)
     local res = encode_map[type(v)](v)
-    statusBuilder[#statusBuilder+1] = res
+    statusBuilder[#statusBuilder + 1] = res
 end
 
 function encode_map.string(v)
-    statusBuilder[#statusBuilder+1] = '"'
-    statusBuilder[#statusBuilder+1] = encode_string(v)
+    statusBuilder[#statusBuilder + 1] = '"'
+    statusBuilder[#statusBuilder + 1] = encode_string(v)
     return '"'
 end
 
@@ -71,28 +71,28 @@ function encode_map.table(t)
         local key = {}
         for k in next, t do
             if type(k) ~= "string" then
-                error("invalid table: mixed or invalid key types: "..k)
+                error("invalid table: mixed or invalid key types: " .. k)
             end
-            key[#key+1] = k
+            key[#key + 1] = k
         end
         table_sort(key)
-        statusBuilder[#statusBuilder+1] = "{"
+        statusBuilder[#statusBuilder + 1] = "{"
         statusDep = statusDep + 1
         encode_newline()
         do
             local k = key[1]
-            statusBuilder[#statusBuilder+1] = '"'
-            statusBuilder[#statusBuilder+1] = encode_string(k)
-            statusBuilder[#statusBuilder+1] = '": '
+            statusBuilder[#statusBuilder + 1] = '"'
+            statusBuilder[#statusBuilder + 1] = encode_string(k)
+            statusBuilder[#statusBuilder + 1] = '": '
             encode(t[k])
         end
         for i = 2, #key do
             local k = key[i]
-            statusBuilder[#statusBuilder+1] = ","
+            statusBuilder[#statusBuilder + 1] = ","
             encode_newline()
-            statusBuilder[#statusBuilder+1] = '"'
-            statusBuilder[#statusBuilder+1] = encode_string(k)
-            statusBuilder[#statusBuilder+1] = '": '
+            statusBuilder[#statusBuilder + 1] = '"'
+            statusBuilder[#statusBuilder + 1] = encode_string(k)
+            statusBuilder[#statusBuilder + 1] = '": '
             encode(t[k])
         end
         statusDep = statusDep - 1
@@ -103,18 +103,18 @@ function encode_map.table(t)
         local max = 0
         for k in next, t do
             if math_type(k) ~= "integer" or k <= 0 then
-                error("invalid table: mixed or invalid key types: "..k)
+                error("invalid table: mixed or invalid key types: " .. k)
             end
             if max < k then
                 max = k
             end
         end
-        statusBuilder[#statusBuilder+1] = "["
+        statusBuilder[#statusBuilder + 1] = "["
         statusDep = statusDep + 1
         encode_newline()
         encode(t[1])
         for i = 2, max do
-            statusBuilder[#statusBuilder+1] = ","
+            statusBuilder[#statusBuilder + 1] = ","
             encode_newline()
             encode(t[i])
         end
@@ -126,13 +126,13 @@ function encode_map.table(t)
         if t[1] == nil then
             error("invalid table: sparse array is not supported")
         end
-        statusBuilder[#statusBuilder+1] = "["
+        statusBuilder[#statusBuilder + 1] = "["
         statusDep = statusDep + 1
         encode_newline()
         encode(t[1])
         local count = 2
         while t[count] ~= nil do
-            statusBuilder[#statusBuilder+1] = ","
+            statusBuilder[#statusBuilder + 1] = ","
             encode_newline()
             encode(t[count])
             count = count + 1
@@ -142,7 +142,7 @@ function encode_map.table(t)
             if type(k) == "number" then
                 error("invalid table: sparse array is not supported")
             else
-                error("invalid table: mixed or invalid key types: "..k)
+                error("invalid table: mixed or invalid key types: " .. k)
             end
         end
         statusDep = statusDep - 1

@@ -1,4 +1,4 @@
-local input = require("input")
+--local input = require("input")
 
 function love.run()
     -- load game for testing

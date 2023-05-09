@@ -1,8 +1,11 @@
 local msgpack = require("extlibs.msgpack.msgpack")
-local bit = require("bit")
 
 ---@class Replay
 ---@field private data table
+---@field first_play boolean
+---@field seed number
+---@field pack_id string
+---@field level_id string
 local replay = {}
 replay.__index = replay
 
@@ -12,7 +15,7 @@ replay.__index = replay
 function replay:new(path)
     local obj = setmetatable({
         data = {
-            inputs = {}
+            inputs = {},
         },
     }, replay)
     if path ~= nil then
@@ -32,15 +35,17 @@ end
 
 ---set the level and the settings the game was started with
 ---@param config table global game settings (containing settings such as black and white mode)
+---@param first_play boolean
 ---@param seed number
 ---@param pack_id string
 ---@param level_id string
 ---@param level_settings table level specific settings (e.g. the difficulty mult in 21)
-function replay:set_game_data(config, seed, pack_id, level_id, level_settings)
+function replay:set_game_data(config, first_play, seed, pack_id, level_id, level_settings)
+    self.seed = seed
+    self.pack_id = pack_id
+    self.level_id = level_id
+    self.first_play = first_play
     self.data.config = config
-    self.data.seed = seed
-    self.data.pack_id = pack_id
-    self.data.level_id = level_id
     self.data.level_settings = level_settings
 end
 
@@ -58,11 +63,14 @@ end
 ---saves the replay into a file
 ---@param path string
 function replay:save(path)
-    local extra_data = msgpack.pack(self.data)
-    local inputs = msgpack.pack(self.data.inputs)
+    -- the old game's format version was 0, so we call this 1 now
+    -- TODO: check if this causes issues when opening/saving replays on different platforms (according to lua docs the prefixed length of a string is size_t)
+    local header =
+        love.data.pack("string", ">BBnss", "1", self.first_play and 1 or 0, self.seed, self.pack_id, self.level_id)
+    local data = msgpack.pack(self.data)
     local file = love.filesystem.newFile(path)
     file:open("w")
-    file:write(love.data.compress("data", "zlib", extra_data .. inputs, 9))
+    file:write(love.data.compress("data", "zlib", header .. data, 9))
     file:close()
 end
 
@@ -71,9 +79,13 @@ function replay:_read(path)
     file:open("r")
     local data = love.data.decompress("string", "zlib", file:read("data"))
     file:close()
-    local offset
-    offset, self.data = msgpack.unpack(data)
-    _, self.data.inputs = msgpack.unpack(data, offset)
+    local version, offset = love.data.unpack(">B", data)
+    if version > 1 or version < 1 then
+        error("Unsupported replay format version '" .. version .. "'.")
+    end
+    self.first_play, self.seed, self.pack_id, self.level_id, offset = love.data.unpack(">Bnss", data, offset)
+    self.first_play = self.first_play == 1
+    _, self.data = msgpack.unpack(data, offset - 1)
 end
 
 return replay
