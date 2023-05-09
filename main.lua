@@ -1,3 +1,5 @@
+local input = require("input")
+
 function love.run()
     -- load game for testing
     local game = require("compat.game21")

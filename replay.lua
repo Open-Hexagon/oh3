@@ -32,11 +32,13 @@ end
 
 ---set the level and the settings the game was started with
 ---@param config table global game settings (containing settings such as black and white mode)
+---@param seed number
 ---@param pack_id string
 ---@param level_id string
 ---@param level_settings table level specific settings (e.g. the difficulty mult in 21)
-function replay:set_game_data(config, pack_id, level_id, level_settings)
+function replay:set_game_data(config, seed, pack_id, level_id, level_settings)
     self.data.config = config
+    self.data.seed = seed
     self.data.pack_id = pack_id
     self.data.level_id = level_id
     self.data.level_settings = level_settings
