@@ -1,7 +1,9 @@
 local Replay = require("replay")
 
 -- wrapper for game inputs to automate replay recording
-local input = {}
+local input = {
+    custom_keybinds = {}
+}
 local replay
 local recording = false
 local input_state = {}
@@ -60,13 +62,24 @@ end
 ---gets the down state of any key
 ---records changes if recording
 ---gets input state from replay if replaying
----@param key love.KeyConstant
+---@param key love.KeyConstant|number use number for mouse buttons
 ---@return boolean
 function input.get(key)
+    local key_name
+    if input.custom_keybinds[key] ~= nil then
+        key_name = input.custom_keybinds[key]
+    else
+        key_name = key
+    end
     if replaying then
         return input_state[key] or false
     end
-    local state = love.keyboard.isDown(key)
+    local state
+    if type(key) == "number" then
+        state = love.mouse.isDown(key_name)
+    else
+        state = love.keyboard.isDown(key_name)
+    end
     if recording then
         if replay == nil then
             error("attempted to record input without active replay")

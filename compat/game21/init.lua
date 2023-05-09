@@ -271,10 +271,10 @@ function public.update(frametime)
     game.flash_color[4] = game.status.flash_effect
 
     -- update input
-    local focus = love.keyboard.isDown(public.config.get("key_focus"))
-    local swap = love.keyboard.isDown(public.config.get("key_swap"))
-    local cw = love.keyboard.isDown(public.config.get("key_right"))
-    local ccw = love.keyboard.isDown(public.config.get("key_left"))
+    local focus = game.input.get("key_focus")
+    local swap = game.input.get("key_swap")
+    local cw = game.input.get("key_right")
+    local ccw = game.input.get("key_left")
     local move
     if cw and not ccw then
         move = 1
@@ -749,6 +749,16 @@ function public.draw(screen)
         set_color(unpack(game.flash_color))
         love.graphics.rectangle("fill", 0, 0, game.width / zoom_factor, game.height / zoom_factor)
     end
+end
+
+function public.set_input_handler(input)
+    game.input = input
+    input.custom_keybinds = {
+        key_focus = public.config.get("key_focus"),
+        key_swap = public.config.get("key_swap"),
+        key_right = public.config.get("key_right"),
+        key_left = public.config.get("key_left"),
+    }
 end
 
 return public

@@ -1,8 +1,9 @@
---local input = require("input")
+local input = require("input")
 
 function love.run()
     -- load game for testing
     local game = require("compat.game21")
+    game.set_input_handler(input)
     game.start("cube", "pointless", 5)
 
     -- target frametime

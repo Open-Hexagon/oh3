@@ -534,7 +534,7 @@ function lua_runtime.init_env(game, public)
             lua_runtime.error("Could not find key with sfml keycode '" .. key_code .. "'!")
             return false
         end
-        return love.keyboard.isDown(key)
+        return game.input.get(key)
     end
     env.u_haltTime = function(duration)
         game.status.pause_time(duration / 60)
@@ -549,7 +549,7 @@ function lua_runtime.init_env(game, public)
         return game.player.set_player_angle(angle)
     end
     env.u_isMouseButtonPressed = function(button)
-        return love.mouse.isDown(button)
+        return game.input.get(button)
     end
     env.u_isFastSpinning = function()
         return game.status.fast_spin > 0
