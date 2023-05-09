@@ -1,4 +1,6 @@
 -- 2.1.X compatibility mode
+local args = require("args")
+local playsound = require("compat.game21.playsound")
 local Timeline = require("compat.game21.timeline")
 local Quads = require("compat.game21.dynamic_quads")
 local Tris = require("compat.game21.dynamic_tris")
@@ -34,13 +36,19 @@ local game = {
     walls = require("compat.game21.walls"),
     custom_walls = require("compat.game21.custom_walls"),
     flash_color = { 0, 0, 0, 0 },
-    width = love.graphics.getWidth(),
-    height = love.graphics.getHeight(),
 }
-local wall_quads = Quads:new()
-local pivot_quads = Quads:new()
-local player_tris = Tris:new()
-local cap_tris = Tris:new()
+local wall_quads, pivot_quads, player_tris, cap_tris
+if args.headless then
+    -- should be fine as long as no level uses initial values here to make rng
+    game.width, game.height = 0, 0
+else
+    game.width = love.graphics.getWidth()
+    game.height = love.graphics.getHeight()
+    wall_quads = Quads:new()
+    pivot_quads = Quads:new()
+    player_tris = Tris:new()
+    cap_tris = Tris:new()
+end
 local layer_offsets = {}
 local pivot_layer_colors = {}
 local wall_layer_colors = {}
@@ -48,50 +56,52 @@ local player_layer_colors = {}
 local death_shake_translate = { 0, 0 }
 local current_trail_color = { 0, 0, 0, 0 }
 local swap_particle_info = { x = 0, y = 0, angle = 0 }
-local layer_shader = love.graphics.newShader(
-    [[
-        attribute vec2 instance_position;
-        attribute vec4 instance_color;
-        varying vec4 instance_color_out;
+local layer_shader, message_font, go_sound, swap_blip_sound, level_up_sound, restart_sound, select_sound, small_circle, trail_particles, swap_particles
+if not args.headless then
+    layer_shader = love.graphics.newShader(
+        [[
+            attribute vec2 instance_position;
+            attribute vec4 instance_color;
+            varying vec4 instance_color_out;
 
-        vec4 position(mat4 transform_projection, vec4 vertex_position)
-        {
-            instance_color_out = instance_color / 255.0;
-            vertex_position.xy += instance_position;
-            return transform_projection * vertex_position;
-        }
-    ]],
-    [[
-        varying vec4 instance_color_out;
+            vec4 position(mat4 transform_projection, vec4 vertex_position)
+            {
+                instance_color_out = instance_color / 255.0;
+                vertex_position.xy += instance_position;
+                return transform_projection * vertex_position;
+            }
+        ]],
+        [[
+            varying vec4 instance_color_out;
 
-        vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
-        {
-            return instance_color_out;
-        }
-    ]]
-)
-local message_font = public.assets.get_font("OpenSquare-Regular.ttf", 32 * public.config.get("text_scale"))
-local go_sound = public.assets.get_sound("go.ogg")
-local swap_blip_sound = public.assets.get_sound("swap_blip.ogg")
-local level_up_sound = public.assets.get_sound("level_up.ogg")
-local restart_sound = public.assets.get_sound("restart.ogg")
-local select_sound = public.assets.get_sound("select.ogg")
-local small_circle = public.assets.get_image("smallCircle.png")
-local trail_particles
-trail_particles = Particles:new(small_circle, function(p, frametime)
-    p.color[4] = p.color[4] - trail_particles.alpha_decay / 255 * frametime
-    p.scale = p.scale * 0.98
-    local distance = game.status.radius + 2.4
-    p.x, p.y = math.cos(p.angle) * distance, math.sin(p.angle) * distance
-    return p.color[4] <= 3 / 255
-end, public.config.get("player_trail_alpha"), public.config.get("player_trail_decay"))
-local swap_particles = Particles:new(small_circle, function(p, frametime)
-    p.color[4] = p.color[4] - 3.5 / 255 * frametime
-    p.scale = p.scale * 0.98
-    p.x = p.x + math.cos(p.angle) * p.speed_mult * frametime
-    p.y = p.y + math.sin(p.angle) * p.speed_mult * frametime
-    return p.color[4] <= 3 / 255
-end)
+            vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
+            {
+                return instance_color_out;
+            }
+        ]]
+    )
+    message_font = public.assets.get_font("OpenSquare-Regular.ttf", 32 * public.config.get("text_scale"))
+    go_sound = public.assets.get_sound("go.ogg")
+    swap_blip_sound = public.assets.get_sound("swap_blip.ogg")
+    level_up_sound = public.assets.get_sound("level_up.ogg")
+    restart_sound = public.assets.get_sound("restart.ogg")
+    select_sound = public.assets.get_sound("select.ogg")
+    small_circle = public.assets.get_image("smallCircle.png")
+    trail_particles = Particles:new(small_circle, function(p, frametime)
+        p.color[4] = p.color[4] - trail_particles.alpha_decay / 255 * frametime
+        p.scale = p.scale * 0.98
+        local distance = game.status.radius + 2.4
+        p.x, p.y = math.cos(p.angle) * distance, math.sin(p.angle) * distance
+        return p.color[4] <= 3 / 255
+    end, public.config.get("player_trail_alpha"), public.config.get("player_trail_decay"))
+    swap_particles = Particles:new(small_circle, function(p, frametime)
+        p.color[4] = p.color[4] - 3.5 / 255 * frametime
+        p.scale = p.scale * 0.98
+        p.x = p.x + math.cos(p.angle) * p.speed_mult * frametime
+        p.y = p.y + math.sin(p.angle) * p.speed_mult * frametime
+        return p.color[4] <= 3 / 255
+    end)
+end
 local spawn_swap_particles_ready = false
 local must_spawn_swap_particles = false
 
@@ -103,21 +113,23 @@ function public.start(pack_folder, level_id, difficulty_mult)
     game.style.compute_colors()
     game.difficulty_mult = difficulty_mult
     game.status.reset_all_data()
-    game.music = game.pack_data.music[game.level_data.musicId]
-    if game.music == nil then
-        error("Music with id '" .. game.level_data.musicId .. "' doesn't exist!")
-    end
-    game.refresh_music_pitch()
-    local segment
-    if game.first_play then
-        segment = game.music.segments[1]
-    else
-        segment = game.music.segments[math.random(1, #game.music.segments)]
-    end
-    game.status.beat_pulse_delay = game.status.beat_pulse_delay + (segment.beat_pulse_delay_offset or 0)
-    if game.music.source ~= nil then
-        game.music.source:seek(segment.time)
-        love.audio.play(game.music.source)
+    if game.pack_data.music ~= nil then
+        game.music = game.pack_data.music[game.level_data.musicId]
+        if game.music == nil then
+            error("Music with id '" .. game.level_data.musicId .. "' doesn't exist!")
+        end
+        game.refresh_music_pitch()
+        local segment
+        if game.first_play then
+            segment = game.music.segments[1]
+        else
+            segment = game.music.segments[math.random(1, #game.music.segments)]
+        end
+        game.status.beat_pulse_delay = game.status.beat_pulse_delay + (segment.beat_pulse_delay_offset or 0)
+        if game.music.source ~= nil then
+            game.music.source:seek(segment.time)
+            love.audio.play(game.music.source)
+        end
     end
 
     game.event_timeline:clear()
@@ -144,10 +156,10 @@ function public.start(pack_folder, level_id, difficulty_mult)
     game.lua_runtime.run_lua_file(game.pack_data.path .. "/" .. game.level_data.luaFile)
     public.running = true
     if game.first_play then
-        love.audio.play(select_sound)
+        playsound(select_sound)
     else
         game.lua_runtime.run_fn_if_exists("onUnload")
-        love.audio.play(restart_sound)
+        playsound(restart_sound)
     end
     game.lua_runtime.run_fn_if_exists("onInit")
     game.set_sides(game.level_status.sides)
@@ -155,11 +167,13 @@ function public.start(pack_folder, level_id, difficulty_mult)
     game.status.beat_pulse_delay = game.status.beat_pulse_delay + game.level_status.beat_pulse_initial_delay
     game.status.start()
     game.message_text = ""
-    love.audio.play(go_sound)
+    playsound(go_sound)
     game.lua_runtime.run_fn_if_exists("onLoad")
 
-    trail_particles:reset()
-    swap_particles:reset(30)
+    if not args.headless then
+        trail_particles:reset()
+        swap_particles:reset(30)
+    end
 
     public.dead = false
 end
@@ -184,7 +198,9 @@ function game.death(force)
         if force or not (game.level_status.tutorial_mode or public.config.get("invincible")) then
             game.lua_runtime.run_fn_if_exists("onDeath")
             game.status.camera_shake = 45 * public.config.get("camera_shake_mult")
-            love.audio.stop()
+            if not args.headless then
+                love.audio.stop()
+            end
             game.flash_color[1] = 255
             game.flash_color[2] = 255
             game.flash_color[3] = 255
@@ -192,7 +208,7 @@ function game.death(force)
             game.status.has_died = true
             public.dead = true
         end
-        love.audio.play(game.level_status.death_sound)
+        playsound(game.level_status.death_sound)
     end
 end
 
@@ -200,7 +216,7 @@ function game.perform_player_swap(play_sound)
     game.player.player_swap()
     game.lua_runtime.run_fn_if_exists("onCursorSwap")
     if play_sound then
-        love.audio.play(game.level_status.swap_sound)
+        playsound(game.level_status.swap_sound)
     end
 end
 
@@ -230,7 +246,7 @@ function game.get_swap_cooldown()
 end
 
 function game.set_sides(sides)
-    love.audio.play(game.level_status.beep_sound)
+    playsound(game.level_status.beep_sound)
     if sides < 3 then
         sides = 3
     end
@@ -238,7 +254,7 @@ function game.set_sides(sides)
 end
 
 function game.increment_difficulty()
-    love.audio.play(level_up_sound)
+    playsound(level_up_sound)
     local sign_mult = game.level_status.rotation_speed > 0 and 1 or -1
     game.level_status.rotation_speed = game.level_status.rotation_speed
         + game.level_status.rotation_speed_inc * sign_mult
@@ -250,6 +266,7 @@ function game.increment_difficulty()
 end
 
 function public.update(frametime)
+    game.input.update()
     frametime = frametime * 60
     -- TODO: don't update if debug pause
 
@@ -296,7 +313,7 @@ function public.update(frametime)
                     swap_particle_info.angle = game.player.get_player_angle()
                     game.player_now_ready_to_swap = true
                     if public.config.get("play_swap_sound") then
-                        love.audio.play(swap_blip_sound)
+                        playsound(swap_blip_sound)
                     end
                 end
                 if game.level_status.swap_enabled and swap and game.player.is_ready_to_swap() then
@@ -344,7 +361,7 @@ function public.update(frametime)
                     game.set_sides(side_number)
                 end
                 game.must_change_sides = false
-                love.audio.play(game.level_status.level_up_sound)
+                playsound(game.level_status.level_up_sound)
                 game.lua_runtime.run_fn_if_exists("onIncrement")
             end
 
@@ -469,7 +486,7 @@ function public.update(frametime)
         end
         current_trail_color[4] = public.config.get("player_trail_alpha")
 
-        if public.config.get("show_player_trail") and game.status.show_player_trail then
+        if public.config.get("show_player_trail") and game.status.show_player_trail and not args.headless then
             trail_particles:update(frametime)
             if game.player.has_changed_angle() then
                 local x, y = game.player.get_position()
@@ -483,7 +500,7 @@ function public.update(frametime)
             end
         end
 
-        if public.config.get("show_swap_particles") then
+        if public.config.get("show_swap_particles") and not args.headless then
             swap_particles:update(frametime)
             if must_spawn_swap_particles then
                 must_spawn_swap_particles = false
@@ -753,6 +770,21 @@ function public.set_input_handler(input)
         key_right = public.config.get("key_right"),
         key_left = public.config.get("key_left"),
     }
+end
+
+function public.get_score()
+    if game.level_status.score_overwritten then
+        return game.status.get_custom_score()
+    else
+        return game.status.get_played_accumulated_frametime_in_seconds()
+    end
+end
+
+function public.run_game_until_death()
+    while not game.status.has_died do
+        -- TODO: timescale
+        public.update(1 / 240)
+    end
 end
 
 return public

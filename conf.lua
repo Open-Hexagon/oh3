@@ -1,14 +1,37 @@
+local args = require("args")
+
 function love.conf(t)
-    t.window.title = "Open Hexagon"
-    t.window.icon = "assets/image/icon.png"
-    t.window.width = 960
-    t.window.height = 540
-    t.window.resizable = true
-    t.window.minwidth = 640
-    t.window.minheight = 360
+    if not args.headless then
+        t.window.title = "Open Hexagon"
+        t.window.icon = "assets/image/icon.png"
+        t.window.width = 960
+        t.window.height = 540
+        t.window.resizable = true
+        t.window.minwidth = 640
+        t.window.minheight = 360
 
-    -- TODO: make configurable
-    t.window.vsync = 0
+        -- TODO: make configurable
+        t.window.vsync = 0
 
-    t.console = true -- windows only
+        t.console = true -- windows only
+    else
+        t.modules.data = true
+        t.modules.event = false
+        t.modules.audio = false
+        t.modules.font = false
+        t.modules.graphics = false
+        t.modules.image = false
+        t.modules.joystick = false
+        t.modules.keyboard = false
+        t.modules.math = true
+        t.modules.mouse = false
+        t.modules.physics = false
+        t.modules.sound = false
+        t.modules.system = false
+        t.modules.thread = false
+        t.modules.timer = false
+        t.modules.touch = false
+        t.modules.video = false
+        t.modules.window = false
+    end
 end

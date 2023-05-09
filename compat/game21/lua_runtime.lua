@@ -1,4 +1,5 @@
 local log = require("log")(...)
+local args = require("args")
 local lua_runtime = {
     env = {},
 }
@@ -111,14 +112,18 @@ local keycode_conversion = {
 }
 
 function lua_runtime.error(msg)
-    love.audio.play(error_sound)
+    if not args.headless then
+        love.audio.play(error_sound)
+    end
     log("Error: " .. msg)
 end
 
 function lua_runtime.init_env(game, public)
     local pack = game.pack_data
     local assets = public.assets
-    error_sound = assets.get_sound("error.ogg")
+    if not args.headless then
+        error_sound = assets.get_sound("error.ogg")
+    end
     lua_runtime.env = {
         next = next,
         error = error,
@@ -298,31 +303,37 @@ function lua_runtime.init_env(game, public)
         env.a_setMusicSegment(music_id, 0)
     end
     env.a_setMusicSegment = function(music_id, segment)
-        local music = game.pack_data.music[music_id]
-        if music == nil then
-            lua_runtime.error("Music with id '" .. music_id .. "' doesn't exist!")
-        else
-            game.music = music
-            game.refresh_music_pitch()
-            game.music.source:seek(game.music.segments[segment + 1].time)
+        if not args.headless then
+            local music = game.pack_data.music[music_id]
+            if music == nil then
+                lua_runtime.error("Music with id '" .. music_id .. "' doesn't exist!")
+            else
+                game.music = music
+                game.refresh_music_pitch()
+                game.music.source:seek(game.music.segments[segment + 1].time)
+            end
         end
     end
     env.a_setMusicSeconds = function(music_id, seconds)
-        local music = game.pack_data.music[music_id]
-        if music == nil then
-            lua_runtime.error("Music with id '" .. music_id .. "' doesn't exist!")
-        else
-            game.music = music
-            game.refresh_music_pitch()
-            game.music.source:seek(seconds)
+        if not args.headless then
+            local music = game.pack_data.music[music_id]
+            if music == nil then
+                lua_runtime.error("Music with id '" .. music_id .. "' doesn't exist!")
+            else
+                game.music = music
+                game.refresh_music_pitch()
+                game.music.source:seek(seconds)
+            end
         end
     end
     env.a_playSound = function(sound_id)
-        local sound = assets.get_sound(sound_id)
-        if sound == nil then
-            lua_runtime.error("Sound with id '" .. sound_id .. "' doesn't exist!")
-        else
-            love.audio.play(sound)
+        if not args.headless then
+            local sound = assets.get_sound(sound_id)
+            if sound == nil then
+                lua_runtime.error("Sound with id '" .. sound_id .. "' doesn't exist!")
+            else
+                love.audio.play(sound)
+            end
         end
     end
     local function get_pack_sound(sound_id)
@@ -334,9 +345,11 @@ function lua_runtime.init_env(game, public)
         end
     end
     env.a_playPackSound = function(sound_id)
-        local sound = get_pack_sound(sound_id)
-        if sound ~= nil then
-            love.audio.play(sound)
+        if not args.headless then
+            local sound = get_pack_sound(sound_id)
+            if sound ~= nil then
+                love.audio.play(sound)
+            end
         end
     end
     env.a_syncMusicToDM = function(value)
@@ -418,6 +431,7 @@ function lua_runtime.init_env(game, public)
         end)
     end
     local function add_message(message, duration, sound_toggle)
+        sound_toggle = sound_toggle and not args.headless
         if public.config.get("messages") then
             game.message_timeline:append_do(function()
                 if sound_toggle then
@@ -667,13 +681,22 @@ function lua_runtime.init_env(game, public)
         end
     end
     env.shdr_getShaderId = function(filename)
+        if args.headless then
+            return -1
+        end
         return get_shader_id(pack, filename)
     end
     env.shdr_getDependencyShaderId = function(disambiguator, name, author, filename)
+        if args.headless then
+            return -1
+        end
         return get_shader_id(assets.get_pack_from_metadata(disambiguator, author, name), filename)
     end
 
     local function check_valid_shader_id(id)
+        if args.headless then
+            return false
+        end
         if id < 0 or id > #shaders then
             lua_runtime.error("Invalid shader id: '" .. id .. "'")
             return false

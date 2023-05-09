@@ -1,3 +1,4 @@
+local args = require("args")
 local Tris = require("compat.game21.dynamic_tris")
 local get_color_from_hue = require("compat.game21.hue").get_color
 local style = {}
@@ -57,7 +58,10 @@ local _color_datas
 local _colors
 local _color_start_index
 local _current_hue_color
-local _background_tris = Tris:new()
+local _background_tris
+if not args.headless then
+    _background_tris = Tris:new()
+end
 
 function style.select(style_data)
     _current_hue = style_data.hue_min or 0
