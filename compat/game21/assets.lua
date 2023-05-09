@@ -159,7 +159,8 @@ function assets.get_pack(name)
                     end
                     if
                         not pcall(function()
-                            music_json.source = love.audio.newSource(folder .. "/Music/" .. music_json.file_name, "stream")
+                            music_json.source =
+                                love.audio.newSource(folder .. "/Music/" .. music_json.file_name, "stream")
                             music_json.source:setLooping(true)
                         end)
                     then

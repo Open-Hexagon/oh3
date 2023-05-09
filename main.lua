@@ -10,7 +10,7 @@ local function record_replay(pack, level, dm)
     math.randomseed(game.seed)
     math.random()
     input.replay = Replay:new()
-    input.replay:set_game_data(game.config.get_all(), true, game.seed, pack, level, {difficulty_mult = dm})
+    input.replay:set_game_data(game.config.get_all(), true, game.seed, pack, level, { difficulty_mult = dm })
     input.record_start()
     game.start(pack, level, dm)
 end
@@ -122,7 +122,9 @@ function love.run()
                 end
                 love.timer.step()
                 -- used for testing TODO: remove once we have a proper ui element for it
-                love.graphics.print("FPS: " .. love.timer.getFPS() .. " Score: " .. math.floor(game.get_score() * 1000) / 1000)
+                love.graphics.print(
+                    "FPS: " .. love.timer.getFPS() .. " Score: " .. math.floor(game.get_score() * 1000) / 1000
+                )
 
                 love.graphics.present()
             end
