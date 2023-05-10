@@ -64,9 +64,8 @@ end
 ---@param path string
 function replay:save(path)
     -- the old game's format version was 0, so we call this 1 now
-    -- TODO: check if this causes issues when opening/saving replays on different platforms (according to lua docs the prefixed length of a string is size_t)
     local header =
-        love.data.pack("string", ">BBnss", "1", self.first_play and 1 or 0, self.seed, self.pack_id, self.level_id)
+        love.data.pack("string", ">BBnzz", "1", self.first_play and 1 or 0, self.seed, self.pack_id, self.level_id)
     local data = msgpack.pack(self.data)
     local file = love.filesystem.newFile(path)
     file:open("w")
@@ -83,7 +82,7 @@ function replay:_read(path)
     if version > 1 or version < 1 then
         error("Unsupported replay format version '" .. version .. "'.")
     end
-    self.first_play, self.seed, self.pack_id, self.level_id, offset = love.data.unpack(">Bnss", data, offset)
+    self.first_play, self.seed, self.pack_id, self.level_id, offset = love.data.unpack(">Bnzz", data, offset)
     self.first_play = self.first_play == 1
     _, self.data = msgpack.unpack(data, offset - 1)
 end
