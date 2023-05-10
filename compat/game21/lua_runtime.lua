@@ -337,19 +337,19 @@ function lua_runtime.init_env(game, public)
         end
     end
     local function get_pack_sound(sound_id)
-        local sound = assets.get_pack_sound(pack, sound_id)
-        if sound == nil then
-            lua_runtime.error("Pack Sound with id '" .. sound_id .. "' doesn't exist!")
-        else
-            return sound
+        if not args.headless then
+            local sound = assets.get_pack_sound(pack, sound_id)
+            if sound == nil then
+                lua_runtime.error("Pack Sound with id '" .. sound_id .. "' doesn't exist!")
+            else
+                return sound
+            end
         end
     end
     env.a_playPackSound = function(sound_id)
-        if not args.headless then
-            local sound = get_pack_sound(sound_id)
-            if sound ~= nil then
-                love.audio.play(sound)
-            end
+        local sound = get_pack_sound(sound_id)
+        if sound ~= nil then
+            love.audio.play(sound)
         end
     end
     env.a_syncMusicToDM = function(value)

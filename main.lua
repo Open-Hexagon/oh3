@@ -30,7 +30,6 @@ local function replay_replay(file)
 end
 
 function love.run()
-    -- uncomment these to record/replay a replay (make sure to uncomment the save call below as well when recording)
     if args.headless then
         if args.no_option == nil then
             error("Started headless mode without replay")
