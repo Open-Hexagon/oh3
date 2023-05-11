@@ -16,8 +16,8 @@ local function record_replay(pack, level, dm)
 end
 
 local function replay_replay(file)
-    input.replay = Replay:new(file)
-    local replay = input.replay
+    local replay = Replay:new(file)
+    input.replay = replay
     -- TODO: save and restore config later
     for name, value in pairs(replay.data.config) do
         game.config.set(name, value)
@@ -43,7 +43,7 @@ function love.run()
     end
 
     if args.no_option == nil then
-        record_replay("cube", "pointless", 1)
+        record_replay("ohvrvanilla_vittorio_romeo_cube", "pointless", 1)
     else
         replay_replay(args.no_option)
     end

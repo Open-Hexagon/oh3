@@ -106,14 +106,22 @@ local spawn_swap_particles_ready = false
 local must_spawn_swap_particles = false
 
 ---starts a new game
----@param pack_folder string
+---@param pack_id string
 ---@param level_id string
 ---@param difficulty_mult number
-function public.start(pack_folder, level_id, difficulty_mult)
-    game.pack_data = public.assets.get_pack(pack_folder)
+function public.start(pack_id, level_id, difficulty_mult)
+    game.pack_data = public.assets.get_pack_from_id(pack_id)
     game.level_data = game.pack_data.levels[level_id]
+    if game.level_data == nil then
+        error("Error: level with id '" .. level_id .. "' not found")
+    end
     game.level_status.reset(public.config.get("sync_music_to_dm"), public.assets)
-    game.style.select(game.pack_data.styles[game.level_data.styleId])
+    local style_data = game.pack_data.styles[game.level_data.styleId]
+    if style_data == nil then
+        error("Error: style with id '" .. game.level_data.styleId .. "' not found")
+        -- still continue with default style values
+    end
+    game.style.select(style_data)
     game.style.compute_colors()
     game.difficulty_mult = difficulty_mult
     game.status.reset_all_data()

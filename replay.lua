@@ -1,7 +1,7 @@
 local msgpack = require("extlibs.msgpack.msgpack")
 
 ---@class Replay
----@field private data table
+---@field data table
 ---@field first_play boolean
 ---@field seed number
 ---@field pack_id string

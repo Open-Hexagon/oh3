@@ -21,7 +21,9 @@ local cached_sounds = {}
 local loaded_fonts = {}
 local loaded_images = {}
 
-local assets = {}
+local assets = {
+    pack_ids = {},
+}
 
 function assets._build_pack_id(disambiguator, author, name, version)
     local pack_id = disambiguator .. "_" .. author .. "_" .. name
@@ -67,6 +69,7 @@ function assets.init()
             pack_json.pack_id =
                 assets._build_pack_id(pack_json.disambiguator, pack_json.author, pack_json.name, pack_json.version)
             local index_pack_id = assets._build_pack_id(pack_json.disambiguator, pack_json.author, pack_json.name)
+            assets.pack_ids[#assets.pack_ids + 1] = index_pack_id
             pack_json.pack_name = pack_folders[i]
             metadata_pack_json_map[index_pack_id] = pack_json
             folder_pack_json_map[folder] = pack_json
@@ -75,7 +78,10 @@ function assets.init()
 end
 
 function assets.get_pack_from_metadata(disambiguator, author, name)
-    local id = assets._build_pack_id(disambiguator, author, name)
+    return assets.get_pack_from_id(assets._build_pack_id(disambiguator, author, name))
+end
+
+function assets.get_pack_from_id(id)
     local pack = metadata_pack_json_map[id]
     if pack == nil then
         error("Pack with id '" .. id .. "' not found.")
