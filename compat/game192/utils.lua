@@ -7,6 +7,7 @@ end
 
 -- This is quite messy since it's copied from 1.92
 function utils.get_color_from_hue(hue, color)
+    hue = utils.float_round(hue)
     local s,v,r,g,b=1,1,0,0,0
     local i = math.floor(hue * 6)
     local f = hue * 6 - i

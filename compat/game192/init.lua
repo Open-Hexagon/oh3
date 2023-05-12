@@ -162,12 +162,10 @@ function public.draw(screen)
     -- TODO: keep track of sides
     game.style.draw_background(game.level_data.sides, false)
     main_quads:clear()
-    game.player.draw(game.style, game.level_data.sides, game.status.radius, main_quads)
+    game.player.draw(game.style, game.level_data.sides, game.status.radius, main_quads, false, game.get_main_color(false))
     -- TODO: draw 3d if enabled in config
     -- TODO: draw walls
-    set_color(game.get_main_color(false))
     main_quads:draw()
-    love.graphics.setColor(1, 1, 1, 1)
     game.player.draw_cap(game.level_data.sides, game.style, false)
     -- TODO: draw text
     -- TODO: draw flash

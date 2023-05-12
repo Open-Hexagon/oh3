@@ -50,7 +50,7 @@ function player.update(frametime, radius, movement, focus)
     pos[1], pos[2] = tmp_pos[1], tmp_pos[2]
 end
 
-local function draw_pivot(sides, radius, main_quads)
+local function draw_pivot(sides, radius, main_quads, r, g, b, a)
     local div = 360 / sides
     local p_radius = radius * 0.75
     local distance2 = 5 + p_radius
@@ -63,7 +63,7 @@ local function draw_pivot(sides, radius, main_quads)
         local p2_x, p2_y = cos(angle1) * p_radius, sin(angle1) * p_radius
         local p3_x, p3_y = cos(angle1) * distance2, sin(angle1) * distance2
         local p4_x, p4_y = cos(angle0) * distance2, sin(angle0) * distance2
-        main_quads:add_quad(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y, 255, 255, 255, 255)
+        main_quads:add_quad(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y, r, g, b, a)
         cap_vertices[i * 2 + 1] = p1_x
         cap_vertices[i * 2 + 2] = p1_y
     end
@@ -73,8 +73,8 @@ local function draw_death_effect()
     -- TODO
 end
 
-function player.draw(style, sides, radius, main_quads, black_and_white)
-    draw_pivot(sides, radius, main_quads)
+function player.draw(style, sides, radius, main_quads, black_and_white, r, g, b, a)
+    draw_pivot(sides, radius, main_quads, r, g, b, a)
     if dead then
         draw_death_effect()
     end

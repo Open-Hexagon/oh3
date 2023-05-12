@@ -85,9 +85,14 @@ function style.calculate_color(color_data)
         end
     end
     for i = 1, 4 do
-        local value = (color_data.result[i] + color_data.pulse[i] * pulse_factor) % 256
+        local value = color_data.result[i] + color_data.pulse[i] * pulse_factor
         if value ~= value then
             -- nan
+            value = 0
+        end
+        if value > 255 then
+            value = 255
+        elseif value < 0 then
             value = 0
         end
         color_data.result[i] = value
