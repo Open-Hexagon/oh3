@@ -179,11 +179,31 @@ function style.get_value(name)
 end
 
 function style.get_color(index)
-    return unpack(root.colors[(color_start_index + index) % #root.colors + 1].result or {0, 0, 0, 255})
+    local color_object = root.colors[(color_start_index + index) % #root.colors + 1]
+    if color_object == nil then
+        return 0, 0, 0, 255
+    else
+        return unpack(color_object.result)
+    end
+end
+
+function style.get_second_color()
+    local i
+    if #root.colors == 2 then
+        i = 2 - color_start_index
+    else
+        i = 2 + color_start_index
+    end
+    local color_object = root.colors[i]
+    if color_object == nil then
+        return 0, 0, 0, 255
+    else
+        return unpack(color_object.result)
+    end
 end
 
 function style.get_main_color()
-    return unpack(root.main)
+    return unpack(root.main.result)
 end
 
 function style.get_current_hue()

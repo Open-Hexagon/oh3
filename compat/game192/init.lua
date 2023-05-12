@@ -1,4 +1,6 @@
 local assets = require("compat.game192.assets")
+local DynamicQuads = require("compat.game21.dynamic_quads")
+local set_color = require("compat.game21.color_transform")
 local public = {
     running = false
 }
@@ -6,9 +8,12 @@ local game = {
     style = require("compat.game192.style"),
     status = require("compat.game192.status"),
     level = require("compat.game192.level"),
+    player = require("compat.game192.player"),
     difficulty_mult = 1,
 }
 
+local last_move = 0
+local main_quads = DynamicQuads:new()
 local current_rotation = 0
 
 function game.set_sides(side_count)
@@ -16,9 +21,16 @@ function game.set_sides(side_count)
     if side_count < 3 then
         side_count = 3
     end
-    game.level.set_value("sides", side_count)
+    game.level_data.sides = side_count
 end
 
+function game.get_main_color(black_and_white)
+    local r, g, b, a = game.style.get_main_color()
+    if black_and_white then
+        r, g, b = 255, 255, 255
+    end
+    return r, g, b, a
+end
 
 function public.start(pack_folder, level_id, difficulty_mult)
     -- TODO: first play
@@ -42,7 +54,8 @@ function public.start(pack_folder, level_id, difficulty_mult)
     -- TODO: clear events
     game.status.reset()
     game.set_sides(game.level_data.sides)
-    -- TODO: reset walls and player
+    -- TODO: reset walls
+    game.player.reset()
     -- TODO: reset timelines
     -- TODO: call onUnload if not first play
     -- TODO: reset lua env
@@ -63,6 +76,22 @@ function public.update(frametime)
     -- TODO: update effects
     -- TODO: if not dead
     if true then
+        local focus = love.keyboard.isDown("lshift")
+        local cw = love.keyboard.isDown("right")
+        local ccw = love.keyboard.isDown("left")
+        local move
+        if cw and not ccw then
+            move = 1
+            last_move = 1
+        elseif not cw and ccw then
+            move = -1
+            last_move = -1
+        elseif cw and ccw then
+            move = -last_move
+        else
+            move = 0
+        end
+        game.player.update(frametime, game.status.radius, move, focus)
         -- TODO: update walls
         -- TODO: update events
         if game.status.time_stop <= 0 then
@@ -131,8 +160,14 @@ function public.draw(screen)
     -- TODO: black and white mode
     -- TODO: keep track of sides
     game.style.draw_background(game.level_data.sides, false)
+    main_quads:clear()
+    game.player.draw(game.style, game.level_data.sides, game.status.radius, main_quads)
     -- TODO: draw 3d if enabled in config
     -- TODO: draw walls
+    set_color(game.get_main_color(false))
+    main_quads:draw()
+    love.graphics.setColor(1, 1, 1, 1)
+    game.player.draw_cap(game.level_data.sides, game.style, false)
     -- TODO: draw text
     -- TODO: draw flash
 end
