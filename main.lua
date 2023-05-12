@@ -1,7 +1,7 @@
 function love.run()
     -- load game for testing
     local game = require("compat.game192")
-    game.start("FadeIn", "HappyHappyLife", 1)
+    game.start("FadeIn", "BlindStorm", 1)
 
     -- target frametime
     local frametime = 1 / 240
@@ -63,7 +63,6 @@ function love.run()
             if game.running and screen ~= nil then
                 -- render onto the screen
                 love.graphics.setCanvas(screen)
-                -- clear with white for now, so the resizing can be seen in action
                 love.graphics.clear(0, 0, 0, 1)
                 -- make (0, 0) be the center
                 love.graphics.translate(screen:getWidth() / 2, screen:getHeight() / 2)
