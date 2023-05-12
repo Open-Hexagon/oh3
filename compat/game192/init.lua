@@ -1,6 +1,5 @@
 local assets = require("compat.game192.assets")
 local DynamicQuads = require("compat.game21.dynamic_quads")
-local set_color = require("compat.game21.color_transform")
 local public = {
     running = false
 }
@@ -17,6 +16,31 @@ local game = {
     first_play = true,
 }
 
+local layer_shader = love.graphics.newShader(
+    [[
+        attribute vec2 instance_offset;
+        attribute vec4 instance_color;
+        varying vec4 instance_color_out;
+
+        vec4 position(mat4 transform_projection, vec4 vertex_position)
+        {
+            instance_color_out = instance_color / 255.0;
+            vertex_position.xy += instance_offset;
+            return transform_projection * vertex_position;
+        }
+    ]],
+    [[
+        varying vec4 instance_color_out;
+
+        vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
+        {
+            return instance_color_out;
+        }
+    ]]
+)
+local instance_offsets = {}
+local instance_colors = {}
+local depth = 0
 local last_move = 0
 local main_quads = DynamicQuads:new()
 local current_rotation = 0
@@ -38,7 +62,6 @@ function game.get_main_color(black_and_white)
 end
 
 function public.start(pack_folder, level_id, difficulty_mult)
-    -- TODO: first play
     game.pack = assets.get_pack(pack_folder)
     local level_data = game.pack.levels[level_id]
     if level_data == nil then
@@ -74,7 +97,10 @@ function public.start(pack_folder, level_id, difficulty_mult)
         game.level_data.rotation_speed = -game.level_data.rotation_speed
     end
     current_rotation = 0
-    -- TODO: init 3d (max 100) cannot change during runtime
+    depth = game.style.get_value("3D_depth")
+    if depth > 100 then
+        depth = 100
+    end
     public.running = true
 end
 
@@ -159,7 +185,13 @@ function public.update(frametime)
     else
         game.level_data.rotation_speed = game.level_data.rotation_speed * 0.99
     end
-    -- TODO: update 3d if enabled in config
+    -- TODO: only update 3d if enabled in config
+    game.status.pulse_3D = game.status.pulse_3D + game.style.get_value("3D_pulse_speed") * game.status.pulse_3D_direction * frametime
+    if game.status.pulse_3D > game.style.get_value("3D_pulse_max") then
+        game.status.pulse_3D_direction = -1
+    elseif game.status.pulse_3D < game.style.get_value("3D_pulse_min") then
+        game.status.pulse_3D_direction = 1
+    end
     -- TODO: if not rotation disabled in config
     local next_rotation = math.abs(game.level_data.rotation_speed) * 10 * frametime
     if game.status.fast_spin > 0 then
@@ -182,16 +214,62 @@ function public.draw(screen)
     -- apply pulse as well
     local p = game.status.pulse / game.level_data.pulse_min
     love.graphics.scale(zoom_factor / p, zoom_factor / p)
+    local effect
+    -- TODO: if 3d enabled in config
+    if true then
+        effect = game.style.get_value("3D_skew") * game.status.pulse_3D
+        love.graphics.scale(1, 1 / (1 + effect))
+    end
     love.graphics.rotate(math.rad(current_rotation))
     game.style.compute_colors()
     -- TODO: only if not background disabled in config
     -- TODO: black and white mode
-    -- TODO: keep track of sides
     game.style.draw_background(game.level_data.sides, false)
     main_quads:clear()
     game.player.draw(game.style, game.level_data.sides, game.status.radius, main_quads, false, game.get_main_color(false))
     -- TODO: draw 3d if enabled in config
     -- TODO: draw walls
+    -- TODO: if 3d enabled in config
+    if true then
+        -- TODO: get 3d multiplier from config (1 by default)
+        local per_layer_offset = game.style.get_value("3D_spacing") * game.style.get_value("3D_perspective_multiplier") * effect * 3.6
+        local rad_rot = math.rad(current_rotation)
+        local sin_rot = math.sin(rad_rot)
+        local cos_rot = math.cos(rad_rot)
+        local darken_mult = game.style.get_value("3D_darken_multiplier")
+        local r, g, b, a = game.style.get_3D_override_color()
+        if darken_mult == 0 then
+            r, g, b = 0, 0, 0
+        else
+            r = r / darken_mult
+            g = g / darken_mult
+            b = b / darken_mult
+        end
+        local alpha_mult = game.style.get_value("3D_alpha_multiplier")
+        if alpha_mult == 0 then
+            a = 0
+        else
+            a = a / alpha_mult
+        end
+        local alpha_falloff = game.style.get_value("3D_alpha_falloff")
+        for i = 1, depth do
+            local offset = per_layer_offset * (i - 1)
+            instance_offsets[i] = instance_offsets[i] or {}
+            instance_offsets[i][1] = offset * sin_rot
+            instance_offsets[i][2] = offset * cos_rot
+            instance_colors[i] = instance_colors[i] or {}
+            instance_colors[i][1] = r
+            instance_colors[i][2] = g
+            instance_colors[i][3] = b
+            instance_colors[i][4] = a
+            a = (a - alpha_falloff) % 256
+        end
+        main_quads:set_instance_attribute_array("instance_offset", "float", 2, instance_offsets)
+        main_quads:set_instance_attribute_array("instance_color", "float", 4, instance_colors)
+        love.graphics.setShader(layer_shader)
+        main_quads:draw_instanced(depth)
+        love.graphics.setShader()
+    end
     main_quads:draw()
     game.player.draw_cap(game.level_data.sides, game.style, false)
     -- TODO: draw text

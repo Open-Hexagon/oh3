@@ -18,7 +18,6 @@ status.reset = function()
     status.has_died = false
     status.random_side_changes_enabled = true
     status.increment_enabled = true
-    status.drawing_3D = false
     status.score_invalid = false
     status.must_restart = false
     status.override_color = {0, 0, 0, 0}

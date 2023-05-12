@@ -136,7 +136,7 @@ end
 
 function style.compute_colors()
     style.calculate_color(root.main)
-    current_3D_override_color = root["3D_override_color"] == nil and root.main.result or root["3D_override_color"]
+    current_3D_override_color = root["3D_override_color"] == 0 and root.main.result or root["3D_override_color"]
     for i = 1, #root.colors do
         style.calculate_color(root.colors[i])
     end
