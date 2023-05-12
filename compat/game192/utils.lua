@@ -1,6 +1,23 @@
 local ffi = require("ffi")
 local utils = {}
 
+function utils.round_to_even(num)
+	if num == nil then
+		return 0
+	end
+    -- TODO: return math.floor(num) on some packs depending on target platform?
+	local decimal = num % 1
+	if decimal ~= 0.5 then
+		return math.floor(num + 0.5)
+	else
+		if num % 2 == 0.5 then
+			return num - 0.5
+		else
+			return num + 0.5
+		end
+	end
+end
+
 function utils.float_round(num)
     return tonumber(ffi.new("float", num))
 end

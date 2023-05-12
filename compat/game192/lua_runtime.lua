@@ -1,4 +1,5 @@
 local log = require("log")(...)
+local utils = require("compat.game192.utils")
 local lua_runtime = {
     env = {},
 }
@@ -148,6 +149,44 @@ function lua_runtime.init_env(game)
     end
     env.getDifficultyMult = function()
         return game.difficulty_mult
+    end
+    local function make_get_set_functions(tbl, name)
+        env["get" .. name .. "ValueInt"] = function(field)
+            return utils.round_to_even(tonumber(tbl[field] or 0))
+        end
+        env["get" .. name .. "ValueFloat"] = function(field)
+            return tonumber(tbl[field] or 0)
+        end
+        env["get" .. name .. "ValueString"] = function(field)
+            local value = tbl[field] or ""
+            local str = tostring(value)
+            -- fix float to string conversion expecting 0 after dot
+            if type(value) == "number" and str:match("[.]") then
+                return str .. "0"
+            else
+                return str
+            end
+        end
+        env["get" .. name .. "ValueBool"] = function(field)
+            return tbl[field] or false
+        end
+        env["set" .. name .. "ValueInt"] = function(field, value)
+            tbl[field] = utils.round_to_even(value)
+        end
+        env["set" .. name .. "ValueFloat"] = function(field, value)
+            tbl[field] = value
+        end
+        env["set" .. name .. "ValueString"] = function(field, value)
+            tbl[field] = value
+        end
+        env["set" .. name .. "ValueBool"] = function(field, value)
+            tbl[field] = value
+        end
+    end
+    make_get_set_functions(game.level_data, "Level")
+    make_get_set_functions(game.style.get_table(), "Style")
+    env.log = function(text)
+        log("Lua: " .. text)
     end
     log("initialized environment")
 end

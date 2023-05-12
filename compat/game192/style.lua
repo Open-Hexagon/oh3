@@ -57,6 +57,10 @@ function style.select(style_data)
     set_color_data_defaults(root.main)
 end
 
+function style.get_table()
+    return root
+end
+
 function style.calculate_color(color_data)
     if color_data.dynamic then
         utils.get_color_from_hue(math.fmod(current_hue + color_data.hue_shift, 360) / 360, current_hue_color)
