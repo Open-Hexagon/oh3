@@ -1,0 +1,33 @@
+local ffi = require("ffi")
+local utils = {}
+
+function utils.float_round(num)
+    return tonumber(ffi.new("float", num))
+end
+
+-- This is quite messy since it's copied from 1.92
+function utils.get_color_from_hue(hue, color)
+    local s,v,r,g,b=1,1,0,0,0
+    local i = math.floor(hue * 6)
+    local f = hue * 6 - i
+    local p,q,t=v * (1 - s), v * (1 - f * s), v * (1 - (1 - f) * s)
+    local im
+    if i >= 0 then
+        im = i % 6
+    else
+        im = -(i % 6)
+    end
+    if im == 0 then r,g,b=v,t,p
+    elseif im == 1 then r,g,b=q,v,p
+    elseif im == 2 then r,g,b=p,v,t
+    elseif im == 3 then r,g,b=p,q,v
+    elseif im == 4 then r,g,b=t,p,v
+    elseif im == 5 then r,g,b=v,p,q
+    end
+    color[1] = math.modf(r * 255)
+    color[2] = math.modf(g * 255)
+    color[3] = math.modf(b * 255)
+    color[4] = 255
+end
+
+return utils

@@ -4,8 +4,20 @@ local public = {
 }
 local game = {
     style = require("compat.game192.style"),
+    status = require("compat.game192.status"),
+    level = require("compat.game192.level"),
     difficulty_mult = 1,
 }
+
+local current_rotation = 0
+
+function game.set_sides(side_count)
+    -- TODO: play beep.ogg
+    if side_count < 3 then
+        side_count = 3
+    end
+    game.level.set_value("sides", side_count)
+end
 
 
 function public.start(pack_folder, level_id, difficulty_mult)
@@ -15,6 +27,7 @@ function public.start(pack_folder, level_id, difficulty_mult)
     if level_data == nil then
         error("Level with id '" .. level_id .. "' not found")
     end
+    game.level_data = game.level.set(level_data)
     if level_data.style_id == nil then
         error("Style id cannot be 'nil'!")
     end
@@ -27,16 +40,18 @@ function public.start(pack_folder, level_id, difficulty_mult)
     game.difficulty_mult = difficulty_mult
     -- TODO: clear messages
     -- TODO: clear events
-    -- TODO: reset status
-    -- TODO: set sides
+    game.status.reset()
+    game.set_sides(game.level_data.sides)
     -- TODO: reset walls and player
     -- TODO: reset timelines
     -- TODO: call onUnload if not first play
     -- TODO: reset lua env
     -- TODO: run level lua
     -- TODO: run onLoad
-    -- TODO: randomize rotation direction
-    -- TODO: set rotation to 0
+    if math.random(0, 1) == 0 then
+        game.level_data.rotation_speed = -game.level_data.rotation_speed
+    end
+    current_rotation = 0
     -- TODO: init 3d (max 100) cannot change during runtime
     public.running = true
 end
@@ -67,11 +82,12 @@ function public.draw(screen)
     local width, height = screen:getDimensions()
     local zoom_factor = 1 / math.max(1024 / width, 768 / height)
     love.graphics.scale(zoom_factor, zoom_factor)
+    love.graphics.rotate(math.rad(current_rotation))
     game.style.compute_colors()
     -- TODO: only if not background disabled in config
     -- TODO: black and white mode
     -- TODO: keep track of sides
-    game.style.draw_background(6, false)
+    game.style.draw_background(game.level_data.sides, false)
     -- TODO: draw 3d if enabled in config
     -- TODO: draw walls
     -- TODO: draw text
