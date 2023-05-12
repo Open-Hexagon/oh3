@@ -20,6 +20,7 @@ status.reset = function()
     status.increment_enabled = true
     status.drawing_3D = false
     status.score_invalid = false
+    status.must_restart = false
     status.override_color = {0, 0, 0, 0}
     status.lost_frames = 0
 end

@@ -12,6 +12,7 @@ function assets.init()
         local folder = pack_folders[i]
         local pack_data = {}
         pack_data.path = pack_path .. folder .. "/"
+        pack_data.folder = folder
         local pack_json = json.decode_jsonc(love.filesystem.read(pack_data.path .. "pack.json"))
         pack_data.name = pack_json.name or ""
         packs[folder] = pack_data
@@ -97,7 +98,7 @@ function assets.get_pack(folder)
         for contents, filename in file_ext_read_iter(folder .. "Events", ".json") do
             local success, event_json = decode_json(contents, filename)
             if success then
-                pack_data.events[event_json.id] = event_json
+                pack_data.events[event_json.id] = event_json.events
             end
         end
     end

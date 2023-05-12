@@ -10,7 +10,11 @@ local game = {
     level = require("compat.game192.level"),
     player = require("compat.game192.player"),
     lua_runtime = require("compat.game192.lua_runtime"),
+    events = require("compat.game192.events"),
     difficulty_mult = 1,
+    restart_id = "",
+    restart_first_time = false,
+    first_play = true,
 }
 
 local last_move = 0
@@ -52,13 +56,17 @@ function public.start(pack_folder, level_id, difficulty_mult)
     -- TODO: set music
     game.difficulty_mult = difficulty_mult
     -- TODO: clear messages
-    -- TODO: clear events
+    game.events.init(game)
     game.status.reset()
+    game.restart_id = level_id
+    game.restart_first_time = false
     game.set_sides(game.level_data.sides)
     -- TODO: reset walls
     game.player.reset()
     -- TODO: reset timelines
-    -- TODO: call onUnload if not first play
+    if not game.first_play then
+        game.lua_runtime.run_fn_if_exists("onUnload")
+    end
     game.lua_runtime.init_env(game)
     game.lua_runtime.run_lua_file(game.pack.path .. "Scripts/" .. level_data.lua_file)
     game.lua_runtime.run_fn_if_exists("onLoad")
@@ -103,7 +111,7 @@ function public.update(frametime)
         end
         game.player.update(frametime, game.status.radius, move, focus)
         -- TODO: update walls
-        -- TODO: update events
+        game.events.update(frametime, game.status.current_time)
         if game.status.time_stop <= 0 then
             game.status.current_time = game.status.current_time + frametime / 60
             game.status.increment_time = game.status.increment_time + frametime / 60
@@ -159,7 +167,11 @@ function public.update(frametime)
         game.status.fast_spin = game.status.fast_spin - frametime
     end
     current_rotation = current_rotation + next_rotation * get_sign(game.level_data.rotation_speed)
-    -- TODO: handle level change
+    -- only for level change, real restarts will happen externally
+    if game.status.must_restart then
+        game.first_play = game.restart_first_time
+        public.start(game.pack.folder, game.restart_id, game.difficulty_mult)
+    end
     -- TODO: invalidate score if not official status invalid set or fps limit maybe?
 end
 

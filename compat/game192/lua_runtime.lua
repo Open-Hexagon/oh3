@@ -144,12 +144,6 @@ function lua_runtime.init_env(game)
     }
     env = lua_runtime.env
     env._G = env
-    env.execScript = function(script)
-        lua_runtime.run_lua_file(pack.path .. "Scripts/" .. script)
-    end
-    env.getDifficultyMult = function()
-        return game.difficulty_mult
-    end
     local function make_get_set_functions(tbl, name)
         env["get" .. name .. "ValueInt"] = function(field)
             return utils.round_to_even(tonumber(tbl[field] or 0))
@@ -187,6 +181,62 @@ function lua_runtime.init_env(game)
     make_get_set_functions(game.style.get_table(), "Style")
     env.log = function(text)
         log("Lua: " .. text)
+    end
+    env.wall = function()
+        -- TODO
+    end
+    env.getSides = function()
+        return game.level_data.sides
+    end
+    env.getSpeedMult = function()
+        -- TODO: dm adjust speed
+    end
+    env.getDelayMult = function()
+        -- TODO: dm adjust delay
+    end
+    env.getDifficultyMult = function()
+        return game.difficulty_mult
+    end
+    env.execScript = function(script)
+        lua_runtime.run_lua_file(pack.path .. "Scripts/" .. script)
+    end
+    env.execEvent = function(id)
+        game.events.exec(game.pack.events[id])
+    end
+    env.enqueueEvent = function(id)
+        game.events.queue(game.pack.events[id])
+    end
+    env.wait = function(duration)
+        -- TODO: timeline stuffs
+    end
+    env.playSound = function(id)
+        -- TODO
+    end
+    env.forceIncrement = function()
+        -- TODO: incrementDifficulty()
+    end
+    env.messageAdd = function()
+        -- TODO
+    end
+    env.messageImportantAdd = function()
+        -- TODO
+    end
+    env.isKeyPressed = function(key_code)
+        local key = keycode_conversion(key_code)
+        if key == nil then
+            lua_runtime.error("No suitable keycode conversion found for '" .. key_code .. "'")
+            return false
+        end
+        return love.keyboard.isDown(key)
+    end
+    env.isFastSpinning = function()
+        return game.status.fast_spin > 0
+    end
+    env.wallAdj = function()
+        -- TODO
+    end
+    env.wallAcc = function()
+        -- TODO
     end
     log("initialized environment")
 end
