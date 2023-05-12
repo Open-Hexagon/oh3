@@ -70,6 +70,15 @@ function public.start(pack_folder, level_id, difficulty_mult)
     public.running = true
 end
 
+local function get_sign(num)
+    return (num > 0 and 1 or (num == 0 and 0 or -1))
+end
+
+local function get_smoother_step(edge0, edge1, x)
+    x = math.max(0, math.min(1, (x - edge0) / (edge1 - edge0)))
+    return x * x * x * (x * (x * 6 - 15) + 10)
+end
+
 function public.update(frametime)
     frametime = frametime * 60
     -- TODO: adjust tick rate based on object count
@@ -140,10 +149,16 @@ function public.update(frametime)
         -- TODO: only update style if not bw mode
         game.style.update(frametime)
     else
-        -- TODO: mult rot speed by 0.99
+        game.level_data.rotation_speed = game.level_data.rotation_speed * 0.99
     end
     -- TODO: update 3d if enabled in config
-    -- TODO: update rotation if not disabled in config
+    -- TODO: if not rotation disabled in config
+    local next_rotation = math.abs(game.level_data.rotation_speed) * 10 * frametime
+    if game.status.fast_spin > 0 then
+        next_rotation = next_rotation + math.abs((get_smoother_step(0, game.level_data.fast_spin, game.status.fast_spin) / 3.5) * frametime * 17)
+        game.status.fast_spin = game.status.fast_spin - frametime
+    end
+    current_rotation = current_rotation + next_rotation * get_sign(game.level_data.rotation_speed)
     -- TODO: handle level change
     -- TODO: invalidate score if not official status invalid set or fps limit maybe?
 end
