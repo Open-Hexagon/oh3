@@ -9,6 +9,7 @@ local game = {
     status = require("compat.game192.status"),
     level = require("compat.game192.level"),
     player = require("compat.game192.player"),
+    lua_runtime = require("compat.game192.lua_runtime"),
     difficulty_mult = 1,
 }
 
@@ -34,8 +35,8 @@ end
 
 function public.start(pack_folder, level_id, difficulty_mult)
     -- TODO: first play
-    local pack = assets.get_pack(pack_folder)
-    local level_data = pack.levels[level_id]
+    game.pack = assets.get_pack(pack_folder)
+    local level_data = game.pack.levels[level_id]
     if level_data == nil then
         error("Level with id '" .. level_id .. "' not found")
     end
@@ -43,7 +44,7 @@ function public.start(pack_folder, level_id, difficulty_mult)
     if level_data.style_id == nil then
         error("Style id cannot be 'nil'!")
     end
-    local style_data = pack.styles[level_data.style_id]
+    local style_data = game.pack.styles[level_data.style_id]
     if style_data == nil then
         error("Style with id '" .. level_data.style_id .. "' does not exist.")
     end
@@ -58,9 +59,9 @@ function public.start(pack_folder, level_id, difficulty_mult)
     game.player.reset()
     -- TODO: reset timelines
     -- TODO: call onUnload if not first play
-    -- TODO: reset lua env
-    -- TODO: run level lua
-    -- TODO: run onLoad
+    game.lua_runtime.init_env(game)
+    game.lua_runtime.run_lua_file(game.pack.path .. "Scripts/" .. level_data.lua_file)
+    game.lua_runtime.run_fn_if_exists("onLoad")
     if math.random(0, 1) == 0 then
         game.level_data.rotation_speed = -game.level_data.rotation_speed
     end

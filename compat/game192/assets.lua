@@ -10,9 +10,9 @@ function assets.init()
     local pack_folders = love.filesystem.getDirectoryItems(pack_path)
     for i = 1, #pack_folders do
         local folder = pack_folders[i]
-        local path = pack_path .. folder .. "/"
         local pack_data = {}
-        local pack_json = json.decode_jsonc(love.filesystem.read(path .. "pack.json"))
+        pack_data.path = pack_path .. folder .. "/"
+        local pack_json = json.decode_jsonc(love.filesystem.read(pack_data.path .. "pack.json"))
         pack_data.name = pack_json.name or ""
         packs[folder] = pack_data
     end
