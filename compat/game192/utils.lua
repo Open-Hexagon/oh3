@@ -2,20 +2,20 @@ local ffi = require("ffi")
 local utils = {}
 
 function utils.round_to_even(num)
-	if num == nil then
-		return 0
-	end
+    if num == nil then
+        return 0
+    end
     -- TODO: return math.floor(num) on some packs depending on target platform?
-	local decimal = num % 1
-	if decimal ~= 0.5 then
-		return math.floor(num + 0.5)
-	else
-		if num % 2 == 0.5 then
-			return num - 0.5
-		else
-			return num + 0.5
-		end
-	end
+    local decimal = num % 1
+    if decimal ~= 0.5 then
+        return math.floor(num + 0.5)
+    else
+        if num % 2 == 0.5 then
+            return num - 0.5
+        else
+            return num + 0.5
+        end
+    end
 end
 
 function utils.float_round(num)
@@ -25,22 +25,28 @@ end
 -- This is quite messy since it's copied from 1.92
 function utils.get_color_from_hue(hue, color)
     hue = utils.float_round(hue)
-    local s,v,r,g,b=1,1,0,0,0
+    local s, v, r, g, b = 1, 1, 0, 0, 0
     local i = math.floor(hue * 6)
     local f = hue * 6 - i
-    local p,q,t=v * (1 - s), v * (1 - f * s), v * (1 - (1 - f) * s)
+    local p, q, t = v * (1 - s), v * (1 - f * s), v * (1 - (1 - f) * s)
     local im
     if i >= 0 then
         im = i % 6
     else
         im = -(i % 6)
     end
-    if im == 0 then r,g,b=v,t,p
-    elseif im == 1 then r,g,b=q,v,p
-    elseif im == 2 then r,g,b=p,v,t
-    elseif im == 3 then r,g,b=p,q,v
-    elseif im == 4 then r,g,b=t,p,v
-    elseif im == 5 then r,g,b=v,p,q
+    if im == 0 then
+        r, g, b = v, t, p
+    elseif im == 1 then
+        r, g, b = q, v, p
+    elseif im == 2 then
+        r, g, b = p, v, t
+    elseif im == 3 then
+        r, g, b = p, q, v
+    elseif im == 4 then
+        r, g, b = t, p, v
+    elseif im == 5 then
+        r, g, b = v, p, q
     end
     color[1] = math.modf(r * 255)
     color[2] = math.modf(g * 255)

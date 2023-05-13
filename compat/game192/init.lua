@@ -1,7 +1,9 @@
 local assets = require("compat.game192.assets")
 local DynamicQuads = require("compat.game21.dynamic_quads")
+local Timeline = require("compat.game192.timeline")
+local set_color = require("compat.game21.color_transform")
 local public = {
-    running = false
+    running = false,
 }
 local game = {
     style = require("compat.game192.style"),
@@ -14,8 +16,12 @@ local game = {
     restart_id = "",
     restart_first_time = false,
     first_play = true,
+    main_timeline = Timeline:new(),
+    message_timeline = Timeline:new(),
+    effect_timeline = Timeline:new(),
 }
 
+local message_font = love.graphics.newFont("assets/font/imagine.ttf", 40)
 local layer_shader = love.graphics.newShader(
     [[
         attribute vec2 instance_offset;
@@ -86,7 +92,12 @@ function public.start(pack_folder, level_id, difficulty_mult)
     game.set_sides(game.level_data.sides)
     -- TODO: reset walls
     game.player.reset()
-    -- TODO: reset timelines
+    game.main_timeline:clear()
+    game.main_timeline:reset()
+    game.message_timeline:clear()
+    game.message_timeline:reset()
+    game.effect_timeline:clear()
+    game.effect_timeline:reset()
     if not game.first_play then
         game.lua_runtime.run_fn_if_exists("onUnload")
     end
@@ -137,7 +148,7 @@ function public.update(frametime)
         end
         game.player.update(frametime, game.status.radius, move, focus)
         -- TODO: update walls
-        game.events.update(frametime, game.status.current_time)
+        game.events.update(frametime, game.status.current_time, game.message_timeline)
         if game.status.time_stop <= 0 then
             game.status.current_time = game.status.current_time + frametime / 60
             game.status.increment_time = game.status.increment_time + frametime / 60
@@ -150,7 +161,13 @@ function public.update(frametime)
                 -- TODO: increment difficulty
             end
         end
-        -- TODO: update level
+        game.lua_runtime.run_fn_if_exists("onUpdate", frametime)
+        game.main_timeline:update(frametime)
+        if game.main_timeline.finished then
+            game.main_timeline:clear()
+            game.lua_runtime.run_fn_if_exists("onStep")
+            game.main_timeline:reset()
+        end
         -- TODO: if not beatpulse disabled in config
         if game.status.beat_pulse_delay <= 0 then
             game.status.beat_pulse = game.level_data.beat_pulse_max
@@ -166,10 +183,15 @@ function public.update(frametime)
         game.status.radius = radius_min * (game.status.pulse / game.level_data.pulse_min) + game.status.beat_pulse
         -- TODO: if not pulse disabled in config
         if game.status.pulse_delay <= 0 and game.status.pulse_delay_half <= 0 then
-            local pulse_add = game.status.pulse_direction > 0 and game.level_data.pulse_speed or -game.level_data.pulse_speed_r
-            local pulse_limit = game.status.pulse_direction > 0 and game.level_data.pulse_max or game.level_data.pulse_min
+            local pulse_add = game.status.pulse_direction > 0 and game.level_data.pulse_speed
+                or -game.level_data.pulse_speed_r
+            local pulse_limit = game.status.pulse_direction > 0 and game.level_data.pulse_max
+                or game.level_data.pulse_min
             game.status.pulse = game.status.pulse + pulse_add * frametime
-            if (game.status.pulse_direction > 0 and game.status.pulse >= pulse_limit) or (game.status.pulse_direction < 0 and game.status.pulse <= pulse_limit) then
+            if
+                (game.status.pulse_direction > 0 and game.status.pulse >= pulse_limit)
+                or (game.status.pulse_direction < 0 and game.status.pulse <= pulse_limit)
+            then
                 game.status.pulse = pulse_limit
                 game.status.pulse_direction = -game.status.pulse_direction
                 game.status.pulse_delay_half = game.level_data.pulse_delay_half_max
@@ -186,7 +208,8 @@ function public.update(frametime)
         game.level_data.rotation_speed = game.level_data.rotation_speed * 0.99
     end
     -- TODO: only update 3d if enabled in config
-    game.status.pulse_3D = game.status.pulse_3D + game.style.get_value("3D_pulse_speed") * game.status.pulse_3D_direction * frametime
+    game.status.pulse_3D = game.status.pulse_3D
+        + game.style.get_value("3D_pulse_speed") * game.status.pulse_3D_direction * frametime
     if game.status.pulse_3D > game.style.get_value("3D_pulse_max") then
         game.status.pulse_3D_direction = -1
     elseif game.status.pulse_3D < game.style.get_value("3D_pulse_min") then
@@ -195,7 +218,8 @@ function public.update(frametime)
     -- TODO: if not rotation disabled in config
     local next_rotation = math.abs(game.level_data.rotation_speed) * 10 * frametime
     if game.status.fast_spin > 0 then
-        next_rotation = next_rotation + math.abs((get_smoother_step(0, game.level_data.fast_spin, game.status.fast_spin) / 3.5) * frametime * 17)
+        next_rotation = next_rotation
+            + math.abs((get_smoother_step(0, game.level_data.fast_spin, game.status.fast_spin) / 3.5) * frametime * 17)
         game.status.fast_spin = game.status.fast_spin - frametime
     end
     current_rotation = current_rotation + next_rotation * get_sign(game.level_data.rotation_speed)
@@ -226,13 +250,23 @@ function public.draw(screen)
     -- TODO: black and white mode
     game.style.draw_background(game.level_data.sides, false)
     main_quads:clear()
-    game.player.draw(game.style, game.level_data.sides, game.status.radius, main_quads, false, game.get_main_color(false))
+    game.player.draw(
+        game.style,
+        game.level_data.sides,
+        game.status.radius,
+        main_quads,
+        false,
+        game.get_main_color(false)
+    )
     -- TODO: draw 3d if enabled in config
     -- TODO: draw walls
     -- TODO: if 3d enabled in config
     if true then
         -- TODO: get 3d multiplier from config (1 by default)
-        local per_layer_offset = game.style.get_value("3D_spacing") * game.style.get_value("3D_perspective_multiplier") * effect * 3.6
+        local per_layer_offset = game.style.get_value("3D_spacing")
+            * game.style.get_value("3D_perspective_multiplier")
+            * effect
+            * 3.6
         local rad_rot = math.rad(current_rotation)
         local sin_rot = math.sin(rad_rot)
         local cos_rot = math.cos(rad_rot)
@@ -272,7 +306,37 @@ function public.draw(screen)
     end
     main_quads:draw()
     game.player.draw_cap(game.level_data.sides, game.style, false)
-    -- TODO: draw text
+    -- message and flash shouldn't be affected by skew/rotation
+    love.graphics.origin()
+    love.graphics.scale(zoom_factor, zoom_factor)
+    if game.message_text ~= nil then
+        local function draw_text(ox, oy)
+            love.graphics.print(
+                game.message_text,
+                message_font,
+                width / zoom_factor / 2 - message_font:getWidth(game.message_text) / 2 + ox,
+                height / zoom_factor / 6 + oy
+            )
+        end
+        local r, g, b, a = game.style.get_second_color()
+        -- TODO: black and white
+        if false then
+            r, g, b, a = 0, 0, 0, 0
+        end
+        set_color(r, g, b, a)
+        -- 1.92 unlike the steam version actually does outlines like this so it's probably fine to do the same here
+        draw_text(-1, -1)
+        draw_text(-1, 1)
+        draw_text(1, -1)
+        draw_text(1, 1)
+        r, g, b, a = game.style.get_main_color()
+        -- TODO: black and white
+        if false then
+            r, g, b = 255, 255, 255
+        end
+        set_color(r, g, b, a)
+        draw_text(0, 0)
+    end
     -- TODO: draw flash
 end
 

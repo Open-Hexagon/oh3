@@ -108,7 +108,7 @@ local keycode_conversion = {
     [97] = "f13",
     [98] = "f14",
     [99] = "f15",
-    [100] = "pause"
+    [100] = "pause",
 }
 
 function lua_runtime.error(msg)
@@ -121,7 +121,7 @@ function lua_runtime.init_env(game)
         os = {
             time = function(...)
                 return os.time(...)
-            end
+            end,
         },
         next = next,
         error = error,
@@ -183,16 +183,18 @@ function lua_runtime.init_env(game)
         log("Lua: " .. text)
     end
     env.wall = function()
-        -- TODO
+        game.main_timeline:append_do(function()
+            -- TODO
+        end)
     end
     env.getSides = function()
         return game.level_data.sides
     end
     env.getSpeedMult = function()
-        -- TODO: dm adjust speed
+        return game.level_data.speed_multiplier * math.pow(game.difficulty_mult, 0.65)
     end
     env.getDelayMult = function()
-        -- TODO: dm adjust delay
+        return game.level_data.delay_multiplier * math.pow(game.difficulty_mult, 0.1)
     end
     env.getDifficultyMult = function()
         return game.difficulty_mult
@@ -207,7 +209,7 @@ function lua_runtime.init_env(game)
         game.events.queue(game.pack.events[id])
     end
     env.wait = function(duration)
-        -- TODO: timeline stuffs
+        game.main_timeline:append_wait(duration)
     end
     env.playSound = function(id)
         -- TODO
@@ -215,11 +217,25 @@ function lua_runtime.init_env(game)
     env.forceIncrement = function()
         -- TODO: incrementDifficulty()
     end
-    env.messageAdd = function()
-        -- TODO
+    local function add_message(message, duration)
+        game.message_timeline:append_do(function()
+            -- TODO: play beep.ogg
+            game.message_text = message
+        end)
+        game.message_timeline:append_wait(duration)
+        game.message_timeline:append_do(function()
+            game.message_text = nil
+        end)
     end
-    env.messageImportantAdd = function()
-        -- TODO
+    env.messageAdd = function(message, duration)
+        -- TODO: only if messages enabled in config
+        if game.first_play then
+            add_message(message, duration)
+        end
+    end
+    env.messageImportantAdd = function(message, duration)
+        -- TODO: only if messages enabled in config
+        add_message(message, duration)
     end
     env.isKeyPressed = function(key_code)
         local key = keycode_conversion(key_code)
@@ -233,10 +249,14 @@ function lua_runtime.init_env(game)
         return game.status.fast_spin > 0
     end
     env.wallAdj = function()
-        -- TODO
+        game.main_timeline:append_do(function()
+            -- TODO
+        end)
     end
     env.wallAcc = function()
-        -- TODO
+        game.main_timeline:append_do(function()
+            -- TODO
+        end)
     end
     log("initialized environment")
 end

@@ -15,15 +15,15 @@ function level.set(level_data)
     current_data = setmetatable(tmp_values, {
         __index = function(_, k)
             return level_data[k] or (default_values[k] or 0)
-        end
+        end,
     })
     return current_data
 end
 
 function level.get_difficulty_multipliers()
-    local mults = current_data.difficulty_multipliers or {1}
+    local mults = current_data.difficulty_multipliers or { 1 }
     if #mults == 0 then
-        return {1}
+        return { 1 }
     else
         return mults
     end

@@ -5,7 +5,6 @@ local assets = {}
 local packs = {}
 local pack_path = "Packs192/"
 
-
 function assets.init()
     local pack_folders = love.filesystem.getDirectoryItems(pack_path)
     for i = 1, #pack_folders do
@@ -74,10 +73,12 @@ function assets.get_pack(folder)
                 if music_json.file_name:sub(-4) ~= ".ogg" then
                     music_json.file_name = music_json.file_name .. ".ogg"
                 end
-                if not pcall(function()
-                    music_json.source = love.audio.newSource(folder .. "Music/" .. music_json.file_name, "stream")
-                    music_json.source:setLooping(true)
-                end) then
+                if
+                    not pcall(function()
+                        music_json.source = love.audio.newSource(folder .. "Music/" .. music_json.file_name, "stream")
+                        music_json.source:setLooping(true)
+                    end)
+                then
                     log("Error: failed to load '" .. music_json.file_name .. "'")
                 end
                 pack_data.music[music_json.id] = music_json
@@ -105,8 +106,6 @@ function assets.get_pack(folder)
     return pack_data
 end
 
-
 assets.init()
-
 
 return assets

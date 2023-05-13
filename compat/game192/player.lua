@@ -25,11 +25,11 @@ function player.reset()
     speed = 9.45
     focus_speed = 4.625
 
-    pos = {0, 0}
-    last_pos = {0, 0}
-    tmp_pos = {0, 0}
+    pos = { 0, 0 }
+    last_pos = { 0, 0 }
+    tmp_pos = { 0, 0 }
     dead = false
-    color = {0, 0, 0, 0}
+    color = { 0, 0, 0, 0 }
     cap_vertices = {}
 end
 

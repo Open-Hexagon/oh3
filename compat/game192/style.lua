@@ -28,10 +28,10 @@ local default_values = {
     ["3D_pulse_min"] = 0,
     ["3D_pulse_speed"] = 0.01,
     ["3D_perspective_multiplier"] = 1,
-    colors = {}
+    colors = {},
 }
 local current_hue = 0
-local current_hue_color = {0, 0, 0, 0}
+local current_hue_color = { 0, 0, 0, 0 }
 local pulse_factor = 0
 local current_swap_time = 0
 local current_3D_override_color
@@ -47,7 +47,7 @@ function style.select(style_data)
     root = setmetatable(real_style_table, {
         __index = function(_, k)
             return style_data[k] or (default_values[k] or 0)
-        end
+        end,
     })
     current_hue = root.hue_min
     set_color_data_defaults(root.main)
