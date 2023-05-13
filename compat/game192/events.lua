@@ -69,7 +69,8 @@ function events.init(game)
             game.restart_first_time = true
         end,
         menu = function()
-            -- TODO
+            -- TODO: actually go to menu instead of closing the game
+            love.event.push("quit")
         end,
         message_add = function(event)
             game.lua_runtime.env.messageAdd(event.message, event.duration)
