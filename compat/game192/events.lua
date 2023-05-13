@@ -59,7 +59,7 @@ end
 
 -- initalize the events defined in the level json
 function events.init(game)
-    level_events = EventList:new(game.level_data.events or {})
+    level_events = EventList:new(game.level_data.events == 0 and {} or game.level_data.events)
     executing_events = {}
     queued_events = {}
     event_executors = {

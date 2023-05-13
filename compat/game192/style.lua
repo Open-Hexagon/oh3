@@ -51,8 +51,15 @@ function style.select(style_data)
     })
     current_hue = root.hue_min
     set_color_data_defaults(root.main)
-    for i = 1, #root.colors do
-        set_color_data_defaults(root.colors[i])
+    for i = #root.colors, 1, -1 do
+        if type(root.colors[i]) == "userdata" then
+            root.colors[i] = nil
+        else
+            set_color_data_defaults(root.colors[i])
+        end
+    end
+    if type(root.main) == "userdata" then
+        root.main = {}
     end
     set_color_data_defaults(root.main)
 end
@@ -141,7 +148,11 @@ function style.compute_colors()
     for i = 1, #root.colors do
         style.calculate_color(root.colors[i])
     end
-    color_start_index = math.floor(2 * current_swap_time / root.max_swap_time)
+    if root.max_swap_time == 0 then
+        color_start_index = 0
+    else
+        color_start_index = math.floor(2 * current_swap_time / root.max_swap_time)
+    end
 end
 
 function style.draw_background(sides, black_and_white)
