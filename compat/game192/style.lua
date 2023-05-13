@@ -191,7 +191,7 @@ end
 function style.get_color(index)
     local color_object = root.colors[(color_start_index + index) % #root.colors + 1]
     if color_object == nil then
-        return 0, 0, 0, 255
+        return 0, 0, 0, 0
     else
         return unpack(color_object.result)
     end

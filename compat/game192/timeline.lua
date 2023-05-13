@@ -126,4 +126,12 @@ function Timeline:append_wait(duration)
     self:append(Wait:new(self, duration))
 end
 
+function Timeline:at_start_do(func)
+    self:insert(self:get_current_index() + 1, Do:new(self, func))
+end
+
+function Timeline:at_start_wait(duration)
+    self:insert(self:get_current_index() + 1, Wait:new(self, duration))
+end
+
 return Timeline

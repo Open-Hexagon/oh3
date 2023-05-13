@@ -4,6 +4,18 @@ local json = require("extlibs.json.jsonc")
 local assets = {}
 local packs = {}
 local pack_path = "Packs192/"
+local sound_mapping = {
+    ["beep.ogg"] = "click.ogg",
+    ["difficultyMultDown.ogg"] = "difficulty_mult_down.ogg",
+    ["difficultyMultUp.ogg"] = "difficulty_mult_up.ogg",
+    ["gameOver.ogg"] = "game_over.ogg",
+    ["levelUp.ogg"] = "level_up.ogg",
+    ["openHexagon.ogg"] = "open_hexagon.ogg",
+    ["personalBest.ogg"] = "personal_best.ogg",
+    ["swapBlip.ogg"] = "swap_blip.ogg",
+}
+local audio_path = "assets/audio/"
+local cached_sounds = {}
 
 function assets.init()
     local pack_folders = love.filesystem.getDirectoryItems(pack_path)
@@ -102,8 +114,25 @@ function assets.get_pack(folder)
                 pack_data.events[event_json.id] = event_json.events
             end
         end
+
+        pack_data.cached_sounds = {}
     end
     return pack_data
+end
+
+function assets.get_sound(id)
+    id = sound_mapping[id] or id
+    if cached_sounds[id] == nil then
+        cached_sounds[id] = love.audio.newSource(audio_path .. id, "static")
+    end
+    return cached_sounds[id]
+end
+
+function assets.get_pack_sound(pack, id)
+    if pack.cached_sounds[id] == nil then
+        pack.cached_sounds[id] = love.audio.newSource(pack.path .. "/Sounds/" .. id, "static")
+    end
+    return pack.cached_sounds[id]
 end
 
 assets.init()

@@ -169,6 +169,7 @@ function module.update(frametime, radius)
             end
         end
         if points_on_center > 3 or points_out_of_bg > 3 then
+            duplicate_wall_count = duplicate_wall_count - wall.times + 1
             if points_out_of_bg > 3 then
                 imaginary_walls = imaginary_walls + 1
                 table.remove(walls, i)
@@ -198,6 +199,7 @@ function module.update(frametime, radius)
                 if points_out_of_bg > 3 then
                     imaginary_walls = imaginary_walls + 1
                 end
+                duplicate_wall_count = duplicate_wall_count - wall.times + 1
                 table.remove(stopped_walls, i)
             end
         end

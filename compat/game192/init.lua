@@ -22,6 +22,11 @@ local game = {
     effect_timeline = Timeline:new(),
 }
 
+local beep_sound = assets.get_sound("beep.ogg")
+local death_sound = assets.get_sound("death.ogg")
+local game_over_sound = assets.get_sound("game_over.ogg")
+local go_sound = assets.get_sound("go.ogg")
+local level_up_sound = assets.get_sound("level_up.ogg")
 local message_font = love.graphics.newFont("assets/font/imagine.ttf", 40)
 local layer_shader = love.graphics.newShader(
     [[
@@ -52,8 +57,42 @@ local last_move = 0
 local main_quads = DynamicQuads:new()
 local current_rotation = 0
 
+function game.increment_difficulty()
+    love.audio.play(level_up_sound)
+    game.level_data.rotation_speed = game.level_data.rotation_speed + game.level_data.rotation_increment * (game.level_data.rotation_speed > 0 and 1 or -1)
+    game.level_data.rotation_speed = -game.level_data.rotation_speed
+    if game.status.fast_spin < 0 and math.abs(game.level_data.rotation_speed) > game.level_data.rotation_speed_max then
+        game.level_data.rotation_speed = game.level_data.rotation_speed_max * (game.level_data.rotation_speed > 0 and 1 or -1)
+    end
+    game.status.fast_spin = game.level_data.fast_spin
+    game.main_timeline:append_do(function()
+        game.side_change(math.random(game.level_data.sides_min, game.level_data.sides_max))
+    end)
+end
+
+function game.side_change(side_count)
+    if game.walls.size() > 0 then
+        game.main_timeline:at_start_do(function()
+            game.main_timeline:clear()
+            game.main_timeline:reset()
+        end)
+        game.main_timeline:at_start_do(function()
+            game.side_change(side_count)
+        end)
+        game.main_timeline:at_start_wait(1)
+    else
+        game.lua_runtime.run_fn_if_exists("onIncrement")
+        game.level_data.speed_multiplier = game.level_data.speed_multiplier + game.level_data.speed_increment
+        -- This is wrong, ask vee what he thought while doing that in 1.92 lol
+        game.level_data.delay_increment = game.level_data.delay_multiplier + game.level_data.delay_increment
+        if game.status.random_side_changes_enabled then
+            game.set_sides(side_count)
+        end
+    end
+end
+
 function game.set_sides(side_count)
-    -- TODO: play beep.ogg
+    love.audio.play(beep_sound)
     if side_count < 3 then
         side_count = 3
     end
@@ -83,9 +122,15 @@ function public.start(pack_folder, level_id, difficulty_mult)
         error("Style with id '" .. level_data.style_id .. "' does not exist.")
     end
     game.style.select(style_data)
-    -- TODO: set music
     game.difficulty_mult = difficulty_mult
-    -- TODO: clear messages
+    love.audio.stop()
+    love.audio.play(go_sound)
+    game.music = game.pack.music[level_data.music_id]
+    if game.music == nil then
+        error("Music with id '" .. level_data.music_id .. "' not found")
+    end
+    love.audio.play(game.music.source)
+    game.message_text = ""
     game.events.init(game)
     game.status.reset()
     game.restart_id = level_id
@@ -149,13 +194,14 @@ function public.update(frametime)
         end
         game.walls.update(frametime, game.status.radius)
         if game.player.update(frametime, game.status.radius, move, focus, game.walls) then
-            -- TODO: play death.ogg and gameOver.ogg
+            love.audio.play(death_sound)
+            love.audio.play(game_over_sound)
             -- TODO: if not invincible
             if false then
                 game.status.flash_effect = 255
                 -- TODO: camera shake
                 game.status.has_died = true
-                -- TODO: stop level music
+                love.audio.stop(game.music.source)
             end
         end
         game.events.update(frametime, game.status.current_time, game.message_timeline)
@@ -168,7 +214,7 @@ function public.update(frametime)
         if game.status.increment_enabled then
             if game.status.increment_time >= game.level_data.increment_time then
                 game.status.increment_time = 0
-                -- TODO: increment difficulty
+                game.increment_difficulty()
             end
         end
         game.lua_runtime.run_fn_if_exists("onUpdate", frametime)
