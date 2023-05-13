@@ -206,7 +206,7 @@ function style.get_second_color()
     end
     local color_object = root.colors[i]
     if color_object == nil then
-        return 0, 0, 0, 255
+        return 0, 0, 0, 0
     else
         return unpack(color_object.result)
     end

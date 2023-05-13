@@ -9,17 +9,22 @@ local EventList = {}
 EventList.__index = EventList
 
 function EventList:new(event_table)
+    local new_event_table = {}
     for i = 1, #event_table do
         local event = event_table[i]
-        event.type = event.type or ""
-        event.duration = event.duration or 0
-        event.value_name = event.value_name or ""
-        event.value = event.value or 0
-        event.message = event.message or ""
-        event.id = event.id or ""
+        -- null in json
+        if type(event) ~= "userdata" then
+            event.type = event.type or ""
+            event.duration = event.duration or 0
+            event.value_name = event.value_name or ""
+            event.value = event.value or 0
+            event.message = event.message or ""
+            event.id = event.id or ""
+            new_event_table[#new_event_table+1] = event
+        end
     end
     return setmetatable({
-        events = event_table,
+        events = new_event_table,
         done = {},
         time = 0,
         finished = false,

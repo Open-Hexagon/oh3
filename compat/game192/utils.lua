@@ -1,6 +1,26 @@
 local ffi = require("ffi")
 local utils = {}
 
+-- fixes case insensitive paths
+function utils.get_real_path(path)
+    local real_path = ""
+    for segment in path:gmatch("[^/]+") do
+        if love.filesystem.getInfo(real_path .. segment) then
+            real_path = real_path .. segment .. "/"
+        else
+            local list = love.filesystem.getDirectoryItems(real_path)
+            for i = 1, #list do
+                if list[i]:upper() == segment:upper() then
+                    real_path = real_path .. list[i] .. "/"
+                    break
+                end
+            end
+        end
+    end
+    real_path = real_path:sub(1, -2)
+    return real_path
+end
+
 -- insert a path into a recursive table structure
 function utils.insert_path(t, keys, value)
     local directory = t

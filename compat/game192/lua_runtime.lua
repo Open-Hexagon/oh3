@@ -277,7 +277,7 @@ function lua_runtime.run_lua_file(path)
     else
         if file_cache[path] == nil then
             local error_msg
-            file_cache[path], error_msg = love.filesystem.load(path)
+            file_cache[path], error_msg = love.filesystem.load(utils.get_real_path(path))
             if file_cache[path] == nil then
                 error("Failed to load '" .. path .. "': " .. error_msg)
             end
