@@ -4,7 +4,6 @@ local lua_runtime = {
     env = {},
 }
 
-local error_sound
 local file_cache = {}
 local env = lua_runtime.env
 local keycode_conversion = {
@@ -115,6 +114,8 @@ function lua_runtime.error(msg)
     log("Error: " .. msg)
 end
 
+local clock_count = 0
+
 function lua_runtime.init_env(game)
     local pack = game.pack
     lua_runtime.env = {
@@ -122,6 +123,15 @@ function lua_runtime.init_env(game)
             time = function(...)
                 return os.time(...)
             end,
+            clock = function()
+                clock_count = clock_count + 1
+                if clock_count > 10000 then
+                    -- blocking call (something like: `while os.clock() < x do ...`)
+                    -- TODO: check if this will break replays
+                    game.real_time = game.real_time + love.timer.step()
+                end
+                return game.real_time
+            end
         },
         next = next,
         error = error,
@@ -266,6 +276,7 @@ local function run_fn(name, ...)
 end
 
 function lua_runtime.run_fn_if_exists(name, ...)
+    clock_count = 0
     if env[name] ~= nil then
         xpcall(run_fn, lua_runtime.error, name, ...)
     end

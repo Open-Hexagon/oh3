@@ -20,6 +20,7 @@ local game = {
     main_timeline = Timeline:new(),
     message_timeline = Timeline:new(),
     effect_timeline = Timeline:new(),
+    real_time = 0,
 }
 
 local beep_sound = assets.get_sound("beep.ogg")
@@ -164,6 +165,7 @@ function public.start(pack_folder, level_id, difficulty_mult)
     if depth > 100 then
         depth = 100
     end
+    game.real_time = 0
     public.running = true
 end
 
@@ -177,6 +179,7 @@ local function get_smoother_step(edge0, edge1, x)
 end
 
 function public.update(frametime)
+    game.real_time = game.real_time + frametime
     frametime = frametime * 60
     -- TODO: update flash
     -- TODO: update effects
