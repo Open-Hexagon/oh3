@@ -131,8 +131,7 @@ function public.update(frametime)
     -- TODO: adjust tick rate based on object count
     -- TODO: update flash
     -- TODO: update effects
-    -- TODO: if not dead
-    if true then
+    if not game.status.has_died then
         local focus = love.keyboard.isDown("lshift")
         local cw = love.keyboard.isDown("right")
         local ccw = love.keyboard.isDown("left")
@@ -148,8 +147,17 @@ function public.update(frametime)
         else
             move = 0
         end
-        game.player.update(frametime, game.status.radius, move, focus)
         game.walls.update(frametime, game.status.radius)
+        if game.player.update(frametime, game.status.radius, move, focus, game.walls) then
+            -- TODO: play death.ogg and gameOver.ogg
+            -- TODO: if not invincible
+            if false then
+                game.status.flash_effect = 255
+                -- TODO: camera shake
+                game.status.has_died = true
+                -- TODO: stop level music
+            end
+        end
         game.events.update(frametime, game.status.current_time, game.message_timeline)
         if game.status.time_stop <= 0 then
             game.status.current_time = game.status.current_time + frametime / 60

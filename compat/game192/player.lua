@@ -11,7 +11,6 @@ local speed
 local focus_speed
 local pos
 local last_pos
-local tmp_pos
 local dead
 local color
 local cap_vertices
@@ -27,27 +26,38 @@ function player.reset()
 
     pos = { 0, 0 }
     last_pos = { 0, 0 }
-    tmp_pos = { 0, 0 }
     dead = false
     color = { 0, 0, 0, 0 }
     cap_vertices = {}
 end
 
-function player.update(frametime, radius, movement, focus)
-    last_pos[1] = pos[1]
-    last_pos[2] = pos[2]
+function player.update(frametime, radius, movement, focus, walls)
     local current_speed = speed
     local last_angle = angle
     if focus then
         current_speed = focus_speed
     end
-    angle = angle + current_speed * movement * frametime
     local rad_angle = math.rad(angle)
-    tmp_pos[1], tmp_pos[2] = math.cos(rad_angle) * radius, math.sin(rad_angle) * radius
-    local p_left_check_x, p_left_check_y = extra_math.get_orbit(tmp_pos, rad_angle - 0.5 * math.pi, 0.01)
-    local p_right_check_x, p_right_check_y = extra_math.get_orbit(tmp_pos, rad_angle + 0.5 * math.pi, 0.01)
-    -- TODO: for each wall: if overlop check right/left then angle = last angle and then check pos overlap and ded stuff
-    pos[1], pos[2] = tmp_pos[1], tmp_pos[2]
+    last_pos[1], last_pos[2] = math.cos(rad_angle) * radius, math.sin(rad_angle) * radius
+    angle = angle + current_speed * movement * frametime
+    rad_angle = math.rad(angle)
+    pos[1], pos[2] = math.cos(rad_angle) * radius, math.sin(rad_angle) * radius
+    for wall in walls.iter() do
+        if extra_math.point_in_polygon(wall.vertices, unpack(pos)) then
+            if extra_math.point_in_polygon(wall.vertices, unpack(last_pos)) then
+                -- TODO: if not invincible in config: dead = true
+                local mag = math.sqrt(last_pos[1] ^ 2 + last_pos[2] ^ 2)
+                last_pos[1] = last_pos[1] - last_pos[1] / mag * 5
+                last_pos[2] = last_pos[2] - last_pos[2] / mag * 5
+                pos[1], pos[2] = last_pos[1], last_pos[2]
+                return true
+            else
+                angle = last_angle
+                pos[1], pos[2] = last_pos[1], last_pos[2]
+            end
+        end
+    end
+    return false
 end
 
 local function draw_pivot(sides, radius, main_quads, r, g, b, a)
