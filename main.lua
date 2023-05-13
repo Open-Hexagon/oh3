@@ -1,7 +1,7 @@
 function love.run()
     -- load game for testing
     local game = require("compat.game192")
-    game.start("Open Hexagon Community Tribute", "journey", 1)
+    game.start("Open Hexagon Community Tribute", "synergy_galaxy", 1)
 
     -- target frametime
     local frametime = 1 / 240
@@ -51,7 +51,8 @@ function love.run()
                 end
             end
             if game.running then
-                game.update(frametime)
+                -- allow games to control tick rate dynamically
+                frametime = game.update(frametime) or frametime
             end
         end
         if love.graphics.isActive() then
@@ -77,7 +78,7 @@ function love.run()
             end
             -- used for performance testing TODO: remove once we have a proper ui element for it
             love.timer.step()
-            love.graphics.print("FPS: " .. love.timer.getFPS())
+            love.graphics.print("FPS: " .. love.timer.getFPS() .. " Tickrate: " .. 1 / frametime)
 
             love.graphics.present()
         end

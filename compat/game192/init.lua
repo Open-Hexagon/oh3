@@ -178,7 +178,6 @@ end
 
 function public.update(frametime)
     frametime = frametime * 60
-    -- TODO: adjust tick rate based on object count
     -- TODO: update flash
     -- TODO: update effects
     if not game.status.has_died then
@@ -290,6 +289,16 @@ function public.update(frametime)
         public.start(game.pack.folder, game.restart_id, game.difficulty_mult)
     end
     -- TODO: invalidate score if not official status invalid set or fps limit maybe?
+
+    -- TODO: make adjustable on a per level basis
+    local performance = 0.03
+    local target_frametime = ((0.785 * depth + 1) * (0.000461074 * performance + 0.000155698) * game.walls.size() + performance * (0.025 * depth + 1))
+    if target_frametime < 0.0625 then
+        target_frametime = 0.0625
+    elseif target_frametime > 0.25 then
+        target_frametime = 0.25
+    end
+    return target_frametime / 60
 end
 
 function public.draw(screen)
