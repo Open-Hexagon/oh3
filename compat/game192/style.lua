@@ -89,11 +89,12 @@ function style.calculate_color(color_data)
         end
     end
     for i = 1, 4 do
-        local value = color_data.result[i] + color_data.pulse[i] * pulse_factor
-        if value ~= value then
+        local value = color_data.result[i]
+        if value ~= value or value == math.huge then
             -- nan
             value = 0
         end
+        value = value + color_data.pulse[i] * pulse_factor
         if value > 255 then
             value = 255
         elseif value < 0 then
@@ -105,7 +106,7 @@ end
 
 function style.update(frametime)
     current_swap_time = current_swap_time + frametime
-    if current_swap_time > root.max_swap_time then
+    if current_swap_time >= root.max_swap_time then
         current_swap_time = 0
     end
     current_hue = current_hue + root.hue_increment * frametime

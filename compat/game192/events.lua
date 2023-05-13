@@ -60,7 +60,7 @@ function events.init(game)
     event_executors = {
         level_change = function(event)
             game.status.must_restart = true
-            game.restart_id = event.id
+            game.restart_id = event.id:match("/(.*)"):match("/(.*)")
             game.restart_first_time = true
         end,
         menu = function()
@@ -78,11 +78,12 @@ function events.init(game)
         time_stop = function(event)
             game.status.time_stop = event.duration
         end,
-        timeline_wait = function()
-            -- TODO
+        timeline_wait = function(event)
+            game.main_timeline:append_wait(event.duration)
         end,
         timeline_clear = function()
-            -- TODO
+            game.main_timeline:clear()
+            game.main_timeline:reset()
         end,
         -- level float set, add, subtract, multiply, divide
         level_float_set = function(event)
@@ -205,8 +206,12 @@ function events.init(game)
         music_set_seconds = function()
             -- TODO
         end,
-        style_set = function()
-            -- TODO
+        style_set = function(event)
+            local style_data = game.pack.styles[event.id]
+            if style_data == nil then
+                error("Invalid style id '" .. event.id .. "'")
+            end
+            game.style.select(style_data)
         end,
         side_changing_stop = function()
             game.status.random_side_changes_enabled = false
@@ -227,7 +232,7 @@ function events.init(game)
             events.queue(game.pack.events[event.id])
         end,
         script_exec = function(event)
-            game.lua_runtime.run_lua_file(event.value_name)
+            game.lua_runtime.run_lua_file(game.pack.path .. "Scripts/" .. event.value_name)
         end,
         play_sound = function()
             -- TODO
