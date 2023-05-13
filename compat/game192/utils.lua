@@ -1,6 +1,34 @@
 local ffi = require("ffi")
 local utils = {}
 
+-- insert a path into a recursive table structure
+function utils.insert_path(t, keys, value)
+    local directory = t
+    for i = 1, #keys do
+        local key = keys[i]
+        if directory[key] == nil then
+            if i == #keys then
+                directory[key] = value
+                return
+            end
+            directory[key] = {}
+        end
+        directory = directory[key]
+    end
+end
+
+-- lookup the item at the end of a path inside a recursive table structure
+function utils.lookup_path(t, keys)
+    local directory = t
+    for _, key in pairs(keys) do
+        if directory[key] == nil then
+            return
+        end
+        directory = directory[key]
+    end
+    return directory
+end
+
 function utils.round_to_even(num)
     if num == nil then
         return 0

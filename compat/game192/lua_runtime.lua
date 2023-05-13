@@ -182,9 +182,9 @@ function lua_runtime.init_env(game)
     env.log = function(text)
         log("Lua: " .. text)
     end
-    env.wall = function()
+    env.wall = function(side, thickness)
         game.main_timeline:append_do(function()
-            -- TODO
+            game.walls.wall(side, thickness)
         end)
     end
     env.getSides = function()
@@ -238,7 +238,7 @@ function lua_runtime.init_env(game)
         add_message(message, duration)
     end
     env.isKeyPressed = function(key_code)
-        local key = keycode_conversion(key_code)
+        local key = keycode_conversion[key_code]
         if key == nil then
             lua_runtime.error("No suitable keycode conversion found for '" .. key_code .. "'")
             return false
@@ -248,14 +248,14 @@ function lua_runtime.init_env(game)
     env.isFastSpinning = function()
         return game.status.fast_spin > 0
     end
-    env.wallAdj = function()
+    env.wallAdj = function(side, thickness, speed)
         game.main_timeline:append_do(function()
-            -- TODO
+            game.walls.wallAdj(side, thickness, speed)
         end)
     end
-    env.wallAcc = function()
+    env.wallAcc = function(side, thickness, speed, accel, min, max)
         game.main_timeline:append_do(function()
-            -- TODO
+            game.walls.wallAcc(side, thickness, speed, accel, min, max)
         end)
     end
     log("initialized environment")

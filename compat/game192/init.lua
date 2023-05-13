@@ -12,6 +12,7 @@ local game = {
     player = require("compat.game192.player"),
     lua_runtime = require("compat.game192.lua_runtime"),
     events = require("compat.game192.events"),
+    walls = require("compat.game192.walls"),
     difficulty_mult = 1,
     restart_id = "",
     restart_first_time = false,
@@ -90,7 +91,8 @@ function public.start(pack_folder, level_id, difficulty_mult)
     game.restart_id = level_id
     game.restart_first_time = false
     game.set_sides(game.level_data.sides)
-    -- TODO: reset walls
+    game.walls.clear()
+    game.walls.set_level_data(game.level_data, game.difficulty_mult)
     game.player.reset()
     game.main_timeline:clear()
     game.main_timeline:reset()
@@ -147,7 +149,7 @@ function public.update(frametime)
             move = 0
         end
         game.player.update(frametime, game.status.radius, move, focus)
-        -- TODO: update walls
+        game.walls.update(frametime, game.status.radius)
         game.events.update(frametime, game.status.current_time, game.message_timeline)
         if game.status.time_stop <= 0 then
             game.status.current_time = game.status.current_time + frametime / 60
@@ -258,10 +260,9 @@ function public.draw(screen)
         false,
         game.get_main_color(false)
     )
-    -- TODO: draw 3d if enabled in config
-    -- TODO: draw walls
+    game.walls.draw(main_quads, game.get_main_color(false))
     -- TODO: if 3d enabled in config
-    if true then
+    if true and depth ~= 0 then
         -- TODO: get 3d multiplier from config (1 by default)
         local per_layer_offset = game.style.get_value("3D_spacing")
             * game.style.get_value("3D_perspective_multiplier")
