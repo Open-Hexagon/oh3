@@ -178,18 +178,19 @@ local function get_smoother_step(edge0, edge1, x)
     return x * x * x * (x * (x * 6 - 15) + 10)
 end
 
+function public.keypressed(key)
+    -- TODO: make this work with ui? or make it specific only for levels that need it?
+    if key == "r" or key == "up" then
+        game.status.must_restart = true
+    end
+end
+
 function public.update(frametime)
     game.real_time = game.real_time + frametime
     frametime = frametime * 60
     -- TODO: update flash
     -- TODO: update effects
     if not game.status.has_died then
-        -- TODO: make this work with ui? or make it specific only for levels that need it?
-        -- TODO: prevent spam
-        if love.keyboard.isDown("r") or love.keyboard.isDown("up") then
-            game.status.must_restart = true
-        end
-
         local focus = love.keyboard.isDown("lshift")
         local cw = love.keyboard.isDown("right")
         local ccw = love.keyboard.isDown("left")

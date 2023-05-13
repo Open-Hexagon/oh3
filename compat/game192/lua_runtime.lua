@@ -61,7 +61,8 @@ local keycode_conversion = {
     [51] = "'",
     [52] = "/",
     [53] = "\\",
-    [54] = "~",
+    -- love doesn't have this one
+    --[54] = "~",
     [55] = "=",
     [56] = "-",
     [57] = "space",

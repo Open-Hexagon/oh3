@@ -1,7 +1,7 @@
 function love.run()
     -- load game for testing
     local game = require("compat.game192")
-    game.start("Imaginative Leftovers", "Rotation", 1)
+    game.start("VeeDefault", "lunatic", 1)
 
     -- target frametime
     local frametime = 1 / 240
@@ -47,7 +47,7 @@ function love.run()
 
                 -- allow game modules to have their own event handlers
                 if game.running and game[name] ~= nil then
-                    game[name](game, a, b, c, d, e, f)
+                    game[name](a, b, c, d, e, f)
                 end
             end
             if game.running then
