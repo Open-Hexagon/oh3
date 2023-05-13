@@ -161,7 +161,7 @@ function public.start(pack_folder, level_id, difficulty_mult)
         game.level_data.rotation_speed = -game.level_data.rotation_speed
     end
     current_rotation = 0
-    depth = game.style.get_value("3D_depth")
+    depth = math.floor(game.style.get_value("3D_depth"))
     if depth > 100 then
         depth = 100
     end
@@ -184,6 +184,12 @@ function public.update(frametime)
     -- TODO: update flash
     -- TODO: update effects
     if not game.status.has_died then
+        -- TODO: make this work with ui? or make it specific only for levels that need it?
+        -- TODO: prevent spam
+        if love.keyboard.isDown("r") or love.keyboard.isDown("up") then
+            game.status.must_restart = true
+        end
+
         local focus = love.keyboard.isDown("lshift")
         local cw = love.keyboard.isDown("right")
         local ccw = love.keyboard.isDown("left")
