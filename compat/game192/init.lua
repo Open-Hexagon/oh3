@@ -129,6 +129,11 @@ function public.start(pack_folder, level_id, difficulty_mult)
     if game.music == nil then
         error("Music with id '" .. level_data.music_id .. "' not found")
     end
+    if game.first_play then
+        game.music.source:seek(math.floor(game.music.segments[1].time))
+    else
+        game.music.source:seek(math.floor(game.music.segments[math.random(1, #game.music.segments)].time))
+    end
     love.audio.play(game.music.source)
     game.message_text = ""
     game.events.init(game)

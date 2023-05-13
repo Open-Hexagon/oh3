@@ -1,7 +1,7 @@
 function love.run()
     -- load game for testing
     local game = require("compat.game192")
-    game.start("Open Hexagon Community Tribute", "Magnolia", 1)
+    game.start("Open Hexagon Community Tribute", "journey", 1)
 
     -- target frametime
     local frametime = 1 / 240
