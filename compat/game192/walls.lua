@@ -192,7 +192,7 @@ function module.update(frametime, radius)
                 elseif abs_x > WALL_DESPAWN_DIST and abs_y > WALL_DESPAWN_DIST then
                     points_out_of_bg = points_out_of_bg + 1
                 end
-                stopped_wall_radius = math.min(abs_x, abs_y, stopped_wall_radius)
+                stopped_wall_radius = math.min(math.sqrt(abs_x ^ 2 + abs_y ^ 2), stopped_wall_radius)
             end
             need_to_check_stopped = true
             if points_on_center > 3 or points_out_of_bg > 3 then
