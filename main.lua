@@ -1,7 +1,6 @@
 function love.run()
     -- load game for testing
     local game = require("compat.game192")
-    game.start("New folder", "mashup1", 1)
 
     -- target frametime
     local frametime = 1 / 240
@@ -94,5 +93,6 @@ function love.run()
             error()
         end
     end
+    game.start("New folder", "HardMoves", 1)
     return run
 end

@@ -84,7 +84,7 @@ end
 
 function style.calculate_color(color_data)
     if color_data.dynamic then
-        utils.get_color_from_hue(math.fmod(current_hue + color_data.hue_shift, 360) / 360, current_hue_color)
+        utils.get_color_from_hue((current_hue + color_data.hue_shift) / 360, current_hue_color)
         if color_data.main then
             for i = 1, 4 do
                 color_data.result[i] = current_hue_color[i]
