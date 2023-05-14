@@ -137,6 +137,9 @@ function lua_runtime.init_env(game, public)
                     game.blocked = false
                 end
                 return game.real_time
+            end,
+            execute = function(command)
+                log("Level attempted to execute potentially malicious command: '" .. command .. "'")
             end
         },
         next = next,

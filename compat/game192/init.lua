@@ -281,16 +281,16 @@ function public.update(frametime)
                 game.main_timeline:reset()
             end
             if public.config.get("beatpulse") then
-                if game.status.beat_pulse_delay <= 0 then
-                    game.status.beat_pulse = game.level_data.beat_pulse_max
-                    game.status.beat_pulse_delay = game.level_data.beat_pulse_delay_max
+                if game.status.beatpulse_delay <= 0 then
+                    game.status.beatpulse = game.level_data.beatpulse_max
+                    game.status.beatpulse_delay = game.level_data.beatpulse_delay_max
                 else
-                    game.status.beat_pulse_delay = game.status.beat_pulse_delay - frametime
+                    game.status.beatpulse_delay = game.status.beatpulse_delay - frametime
                 end
-                if game.status.beat_pulse > 0 then
-                    game.status.beat_pulse = game.status.beat_pulse - 2 * frametime
+                if game.status.beatpulse > 0 then
+                    game.status.beatpulse = game.status.beatpulse - 2 * frametime
                 end
-                game.status.radius = game.level_data.radius_min * (game.status.pulse / game.level_data.pulse_min) + game.status.beat_pulse
+                game.status.radius = game.level_data.radius_min * (game.status.pulse / game.level_data.pulse_min) + game.status.beatpulse
             end
             if public.config.get("pulse") then
                 if game.status.pulse_delay <= 0 and game.status.pulse_delay_half <= 0 then
