@@ -14,15 +14,16 @@ local last_pos
 local dead
 local color
 local cap_vertices
+local conf
 
-function player.reset()
+function player.reset(config)
+    conf = config
     hue = 0
     angle = 0
 
-    -- TODO: get from config
-    size = 7.3
-    speed = 9.45
-    focus_speed = 4.625
+    size = config.get("player_size")
+    speed = config.get("player_speed")
+    focus_speed = config.get("player_focus_speed")
 
     pos = { 0, 0 }
     last_pos = { 0, 0 }
@@ -45,7 +46,9 @@ function player.update(frametime, radius, movement, focus, walls)
     for wall in walls.iter() do
         if extra_math.point_in_polygon(wall.vertices, unpack(pos)) then
             if extra_math.point_in_polygon(wall.vertices, unpack(last_pos)) then
-                -- TODO: if not invincible in config: dead = true
+                if not conf.get("invincible") then
+                    dead = true
+                end
                 local mag = math.sqrt(last_pos[1] ^ 2 + last_pos[2] ^ 2)
                 last_pos[1] = last_pos[1] - last_pos[1] / mag * 5
                 last_pos[2] = last_pos[2] - last_pos[2] / mag * 5

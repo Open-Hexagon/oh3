@@ -3,6 +3,7 @@ local DynamicQuads = require("compat.game21.dynamic_quads")
 local Timeline = require("compat.game192.timeline")
 local set_color = require("compat.game21.color_transform")
 local public = {
+    config = require("compat.game192.config"),
     running = false,
 }
 local game = {
@@ -21,6 +22,7 @@ local game = {
     message_timeline = Timeline:new(),
     effect_timeline = Timeline:new(),
     real_time = 0,
+    assets = assets,
 }
 
 local beep_sound = assets.get_sound("beep.ogg")
@@ -144,7 +146,7 @@ function public.start(pack_folder, level_id, difficulty_mult)
     game.set_sides(game.level_data.sides)
     game.walls.clear()
     game.walls.set_level_data(game.level_data, game.difficulty_mult)
-    game.player.reset()
+    game.player.reset(public.config)
     game.main_timeline:clear()
     game.main_timeline:reset()
     game.message_timeline:clear()
@@ -154,7 +156,7 @@ function public.start(pack_folder, level_id, difficulty_mult)
     if not game.first_play then
         game.lua_runtime.run_fn_if_exists("onUnload")
     end
-    game.lua_runtime.init_env(game)
+    game.lua_runtime.init_env(game, public.config)
     game.lua_runtime.run_lua_file(game.pack.path .. "Scripts/" .. level_data.lua_file)
     game.lua_runtime.run_fn_if_exists("onLoad")
     if math.random(0, 1) == 0 then
@@ -191,9 +193,9 @@ function public.update(frametime)
     -- TODO: update flash
     -- TODO: update effects
     if not game.status.has_died then
-        local focus = love.keyboard.isDown("lshift")
-        local cw = love.keyboard.isDown("right")
-        local ccw = love.keyboard.isDown("left")
+        local focus = love.keyboard.isDown(public.config.get("key_focus"))
+        local cw = love.keyboard.isDown(public.config.get("key_right"))
+        local ccw = love.keyboard.isDown(public.config.get("key_left"))
         local move
         if cw and not ccw then
             move = 1
@@ -210,8 +212,7 @@ function public.update(frametime)
         if game.player.update(frametime, game.status.radius, move, focus, game.walls) then
             love.audio.play(death_sound)
             love.audio.play(game_over_sound)
-            -- TODO: if not invincible
-            if false then
+            if not public.config.get("invincible") then
                 game.status.flash_effect = 255
                 -- TODO: camera shake
                 game.status.has_died = true
@@ -238,61 +239,64 @@ function public.update(frametime)
             game.lua_runtime.run_fn_if_exists("onStep")
             game.main_timeline:reset()
         end
-        -- TODO: if not beatpulse disabled in config
-        if game.status.beat_pulse_delay <= 0 then
-            game.status.beat_pulse = game.level_data.beat_pulse_max
-            game.status.beat_pulse_delay = game.level_data.beat_pulse_delay_max
-        else
-            game.status.beat_pulse_delay = game.status.beat_pulse_delay - frametime
+        if public.config.get("beatpulse") then
+            if game.status.beat_pulse_delay <= 0 then
+                game.status.beat_pulse = game.level_data.beat_pulse_max
+                game.status.beat_pulse_delay = game.level_data.beat_pulse_delay_max
+            else
+                game.status.beat_pulse_delay = game.status.beat_pulse_delay - frametime
+            end
+            if game.status.beat_pulse > 0 then
+                game.status.beat_pulse = game.status.beat_pulse - 2 * frametime
+            end
+            game.status.radius = game.level_data.radius_min * (game.status.pulse / game.level_data.pulse_min) + game.status.beat_pulse
         end
-        if game.status.beat_pulse > 0 then
-            game.status.beat_pulse = game.status.beat_pulse - 2 * frametime
-        end
-        -- TODO: radius_min = 75 if beatpulse disabled in config
-        local radius_min = game.level_data.radius_min
-        game.status.radius = radius_min * (game.status.pulse / game.level_data.pulse_min) + game.status.beat_pulse
-        -- TODO: if not pulse disabled in config
-        if game.status.pulse_delay <= 0 and game.status.pulse_delay_half <= 0 then
-            local pulse_add = game.status.pulse_direction > 0 and game.level_data.pulse_speed
-                or -game.level_data.pulse_speed_r
-            local pulse_limit = game.status.pulse_direction > 0 and game.level_data.pulse_max
-                or game.level_data.pulse_min
-            game.status.pulse = game.status.pulse + pulse_add * frametime
-            if
-                (game.status.pulse_direction > 0 and game.status.pulse >= pulse_limit)
-                or (game.status.pulse_direction < 0 and game.status.pulse <= pulse_limit)
-            then
-                game.status.pulse = pulse_limit
-                game.status.pulse_direction = -game.status.pulse_direction
-                game.status.pulse_delay_half = game.level_data.pulse_delay_half_max
-                if game.status.pulse_direction < 0 then
-                    game.status.pulse_delay = game.level_data.pulse_delay_max
+        if public.config.get("pulse") then
+            if game.status.pulse_delay <= 0 and game.status.pulse_delay_half <= 0 then
+                local pulse_add = game.status.pulse_direction > 0 and game.level_data.pulse_speed
+                    or -game.level_data.pulse_speed_r
+                local pulse_limit = game.status.pulse_direction > 0 and game.level_data.pulse_max
+                    or game.level_data.pulse_min
+                game.status.pulse = game.status.pulse + pulse_add * frametime
+                if
+                    (game.status.pulse_direction > 0 and game.status.pulse >= pulse_limit)
+                    or (game.status.pulse_direction < 0 and game.status.pulse <= pulse_limit)
+                then
+                    game.status.pulse = pulse_limit
+                    game.status.pulse_direction = -game.status.pulse_direction
+                    game.status.pulse_delay_half = game.level_data.pulse_delay_half_max
+                    if game.status.pulse_direction < 0 then
+                        game.status.pulse_delay = game.level_data.pulse_delay_max
+                    end
                 end
             end
+            game.status.pulse_delay = game.status.pulse_delay - frametime
+            game.status.pulse_delay_half = game.status.pulse_delay_half - frametime
         end
-        game.status.pulse_delay = game.status.pulse_delay - frametime
-        game.status.pulse_delay_half = game.status.pulse_delay_half - frametime
-        -- TODO: only update style if not bw mode
-        game.style.update(frametime)
+        if not public.config.get("black_and_white") then
+            game.style.update(frametime)
+        end
     else
         game.level_data.rotation_speed = game.level_data.rotation_speed * 0.99
     end
-    -- TODO: only update 3d if enabled in config
-    game.status.pulse_3D = game.status.pulse_3D
-        + game.style.get_value("3D_pulse_speed") * game.status.pulse_3D_direction * frametime
-    if game.status.pulse_3D > game.style.get_value("3D_pulse_max") then
-        game.status.pulse_3D_direction = -1
-    elseif game.status.pulse_3D < game.style.get_value("3D_pulse_min") then
-        game.status.pulse_3D_direction = 1
+    if public.config.get("3D_enabled") then
+        game.status.pulse_3D = game.status.pulse_3D
+            + game.style.get_value("3D_pulse_speed") * game.status.pulse_3D_direction * frametime
+        if game.status.pulse_3D > game.style.get_value("3D_pulse_max") then
+            game.status.pulse_3D_direction = -1
+        elseif game.status.pulse_3D < game.style.get_value("3D_pulse_min") then
+            game.status.pulse_3D_direction = 1
+        end
     end
-    -- TODO: if not rotation disabled in config
-    local next_rotation = math.abs(game.level_data.rotation_speed) * 10 * frametime
-    if game.status.fast_spin > 0 then
-        next_rotation = next_rotation
-            + math.abs((get_smoother_step(0, game.level_data.fast_spin, game.status.fast_spin) / 3.5) * frametime * 17)
-        game.status.fast_spin = game.status.fast_spin - frametime
+    if public.config.get("rotation") then
+        local next_rotation = math.abs(game.level_data.rotation_speed) * 10 * frametime
+        if game.status.fast_spin > 0 then
+            next_rotation = next_rotation
+                + math.abs((get_smoother_step(0, game.level_data.fast_spin, game.status.fast_spin) / 3.5) * frametime * 17)
+            game.status.fast_spin = game.status.fast_spin - frametime
+        end
+        current_rotation = current_rotation + next_rotation * get_sign(game.level_data.rotation_speed)
     end
-    current_rotation = current_rotation + next_rotation * get_sign(game.level_data.rotation_speed)
     -- only for level change, real restarts will happen externally
     if game.status.must_restart then
         game.first_play = game.restart_first_time
@@ -319,31 +323,30 @@ function public.draw(screen)
     local p = game.status.pulse / game.level_data.pulse_min
     love.graphics.scale(zoom_factor / p, zoom_factor / p)
     local effect
-    -- TODO: if 3d enabled in config
-    if true then
+    if public.config.get("3D_enabled") then
         effect = game.style.get_value("3D_skew") * game.status.pulse_3D
         love.graphics.scale(1, 1 / (1 + effect))
     end
     love.graphics.rotate(math.rad(current_rotation))
     game.style.compute_colors()
-    -- TODO: only if not background disabled in config
-    -- TODO: black and white mode
-    game.style.draw_background(game.level_data.sides, false)
+    local black_and_white = public.config.get("black_and_white")
+    if public.config.get("background") then
+        game.style.draw_background(game.level_data.sides, black_and_white)
+    end
     main_quads:clear()
     game.player.draw(
         game.style,
         game.level_data.sides,
         game.status.radius,
         main_quads,
-        false,
-        game.get_main_color(false)
+        black_and_white,
+        game.get_main_color(black_and_white)
     )
-    game.walls.draw(main_quads, game.get_main_color(false))
-    -- TODO: if 3d enabled in config
-    if true and depth ~= 0 then
-        -- TODO: get 3d multiplier from config (1 by default)
+    game.walls.draw(main_quads, game.get_main_color(black_and_white))
+    if public.config.get("3D_enabled") and depth ~= 0 then
         local per_layer_offset = game.style.get_value("3D_spacing")
             * game.style.get_value("3D_perspective_multiplier")
+            * public.config.get("3D_multiplier")
             * effect
             * 3.6
         local rad_rot = math.rad(current_rotation)
@@ -398,8 +401,7 @@ function public.draw(screen)
             )
         end
         local r, g, b, a = game.style.get_second_color()
-        -- TODO: black and white
-        if false then
+        if black_and_white then
             r, g, b, a = 0, 0, 0, 0
         end
         set_color(r, g, b, a)
@@ -409,8 +411,7 @@ function public.draw(screen)
         draw_text(1, -1)
         draw_text(1, 1)
         r, g, b, a = game.style.get_main_color()
-        -- TODO: black and white
-        if false then
+        if black_and_white then
             r, g, b = 255, 255, 255
         end
         set_color(r, g, b, a)

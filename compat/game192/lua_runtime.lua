@@ -117,7 +117,7 @@ end
 
 local clock_count = 0
 
-function lua_runtime.init_env(game)
+function lua_runtime.init_env(game, config)
     local pack = game.pack
     lua_runtime.env = {
         os = {
@@ -226,11 +226,11 @@ function lua_runtime.init_env(game)
         -- TODO
     end
     env.forceIncrement = function()
-        -- TODO: incrementDifficulty()
+        game.incrementDifficulty()
     end
     local function add_message(message, duration)
         game.message_timeline:append_do(function()
-            -- TODO: play beep.ogg
+            love.audio.play(game.assets.get_sound("beep.ogg"))
             game.message_text = message
         end)
         game.message_timeline:append_wait(duration)
@@ -239,14 +239,14 @@ function lua_runtime.init_env(game)
         end)
     end
     env.messageAdd = function(message, duration)
-        -- TODO: only if messages enabled in config
-        if game.first_play then
+        if config.get("messages") and game.first_play then
             add_message(message, duration)
         end
     end
     env.messageImportantAdd = function(message, duration)
-        -- TODO: only if messages enabled in config
-        add_message(message, duration)
+        if config.get("messages") then
+            add_message(message, duration)
+        end
     end
     env.isKeyPressed = function(key_code)
         local key = keycode_conversion[key_code]
