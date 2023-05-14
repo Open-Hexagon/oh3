@@ -13,6 +13,7 @@ local pos
 local last_pos
 local dead
 local color
+local hue_color = { 0, 0, 0, 0 }
 local cap_vertices
 local conf
 
@@ -82,14 +83,29 @@ local function draw_pivot(sides, radius, main_quads, r, g, b, a)
     end
 end
 
-local function draw_death_effect()
-    -- TODO
+local function draw_death_effect(sides, main_quads)
+    local div = math.pi / sides
+    local radius = hue / 8
+    local thickness = hue / 20
+    utils.get_color_from_hue((360 - hue) / 255, hue_color)
+    hue = hue + 1
+    if hue > 360 then
+        hue = 0
+    end
+    for i = 0, sides - 1 do
+        local d_angle = 2 * div * i
+        local p1_x, p1_y = extra_math.get_orbit(pos, d_angle - div, radius)
+        local p2_x, p2_y = extra_math.get_orbit(pos, d_angle + div, radius)
+        local p3_x, p3_y = extra_math.get_orbit(pos, d_angle + div, radius + thickness)
+        local p4_x, p4_y = extra_math.get_orbit(pos, d_angle - div, radius + thickness)
+        main_quads:add_quad(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y, unpack(hue_color))
+    end
 end
 
 function player.draw(style, sides, radius, main_quads, black_and_white, r, g, b, a)
     draw_pivot(sides, radius, main_quads, r, g, b, a)
     if dead then
-        draw_death_effect()
+        draw_death_effect(sides, main_quads)
     end
     color[1], color[2], color[3], color[4] = style.get_main_color()
     if black_and_white then

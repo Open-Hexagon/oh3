@@ -334,6 +334,7 @@ function public.draw(screen)
         game.style.draw_background(game.level_data.sides, black_and_white)
     end
     main_quads:clear()
+    game.walls.draw(main_quads, game.get_main_color(black_and_white))
     game.player.draw(
         game.style,
         game.level_data.sides,
@@ -342,7 +343,6 @@ function public.draw(screen)
         black_and_white,
         game.get_main_color(black_and_white)
     )
-    game.walls.draw(main_quads, game.get_main_color(black_and_white))
     if public.config.get("3D_enabled") and depth ~= 0 then
         local per_layer_offset = game.style.get_value("3D_spacing")
             * game.style.get_value("3D_perspective_multiplier")
@@ -386,8 +386,9 @@ function public.draw(screen)
         main_quads:draw_instanced(depth)
         love.graphics.setShader()
     end
-    main_quads:draw()
     game.player.draw_cap(game.level_data.sides, game.style, false)
+    love.graphics.setColor(1, 1, 1, 1)
+    main_quads:draw()
     -- message and flash shouldn't be affected by skew/rotation
     love.graphics.origin()
     love.graphics.scale(zoom_factor, zoom_factor)
