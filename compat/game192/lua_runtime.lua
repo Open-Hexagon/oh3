@@ -120,8 +120,9 @@ local clock_count = 0
 local key_count = 0
 local block_threshold = 1000
 
-function lua_runtime.init_env(game, config)
+function lua_runtime.init_env(game, public)
     local pack = game.pack
+    local config = public.config
     lua_runtime.env = {
         os = {
             time = function(...)
@@ -131,8 +132,9 @@ function lua_runtime.init_env(game, config)
                 clock_count = clock_count + 1
                 if clock_count > block_threshold then
                     -- blocking call (something like: `while os.clock() < x do ...`)
-                    -- TODO: check if this causes replay issues
-                    game.real_time = game.real_time + love.timer.step()
+                    game.blocked = true
+                    public.real_game_loop()
+                    game.blocked = false
                 end
                 return game.real_time
             end
@@ -260,8 +262,9 @@ function lua_runtime.init_env(game, config)
         key_count = key_count + 1
         if key_count > block_threshold then
             -- blocking loop like `while not isKeyPressed("left") do ...`
-            -- update events here in this case so keyboard state is updated
-            love.event.pump()
+            game.blocked = true
+            public.real_game_loop()
+            game.blocked = false
         end
         return love.keyboard.isDown(key)
     end

@@ -1,7 +1,7 @@
 function love.run()
     -- load game for testing
     local game = require("compat.game192")
-    game.start("Ideal Definition of Face Knocker", "reception", 1)
+    game.start("Neon", "lag", 1)
 
     -- target frametime
     local frametime = 1 / 240
@@ -15,7 +15,7 @@ function love.run()
     love.event.push("resize", love.graphics.getDimensions())
 
     -- function is called every frame by love
-    return function()
+    local function run()
         -- update as much as required depending on passed time
         local current_time = love.timer.getTime()
         while current_time - start_time >= frametime do
@@ -83,4 +83,6 @@ function love.run()
             love.graphics.present()
         end
     end
+    game.real_game_loop = run
+    return run
 end

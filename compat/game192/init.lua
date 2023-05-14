@@ -22,6 +22,7 @@ local game = {
     message_timeline = Timeline:new(),
     effect_timeline = Timeline:new(),
     real_time = 0,
+    blocked = false,
     assets = assets,
 }
 
@@ -59,6 +60,7 @@ local instance_colors = {}
 local depth = 0
 local last_move = 0
 local main_quads = DynamicQuads:new()
+local last_real_time = 0
 local current_rotation = 0
 
 function game.increment_difficulty()
@@ -159,7 +161,7 @@ function public.start(pack_folder, level_id, difficulty_mult)
     if not game.first_play then
         game.lua_runtime.run_fn_if_exists("onUnload")
     end
-    game.lua_runtime.init_env(game, public.config)
+    game.lua_runtime.init_env(game, public)
     game.lua_runtime.run_lua_file(game.pack.path .. "Scripts/" .. level_data.lua_file)
     game.lua_runtime.run_fn_if_exists("onLoad")
     if math.random(0, 1) == 0 then
@@ -172,6 +174,7 @@ function public.start(pack_folder, level_id, difficulty_mult)
     end
     shake_move[1], shake_move[2] = 0, 0
     game.real_time = 0
+    last_real_time = 0
     public.running = true
 end
 
@@ -193,150 +196,155 @@ end
 
 function public.update(frametime)
     game.real_time = game.real_time + frametime
-    frametime = frametime * 60
-    if game.status.flash_effect > 0 then
-        game.status.flash_effect = game.status.flash_effect - 3 * frametime
-    end
-    if game.status.flash_effect > 255 then
-        game.status.flash_effect = 255
-    elseif game.status.flash_effect < 0 then
-        game.status.flash_effect = 0
-    end
-    if game.status.has_died then
-        game.effect_timeline:update(frametime)
-        if game.effect_timeline.finished then
-            game.effect_timeline:clear()
-            game.effect_timeline:reset()
+    if not game.blocked then
+        frametime = (game.real_time - last_real_time) * 60
+        last_real_time = game.real_time
+        if frametime > 4 then
+            frametime = 4
         end
-    end
-    if not game.status.has_died then
-        local focus = love.keyboard.isDown(public.config.get("key_focus"))
-        local cw = love.keyboard.isDown(public.config.get("key_right"))
-        local ccw = love.keyboard.isDown(public.config.get("key_left"))
-        local move
-        if cw and not ccw then
-            move = 1
-            last_move = 1
-        elseif not cw and ccw then
-            move = -1
-            last_move = -1
-        elseif cw and ccw then
-            move = -last_move
-        else
-            move = 0
+        if game.status.flash_effect > 0 then
+            game.status.flash_effect = game.status.flash_effect - 3 * frametime
         end
-        game.walls.update(frametime, game.status.radius)
-        if game.player.update(frametime, game.status.radius, move, focus, game.walls) then
-            love.audio.play(death_sound)
-            love.audio.play(game_over_sound)
-            if not public.config.get("invincible") then
-                game.status.flash_effect = 255
-                -- camera shake
-                local s = 7
-                for i = s, 0, -1 do
-                    local j = s - i + 1
-                    for _ = 1, j * 3 do
-                        game.effect_timeline:append_do(function()
-                            shake_move[1] = (1 - math.random() * 2) * i
-                            shake_move[2] = (1 - math.random() * 2) * i
-                        end)
-                        game.effect_timeline:append_wait(1)
-                    end
-                end
-                game.effect_timeline:append_do(function()
-                    shake_move[1], shake_move[2] = 0, 0
-                end)
-                game.status.has_died = true
-                if game.music.source ~= nil then
-                    love.audio.stop(game.music.source)
-                end
+        if game.status.flash_effect > 255 then
+            game.status.flash_effect = 255
+        elseif game.status.flash_effect < 0 then
+            game.status.flash_effect = 0
+        end
+        if game.status.has_died then
+            game.effect_timeline:update(frametime)
+            if game.effect_timeline.finished then
+                game.effect_timeline:clear()
+                game.effect_timeline:reset()
             end
         end
-        game.events.update(frametime, game.status.current_time, game.message_timeline)
-        if game.status.time_stop <= 0 then
-            game.status.current_time = game.status.current_time + frametime / 60
-            game.status.increment_time = game.status.increment_time + frametime / 60
-        else
-            game.status.time_stop = game.status.time_stop - frametime
-        end
-        if game.status.increment_enabled then
-            if game.status.increment_time >= game.level_data.increment_time then
-                game.status.increment_time = 0
-                game.increment_difficulty()
-            end
-        end
-        game.lua_runtime.run_fn_if_exists("onUpdate", frametime)
-        game.main_timeline:update(frametime)
-        if game.main_timeline.finished then
-            game.main_timeline:clear()
-            game.lua_runtime.run_fn_if_exists("onStep")
-            game.main_timeline:reset()
-        end
-        if public.config.get("beatpulse") then
-            if game.status.beat_pulse_delay <= 0 then
-                game.status.beat_pulse = game.level_data.beat_pulse_max
-                game.status.beat_pulse_delay = game.level_data.beat_pulse_delay_max
+        if not game.status.has_died then
+            local focus = love.keyboard.isDown(public.config.get("key_focus"))
+            local cw = love.keyboard.isDown(public.config.get("key_right"))
+            local ccw = love.keyboard.isDown(public.config.get("key_left"))
+            local move
+            if cw and not ccw then
+                move = 1
+                last_move = 1
+            elseif not cw and ccw then
+                move = -1
+                last_move = -1
+            elseif cw and ccw then
+                move = -last_move
             else
-                game.status.beat_pulse_delay = game.status.beat_pulse_delay - frametime
+                move = 0
             end
-            if game.status.beat_pulse > 0 then
-                game.status.beat_pulse = game.status.beat_pulse - 2 * frametime
-            end
-            game.status.radius = game.level_data.radius_min * (game.status.pulse / game.level_data.pulse_min) + game.status.beat_pulse
-        end
-        if public.config.get("pulse") then
-            if game.status.pulse_delay <= 0 and game.status.pulse_delay_half <= 0 then
-                local pulse_add = game.status.pulse_direction > 0 and game.level_data.pulse_speed
-                    or -game.level_data.pulse_speed_r
-                local pulse_limit = game.status.pulse_direction > 0 and game.level_data.pulse_max
-                    or game.level_data.pulse_min
-                game.status.pulse = game.status.pulse + pulse_add * frametime
-                if
-                    (game.status.pulse_direction > 0 and game.status.pulse >= pulse_limit)
-                    or (game.status.pulse_direction < 0 and game.status.pulse <= pulse_limit)
-                then
-                    game.status.pulse = pulse_limit
-                    game.status.pulse_direction = -game.status.pulse_direction
-                    game.status.pulse_delay_half = game.level_data.pulse_delay_half_max
-                    if game.status.pulse_direction < 0 then
-                        game.status.pulse_delay = game.level_data.pulse_delay_max
+            game.walls.update(frametime, game.status.radius)
+            if game.player.update(frametime, game.status.radius, move, focus, game.walls) then
+                love.audio.play(death_sound)
+                love.audio.play(game_over_sound)
+                if not public.config.get("invincible") then
+                    game.status.flash_effect = 255
+                    -- camera shake
+                    local s = 7
+                    for i = s, 0, -1 do
+                        local j = s - i + 1
+                        for _ = 1, j * 3 do
+                            game.effect_timeline:append_do(function()
+                                shake_move[1] = (1 - math.random() * 2) * i
+                                shake_move[2] = (1 - math.random() * 2) * i
+                            end)
+                            game.effect_timeline:append_wait(1)
+                        end
+                    end
+                    game.effect_timeline:append_do(function()
+                        shake_move[1], shake_move[2] = 0, 0
+                    end)
+                    game.status.has_died = true
+                    if game.music.source ~= nil then
+                        love.audio.stop(game.music.source)
                     end
                 end
             end
-            game.status.pulse_delay = game.status.pulse_delay - frametime
-            game.status.pulse_delay_half = game.status.pulse_delay_half - frametime
+            game.events.update(frametime, game.status.current_time, game.message_timeline)
+            if game.status.time_stop <= 0 then
+                game.status.current_time = game.status.current_time + frametime / 60
+                game.status.increment_time = game.status.increment_time + frametime / 60
+            else
+                game.status.time_stop = game.status.time_stop - frametime
+            end
+            if game.status.increment_enabled then
+                if game.status.increment_time >= game.level_data.increment_time then
+                    game.status.increment_time = 0
+                    game.increment_difficulty()
+                end
+            end
+            game.lua_runtime.run_fn_if_exists("onUpdate", frametime)
+            game.main_timeline:update(frametime)
+            if game.main_timeline.finished then
+                game.main_timeline:clear()
+                game.lua_runtime.run_fn_if_exists("onStep")
+                game.main_timeline:reset()
+            end
+            if public.config.get("beatpulse") then
+                if game.status.beat_pulse_delay <= 0 then
+                    game.status.beat_pulse = game.level_data.beat_pulse_max
+                    game.status.beat_pulse_delay = game.level_data.beat_pulse_delay_max
+                else
+                    game.status.beat_pulse_delay = game.status.beat_pulse_delay - frametime
+                end
+                if game.status.beat_pulse > 0 then
+                    game.status.beat_pulse = game.status.beat_pulse - 2 * frametime
+                end
+                game.status.radius = game.level_data.radius_min * (game.status.pulse / game.level_data.pulse_min) + game.status.beat_pulse
+            end
+            if public.config.get("pulse") then
+                if game.status.pulse_delay <= 0 and game.status.pulse_delay_half <= 0 then
+                    local pulse_add = game.status.pulse_direction > 0 and game.level_data.pulse_speed
+                        or -game.level_data.pulse_speed_r
+                    local pulse_limit = game.status.pulse_direction > 0 and game.level_data.pulse_max
+                        or game.level_data.pulse_min
+                    game.status.pulse = game.status.pulse + pulse_add * frametime
+                    if
+                        (game.status.pulse_direction > 0 and game.status.pulse >= pulse_limit)
+                        or (game.status.pulse_direction < 0 and game.status.pulse <= pulse_limit)
+                    then
+                        game.status.pulse = pulse_limit
+                        game.status.pulse_direction = -game.status.pulse_direction
+                        game.status.pulse_delay_half = game.level_data.pulse_delay_half_max
+                        if game.status.pulse_direction < 0 then
+                            game.status.pulse_delay = game.level_data.pulse_delay_max
+                        end
+                    end
+                end
+                game.status.pulse_delay = game.status.pulse_delay - frametime
+                game.status.pulse_delay_half = game.status.pulse_delay_half - frametime
+            end
+            if not public.config.get("black_and_white") then
+                game.style.update(frametime)
+            end
+        else
+            game.level_data.rotation_speed = game.level_data.rotation_speed * 0.99
         end
-        if not public.config.get("black_and_white") then
-            game.style.update(frametime)
+        if public.config.get("3D_enabled") then
+            game.status.pulse_3D = game.status.pulse_3D
+                + game.style.get_value("3D_pulse_speed") * game.status.pulse_3D_direction * frametime
+            if game.status.pulse_3D > game.style.get_value("3D_pulse_max") then
+                game.status.pulse_3D_direction = -1
+            elseif game.status.pulse_3D < game.style.get_value("3D_pulse_min") then
+                game.status.pulse_3D_direction = 1
+            end
         end
-    else
-        game.level_data.rotation_speed = game.level_data.rotation_speed * 0.99
-    end
-    if public.config.get("3D_enabled") then
-        game.status.pulse_3D = game.status.pulse_3D
-            + game.style.get_value("3D_pulse_speed") * game.status.pulse_3D_direction * frametime
-        if game.status.pulse_3D > game.style.get_value("3D_pulse_max") then
-            game.status.pulse_3D_direction = -1
-        elseif game.status.pulse_3D < game.style.get_value("3D_pulse_min") then
-            game.status.pulse_3D_direction = 1
+        if public.config.get("rotation") then
+            local next_rotation = math.abs(game.level_data.rotation_speed) * 10 * frametime
+            if game.status.fast_spin > 0 then
+                next_rotation = next_rotation
+                    + math.abs((get_smoother_step(0, game.level_data.fast_spin, game.status.fast_spin) / 3.5) * frametime * 17)
+                game.status.fast_spin = game.status.fast_spin - frametime
+            end
+            current_rotation = current_rotation + next_rotation * get_sign(game.level_data.rotation_speed)
         end
-    end
-    if public.config.get("rotation") then
-        local next_rotation = math.abs(game.level_data.rotation_speed) * 10 * frametime
-        if game.status.fast_spin > 0 then
-            next_rotation = next_rotation
-                + math.abs((get_smoother_step(0, game.level_data.fast_spin, game.status.fast_spin) / 3.5) * frametime * 17)
-            game.status.fast_spin = game.status.fast_spin - frametime
+        -- only for level change, real restarts will happen externally
+        if game.status.must_restart then
+            game.first_play = game.restart_first_time
+            public.start(game.pack.folder, game.restart_id, game.difficulty_mult)
         end
-        current_rotation = current_rotation + next_rotation * get_sign(game.level_data.rotation_speed)
+        -- TODO: invalidate score if not official status invalid set or fps limit maybe?
     end
-    -- only for level change, real restarts will happen externally
-    if game.status.must_restart then
-        game.first_play = game.restart_first_time
-        public.start(game.pack.folder, game.restart_id, game.difficulty_mult)
-    end
-    -- TODO: invalidate score if not official status invalid set or fps limit maybe?
-
     -- TODO: make adjustable on a per level basis
     local performance = 0.03
     local target_frametime = ((0.785 * depth + 1) * (0.000461074 * performance + 0.000155698) * game.walls.size() + performance * (0.025 * depth + 1))
