@@ -133,12 +133,14 @@ function public.start(pack_folder, level_id, difficulty_mult)
     if game.music == nil then
         error("Music with id '" .. level_data.music_id .. "' not found")
     end
-    if game.first_play then
-        game.music.source:seek(math.floor(game.music.segments[1].time))
-    else
-        game.music.source:seek(math.floor(game.music.segments[math.random(1, #game.music.segments)].time))
+    if game.music.source ~= nil then
+        if game.first_play then
+            game.music.source:seek(math.floor(game.music.segments[1].time))
+        else
+            game.music.source:seek(math.floor(game.music.segments[math.random(1, #game.music.segments)].time))
+        end
+        love.audio.play(game.music.source)
     end
-    love.audio.play(game.music.source)
     game.message_text = ""
     game.events.init(game)
     game.status.reset()
@@ -245,7 +247,9 @@ function public.update(frametime)
                     shake_move[1], shake_move[2] = 0, 0
                 end)
                 game.status.has_died = true
-                love.audio.stop(game.music.source)
+                if game.music.source ~= nil then
+                    love.audio.stop(game.music.source)
+                end
             end
         end
         game.events.update(frametime, game.status.current_time, game.message_timeline)

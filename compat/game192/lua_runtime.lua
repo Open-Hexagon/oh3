@@ -1,4 +1,5 @@
 local log = require("log")(...)
+local play_sound = require("compat.game192.play_sound")
 local utils = require("compat.game192.utils")
 local lua_runtime = {
     env = {},
@@ -116,6 +117,8 @@ function lua_runtime.error(msg)
 end
 
 local clock_count = 0
+local key_count = 0
+local block_threshold = 1000
 
 function lua_runtime.init_env(game, config)
     local pack = game.pack
@@ -126,9 +129,9 @@ function lua_runtime.init_env(game, config)
             end,
             clock = function()
                 clock_count = clock_count + 1
-                if clock_count > 10000 then
+                if clock_count > block_threshold then
                     -- blocking call (something like: `while os.clock() < x do ...`)
-                    -- TODO: check if this will break replays
+                    -- TODO: check if this causes replay issues
                     game.real_time = game.real_time + love.timer.step()
                 end
                 return game.real_time
@@ -223,14 +226,14 @@ function lua_runtime.init_env(game, config)
         game.main_timeline:append_wait(duration)
     end
     env.playSound = function(id)
-        love.audio.play(game.assets.get_pack_sound(game.pack, id))
+        play_sound(game.assets.get_pack_sound(game.pack, id))
     end
     env.forceIncrement = function()
         game.incrementDifficulty()
     end
     local function add_message(message, duration)
         game.message_timeline:append_do(function()
-            love.audio.play(game.assets.get_sound("beep.ogg"))
+            play_sound(game.assets.get_sound("beep.ogg"))
             game.message_text = message
         end)
         game.message_timeline:append_wait(duration)
@@ -251,8 +254,14 @@ function lua_runtime.init_env(game, config)
     env.isKeyPressed = function(key_code)
         local key = keycode_conversion[key_code]
         if key == nil then
-            lua_runtime.error("No suitable keycode conversion found for '" .. key_code .. "'")
+            --lua_runtime.error("No suitable keycode conversion found for '" .. key_code .. "'")
             return false
+        end
+        key_count = key_count + 1
+        if key_count > block_threshold then
+            -- blocking loop like `while not isKeyPressed("left") do ...`
+            -- update events here in this case so keyboard state is updated
+            love.event.pump()
         end
         return love.keyboard.isDown(key)
     end
@@ -278,6 +287,7 @@ end
 
 function lua_runtime.run_fn_if_exists(name, ...)
     clock_count = 0
+    key_count = 0
     if env[name] ~= nil then
         xpcall(run_fn, lua_runtime.error, name, ...)
     end
