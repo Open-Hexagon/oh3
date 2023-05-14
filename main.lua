@@ -83,6 +83,16 @@ function love.run()
             love.graphics.present()
         end
     end
-    game.real_game_loop = run
+    game.real_game_loop = function()
+        -- move out of blocking call if game was stopped or on quit event
+        if not game.running then
+            error()
+        end
+        local ret = run()
+        if ret ~= nil then
+            love.event.push("quit", ret)
+            error()
+        end
+    end
     return run
 end

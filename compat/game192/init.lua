@@ -465,4 +465,8 @@ function public.draw(screen)
     end
 end
 
+function public.stop()
+    public.running = false
+end
+
 return public
