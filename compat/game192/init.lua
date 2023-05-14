@@ -190,7 +190,14 @@ end
 function public.update(frametime)
     game.real_time = game.real_time + frametime
     frametime = frametime * 60
-    -- TODO: update flash
+    if game.status.flash_effect > 0 then
+        game.status.flash_effect = game.status.flash_effect - 3 * frametime
+    end
+    if game.status.flash_effect > 255 then
+        game.status.flash_effect = 255
+    elseif game.status.flash_effect < 0 then
+        game.status.flash_effect = 0
+    end
     -- TODO: update effects
     if not game.status.has_died then
         local focus = love.keyboard.isDown(public.config.get("key_focus"))
@@ -417,7 +424,10 @@ function public.draw(screen)
         set_color(r, g, b, a)
         draw_text(0, 0)
     end
-    -- TODO: draw flash
+    if game.status.flash_effect ~= 0 then
+        set_color(255, 255, 255, game.status.flash_effect)
+        love.graphics.rectangle("fill", 0, 0, width / zoom_factor, height / zoom_factor)
+    end
 end
 
 return public
