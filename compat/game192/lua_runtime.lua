@@ -223,7 +223,7 @@ function lua_runtime.init_env(game, config)
         game.main_timeline:append_wait(duration)
     end
     env.playSound = function(id)
-        -- TODO
+        love.audio.play(game.assets.get_pack_sound(game.pack, id))
     end
     env.forceIncrement = function()
         game.incrementDifficulty()

@@ -203,14 +203,26 @@ function events.init(game)
                 game.lua_runtime.env.getLevelValueFloat(event.value_name) / event.value
             )
         end,
-        music_set = function()
-            -- TODO
+        music_set = function(event)
+            game.music = game.pack.music[event.id]
+            if game.music == nil then
+                error("Music with id '" .. event.id .. "' not found")
+            end
+            game.music.source:seek(math.floor(game.music.segments[math.random(1, #game.music.segments)].time))
         end,
-        music_set_segment = function()
-            -- TODO
+        music_set_segment = function(event)
+            game.music = game.pack.music[event.id]
+            if game.music == nil then
+                error("Music with id '" .. event.id .. "' not found")
+            end
+            game.music.source:seek(math.floor(game.music.segments[math.floor((event.segment_index or 0) + 1)].time))
         end,
-        music_set_seconds = function()
-            -- TODO
+        music_set_seconds = function(event)
+            game.music = game.pack.music[event.id]
+            if game.music == nil then
+                error("Music with id '" .. event.id .. "' not found")
+            end
+            game.music.source:seek(math.floor(event.seconds or 0))
         end,
         style_set = function(event)
             local style_data = game.pack.styles[event.id]
@@ -240,8 +252,8 @@ function events.init(game)
         script_exec = function(event)
             game.lua_runtime.run_lua_file(game.pack.path .. "Scripts/" .. event.value_name)
         end,
-        play_sound = function()
-            -- TODO
+        play_sound = function(event)
+            love.audio.play(game.assets.get_pack_sound(game.pack, event.id))
         end,
     }
 end

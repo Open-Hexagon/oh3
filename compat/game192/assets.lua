@@ -125,15 +125,17 @@ end
 
 function assets.get_sound(id)
     id = sound_mapping[id] or id
-    if cached_sounds[id] == nil then
+    -- cache sources, but allow playing it multiple times at the same time by loading it again if it's still playing
+    if cached_sounds[id] == nil or cached_sounds[id]:isPlaying() then
         cached_sounds[id] = love.audio.newSource(audio_path .. id, "static")
     end
     return cached_sounds[id]
 end
 
 function assets.get_pack_sound(pack, id)
-    if pack.cached_sounds[id] == nil then
-        pack.cached_sounds[id] = love.audio.newSource(pack.path .. "/Sounds/" .. id, "static")
+    -- cache sources, but allow playing it multiple times at the same time by loading it again if it's still playing
+    if pack.cached_sounds[id] == nil or pack.cached_sounds[id]:isPlaying() then
+        pack.cached_sounds[id] = love.audio.newSource(pack.path .. "Sounds/" .. id:match("_(.*)"), "static")
     end
     return pack.cached_sounds[id]
 end

@@ -39,6 +39,11 @@ local color_start_index = 0
 local background_tris = Tris:new()
 
 function style.select(style_data)
+    -- reset other values
+    current_hue = 0
+    pulse_factor = 0
+    current_swap_time = 0
+    color_start_index = 0
     -- reset values
     for k, _ in pairs(real_style_table) do
         real_style_table[k] = nil
