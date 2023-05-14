@@ -386,9 +386,8 @@ function public.draw(screen)
         main_quads:draw_instanced(depth)
         love.graphics.setShader()
     end
-    game.player.draw_cap(game.level_data.sides, game.style, false)
-    love.graphics.setColor(1, 1, 1, 1)
     main_quads:draw()
+    game.player.draw_cap(game.level_data.sides, game.style, false)
     -- message and flash shouldn't be affected by skew/rotation
     love.graphics.origin()
     love.graphics.scale(zoom_factor, zoom_factor)
