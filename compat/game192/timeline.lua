@@ -103,7 +103,13 @@ function Timeline:next()
     if self.current_command == nil then
         return
     end
-    self.current_index = self.current_index + 1
+    -- this is what the real game would do here
+    --self.current_index = self.current_index + 1
+    -- I changed it to remove the last command, it doesn't seem to cause issues
+    -- and most importantly it fixes the insane lag that comes from never letting
+    -- a timeline finish all its commands.
+    table.remove(self.commands, self.current_index)
+
     self.current_command = self.commands[self.current_index]
 end
 
