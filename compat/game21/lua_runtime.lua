@@ -471,7 +471,7 @@ function lua_runtime.init_env(game, public)
 
     -- Utility functions
     env.u_isHeadless = function()
-        return false
+        return args.headless
     end
     env.u_rndReal = function()
         -- u_rndReal = math.random wouldn't ignore args
