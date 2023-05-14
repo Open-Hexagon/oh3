@@ -114,6 +114,9 @@ function game.get_main_color(black_and_white)
 end
 
 function public.start(pack_folder, level_id, difficulty_mult)
+    game.real_time = 0
+    last_real_time = 0
+    public.running = true
     game.pack = assets.get_pack(pack_folder)
     local level_data = game.pack.levels[level_id]
     if level_data == nil then
@@ -173,9 +176,6 @@ function public.start(pack_folder, level_id, difficulty_mult)
         depth = 100
     end
     shake_move[1], shake_move[2] = 0, 0
-    game.real_time = 0
-    last_real_time = 0
-    public.running = true
 end
 
 local function get_sign(num)
