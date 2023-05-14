@@ -2,6 +2,12 @@ local Tris = require("compat.game21.dynamic_tris")
 local utils = require("compat.game192.utils")
 local style = {}
 
+local function set_default_color(color)
+    for i = 1, 4 do
+        color[i] = color[i] or 0
+    end
+end
+
 local function set_color_data_defaults(data)
     data.main = data.main or false
     data.dynamic = data.dynamic or false
@@ -9,9 +15,12 @@ local function set_color_data_defaults(data)
     data.dynamic_darkness = data.dynamic_darkness or 0
     data.hue_shift = data.hue_shift or 0
     data.offset = data.offset or 0
-    data.color = data.value or { 0, 0, 0, 0 }
+    data.value = data.value or { 0, 0, 0, 0 }
     data.pulse = data.pulse or { 0, 0, 0, 0 }
     data.result = { 0, 0, 0, 0 }
+    set_default_color(data.value)
+    set_default_color(data.pulse)
+    set_default_color(data.result)
 end
 
 local root
