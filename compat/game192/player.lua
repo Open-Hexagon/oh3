@@ -68,6 +68,11 @@ local function draw_pivot(sides, radius, main_quads, r, g, b, a)
     local div = 360 / sides
     local p_radius = radius * 0.75
     local distance2 = 5 + p_radius
+    if math.abs(p_radius) > math.abs(distance2) then
+        local dist = p_radius
+        p_radius = distance2
+        distance2 = dist
+    end
     local cos, sin = math.cos, math.sin
     for i = 0, sides - 1 do
         local p_angle = div * i
