@@ -25,6 +25,7 @@ local game = {
     assets = assets,
 }
 
+local shake_move = {0, 0}
 local beep_sound = assets.get_sound("beep.ogg")
 local death_sound = assets.get_sound("death.ogg")
 local game_over_sound = assets.get_sound("game_over.ogg")
@@ -167,6 +168,7 @@ function public.start(pack_folder, level_id, difficulty_mult)
     if depth > 100 then
         depth = 100
     end
+    shake_move[1], shake_move[2] = 0, 0
     game.real_time = 0
     public.running = true
 end
@@ -198,7 +200,13 @@ function public.update(frametime)
     elseif game.status.flash_effect < 0 then
         game.status.flash_effect = 0
     end
-    -- TODO: update effects
+    if game.status.has_died then
+        game.effect_timeline:update(frametime)
+        if game.effect_timeline.finished then
+            game.effect_timeline:clear()
+            game.effect_timeline:reset()
+        end
+    end
     if not game.status.has_died then
         local focus = love.keyboard.isDown(public.config.get("key_focus"))
         local cw = love.keyboard.isDown(public.config.get("key_right"))
@@ -221,7 +229,21 @@ function public.update(frametime)
             love.audio.play(game_over_sound)
             if not public.config.get("invincible") then
                 game.status.flash_effect = 255
-                -- TODO: camera shake
+                -- camera shake
+                local s = 7
+                for i = s, 0, -1 do
+                    local j = s - i + 1
+                    for _ = 1, j * 3 do
+                        game.effect_timeline:append_do(function()
+                            shake_move[1] = (1 - math.random() * 2) * i
+                            shake_move[2] = (1 - math.random() * 2) * i
+                        end)
+                        game.effect_timeline:append_wait(1)
+                    end
+                end
+                game.effect_timeline:append_do(function()
+                    shake_move[1], shake_move[2] = 0, 0
+                end)
                 game.status.has_died = true
                 love.audio.stop(game.music.source)
             end
@@ -329,6 +351,7 @@ function public.draw(screen)
     -- apply pulse as well
     local p = game.status.pulse / game.level_data.pulse_min
     love.graphics.scale(zoom_factor / p, zoom_factor / p)
+    love.graphics.translate(unpack(shake_move))
     local effect
     if public.config.get("3D_enabled") then
         effect = game.style.get_value("3D_skew") * game.status.pulse_3D
