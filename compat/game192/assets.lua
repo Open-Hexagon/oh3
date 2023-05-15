@@ -1,4 +1,5 @@
 local log = require("log")(...)
+local args = require("args")
 local json = require("extlibs.json.jsonc")
 
 local assets = {}
@@ -76,24 +77,26 @@ function assets.get_pack(folder)
             end
         end
 
-        -- music
-        pack_data.music = {}
-        for contents, filename in file_ext_read_iter(folder .. "Music", ".json") do
-            local success, music_json = decode_json(contents, filename)
-            if success then
-                music_json.file_name = music_json.file_name or filename:gsub("%.json", ".ogg")
-                if music_json.file_name:sub(-4) ~= ".ogg" then
-                    music_json.file_name = music_json.file_name .. ".ogg"
+        if not args.headless then
+            -- music
+            pack_data.music = {}
+            for contents, filename in file_ext_read_iter(folder .. "Music", ".json") do
+                local success, music_json = decode_json(contents, filename)
+                if success then
+                    music_json.file_name = music_json.file_name or filename:gsub("%.json", ".ogg")
+                    if music_json.file_name:sub(-4) ~= ".ogg" then
+                        music_json.file_name = music_json.file_name .. ".ogg"
+                    end
+                    if
+                        not pcall(function()
+                            music_json.source = love.audio.newSource(folder .. "Music/" .. music_json.file_name, "stream")
+                            music_json.source:setLooping(true)
+                        end)
+                    then
+                        log("Error: failed to load '" .. music_json.file_name .. "'")
+                    end
+                    pack_data.music[music_json.id] = music_json
                 end
-                if
-                    not pcall(function()
-                        music_json.source = love.audio.newSource(folder .. "Music/" .. music_json.file_name, "stream")
-                        music_json.source:setLooping(true)
-                    end)
-                then
-                    log("Error: failed to load '" .. music_json.file_name .. "'")
-                end
-                pack_data.music[music_json.id] = music_json
             end
         end
 

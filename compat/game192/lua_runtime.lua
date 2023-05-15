@@ -1,4 +1,5 @@
 local log = require("log")(...)
+local args = require("args")
 local play_sound = require("compat.game192.play_sound")
 local utils = require("compat.game192.utils")
 local lua_runtime = {
@@ -113,7 +114,7 @@ local keycode_conversion = {
 }
 
 function lua_runtime.error(msg)
-    log("Error: " .. msg)
+    log("Error: " .. (msg or "error() was called"))
 end
 
 local clock_count = 0
@@ -240,14 +241,16 @@ function lua_runtime.init_env(game, public)
         game.incrementDifficulty()
     end
     local function add_message(message, duration)
-        game.message_timeline:append_do(function()
-            play_sound(game.assets.get_sound("beep.ogg"))
-            game.message_text = message
-        end)
-        game.message_timeline:append_wait(duration)
-        game.message_timeline:append_do(function()
-            game.message_text = nil
-        end)
+        if not args.headless then
+            game.message_timeline:append_do(function()
+                play_sound(game.assets.get_sound("beep.ogg"))
+                game.message_text = message
+            end)
+            game.message_timeline:append_wait(duration)
+            game.message_timeline:append_do(function()
+                game.message_text = nil
+            end)
+        end
     end
     env.messageAdd = function(message, duration)
         if config.get("messages") and game.first_play then
@@ -275,7 +278,7 @@ function lua_runtime.init_env(game, public)
                 error()
             end
         end
-        return love.keyboard.isDown(key)
+        return game.input.get(key)
     end
     env.isFastSpinning = function()
         return game.status.fast_spin > 0

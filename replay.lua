@@ -16,6 +16,7 @@ function replay:new(path)
     local obj = setmetatable({
         data = {
             inputs = {},
+            seeds = {},
         },
     }, replay)
     if path ~= nil then
@@ -36,12 +37,10 @@ end
 ---set the level and the settings the game was started with
 ---@param config table global game settings (containing settings such as black and white mode)
 ---@param first_play boolean
----@param seed number
 ---@param pack_id string
 ---@param level_id string
 ---@param level_settings table level specific settings (e.g. the difficulty mult in 21)
-function replay:set_game_data(config, first_play, seed, pack_id, level_id, level_settings)
-    self.seed = seed
+function replay:set_game_data(config, first_play, pack_id, level_id, level_settings)
     self.pack_id = pack_id
     self.level_id = level_id
     self.first_play = first_play
@@ -60,12 +59,17 @@ function replay:record_input(key, state, time)
     state_changes[#state_changes + 1] = state
 end
 
+---saves the seed a math.randomseed call was given (this way they can be the same when the replay is replayed even if the level is settings its own random seeds)
+function replay:record_seed(seed)
+    self.data.seeds[#self.data.seeds + 1] = seed
+end
+
 ---saves the replay into a file
 ---@param path string
 function replay:save(path)
     -- the old game's format version was 0, so we call this 1 now
     local header =
-        love.data.pack("string", ">BBnzz", "1", self.first_play and 1 or 0, self.seed, self.pack_id, self.level_id)
+        love.data.pack("string", ">BBzz", "1", self.first_play and 1 or 0, self.pack_id, self.level_id)
     local data = msgpack.pack(self.data)
     local file = love.filesystem.newFile(path)
     file:open("w")
@@ -82,7 +86,7 @@ function replay:_read(path)
     if version > 1 or version < 1 then
         error("Unsupported replay format version '" .. version .. "'.")
     end
-    self.first_play, self.seed, self.pack_id, self.level_id, offset = love.data.unpack(">Bnzz", data, offset)
+    self.first_play, self.pack_id, self.level_id, offset = love.data.unpack(">Bzz", data, offset)
     self.first_play = self.first_play == 1
     _, self.data = msgpack.unpack(data, offset - 1)
 end

@@ -2,15 +2,14 @@ local args = require("args")
 local input = require("input")
 local Replay = require("replay")
 -- load game for testing
-local game = require("compat.game21")
+local game = require("compat.game192")
+--local game = require("compat.game21")
 game.set_input_handler(input)
 
 local function record_replay(pack, level, dm)
     game.seed = math.floor(love.timer.getTime() * 1000)
-    math.randomseed(game.seed)
-    math.random()
     input.replay = Replay:new()
-    input.replay:set_game_data(game.config.get_all(), true, game.seed, pack, level, { difficulty_mult = dm })
+    input.replay:set_game_data(game.config.get_all(), true, pack, level, { difficulty_mult = dm })
     input.record_start()
     game.start(pack, level, dm)
 end
@@ -23,8 +22,6 @@ local function replay_replay(file)
         game.config.set(name, value)
     end
     game.seed = replay.seed
-    math.randomseed(game.seed)
-    math.random()
     input.replay_start()
     game.start(replay.pack_id, replay.level_id, replay.data.level_settings.difficulty_mult)
 end
@@ -32,6 +29,26 @@ end
 function love.run()
     -- target frametime
     local frametime = 1 / 240
+
+    if args.headless then
+        if args.no_option == nil then
+            error("Started headless mode without replay")
+        end
+        game.real_game_loop = function()
+            -- move out of blocking call if game was stopped or on quit event
+            if not game.running then
+                error()
+            end
+            frametime = game.update(frametime) or frametime
+        end
+        replay_replay(args.no_option)
+        game.run_game_until_death()
+        print("Score: " .. game.get_score())
+        return function()
+            return 0
+        end
+    end
+
     local start_time = love.timer.getTime()
 
     -- enforce aspect ratio by rendering to canvas
@@ -123,20 +140,9 @@ function love.run()
             error()
         end
     end
-    if args.headless then
-        if args.no_option == nil then
-            error("Started headless mode without replay")
-        end
-        replay_replay(args.no_option)
-        game.run_game_until_death()
-        print("Score: " .. game.get_score())
-        return function()
-            return 0
-        end
-    end
-
     if args.no_option == nil then
-        record_replay("ohvrvanilla_vittorio_romeo_cube", "pointless", 1)
+        --record_replay("ohvrvanilla_vittorio_romeo_cube", "pointless", 1)
+        record_replay("New folder", "HardMoves", 1)
     else
         replay_replay(args.no_option)
     end

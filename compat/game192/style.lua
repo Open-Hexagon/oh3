@@ -1,3 +1,4 @@
+local args = require("args")
 local Tris = require("compat.game21.dynamic_tris")
 local utils = require("compat.game192.utils")
 local style = {}
@@ -45,7 +46,10 @@ local pulse_factor = 0
 local current_swap_time = 0
 local current_3D_override_color
 local color_start_index = 0
-local background_tris = Tris:new()
+local background_tris
+if not args.headless then
+    background_tris = Tris:new()
+end
 
 function style.select(style_data)
     -- reset other values

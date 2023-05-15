@@ -1,3 +1,5 @@
+local args = require("args")
+local playsound = require("compat.game21.playsound")
 local assets = require("compat.game192.assets")
 local DynamicQuads = require("compat.game21.dynamic_quads")
 local Timeline = require("compat.game192.timeline")
@@ -27,44 +29,47 @@ local game = {
 }
 
 local shake_move = {0, 0}
-local beep_sound = assets.get_sound("beep.ogg")
-local death_sound = assets.get_sound("death.ogg")
-local game_over_sound = assets.get_sound("game_over.ogg")
-local go_sound = assets.get_sound("go.ogg")
-local level_up_sound = assets.get_sound("level_up.ogg")
-local message_font = love.graphics.newFont("assets/font/imagine.ttf", 40)
-local layer_shader = love.graphics.newShader(
-    [[
-        attribute vec2 instance_offset;
-        attribute vec4 instance_color;
-        varying vec4 instance_color_out;
+local beep_sound, death_sound, game_over_sound, go_sound, level_up_sound, message_font, layer_shader, main_quads
+if not args.headless then
+    beep_sound = assets.get_sound("beep.ogg")
+    death_sound = assets.get_sound("death.ogg")
+    game_over_sound = assets.get_sound("game_over.ogg")
+    go_sound = assets.get_sound("go.ogg")
+    level_up_sound = assets.get_sound("level_up.ogg")
+    message_font = love.graphics.newFont("assets/font/imagine.ttf", 40)
+    layer_shader = love.graphics.newShader(
+        [[
+            attribute vec2 instance_offset;
+            attribute vec4 instance_color;
+            varying vec4 instance_color_out;
 
-        vec4 position(mat4 transform_projection, vec4 vertex_position)
-        {
-            instance_color_out = instance_color / 255.0;
-            vertex_position.xy += instance_offset;
-            return transform_projection * vertex_position;
-        }
-    ]],
-    [[
-        varying vec4 instance_color_out;
+            vec4 position(mat4 transform_projection, vec4 vertex_position)
+            {
+                instance_color_out = instance_color / 255.0;
+                vertex_position.xy += instance_offset;
+                return transform_projection * vertex_position;
+            }
+        ]],
+        [[
+            varying vec4 instance_color_out;
 
-        vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
-        {
-            return instance_color_out;
-        }
-    ]]
-)
+            vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
+            {
+                return instance_color_out;
+            }
+        ]]
+    )
+    main_quads = DynamicQuads:new()
+end
 local instance_offsets = {}
 local instance_colors = {}
 local depth = 0
 local last_move = 0
-local main_quads = DynamicQuads:new()
 local last_real_time = 0
 local current_rotation = 0
 
 function game.increment_difficulty()
-    love.audio.play(level_up_sound)
+    playsound(level_up_sound)
     game.level_data.rotation_speed = game.level_data.rotation_speed + game.level_data.rotation_increment * (game.level_data.rotation_speed > 0 and 1 or -1)
     game.level_data.rotation_speed = -game.level_data.rotation_speed
     if game.status.fast_spin < 0 and math.abs(game.level_data.rotation_speed) > game.level_data.rotation_speed_max then
@@ -98,7 +103,7 @@ function game.side_change(side_count)
 end
 
 function game.set_sides(side_count)
-    love.audio.play(beep_sound)
+    playsound(beep_sound)
     if side_count < 3 then
         side_count = 3
     end
@@ -132,19 +137,21 @@ function public.start(pack_folder, level_id, difficulty_mult)
     end
     game.style.select(style_data)
     game.difficulty_mult = difficulty_mult
-    love.audio.stop()
-    love.audio.play(go_sound)
-    game.music = game.pack.music[level_data.music_id]
-    if game.music == nil then
-        error("Music with id '" .. level_data.music_id .. "' not found")
-    end
-    if game.music.source ~= nil then
-        if game.first_play then
-            game.music.source:seek(math.floor(game.music.segments[1].time))
-        else
-            game.music.source:seek(math.floor(game.music.segments[math.random(1, #game.music.segments)].time))
+    if not args.headless then
+        love.audio.stop()
+        love.audio.play(go_sound)
+        game.music = game.pack.music[level_data.music_id]
+        if game.music == nil then
+            error("Music with id '" .. level_data.music_id .. "' not found")
         end
-        love.audio.play(game.music.source)
+        if game.music.source ~= nil then
+            if game.first_play then
+                game.music.source:seek(math.floor(game.music.segments[1].time))
+            else
+                game.music.source:seek(math.floor(game.music.segments[math.random(1, #game.music.segments)].time))
+            end
+            love.audio.play(game.music.source)
+        end
     end
     game.message_text = ""
     game.events.init(game)
@@ -197,6 +204,7 @@ end
 function public.update(frametime)
     game.real_time = game.real_time + frametime
     if not game.blocked then
+        game.input.update()
         frametime = (game.real_time - last_real_time) * 60
         last_real_time = game.real_time
         if frametime > 4 then
@@ -218,9 +226,9 @@ function public.update(frametime)
             end
         end
         if not game.status.has_died then
-            local focus = love.keyboard.isDown(public.config.get("key_focus"))
-            local cw = love.keyboard.isDown(public.config.get("key_right"))
-            local ccw = love.keyboard.isDown(public.config.get("key_left"))
+            local focus = game.input.get("key_focus")
+            local cw = game.input.get("key_right")
+            local ccw = game.input.get("key_left")
             local move
             if cw and not ccw then
                 move = 1
@@ -235,8 +243,8 @@ function public.update(frametime)
             end
             game.walls.update(frametime, game.status.radius)
             if game.player.update(frametime, game.status.radius, move, focus, game.walls) then
-                love.audio.play(death_sound)
-                love.audio.play(game_over_sound)
+                playsound(death_sound)
+                playsound(game_over_sound)
                 if not public.config.get("invincible") then
                     game.status.flash_effect = 255
                     -- camera shake
@@ -255,7 +263,7 @@ function public.update(frametime)
                         shake_move[1], shake_move[2] = 0, 0
                     end)
                     game.status.has_died = true
-                    if game.music.source ~= nil then
+                    if not args.headless and game.music.source ~= nil then
                         love.audio.stop(game.music.source)
                     end
                 end
@@ -465,6 +473,33 @@ function public.draw(screen)
     end
 end
 
+---give the game an input handler that is capable of replaying or recording inputs
+---@param input table
+function public.set_input_handler(input)
+    game.input = input
+    input.custom_keybinds = {
+        key_focus = public.config.get("key_focus"),
+        key_right = public.config.get("key_right"),
+        key_left = public.config.get("key_left"),
+    }
+end
+
+---get the current score (gets the custom score if one exists)
+---@return integer
+function public.get_score()
+    return game.status.current_time
+end
+
+---runs the game until the player dies without caring about real time
+function public.run_game_until_death()
+    local frametime = 1 / 240
+    while not game.status.has_died do
+        -- TODO: timescale
+        frametime = public.update(frametime)
+    end
+end
+
+---stop the game (works during gameplay and gets out of blocking calls)
 function public.stop()
     public.running = false
 end

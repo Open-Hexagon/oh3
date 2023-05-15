@@ -110,6 +110,8 @@ local must_spawn_swap_particles = false
 ---@param level_id string
 ---@param difficulty_mult number
 function public.start(pack_id, level_id, difficulty_mult)
+    math.randomseed(public.seed)
+    math.random()
     game.pack_data = public.assets.get_pack_from_id(pack_id)
     game.level_data = game.pack_data.levels[level_id]
     if game.level_data == nil then
@@ -806,6 +808,11 @@ function public.run_game_until_death()
         -- TODO: timescale
         public.update(1 / 240)
     end
+end
+
+---stop the game
+function public.stop()
+    public.running = false
 end
 
 return public

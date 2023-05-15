@@ -1,4 +1,5 @@
 local log = require("log")(...)
+local args = require("args")
 local executing_events = {}
 local queued_events = {}
 local events = {}
@@ -278,10 +279,12 @@ function events.update(frametime, level_time, message_timeline)
             table.remove(queued_events, 1)
         end
     end
-    message_timeline:update(frametime)
-    if message_timeline.finished then
-        message_timeline:clear()
-        message_timeline:reset()
+    if not args.headless then
+        message_timeline:update(frametime)
+        if message_timeline.finished then
+            message_timeline:clear()
+            message_timeline:reset()
+        end
     end
     level_events:execute(level_time)
 end

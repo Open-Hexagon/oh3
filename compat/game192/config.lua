@@ -17,7 +17,7 @@ add_property("3D_multiplier", 1, false)
 add_property("player_size", 7.3, false)
 add_property("player_speed", 9.45, false)
 add_property("player_focus_speed", 4.625, false)
-add_property("invincible", true, false)
+add_property("invincible", false, false)
 add_property("messages", true, false)
 add_property("key_focus", "lshift", true)
 add_property("key_right", "right", true)
@@ -41,6 +41,10 @@ function config.get(name)
     else
         return value
     end
+end
+
+function config.get_all()
+    return settings
 end
 
 config.set_defaults()
