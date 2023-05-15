@@ -4,7 +4,7 @@ local play_sound = require("compat.game192.play_sound")
 local utils = require("compat.game192.utils")
 local lua_runtime = {
     env = {},
-    reset_timings = false
+    reset_timings = false,
 }
 
 local file_cache = {}
@@ -141,7 +141,7 @@ function lua_runtime.init_env(game, public)
             end,
             execute = function(command)
                 log("Level attempted to execute potentially malicious command: '" .. command .. "'")
-            end
+            end,
         },
         next = next,
         error = error,

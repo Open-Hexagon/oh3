@@ -42,9 +42,28 @@ local function spawn_wall(side, thickness, speed, acceleration, minSpeed, maxSpe
     local wall_angle_right = level_data.wall_angle_right
     local wall_skew_left = level_data.wall_skew_left
     local wall_skew_right = level_data.wall_skew_right
-    local original_wall = utils.lookup_path(
-        tmp_wall_data,
-        {
+    local original_wall = utils.lookup_path(tmp_wall_data, {
+        side_count,
+        wall_angle_left,
+        wall_angle_right,
+        wall_skew_left,
+        wall_skew_right,
+        side,
+        thickness,
+        speed,
+        acceleration,
+        minSpeed,
+        maxSpeed,
+    })
+    if original_wall ~= nil then
+        original_wall.times = 1 + original_wall.times
+        duplicate_wall_count = duplicate_wall_count + 1
+    else
+        local wall_table = {
+            vertices = {},
+            times = 1,
+        }
+        utils.insert_path(tmp_wall_data, {
             side_count,
             wall_angle_left,
             wall_angle_right,
@@ -56,33 +75,7 @@ local function spawn_wall(side, thickness, speed, acceleration, minSpeed, maxSpe
             acceleration,
             minSpeed,
             maxSpeed,
-        }
-    )
-    if original_wall ~= nil then
-        original_wall.times = 1 + original_wall.times
-        duplicate_wall_count = duplicate_wall_count + 1
-    else
-        local wall_table = {
-            vertices = {},
-            times = 1
-        }
-        utils.insert_path(
-            tmp_wall_data,
-            {
-                side_count,
-                wall_angle_left,
-                wall_angle_right,
-                wall_skew_left,
-                wall_skew_right,
-                side,
-                thickness,
-                speed,
-                acceleration,
-                minSpeed,
-                maxSpeed,
-            },
-            wall_table
-        )
+        }, wall_table)
         local div = utils.float_round(360 / side_count)
         local angle = div * side
         wall_table.vertices[7], wall_table.vertices[8] = getOrbit(angle - div * 0.5, WALL_SPAWN_DIST)

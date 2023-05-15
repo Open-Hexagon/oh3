@@ -29,7 +29,7 @@ local game = {
     current_frametime = 0.25 / 60,
 }
 
-local shake_move = {0, 0}
+local shake_move = { 0, 0 }
 local beep_sound, death_sound, game_over_sound, go_sound, level_up_sound, message_font, layer_shader, main_quads
 if not args.headless then
     beep_sound = assets.get_sound("beep.ogg")
@@ -71,10 +71,12 @@ local current_rotation = 0
 
 function game.increment_difficulty()
     playsound(level_up_sound)
-    game.level_data.rotation_speed = game.level_data.rotation_speed + game.level_data.rotation_increment * (game.level_data.rotation_speed > 0 and 1 or -1)
+    game.level_data.rotation_speed = game.level_data.rotation_speed
+        + game.level_data.rotation_increment * (game.level_data.rotation_speed > 0 and 1 or -1)
     game.level_data.rotation_speed = -game.level_data.rotation_speed
     if game.status.fast_spin < 0 and math.abs(game.level_data.rotation_speed) > game.level_data.rotation_speed_max then
-        game.level_data.rotation_speed = game.level_data.rotation_speed_max * (game.level_data.rotation_speed > 0 and 1 or -1)
+        game.level_data.rotation_speed = game.level_data.rotation_speed_max
+            * (game.level_data.rotation_speed > 0 and 1 or -1)
     end
     game.status.fast_spin = game.level_data.fast_spin
     game.main_timeline:append_do(function()
@@ -303,7 +305,8 @@ function public.update(frametime)
             if game.status.beatpulse > 0 then
                 game.status.beatpulse = game.status.beatpulse - 2 * frametime
             end
-            game.status.radius = game.level_data.radius_min * (game.status.pulse / game.level_data.pulse_min) + game.status.beatpulse
+            game.status.radius = game.level_data.radius_min * (game.status.pulse / game.level_data.pulse_min)
+                + game.status.beatpulse
         end
         if public.config.get("pulse") then
             if game.status.pulse_delay <= 0 and game.status.pulse_delay_half <= 0 then
@@ -346,7 +349,9 @@ function public.update(frametime)
         local next_rotation = math.abs(game.level_data.rotation_speed) * 10 * frametime
         if game.status.fast_spin > 0 then
             next_rotation = next_rotation
-                + math.abs((get_smoother_step(0, game.level_data.fast_spin, game.status.fast_spin) / 3.5) * frametime * 17)
+                + math.abs(
+                    (get_smoother_step(0, game.level_data.fast_spin, game.status.fast_spin) / 3.5) * frametime * 17
+                )
             game.status.fast_spin = game.status.fast_spin - frametime
         end
         current_rotation = current_rotation + next_rotation * get_sign(game.level_data.rotation_speed)
@@ -365,7 +370,10 @@ function public.update(frametime)
 
     -- TODO: make adjustable on a per level basis
     local performance = 0.03
-    local target_frametime = ((0.785 * depth + 1) * (0.000461074 * performance + 0.000155698) * game.walls.size() + performance * (0.025 * depth + 1))
+    local target_frametime = (
+        (0.785 * depth + 1) * (0.000461074 * performance + 0.000155698) * game.walls.size()
+        + performance * (0.025 * depth + 1)
+    )
     if target_frametime < 0.0625 then
         target_frametime = 0.0625
     elseif target_frametime > 0.25 then
