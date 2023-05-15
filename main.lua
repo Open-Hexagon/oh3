@@ -34,13 +34,6 @@ function love.run()
         if args.no_option == nil then
             error("Started headless mode without replay")
         end
-        game.real_game_loop = function()
-            -- move out of blocking call if game was stopped or on quit event
-            if not game.running then
-                error()
-            end
-            frametime = game.update(frametime) or frametime
-        end
         replay_replay(args.no_option)
         game.run_game_until_death()
         print("Score: " .. game.get_score())
@@ -58,8 +51,14 @@ function love.run()
     -- correct aspect ratio initially (before the user resizes the window)
     love.event.push("resize", love.graphics.getDimensions())
 
+    if args.no_option == nil then
+        --record_replay("ohvrvanilla_vittorio_romeo_cube", "pointless", 1)
+        record_replay("New folder", "HardMoves", 1)
+    else
+        replay_replay(args.no_option)
+    end
     -- function is called every frame by love
-    local function run()
+    return function()
         -- update as much as required depending on passed time
         local current_time = love.timer.getTime()
         while current_time - start_time >= frametime do
@@ -99,6 +98,10 @@ function love.run()
             if game.running then
                 -- allow games to control tick rate dynamically
                 frametime = game.update(frametime) or frametime
+                -- reset timings after longer blocking call
+                if game.reset_timings then
+                    start_time = love.timer.getTime()
+                end
             end
         end
         if love.graphics.isActive() then
@@ -129,22 +132,4 @@ function love.run()
             love.graphics.present()
         end
     end
-    game.real_game_loop = function()
-        -- move out of blocking call if game was stopped or on quit event
-        if not game.running then
-            error()
-        end
-        local ret = run()
-        if ret ~= nil then
-            love.event.push("quit", ret)
-            error()
-        end
-    end
-    if args.no_option == nil then
-        --record_replay("ohvrvanilla_vittorio_romeo_cube", "pointless", 1)
-        record_replay("New folder", "HardMoves", 1)
-    else
-        replay_replay(args.no_option)
-    end
-    return run
 end

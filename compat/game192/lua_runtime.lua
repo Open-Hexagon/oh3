@@ -4,6 +4,7 @@ local play_sound = require("compat.game192.play_sound")
 local utils = require("compat.game192.utils")
 local lua_runtime = {
     env = {},
+    reset_timings = false
 }
 
 local file_cache = {}
@@ -133,12 +134,8 @@ function lua_runtime.init_env(game, public)
                 clock_count = clock_count + 1
                 if clock_count > block_threshold then
                     -- blocking call (something like: `while os.clock() < x do ...`)
-                    game.blocked = true
-                    public.real_game_loop()
-                    game.blocked = false
-                    if game.status.must_restart then
-                        error()
-                    end
+                    game.real_time = game.real_time + game.current_frametime
+                    game.blocked_updates = game.blocked_updates + 1
                 end
                 return game.real_time
             end,
@@ -271,12 +268,10 @@ function lua_runtime.init_env(game, public)
         key_count = key_count + 1
         if key_count > block_threshold then
             -- blocking loop like `while not isKeyPressed("left") do ...`
-            game.blocked = true
-            public.real_game_loop()
-            game.blocked = false
-            if game.status.must_restart then
-                error()
+            if not args.headless then
+                love.event.pump()
             end
+            game.input.update()
         end
         return game.input.get(key)
     end
@@ -305,6 +300,9 @@ function lua_runtime.run_fn_if_exists(name, ...)
     key_count = 0
     if env[name] ~= nil then
         xpcall(run_fn, lua_runtime.error, name, ...)
+    end
+    if key_count > block_threshold then
+        lua_runtime.reset_timings = true
     end
 end
 
