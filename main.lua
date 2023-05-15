@@ -93,6 +93,6 @@ function love.run()
             error()
         end
     end
-    game.start("Neon", "lag", 1)
+    game.start("Hexadorsip", "pac-man", 1)
     return run
 end

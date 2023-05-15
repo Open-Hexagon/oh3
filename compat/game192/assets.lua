@@ -93,9 +93,6 @@ function assets.get_pack(folder)
                 then
                     log("Error: failed to load '" .. music_json.file_name .. "'")
                 end
-                while type(music_json.segments[#music_json.segments]) == "userdata" do
-                    music_json.segments[#music_json.segments] = nil
-                end
                 pack_data.music[music_json.id] = music_json
             end
         end

@@ -65,15 +65,8 @@ function style.select(style_data)
     })
     current_hue = root.hue_min
     set_color_data_defaults(root.main)
-    for i = #root.colors, 1, -1 do
-        if type(root.colors[i]) == "userdata" then
-            root.colors[i] = nil
-        else
-            set_color_data_defaults(root.colors[i])
-        end
-    end
-    if type(root.main) == "userdata" then
-        root.main = {}
+    for i = 1, #root.colors do
+        set_color_data_defaults(root.colors[i])
     end
     set_color_data_defaults(root.main)
 end
