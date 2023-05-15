@@ -93,6 +93,6 @@ function love.run()
             error()
         end
     end
-    game.start("New folder", "HardMoves", 1)
+    game.start("Neon", "lag", 1)
     return run
 end

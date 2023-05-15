@@ -135,6 +135,9 @@ function lua_runtime.init_env(game, public)
                     game.blocked = true
                     public.real_game_loop()
                     game.blocked = false
+                    if game.status.must_restart then
+                        error()
+                    end
                 end
                 return game.real_time
             end,
@@ -268,6 +271,9 @@ function lua_runtime.init_env(game, public)
             game.blocked = true
             public.real_game_loop()
             game.blocked = false
+            if game.status.must_restart then
+                error()
+            end
         end
         return love.keyboard.isDown(key)
     end
