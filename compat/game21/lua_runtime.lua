@@ -753,20 +753,20 @@ function lua_runtime.init_env(game, public)
     env.shdr_setUniformIVec2 = function(id, name, a, b)
         uniform_value[1] = a or 0
         uniform_value[2] = b or 0
-        set_uniform(id, "vec2", name, uniform_value)
+        set_uniform(id, "ivec2", name, uniform_value)
     end
     env.shdr_setUniformIVec3 = function(id, name, a, b, c)
         uniform_value[1] = a or 0
         uniform_value[2] = b or 0
         uniform_value[3] = c or 0
-        set_uniform(id, "vec3", name, uniform_value)
+        set_uniform(id, "ivec3", name, uniform_value)
     end
     env.shdr_setUniformIVec4 = function(id, name, a, b, c, d)
         uniform_value[1] = a or 0
         uniform_value[2] = b or 0
         uniform_value[3] = c or 0
         uniform_value[4] = d or 0
-        set_uniform(id, "vec4", name, uniform_value)
+        set_uniform(id, "ivec4", name, uniform_value)
     end
     env.shdr_resetAllActiveFragmentShaders = function()
         for i = 0, 8 do

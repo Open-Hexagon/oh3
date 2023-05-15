@@ -30,24 +30,6 @@ local function replay_replay(file)
 end
 
 function love.run()
-    if args.headless then
-        if args.no_option == nil then
-            error("Started headless mode without replay")
-        end
-        replay_replay(args.no_option)
-        game.run_game_until_death()
-        print("Score: " .. game.get_score())
-        return function()
-            return 0
-        end
-    end
-
-    if args.no_option == nil then
-        record_replay("ohvrvanilla_vittorio_romeo_cube", "pointless", 1)
-    else
-        replay_replay(args.no_option)
-    end
-
     -- target frametime
     local frametime = 1 / 240
     local start_time = love.timer.getTime()
@@ -60,7 +42,7 @@ function love.run()
     love.event.push("resize", love.graphics.getDimensions())
 
     -- function is called every frame by love
-    return function()
+    local function run()
         -- update as much as required depending on passed time
         local current_time = love.timer.getTime()
         while current_time - start_time >= frametime do
@@ -94,11 +76,12 @@ function love.run()
 
                 -- allow game modules to have their own event handlers
                 if game.running and game[name] ~= nil then
-                    game[name](game, a, b, c, d, e, f)
+                    game[name](a, b, c, d, e, f)
                 end
             end
             if game.running then
-                game.update(frametime)
+                -- allow games to control tick rate dynamically
+                frametime = game.update(frametime) or frametime
             end
         end
         if love.graphics.isActive() then
@@ -110,7 +93,6 @@ function love.run()
             if game.running and screen ~= nil then
                 -- render onto the screen
                 love.graphics.setCanvas(screen)
-                -- clear with white for now, so the resizing can be seen in action
                 love.graphics.clear(0, 0, 0, 1)
                 -- make (0, 0) be the center
                 love.graphics.translate(screen:getWidth() / 2, screen:getHeight() / 2)
@@ -125,11 +107,38 @@ function love.run()
             end
             love.timer.step()
             -- used for testing TODO: remove once we have a proper ui element for it
-            love.graphics.print(
-                "FPS: " .. love.timer.getFPS() .. " Score: " .. math.floor(game.get_score() * 1000) / 1000
-            )
+            love.graphics.print("FPS: " .. love.timer.getFPS() .. " Tickrate: " .. 1 / frametime .. " Score: " .. math.floor(game.get_score() * 1000) / 1000)
 
             love.graphics.present()
         end
     end
+    game.real_game_loop = function()
+        -- move out of blocking call if game was stopped or on quit event
+        if not game.running then
+            error()
+        end
+        local ret = run()
+        if ret ~= nil then
+            love.event.push("quit", ret)
+            error()
+        end
+    end
+    if args.headless then
+        if args.no_option == nil then
+            error("Started headless mode without replay")
+        end
+        replay_replay(args.no_option)
+        game.run_game_until_death()
+        print("Score: " .. game.get_score())
+        return function()
+            return 0
+        end
+    end
+
+    if args.no_option == nil then
+        record_replay("ohvrvanilla_vittorio_romeo_cube", "pointless", 1)
+    else
+        replay_replay(args.no_option)
+    end
+    return run
 end
