@@ -1,5 +1,5 @@
 require("busted.runner")()
-local Replay = require("replay")
+local Replay = require("game_handler.replay")
 
 describe("Replay files", function()
     it("can be created", function()

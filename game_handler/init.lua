@@ -1,6 +1,6 @@
 local args = require("args")
-local input = require("input")
-local Replay = require("replay")
+local input = require("game_handler.input")
+local Replay = require("game_handler.replay")
 local game_handler = {}
 local games = {
     ["192"] = require("compat.game192"),

@@ -1,5 +1,5 @@
 require("busted.runner")()
-local game_handler = require("game_handler")
+local game_handler = require("game_handler.init")
 
 describe("headless games", function()
     local versions = {
