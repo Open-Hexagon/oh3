@@ -703,6 +703,7 @@ function lua_runtime.init_env(game, public, assets)
         return true
     end
     local function set_uniform(id, uniform_type, name, value)
+        id = id or 0
         if check_valid_shader_id(id) then
             local shader_type = shaders[id].uniforms[name]
             -- would be nil if uniform didn't exist (not printing errors because of spam)
@@ -787,6 +788,7 @@ function lua_runtime.init_env(game, public, assets)
     end
     env.shdr_setActiveFragmentShader = function(render_stage, id)
         render_stage = render_stage or 0
+        id = id or 0
         if check_valid_render_stage(render_stage) and check_valid_shader_id(id) then
             game.status.fragment_shaders[render_stage] = shaders[id]
         end

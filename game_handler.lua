@@ -56,6 +56,7 @@ function game_handler.record_start(pack, level, level_settings)
     end
     start_time = love.timer.getTime()
     target_frametime = 1 / 240
+    target_frametime = current_game.update(target_frametime) or target_frametime
 end
 
 function game_handler.replay_start(file)
@@ -81,6 +82,7 @@ function game_handler.replay_start(file)
             start_time = love.timer.getTime()
         end
         target_frametime = 1 / 240
+        target_frametime = current_game.update(target_frametime) or target_frametime
     else
         error("Replay file at '" .. file .. "' does not exist")
     end
