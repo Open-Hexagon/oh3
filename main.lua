@@ -1,3 +1,4 @@
+local log = require("log")(...)
 local args = require("args")
 local game_handler = require("game_handler")
 
@@ -8,7 +9,7 @@ function love.run()
         end
         game_handler.replay_start(args.no_option)
         game_handler.run_until_death()
-        print("Score: " .. game_handler.get_score())
+        log("Score: " .. game_handler.get_score())
         return function()
             return 0
         end
@@ -28,7 +29,6 @@ function love.run()
         love.event.pump()
         for name, a, b, c, d, e, f in love.event.poll() do
             if name == "quit" then
-                game_handler.save_replay()
                 return a or 0
             end
             game_handler.process_event(name, a, b, c, d, e, f)

@@ -274,6 +274,9 @@ function public.update(frametime)
                 if not args.headless and game.music.source ~= nil then
                     love.audio.stop(game.music.source)
                 end
+                if public.death_callback ~= nil then
+                    public.death_callback()
+                end
             end
         end
         game.events.update(frametime, game.status.current_time, game.message_timeline)

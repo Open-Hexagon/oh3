@@ -207,6 +207,7 @@ end
 function game.death(force)
     if not game.status.has_died then
         game.lua_runtime.run_fn_if_exists("onPreDeath")
+        playsound(game.level_status.death_sound)
         if force or not (game.level_status.tutorial_mode or public.config.get("invincible")) then
             game.lua_runtime.run_fn_if_exists("onDeath")
             game.status.camera_shake = 45 * public.config.get("camera_shake_mult")
@@ -218,8 +219,10 @@ function game.death(force)
             game.flash_color[3] = 255
             game.status.flash_effect = 255
             game.status.has_died = true
+            if public.death_callback ~= nil then
+                public.death_callback()
+            end
         end
-        playsound(game.level_status.death_sound)
     end
 end
 

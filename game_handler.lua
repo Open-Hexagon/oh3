@@ -22,6 +22,10 @@ end
 
 function game_handler.set_version(version)
     current_game = games[version]
+    current_game.death_callback = function()
+        game_handler.save_replay()
+    end
+    current_game.set_input_handler(input)
     if current_game == nil then
         error("Game with version '" .. version .. "' does not exist or is unsupported.")
     end
@@ -34,7 +38,6 @@ function game_handler.record_start(pack, level, level_settings)
             error("Level settings must contain 'difficulty_mult' when starting a compat game.")
         end
     end
-    current_game.set_input_handler(input)
     current_game.seed = math.floor(love.timer.getTime() * 1000)
     input.replay = Replay:new()
     input.replay:set_game_data(
@@ -67,7 +70,6 @@ function game_handler.replay_start(file)
         for name, value in pairs(replay.data.config) do
             current_game.config.set(name, value)
         end
-        current_game.set_input_handler(input)
         input.replay_start()
         if current_game.dm_is_only_setting then
             current_game.start(replay.pack_id, replay.level_id, replay.data.level_settings.difficulty_mult)
@@ -81,6 +83,10 @@ function game_handler.replay_start(file)
     else
         error("Replay file at '" .. file .. "' does not exist")
     end
+end
+
+function game_handler.stop()
+    current_game.stop()
 end
 
 function game_handler.process_event(name, ...)
