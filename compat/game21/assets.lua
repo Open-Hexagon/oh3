@@ -3,7 +3,7 @@ local args = require("args")
 local json = require("extlibs.json.jsonc")
 
 local loaded_packs = {}
-local pack_path = "Packs/"
+local pack_path = "packs21/"
 local metadata_pack_json_map = {}
 local folder_pack_json_map = {}
 local sound_mapping = {

@@ -4,7 +4,7 @@ local json = require("extlibs.json.jsonc")
 
 local assets = {}
 local packs = {}
-local pack_path = "Packs192/"
+local pack_path = "packs192/"
 local sound_mapping = {
     ["beep.ogg"] = "click.ogg",
     ["difficultyMultDown.ogg"] = "difficulty_mult_down.ogg",
