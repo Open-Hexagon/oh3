@@ -20,6 +20,8 @@ if not args.headless then
     love.event.push("resize", love.graphics.getDimensions())
 end
 
+---set the game version to use
+---@param version string should be "192" or "21"
 function game_handler.set_version(version)
     current_game = games[version]
     current_game.set_input_handler(input)
@@ -29,6 +31,10 @@ function game_handler.set_version(version)
     current_game_version = tonumber(version)
 end
 
+---start a level and start recording a replay
+---@param pack string
+---@param level string
+---@param level_settings table
 function game_handler.record_start(pack, level, level_settings)
     if current_game.dm_is_only_setting then
         if level_settings.difficulty_mult == nil or type(level_settings.difficulty_mult) ~= "number" then
@@ -59,6 +65,8 @@ function game_handler.record_start(pack, level, level_settings)
     target_frametime = current_game.update(target_frametime) or target_frametime
 end
 
+---read a replay file and run the game with its inputs and seed
+---@param file string
 function game_handler.replay_start(file)
     -- TODO: don't require full path
     if love.filesystem.getInfo(file) then
@@ -88,10 +96,14 @@ function game_handler.replay_start(file)
     end
 end
 
+---stops the game (it will not be updated or rendered anymore)
 function game_handler.stop()
     current_game.stop()
 end
 
+---process an event (mainly used for aspect ratio resizing)
+---@param name string
+---@param ... unknown
 function game_handler.process_event(name, ...)
     if name == "resize" then
         local width, height = ...
@@ -117,11 +129,13 @@ function game_handler.process_event(name, ...)
     end
 end
 
+---save the replay of the current attempt (gets called automatically on death)
 function game_handler.save_replay()
     -- TODO: save in different location depending on level and level_settings
     input.replay:save("test.ohr.z")
 end
 
+---update the game if it's running
 function game_handler.update()
     if current_game.running then
         -- update as much as required depending on passed time
@@ -138,6 +152,7 @@ function game_handler.update()
     end
 end
 
+---draw the game if it's running
 function game_handler.draw()
     -- can only start rendering once the initial resize event was processed
     if current_game.running and screen ~= nil then
@@ -158,14 +173,19 @@ function game_handler.draw()
     end
 end
 
+---get the current score of the game
+---@return number
 function game_handler.get_score()
     return current_game.get_score()
 end
 
+---get the current tickrate (this is constant for all game versions except 1.92)
+---@return number
 function game_handler.get_tickrate()
     return 1 / target_frametime
 end
 
+---run the game until the player dies without drawing it and without matching real time
 function game_handler.run_until_death()
     current_game.run_game_until_death()
 end
