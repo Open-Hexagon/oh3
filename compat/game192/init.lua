@@ -7,6 +7,7 @@ local set_color = require("compat.game21.color_transform")
 local public = {
     config = require("compat.game192.config"),
     running = false,
+    dm_is_only_setting = true,
 }
 local game = {
     style = require("compat.game192.style"),

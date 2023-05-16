@@ -2,8 +2,8 @@ local msgpack = require("extlibs.msgpack.msgpack")
 
 ---@class Replay
 ---@field data table
+---@field game_version number
 ---@field first_play boolean
----@field seed number
 ---@field pack_id string
 ---@field level_id string
 local replay = {}
@@ -35,12 +35,14 @@ function replay:get_key_state_changes(time)
 end
 
 ---set the level and the settings the game was started with
+---@param game_version number
 ---@param config table global game settings (containing settings such as black and white mode)
 ---@param first_play boolean
 ---@param pack_id string
 ---@param level_id string
 ---@param level_settings table level specific settings (e.g. the difficulty mult in 21)
-function replay:set_game_data(config, first_play, pack_id, level_id, level_settings)
+function replay:set_game_data(game_version, config, first_play, pack_id, level_id, level_settings)
+    self.game_version = game_version
     self.pack_id = pack_id
     self.level_id = level_id
     self.first_play = first_play
@@ -68,8 +70,15 @@ end
 ---@param path string
 function replay:save(path)
     -- the old game's format version was 0, so we call this 1 now
-    local header =
-        love.data.pack("string", ">BBzz", "1", self.first_play and 1 or 0, self.pack_id, self.level_id)
+    local header = love.data.pack(
+        "string",
+        ">BBBzz",
+        1,
+        self.game_version,
+        self.first_play and 1 or 0,
+        self.pack_id,
+        self.level_id
+    )
     local data = msgpack.pack(self.data)
     local file = love.filesystem.newFile(path)
     file:open("w")
@@ -86,7 +95,7 @@ function replay:_read(path)
     if version > 1 or version < 1 then
         error("Unsupported replay format version '" .. version .. "'.")
     end
-    self.first_play, self.pack_id, self.level_id, offset = love.data.unpack(">Bzz", data, offset)
+    self.game_version, self.first_play, self.pack_id, self.level_id, offset = love.data.unpack(">BBzz", data, offset)
     self.first_play = self.first_play == 1
     _, self.data = msgpack.unpack(data, offset - 1)
 end

@@ -10,7 +10,7 @@ local public = {
     config = require("compat.game21.config"),
     assets = require("compat.game21.assets"),
     running = false,
-    dead = false,
+    dm_is_only_setting = true,
 }
 local game = {
     lua_runtime = require("compat.game21.lua_runtime"),
@@ -188,8 +188,6 @@ function public.start(pack_id, level_id, difficulty_mult)
         trail_particles:reset()
         swap_particles:reset(30)
     end
-
-    public.dead = false
 end
 
 function game.get_speed_mult_dm()
@@ -220,7 +218,6 @@ function game.death(force)
             game.flash_color[3] = 255
             game.status.flash_effect = 255
             game.status.has_died = true
-            public.dead = true
         end
         playsound(game.level_status.death_sound)
     end
