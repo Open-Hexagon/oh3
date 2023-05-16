@@ -6,9 +6,9 @@ local Quads = require("compat.game21.dynamic_quads")
 local Tris = require("compat.game21.dynamic_tris")
 local set_color = require("compat.game21.color_transform")
 local Particles = require("compat.game21.particles")
+local assets = require("compat.game21.assets")
 local public = {
     config = require("compat.game21.config"),
-    assets = require("compat.game21.assets"),
     running = false,
     dm_is_only_setting = true,
 }
@@ -80,13 +80,13 @@ if not args.headless then
             }
         ]]
     )
-    message_font = public.assets.get_font("OpenSquare-Regular.ttf", 32 * public.config.get("text_scale"))
-    go_sound = public.assets.get_sound("go.ogg")
-    swap_blip_sound = public.assets.get_sound("swap_blip.ogg")
-    level_up_sound = public.assets.get_sound("level_up.ogg")
-    restart_sound = public.assets.get_sound("restart.ogg")
-    select_sound = public.assets.get_sound("select.ogg")
-    small_circle = public.assets.get_image("smallCircle.png")
+    message_font = assets.get_font("OpenSquare-Regular.ttf", 32 * public.config.get("text_scale"))
+    go_sound = assets.get_sound("go.ogg")
+    swap_blip_sound = assets.get_sound("swap_blip.ogg")
+    level_up_sound = assets.get_sound("level_up.ogg")
+    restart_sound = assets.get_sound("restart.ogg")
+    select_sound = assets.get_sound("select.ogg")
+    small_circle = assets.get_image("smallCircle.png")
     trail_particles = Particles:new(small_circle, function(p, frametime)
         p.color[4] = p.color[4] - trail_particles.alpha_decay / 255 * frametime
         p.scale = p.scale * 0.98
@@ -112,12 +112,12 @@ local must_spawn_swap_particles = false
 function public.start(pack_id, level_id, difficulty_mult)
     math.randomseed(public.seed)
     math.random()
-    game.pack_data = public.assets.get_pack_from_id(pack_id)
+    game.pack_data = assets.get_pack_from_id(pack_id)
     game.level_data = game.pack_data.levels[level_id]
     if game.level_data == nil then
         error("Error: level with id '" .. level_id .. "' not found")
     end
-    game.level_status.reset(public.config.get("sync_music_to_dm"), public.assets)
+    game.level_status.reset(public.config.get("sync_music_to_dm"), assets)
     local style_data = game.pack_data.styles[game.level_data.styleId]
     if style_data == nil then
         error("Error: style with id '" .. game.level_data.styleId .. "' not found")
@@ -166,7 +166,7 @@ function public.start(pack_id, level_id, difficulty_mult)
     if not game.first_play then
         game.lua_runtime.run_fn_if_exists("onPreUnload")
     end
-    game.lua_runtime.init_env(game, public)
+    game.lua_runtime.init_env(game, public, assets)
     game.lua_runtime.run_lua_file(game.pack_data.path .. "/" .. game.level_data.luaFile)
     public.running = true
     if game.first_play then

@@ -118,9 +118,8 @@ function lua_runtime.error(msg)
     log("Error: " .. msg)
 end
 
-function lua_runtime.init_env(game, public)
+function lua_runtime.init_env(game, public, assets)
     local pack = game.pack_data
-    local assets = public.assets
     if not args.headless then
         error_sound = assets.get_sound("error.ogg")
     end
