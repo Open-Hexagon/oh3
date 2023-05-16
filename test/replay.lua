@@ -1,5 +1,5 @@
 require("busted.runner")()
-local Replay = loadfile("replay.lua")()
+local Replay = require("replay")
 
 describe("Replay files", function()
     it("can be created", function()

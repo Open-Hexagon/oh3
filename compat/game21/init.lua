@@ -146,6 +146,7 @@ function public.start(pack_id, level_id, difficulty_mult)
         end
     end
 
+    game.main_timeline:clear()
     game.event_timeline:clear()
     game.message_timeline:clear()
     game.custom_timelines:reset()
@@ -211,8 +212,8 @@ function game.death(force)
         if force or not (game.level_status.tutorial_mode or public.config.get("invincible")) then
             game.lua_runtime.run_fn_if_exists("onDeath")
             game.status.camera_shake = 45 * public.config.get("camera_shake_mult")
-            if not args.headless then
-                love.audio.stop()
+            if not args.headless and game.music ~= nil and game.music.source ~= nil then
+                love.audio.stop(game.music.source)
             end
             game.flash_color[1] = 255
             game.flash_color[2] = 255

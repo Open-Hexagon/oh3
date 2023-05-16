@@ -1,6 +1,7 @@
 local args = love.arg.parseGameArguments(arg)
 local ret = {}
-ret.headless = false
+-- tests are always run in headless mode
+ret.headless = love.filesystem.getIdentity() == "ohtest"
 for i = 1, #args do
     if args[i] == "--headless" then
         ret.headless = true

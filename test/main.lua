@@ -7,4 +7,15 @@ end
 table.remove(arg, 1)
 table.remove(arg, 1)
 
-require(test_module)
+-- workaroud in order to be able to require modules in normally
+love.filesystem.setRequirePath("..")
+local real = require
+function require(modname)
+    -- the compat.game... modules that use init.lua don't work for some reason
+    if modname:sub(1, #"compat.game") == "compat.game" and #modname <= #"compat.game192" then
+        modname = modname .. ".init"
+    end
+    return real(modname)
+end
+
+require("test." .. test_module)

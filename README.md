@@ -6,5 +6,7 @@ A potential rewrite for Open Hexagon by Vittorio Romeo using Love2D.
 
 ## Tests
 Run tests with `love test <module>` in the source directory.
-At the moment the only module with tests is the `replay` module.
+At the moment the only test modules are the `replay` and `headless`.
+The replay module tests the file format, reading and saving.
+The headless module tests replay recording and replaying in headless mode.
 Generate coverage statistics with `love test <module> --coverage`
