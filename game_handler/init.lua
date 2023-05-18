@@ -1,6 +1,11 @@
 local args = require("args")
 local input = require("game_handler.input")
 local Replay = require("game_handler.replay")
+local profile = require("game_handler.profile")
+
+-- TODO: profile selection / creation
+profile.open_or_new("test")
+
 local game_handler = {}
 local games = {
     ["192"] = require("compat.game192"),
@@ -9,6 +14,7 @@ local games = {
 local current_game
 local current_game_version
 local first_play = true
+local real_start_time
 local start_time
 local target_frametime = 1 / 240
 -- enforce aspect ratio by rendering to canvas
@@ -42,7 +48,7 @@ function game_handler.record_start(pack, level, level_settings)
         end
     end
     current_game.death_callback = function()
-        game_handler.save_replay()
+        game_handler.save_score()
     end
     current_game.seed = math.floor(love.timer.getTime() * 1000)
     input.replay = Replay:new()
@@ -61,6 +67,7 @@ function game_handler.record_start(pack, level, level_settings)
         current_game.start(pack, level, level_settings)
     end
     start_time = love.timer.getTime()
+    real_start_time = start_time
     target_frametime = 1 / 240
     target_frametime = current_game.update(target_frametime) or target_frametime
 end
@@ -88,6 +95,7 @@ function game_handler.replay_start(file)
         end
         if not args.headless then
             start_time = love.timer.getTime()
+            real_start_time = start_time
         end
         target_frametime = 1 / 240
         target_frametime = current_game.update(target_frametime) or target_frametime
@@ -129,10 +137,10 @@ function game_handler.process_event(name, ...)
     end
 end
 
----save the replay of the current attempt (gets called automatically on death)
-function game_handler.save_replay()
-    -- TODO: save in different location depending on level and level_settings
-    input.replay:save("test.ohr.z")
+---save the score and replay of the current attempt (gets called automatically on death)
+function game_handler.save_score()
+    local elapsed_time = love.timer.getTime() - real_start_time
+    profile.save_score(current_game.get_score(), elapsed_time, input.replay)
 end
 
 ---update the game if it's running

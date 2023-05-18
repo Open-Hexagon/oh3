@@ -794,7 +794,7 @@ function public.set_input_handler(input)
 end
 
 ---get the current score (gets the custom score if one exists)
----@return integer
+---@return number
 function public.get_score()
     if game.level_status.score_overwritten then
         return game.status.get_custom_score()
