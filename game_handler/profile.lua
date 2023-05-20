@@ -12,6 +12,7 @@ if not love.filesystem.getInfo(replay_path) then
     love.filesystem.createDirectory(replay_path)
 end
 local database
+local current_profile
 
 ---open or create a new profile
 ---@param name string
@@ -33,6 +34,7 @@ function profile.open_or_new(name)
             data = "luatable",
         },
     })
+    current_profile = name
 end
 
 ---save a score into the profile's database and save the replay as well
@@ -57,6 +59,26 @@ function profile.save_score(score, time, replay)
     end
     local path = dir .. hash
     replay:save(path, data)
+end
+
+---delete the currently selected profile with all its replays
+function profile.delete()
+    database:open()
+    local scores = database:select("scores")
+    for i = 1, #scores do
+        local score = scores[i]
+        local folder = replay_path .. score.replay_hash:sub(1, 2) .. "/"
+        local path = folder .. score.replay_hash
+        love.filesystem.remove(path)
+        if #love.filesystem.getDirectoryItems(folder) == 0 then
+            love.filesystem.remove(folder)
+        end
+    end
+    database:close()
+    local path = profile_path .. current_profile .. ".db"
+    love.filesystem.remove(path)
+    database = nil
+    current_profile = nil
 end
 
 return profile

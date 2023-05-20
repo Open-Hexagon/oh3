@@ -5,7 +5,7 @@ A potential rewrite for Open Hexagon by Vittorio Romeo using Love2D.
 *(omg it's finally happening)*
 
 ## External dependencies
-Apart from the pure lua dependencies that are present in the repositor, the game relies on:
+Apart from the pure lua dependencies that are present in the repository, the game relies on:
 - Love2D
 - SQLite
 
