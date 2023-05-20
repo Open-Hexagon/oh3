@@ -91,7 +91,7 @@ end
 
 ---saves the replay into a file the data to write can optionally be specified if already gotten
 ---@param path string
----@param data string?|love.CompressedData?
+---@param data string|love.CompressedData|nil
 function replay:save(path, data)
     local file = love.filesystem.newFile(path)
     file:open("w")

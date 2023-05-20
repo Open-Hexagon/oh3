@@ -198,4 +198,10 @@ function game_handler.run_until_death()
     current_game.run_game_until_death()
 end
 
+---gets the current replay (nil if there is none)
+---@return Replay|nil
+function game_handler.get_replay()
+    return input.replay
+end
+
 return game_handler

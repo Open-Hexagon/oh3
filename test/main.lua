@@ -4,18 +4,21 @@ if test_module == nil then
 end
 
 -- workaround for running busted with love
-table.remove(arg, 1)
-table.remove(arg, 1)
+arg = {}
 
 -- workaroud in order to be able to require modules in normally
-love.filesystem.setRequirePath("..")
 local real = require
 function require(modname)
-    -- the compat.game... modules that use init.lua don't work for some reason
-    if modname:sub(1, #"compat.game") == "compat.game" and #modname <= #"compat.game192" then
-        modname = modname .. ".init"
+    local path = modname:gsub("%.", "/") .. ".lua"
+    local file = loadfile(path)
+    if file == nil then
+        path = modname:gsub("%.", "/") .. "/init.lua"
+        file = loadfile(path)
     end
-    return real(modname)
+    if file == nil then
+        return real(modname)
+    end
+    return file(modname)
 end
 
 require("test." .. test_module)
