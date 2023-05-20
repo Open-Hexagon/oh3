@@ -10,8 +10,5 @@ Apart from the pure lua dependencies that are present in the repository, the gam
 - SQLite
 
 ## Tests
-Run tests with `love test <module>` in the source directory.
-At the moment the only test modules are `replay` and `headless`.
-The replay module tests the file format, reading and saving.
-The headless module tests replay recording and replaying in headless mode.
-Generate coverage statistics with `love test <module> --coverage`
+Run tests with `luajit test/main.lua` in the source directory.
+Generate coverage statistics with `luajit test/main.lua --coverage`

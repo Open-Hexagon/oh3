@@ -1,4 +1,6 @@
-require("busted.runner")()
+package.preload["extlibs.sqlite"] = loadfile("extlibs/sqlite/init.lua")
+package.preload["compat.game192"] = loadfile("compat/game192/init.lua")
+package.preload["compat.game21"] = loadfile("compat/game21/init.lua")
 local game_handler = require("game_handler.init")
 
 describe("headless games", function()

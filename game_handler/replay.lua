@@ -100,6 +100,9 @@ function replay:save(path, data)
 end
 
 function replay:_read(path)
+    if not love.filesystem.getInfo(path) then
+        error("Could not find replay at '" .. path .. "'")
+    end
     local file = love.filesystem.newFile(path)
     file:open("r")
     local data = love.data.decompress("string", "zlib", file:read("data"))
