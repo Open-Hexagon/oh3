@@ -1,5 +1,4 @@
 local msgpack = require("extlibs.msgpack.msgpack")
-local sha = require("extlibs.sha.sha2")
 
 ---@class Replay
 ---@field data table
@@ -79,20 +78,20 @@ function replay:_get_compressed()
         self.level_id
     )
     local data = msgpack.pack(self.data)
-    return love.data.compress("string", "zlib", header .. data, 9)
+    return love.data.compress("data", "zlib", header .. data, 9)
 end
 
 ---gets the hash of the replay and also returns the compressed data as it needs to be computed to get the hash already
 ---@return string
----@return string
+---@return love.CompressedData?
 function replay:get_hash()
     local data = self:_get_compressed()
-    return sha.sha256(data), data
+    return love.data.encode("string", "hex", love.data.hash("sha256", data)), data
 end
 
 ---saves the replay into a file the data to write can optionally be specified if already gotten
 ---@param path string
----@param data string?
+---@param data string?|love.CompressedData?
 function replay:save(path, data)
     local file = love.filesystem.newFile(path)
     file:open("w")
