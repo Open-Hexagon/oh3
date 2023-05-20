@@ -1,7 +1,8 @@
-local function get_log(modname)
+return function(modname)
     return function(...)
-        print("[" .. modname .. "]", ...)
+        -- don't print stuff when testing
+        if love.filesystem.getIdentity() ~= "ohtest" then
+            print("[" .. modname .. "]", ...)
+        end
     end
 end
-
-return get_log
