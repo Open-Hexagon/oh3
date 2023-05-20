@@ -1,174 +1,174 @@
-local ffi = require "ffi"
-local bit = require "bit"
-local luv = require "luv"
+local ffi = require("ffi")
+local bit = require("bit")
+local luv = require("luv")
 local M = {}
 
 --- Load clib
 local clib = (function()
-  local path, _
+    local path, _
 
-  if vim then
-    if vim.g.sql_clib_path then
-      error [[ sqlite.lua: vim.g.sql_clib_path is deprecated. Use vim.g.sqlite_clib_path instead. ]]
+    if vim then
+        if vim.g.sql_clib_path then
+            error([[ sqlite.lua: vim.g.sql_clib_path is deprecated. Use vim.g.sqlite_clib_path instead. ]])
+        end
+        path = vim.g.sqlite_clib_path
     end
-    path = vim.g.sqlite_clib_path
-  end
 
-  if not path then
-    path, _ = luv.os_getenv "LIBSQLITE"
-  end
+    if not path then
+        path, _ = luv.os_getenv("LIBSQLITE")
+    end
 
-  local clib_path = path
-    or (function() --- try to find libsqlite.Linux and Macos support only.
-      local os = luv.os_uname()
+    local clib_path = path
+        or (function() --- try to find libsqlite.Linux and Macos support only.
+            local os = luv.os_uname()
 
-      local file_exists = function(file_path)
-        local f = io.open(file_path, "r")
-        if f ~= nil then
-          io.close(f)
-          return true
-        else
-          return false
-        end
-      end
+            local file_exists = function(file_path)
+                local f = io.open(file_path, "r")
+                if f ~= nil then
+                    io.close(f)
+                    return true
+                else
+                    return false
+                end
+            end
 
-      if os.sysname == "Linux" then
-        local linux_paths = {
-          "/usr/lib/x86_64-linux-gnu/libsqlite3.so",
-          "/usr/lib/x86_64-linux-gnu/libsqlite3.so.0",
-          "/usr/lib64/libsqlite3.so",
-          "/usr/lib/libsqlite3.so",
-        }
-        for _, v in pairs(linux_paths) do
-          if file_exists(v) then
-            return v
-          end
-        end
-      end
+            if os.sysname == "Linux" then
+                local linux_paths = {
+                    "/usr/lib/x86_64-linux-gnu/libsqlite3.so",
+                    "/usr/lib/x86_64-linux-gnu/libsqlite3.so.0",
+                    "/usr/lib64/libsqlite3.so",
+                    "/usr/lib/libsqlite3.so",
+                }
+                for _, v in pairs(linux_paths) do
+                    if file_exists(v) then
+                        return v
+                    end
+                end
+            end
 
-      if os.sysname == "Darwin" then
-        return os.machine == "arm64" and "/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib"
-          or "/usr/local/opt/sqlite3/lib/libsqlite3.dylib"
-      end
-    end)()
+            if os.sysname == "Darwin" then
+                return os.machine == "arm64" and "/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib"
+                    or "/usr/local/opt/sqlite3/lib/libsqlite3.dylib"
+            end
+        end)()
 
-  return ffi.load(clib_path or "libsqlite3")
+    return ffi.load(clib_path or "libsqlite3")
 end)()
 
 ---@type sqlite_flags
 M.flags = {
-  -- Result codes
-  ["ok"] = 0,
-  ["error"] = 1,
-  ["internal"] = 2,
-  ["perm"] = 3,
-  ["abort"] = 4,
-  ["busy"] = 5,
-  ["locked"] = 6,
-  ["nomem"] = 7,
-  ["readonly"] = 8,
-  ["interrupt"] = 9,
-  ["ioerr"] = 10,
-  ["corrupt"] = 11,
-  ["notfound"] = 12,
-  ["full"] = 13,
-  ["cantopen"] = 14,
-  ["protocol"] = 15,
-  ["empty"] = 16,
-  ["schema"] = 17,
-  ["toobig"] = 18,
-  ["constraint"] = 19,
-  ["mismatch"] = 20,
-  ["misuse"] = 21,
-  ["nolfs"] = 22,
-  ["auth"] = 23,
-  ["format"] = 24,
-  ["range"] = 25,
-  ["notadb"] = 26,
-  ["notice"] = 27,
-  ["warning"] = 28,
-  ["row"] = 100,
-  ["done"] = 101,
+    -- Result codes
+    ["ok"] = 0,
+    ["error"] = 1,
+    ["internal"] = 2,
+    ["perm"] = 3,
+    ["abort"] = 4,
+    ["busy"] = 5,
+    ["locked"] = 6,
+    ["nomem"] = 7,
+    ["readonly"] = 8,
+    ["interrupt"] = 9,
+    ["ioerr"] = 10,
+    ["corrupt"] = 11,
+    ["notfound"] = 12,
+    ["full"] = 13,
+    ["cantopen"] = 14,
+    ["protocol"] = 15,
+    ["empty"] = 16,
+    ["schema"] = 17,
+    ["toobig"] = 18,
+    ["constraint"] = 19,
+    ["mismatch"] = 20,
+    ["misuse"] = 21,
+    ["nolfs"] = 22,
+    ["auth"] = 23,
+    ["format"] = 24,
+    ["range"] = 25,
+    ["notadb"] = 26,
+    ["notice"] = 27,
+    ["warning"] = 28,
+    ["row"] = 100,
+    ["done"] = 101,
 }
 
 ---@type sqlite_db.opts
 M.valid_pargma = {
-  ["analysis_limit"] = true,
-  ["application_id"] = true,
-  ["auto_vacuum"] = true,
-  ["automatic_index"] = true,
-  ["busy_timeout"] = true,
+    ["analysis_limit"] = true,
+    ["application_id"] = true,
+    ["auto_vacuum"] = true,
+    ["automatic_index"] = true,
+    ["busy_timeout"] = true,
 
-  ["cache_size"] = true,
-  ["cache_spill"] = true,
-  ["case_sensitive_like"] = true,
-  ["cell_size_check"] = true,
-  ["checkpoint_fullfsync"] = true,
+    ["cache_size"] = true,
+    ["cache_spill"] = true,
+    ["case_sensitive_like"] = true,
+    ["cell_size_check"] = true,
+    ["checkpoint_fullfsync"] = true,
 
-  ["collation_list"] = true,
-  ["compile_options"] = true,
-  ["data_version"] = true,
-  ["database_list"] = true,
-  ["encoding"] = true,
-  ["foreign_key_check"] = true,
+    ["collation_list"] = true,
+    ["compile_options"] = true,
+    ["data_version"] = true,
+    ["database_list"] = true,
+    ["encoding"] = true,
+    ["foreign_key_check"] = true,
 
-  ["foreign_key_list"] = true,
-  ["foreign_keys"] = true,
-  ["freelist_count"] = true,
-  ["fullfsync"] = true,
-  ["function_list"] = true,
+    ["foreign_key_list"] = true,
+    ["foreign_keys"] = true,
+    ["freelist_count"] = true,
+    ["fullfsync"] = true,
+    ["function_list"] = true,
 
-  ["hard_heap_limit"] = true,
-  ["ignore_check_constraints"] = true,
-  ["incremental_vacuum"] = true,
-  ["index_info"] = true,
-  ["index_list"] = true,
+    ["hard_heap_limit"] = true,
+    ["ignore_check_constraints"] = true,
+    ["incremental_vacuum"] = true,
+    ["index_info"] = true,
+    ["index_list"] = true,
 
-  ["index_xinfo"] = true,
-  ["integrity_check"] = true,
-  ["journal_mode"] = true,
-  ["journal_size_limit"] = true,
-  ["legacy_alter_table"] = true,
+    ["index_xinfo"] = true,
+    ["integrity_check"] = true,
+    ["journal_mode"] = true,
+    ["journal_size_limit"] = true,
+    ["legacy_alter_table"] = true,
 
-  ["legacy_file_format"] = true,
-  ["locking_mode"] = true,
-  ["max_page_count"] = true,
-  ["mmap_size"] = true,
-  ["module_list"] = true,
-  ["optimize"] = true,
+    ["legacy_file_format"] = true,
+    ["locking_mode"] = true,
+    ["max_page_count"] = true,
+    ["mmap_size"] = true,
+    ["module_list"] = true,
+    ["optimize"] = true,
 
-  ["page_count"] = true,
-  ["page_size"] = true,
-  ["parser_trace"] = true,
-  ["pragma_list"] = true,
-  ["query_only"] = true,
-  ["quick_check"] = true,
+    ["page_count"] = true,
+    ["page_size"] = true,
+    ["parser_trace"] = true,
+    ["pragma_list"] = true,
+    ["query_only"] = true,
+    ["quick_check"] = true,
 
-  ["read_uncommitted"] = true,
-  ["recursive_triggers"] = true,
-  ["reverse_unordered_selects"] = true,
-  ["schema_version"] = true,
-  ["secure_delete"] = true,
+    ["read_uncommitted"] = true,
+    ["recursive_triggers"] = true,
+    ["reverse_unordered_selects"] = true,
+    ["schema_version"] = true,
+    ["secure_delete"] = true,
 
-  ["shrink_memory"] = true,
-  ["soft_heap_limit"] = true,
-  ["stats"] = true,
-  ["synchronous"] = true,
-  ["table_info"] = true,
-  ["table_xinfo"] = true,
-  ["temp_store"] = true,
+    ["shrink_memory"] = true,
+    ["soft_heap_limit"] = true,
+    ["stats"] = true,
+    ["synchronous"] = true,
+    ["table_info"] = true,
+    ["table_xinfo"] = true,
+    ["temp_store"] = true,
 
-  ["vdbe_trace"] = true,
-  ["wal_autocheckpoint"] = true,
-  ["wal_checkpoint"] = true,
-  ["writable_schema"] = true,
+    ["vdbe_trace"] = true,
+    ["wal_autocheckpoint"] = true,
+    ["wal_checkpoint"] = true,
+    ["writable_schema"] = true,
 
-  ["threads"] = true,
-  ["trusted_schema"] = true,
-  ["user_version"] = true,
-  ["vdbe_addoptrace"] = true,
-  ["vdbe_debug"] = true,
-  ["vdbe_listing"] = true,
+    ["threads"] = true,
+    ["trusted_schema"] = true,
+    ["user_version"] = true,
+    ["vdbe_addoptrace"] = true,
+    ["vdbe_debug"] = true,
+    ["vdbe_listing"] = true,
 }
 
 -- Extended Result Codes
@@ -278,7 +278,7 @@ M.flags["blob"] = 4
 M.flags["null"] = 5
 
 -- Types
-ffi.cdef [[
+ffi.cdef([[
   typedef struct sqlite3 sqlite3;
 
   typedef __int64 sqlite_int64;
@@ -300,10 +300,10 @@ ffi.cdef [[
 
   typedef struct sqlite3_str sqlite3_str;
   typedef struct sqlite3_backup sqlite3_backup;
-]]
+]])
 
 -- Functions
-ffi.cdef [[
+ffi.cdef([[
   const char *sqlite3_libversion(void);
   const char *sqlite3_sourceid(void);
   int sqlite3_libversion_number(void);
@@ -612,79 +612,79 @@ ffi.cdef [[
   unsigned char *sqlite3_serialize(sqlite3 *db, const char *zSchema, sqlite3_int64 *piSize, unsigned int mFlags);
   int sqlite3_deserialize(sqlite3 *db, const char *zSchema, unsigned char *pData, sqlite3_int64 szDb,
                   sqlite3_int64 szBuf, unsigned mFlags);
-]]
+]])
 
 ---@class sqlite3 @sqlite3 db object
 ---@class sqlite_blob @sqlite3 blob object
 
 M.to_str = function(ptr, len)
-  if ptr == nil then
-    return
-  end
-  return ffi.string(ptr, len)
+    if ptr == nil then
+        return
+    end
+    return ffi.string(ptr, len)
 end
 
 M.type_of = function(ptr)
-  if ptr == nil then
-    return
-  end
-  return ffi.typeof(ptr)
+    if ptr == nil then
+        return
+    end
+    return ffi.typeof(ptr)
 end
 
 M.get_new_db_ptr = function()
-  return ffi.new "sqlite3*[1]"
+    return ffi.new("sqlite3*[1]")
 end
 
 M.get_new_stmt_ptr = function()
-  return ffi.new "sqlite3_stmt*[1]"
+    return ffi.new("sqlite3_stmt*[1]")
 end
 
 M.get_new_blob_ptr = function()
-  return ffi.new "sqlite3_blob*[1]"
+    return ffi.new("sqlite3_blob*[1]")
 end
 
-M.type_of_db_ptr = ffi.typeof "sqlite3*"
-M.type_of_stmt_ptr = ffi.typeof "sqlite3_stmt*"
-M.type_of_exec_ptr = ffi.typeof "int (*)(void*,int,char**,char**)"
-M.type_of_blob_ptr = ffi.typeof "sqlite3_blob*"
+M.type_of_db_ptr = ffi.typeof("sqlite3*")
+M.type_of_stmt_ptr = ffi.typeof("sqlite3_stmt*")
+M.type_of_exec_ptr = ffi.typeof("int (*)(void*,int,char**,char**)")
+M.type_of_blob_ptr = ffi.typeof("sqlite3_blob*")
 
 --- Wrapper around clib.exec for convenience.
 ---@param conn_ptr sqlite connction ptr
 ---@param statement string: statement to be executed.
 ---@return table: stmt object
 M.exec_stmt = function(conn_ptr, statement)
-  return clib.sqlite3_exec(conn_ptr, statement, nil, nil, nil)
+    return clib.sqlite3_exec(conn_ptr, statement, nil, nil, nil)
 end
 
 --- Execute a manipulation sql statement within begin and commit block
 ---@param conn_ptr sqlite connction ptr
 ---@param fn func()
 M.wrap_stmts = function(conn_ptr, fn)
-  M.exec_stmt(conn_ptr, "BEGIN")
-  local res = fn()
-  M.exec_stmt(conn_ptr, "COMMIT")
-  return res
+    M.exec_stmt(conn_ptr, "BEGIN")
+    local res = fn()
+    M.exec_stmt(conn_ptr, "COMMIT")
+    return res
 end
 
 ---Get last error msg
 ---@param conn_ptr sqlite connction ptr
 ---@return string: sqlite error msg
 M.last_errmsg = function(conn_ptr)
-  return M.to_str(clib.sqlite3_errmsg(conn_ptr))
+    return M.to_str(clib.sqlite3_errmsg(conn_ptr))
 end
 
 ---Get last error code
 ---@param conn_ptr sqlite connction ptr
 ---@return number: sqlite error number
 M.last_errcode = function(conn_ptr)
-  return clib.sqlite3_errcode(conn_ptr)
+    return clib.sqlite3_errcode(conn_ptr)
 end
 
 -- Open Modes
 M.open_modes = {
-  ["ro"] = bit.bor(M.flags.open_readonly, M.flags.open_uri),
-  ["rw"] = bit.bor(M.flags.open_readwrite, M.flags.open_uri),
-  ["rwc"] = bit.bor(M.flags.open_readwrite, M.flags.open_create, M.flags.open_uri),
+    ["ro"] = bit.bor(M.flags.open_readonly, M.flags.open_uri),
+    ["rw"] = bit.bor(M.flags.open_readwrite, M.flags.open_uri),
+    ["rwc"] = bit.bor(M.flags.open_readwrite, M.flags.open_create, M.flags.open_uri),
 }
 
 ---Create new connection and modify `sqlite_db` object
@@ -692,39 +692,39 @@ M.open_modes = {
 ---@param opts sqlite_db.opts
 ---@return sqlite_blob*
 M.connect = function(uri, opts)
-  opts = opts or {}
-  local conn = M.get_new_db_ptr()
-  local open_mode = opts.open_mode
-  opts.open_mode = nil
-  if type(open_mode) == "table" then
-    open_mode = bit.bor(unpack(open_mode))
-  else
-    open_mode = M.open_modes[open_mode or "rwc"]
-  end
-
-  local code = clib.sqlite3_open_v2(uri, conn, open_mode, nil)
-
-  if code ~= M.flags.ok then
-    error(("sqlite.lua: couldn't connect to sql database, ERR: %s"):format(M.last_errmsg(conn[0])))
-  end
-
-  for k, v in pairs(opts) do
-    if not M.valid_pargma[k] then
-      error("sqlite.lua: " .. k .. " is not a valid pragma")
+    opts = opts or {}
+    local conn = M.get_new_db_ptr()
+    local open_mode = opts.open_mode
+    opts.open_mode = nil
+    if type(open_mode) == "table" then
+        open_mode = bit.bor(unpack(open_mode))
+    else
+        open_mode = M.open_modes[open_mode or "rwc"]
     end
-    if type(k) == "boolean" then
-      k = "ON"
-    end
-    M.exec_stmt(conn[0], ("pragma %s = %s"):format(k, v))
-  end
 
-  return conn[0]
+    local code = clib.sqlite3_open_v2(uri, conn, open_mode, nil)
+
+    if code ~= M.flags.ok then
+        error(("sqlite.lua: couldn't connect to sql database, ERR: %s"):format(M.last_errmsg(conn[0])))
+    end
+
+    for k, v in pairs(opts) do
+        if not M.valid_pargma[k] then
+            error("sqlite.lua: " .. k .. " is not a valid pragma")
+        end
+        if type(k) == "boolean" then
+            k = "ON"
+        end
+        M.exec_stmt(conn[0], ("pragma %s = %s"):format(k, v))
+    end
+
+    return conn[0]
 end
 
 M = setmetatable(M, {
-  __index = function(_, k)
-    return clib["sqlite3_" .. k]
-  end,
+    __index = function(_, k)
+        return clib["sqlite3_" .. k]
+    end,
 })
 
 return M

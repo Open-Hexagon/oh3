@@ -3,7 +3,7 @@
 ---@brief ]]
 ---@tag sqlite.db.lua
 
-local u = require "sqlite.utils"
+local u = require("sqlite.utils")
 local require = u.require_on_index
 
 local sqlite = {}
@@ -17,12 +17,12 @@ sqlite.db = {}
 sqlite.db.__index = sqlite.db
 sqlite.db.__version = "v1.2.2"
 
-local clib = require "sqlite.defs"
-local s = require "sqlite.stmt"
-local h = require "sqlite.helpers"
-local a = require "sqlite.assert"
-local p = require "sqlite.parser"
-local tbl = require "sqlite.tbl"
+local clib = require("sqlite.defs")
+local s = require("sqlite.stmt")
+local h = require("sqlite.helpers")
+local a = require("sqlite.assert")
+local p = require("sqlite.parser")
+local tbl = require("sqlite.tbl")
 
 ---Creates a new sqlite.lua object, without creating a connection to uri.
 ---|sqlite.new| is identical to |sqlite.db:open| but it without opening sqlite db
@@ -42,26 +42,26 @@ local tbl = require "sqlite.tbl"
 ---@param opts sqlite_opts: (optional) see |sqlite_opts|
 ---@return sqlite_db
 function sqlite.db.new(uri, opts)
-  opts = opts or {}
-  local keep_open = opts.keep_open
-  opts.keep_open = nil
-  uri = type(uri) == "string" and u.expand(uri) or ":memory:"
+    opts = opts or {}
+    local keep_open = opts.keep_open
+    opts.keep_open = nil
+    uri = type(uri) == "string" and u.expand(uri) or ":memory:"
 
-  local o = setmetatable({
-    uri = uri,
-    conn = nil,
-    closed = true,
-    opts = opts,
-    modified = false,
-    created = nil,
-    tbl_schemas = {},
-  }, sqlite.db)
+    local o = setmetatable({
+        uri = uri,
+        conn = nil,
+        closed = true,
+        opts = opts,
+        modified = false,
+        created = nil,
+        tbl_schemas = {},
+    }, sqlite.db)
 
-  if keep_open then
-    o:open()
-  end
+    if keep_open then
+        o:open()
+    end
 
-  return o
+    return o
 end
 
 ---Extend |sqlite_db| object with extra sugar syntax and api. This is recommended
@@ -106,33 +106,33 @@ end
 ---@see sqlite_tbl:extend
 ---@return sqlite_db
 function sqlite.db:extend(conf)
-  conf.opts = conf.opts or {}
-  local lazy = conf.opts.lazy
-  conf.opts.lazy = nil
+    conf.opts = conf.opts or {}
+    local lazy = conf.opts.lazy
+    conf.opts.lazy = nil
 
-  local db = self.new(conf.uri, conf.opts)
-  local cls = setmetatable({ db = db }, {
-    __index = function(_, key, ...)
-      if type(key) == "string" then
-        key = key:sub(1, 2) == "__" and key:sub(3, -1) or key
-        if db[key] then
-          return db[key]
+    local db = self.new(conf.uri, conf.opts)
+    local cls = setmetatable({ db = db }, {
+        __index = function(_, key, ...)
+            if type(key) == "string" then
+                key = key:sub(1, 2) == "__" and key:sub(3, -1) or key
+                if db[key] then
+                    return db[key]
+                end
+            end
+        end,
+    })
+
+    for tbl_name, schema in pairs(conf) do
+        if tbl_name ~= "uri" and tbl_name ~= "opts" and tbl_name ~= "lazy" and u.is_tbl(schema) then
+            local name = schema._name and schema._name or tbl_name
+            cls[tbl_name] = schema.set_db and schema or require("sqlite.tbl").new(name, schema, not lazy and db or nil)
+            if not cls[tbl_name].db then
+                (cls[tbl_name]):set_db(db)
+            end
         end
-      end
-    end,
-  })
-
-  for tbl_name, schema in pairs(conf) do
-    if tbl_name ~= "uri" and tbl_name ~= "opts" and tbl_name ~= "lazy" and u.is_tbl(schema) then
-      local name = schema._name and schema._name or tbl_name
-      cls[tbl_name] = schema.set_db and schema or require("sqlite.tbl").new(name, schema, not lazy and db or nil)
-      if not cls[tbl_name].db then
-        (cls[tbl_name]):set_db(db)
-      end
     end
-  end
 
-  return cls
+    return cls
 end
 
 ---Creates and connect to new sqlite db object, either in memory or via a {uri}.
@@ -153,18 +153,18 @@ end
 ---@param opts sqlite_opts|nil:  see |sqlite_opts|
 ---@return sqlite_db
 function sqlite.db:open(uri, opts, noconn)
-  local d = self
-  if not d.uri then
-    d = sqlite.db.new(uri, opts)
-  end
+    local d = self
+    if not d.uri then
+        d = sqlite.db.new(uri, opts)
+    end
 
-  if d.closed or d.closed == nil then
-    d.conn = clib.connect(d.uri, d.opts)
-    d.created = os.date "%Y-%m-%d %H:%M:%S"
-    d.closed = false
-  end
+    if d.closed or d.closed == nil then
+        d.conn = clib.connect(d.uri, d.opts)
+        d.created = os.date("%Y-%m-%d %H:%M:%S")
+        d.closed = false
+    end
 
-  return d
+    return d
 end
 
 ---Close sqlite db connection. returns true if closed, error otherwise.
@@ -177,9 +177,9 @@ end
 ---</pre>
 ---@return boolean
 function sqlite.db:close()
-  self.closed = self.closed or clib.close(self.conn) == 0
-  a.should_close(self.conn, self.closed)
-  return self.closed
+    self.closed = self.closed or clib.close(self.conn) == 0
+    a.should_close(self.conn, self.closed)
+    return self.closed
 end
 
 ---Same as |sqlite.db:open| but execute {func} then closes db connection.
@@ -204,25 +204,25 @@ end
 ---@see sqlite.db:open
 ---@return any
 function sqlite.db:with_open(...)
-  local args = { ... }
-  if type(self) == "string" or not self then
-    self = sqlite.db:open(self)
-  end
+    local args = { ... }
+    if type(self) == "string" or not self then
+        self = sqlite.db:open(self)
+    end
 
-  local func = type(args[1]) == "function" and args[1] or args[2]
+    local func = type(args[1]) == "function" and args[1] or args[2]
 
-  if self:isclose() then
-    self:open()
-  end
+    if self:isclose() then
+        self:open()
+    end
 
-  local success, result = pcall(function()
-    return func(self)
-  end)
-  self:close()
-  if not success then
-    error(result)
-  end
-  return result
+    local success, result = pcall(function()
+        return func(self)
+    end)
+    self:close()
+    if not success then
+        error(result)
+    end
+    return result
 end
 
 ---Predict returning true if db connection is active.
@@ -236,7 +236,7 @@ end
 ---</pre>
 ---@return boolean
 function sqlite.db:isopen()
-  return not self.closed
+    return not self.closed
 end
 
 ---Predict returning true if db connection is indeed closed.
@@ -250,7 +250,7 @@ end
 ---</pre>
 ---@return boolean
 function sqlite.db:isclose()
-  return self.closed
+    return self.closed
 end
 
 ---Returns current connection status
@@ -264,10 +264,10 @@ end
 ---</pre>
 ---@return sqlite_db_status
 function sqlite.db:status()
-  return {
-    msg = clib.last_errmsg(self.conn),
-    code = clib.last_errcode(self.conn),
-  }
+    return {
+        msg = clib.last_errmsg(self.conn),
+        code = clib.last_errcode(self.conn),
+    }
 end
 
 ---Evaluates a sql {statement} and if there are results from evaluation it
@@ -288,54 +288,54 @@ end
 ---@param params table|nil: params to be bind to {statement}
 ---@return boolean|table
 function sqlite.db:eval(statement, params)
-  local res = {}
-  local stmt = s:parse(self.conn, statement)
+    local res = {}
+    local stmt = s:parse(self.conn, statement)
 
-  -- when the user provide simple sql statements
-  if not params then
-    stmt:each(function()
-      table.insert(res, stmt:kv())
-    end)
-    stmt:reset()
+    -- when the user provide simple sql statements
+    if not params then
+        stmt:each(function()
+            table.insert(res, stmt:kv())
+        end)
+        stmt:reset()
 
     -- when the user run eval("select * from ?", "tbl_name")
-  elseif type(params) ~= "table" and statement:match "%?" then
-    local value = p.sqlvalue(params)
-    stmt:bind { value }
-    stmt:each(function(stm)
-      table.insert(res, stm:kv())
-    end)
-    stmt:reset()
-    stmt:bind_clear()
+    elseif type(params) ~= "table" and statement:match("%?") then
+        local value = p.sqlvalue(params)
+        stmt:bind({ value })
+        stmt:each(function(stm)
+            table.insert(res, stm:kv())
+        end)
+        stmt:reset()
+        stmt:bind_clear()
 
     -- when the user provided named keys
-  elseif params and type(params) == "table" then
-    params = type(params[1]) == "table" and params or { params }
-    for _, v in ipairs(params) do
-      stmt:bind(v)
-      stmt:each(function(stm)
-        table.insert(res, stm:kv())
-      end)
-      stmt:reset()
-      stmt:bind_clear()
+    elseif params and type(params) == "table" then
+        params = type(params[1]) == "table" and params or { params }
+        for _, v in ipairs(params) do
+            stmt:bind(v)
+            stmt:each(function(stm)
+                table.insert(res, stm:kv())
+            end)
+            stmt:reset()
+            stmt:bind_clear()
+        end
     end
-  end
-  -- clear out the parsed statement.
-  stmt:finalize()
+    -- clear out the parsed statement.
+    stmt:finalize()
 
-  -- if no rows is returned, then check return the result of errcode == flags.ok
-  res = rawequal(next(res), nil) and clib.last_errcode(self.conn) == clib.flags.ok or res
+    -- if no rows is returned, then check return the result of errcode == flags.ok
+    res = rawequal(next(res), nil) and clib.last_errcode(self.conn) == clib.flags.ok or res
 
-  -- fix res of its table, so that select all doesn't return { [1] = {[1] = { row }} }
-  if type(res) == "table" and res[2] == nil and u.is_nested(res[1]) then
-    res = res[1]
-  end
+    -- fix res of its table, so that select all doesn't return { [1] = {[1] = { row }} }
+    if type(res) == "table" and res[2] == nil and u.is_nested(res[1]) then
+        res = res[1]
+    end
 
-  a.should_eval(self.conn)
+    a.should_eval(self.conn)
 
-  self.modified = true
+    self.modified = true
 
-  return res
+    return res
 end
 
 ---Execute statement without any return
@@ -349,8 +349,8 @@ end
 ---@param statement string: statement to be executed
 ---@return boolean: true if successful, error out if not.
 function sqlite.db:execute(statement)
-  local succ = clib.exec_stmt(self.conn, statement) == 0
-  return succ and succ or error(clib.last_errmsg(self.conn))
+    local succ = clib.exec_stmt(self.conn, statement) == 0
+    return succ and succ or error(clib.last_errmsg(self.conn))
 end
 
 ---Check if a table with {tbl_name} exists in sqlite db
@@ -364,8 +364,8 @@ end
 ---@param tbl_name string: the table name.
 ---@return boolean
 function sqlite.db:exists(tbl_name)
-  local q = self:eval("select name from sqlite_master where name= ?", tbl_name)
-  return type(q) == "table" and true or false
+    local q = self:eval("select name from sqlite_master where name= ?", tbl_name)
+    return type(q) == "table" and true or false
 end
 
 ---Create a new sqlite db table with {name} based on {schema}. if {schema.ensure} then
@@ -385,12 +385,12 @@ end
 ---@param schema sqlite_schema_dict
 ---@return boolean
 function sqlite.db:create(tbl_name, schema)
-  local req = p.create(tbl_name, schema)
-  if req:match "reference" then
-    self:execute "pragma foreign_keys = ON"
-    self.opts.foreign_keys = true
-  end
-  return self:eval(req)
+    local req = p.create(tbl_name, schema)
+    if req:match("reference") then
+        self:execute("pragma foreign_keys = ON")
+        self.opts.foreign_keys = true
+    end
+    return self:eval(req)
 end
 
 ---Remove {tbl_name} from database
@@ -405,8 +405,8 @@ end
 ---@param tbl_name string: table name
 ---@return boolean
 function sqlite.db:drop(tbl_name)
-  self.tbl_schemas[tbl_name] = nil
-  return self:eval(p.drop(tbl_name))
+    self.tbl_schemas[tbl_name] = nil
+    return self:eval(p.drop(tbl_name))
 end
 
 ---Get {name} table schema, if table does not exist then return an empty table.
@@ -423,18 +423,18 @@ end
 ---@param tbl_name string: the table name.
 ---@return sqlite_schema_dict
 function sqlite.db:schema(tbl_name)
-  local sch = self:eval(("pragma table_info(%s)"):format(tbl_name))
-  local schema = {}
-  for _, v in ipairs(type(sch) == "boolean" and {} or sch) do
-    schema[v.name] = {
-      cid = v.cid,
-      required = v.notnull == 1,
-      primary = v.pk == 1,
-      type = v.type,
-      default = v.dflt_value,
-    }
-  end
-  return schema
+    local sch = self:eval(("pragma table_info(%s)"):format(tbl_name))
+    local schema = {}
+    for _, v in ipairs(type(sch) == "boolean" and {} or sch) do
+        schema[v.name] = {
+            cid = v.cid,
+            required = v.notnull == 1,
+            primary = v.pk == 1,
+            type = v.type,
+            default = v.dflt_value,
+        }
+    end
+    return schema
 end
 
 ---Insert lua table into sqlite database table.
@@ -451,29 +451,29 @@ end
 ---@param rows table: rows to insert to the table.
 ---@return boolean|integer: boolean (true == success), and the last inserted row id.
 function sqlite.db:insert(tbl_name, rows, schema)
-  a.is_sqltbl(self, tbl_name, "insert")
-  local ret_vals = {}
-  schema = schema and schema or h.get_schema(tbl_name, self)
-  local items = p.pre_insert(rows, schema)
-  local last_rowid
-  clib.wrap_stmts(self.conn, function()
-    for _, v in ipairs(items) do
-      local stmt = s:parse(self.conn, p.insert(tbl_name, { values = v }))
-      stmt:bind(v)
-      stmt:step()
-      stmt:bind_clear()
-      table.insert(ret_vals, stmt:finalize())
-    end
-    last_rowid = tonumber(clib.last_insert_rowid(self.conn))
-  end)
+    a.is_sqltbl(self, tbl_name, "insert")
+    local ret_vals = {}
+    schema = schema and schema or h.get_schema(tbl_name, self)
+    local items = p.pre_insert(rows, schema)
+    local last_rowid
+    clib.wrap_stmts(self.conn, function()
+        for _, v in ipairs(items) do
+            local stmt = s:parse(self.conn, p.insert(tbl_name, { values = v }))
+            stmt:bind(v)
+            stmt:step()
+            stmt:bind_clear()
+            table.insert(ret_vals, stmt:finalize())
+        end
+        last_rowid = tonumber(clib.last_insert_rowid(self.conn))
+    end)
 
-  local succ = u.all(ret_vals, function(_, v)
-    return v
-  end)
-  if succ then
-    self.modified = true
-  end
-  return succ, last_rowid
+    local succ = u.all(ret_vals, function(_, v)
+        return v
+    end)
+    if succ then
+        self.modified = true
+    end
+    return succ, last_rowid
 end
 
 ---Update table row with where closure and list of values
@@ -498,35 +498,35 @@ end
 ---@param specs sqlite_query_update | sqlite_query_update[]
 ---@return boolean
 function sqlite.db:update(tbl_name, specs, schema)
-  a.is_sqltbl(self, tbl_name, "update")
-  if not specs then
-    return false
-  end
-
-  return clib.wrap_stmts(self.conn, function()
-    specs = u.is_nested(specs) and specs or { specs }
-    schema = schema and schema or h.get_schema(tbl_name, self)
-
-    local ret_val = nil
-    for _, v in ipairs(specs) do
-      v.set = v.set and v.set or v.values
-      if self:select(tbl_name, { where = v.where })[1] then
-        local stmt = s:parse(self.conn, p.update(tbl_name, { set = v.set, where = v.where }))
-        stmt:bind(p.pre_insert(v.set, schema)[1])
-        stmt:step()
-        stmt:reset()
-        stmt:bind_clear()
-        stmt:finalize()
-        a.should_modify(self:status())
-        ret_val = true
-      else
-        ret_val = self:insert(tbl_name, u.tbl_extend("keep", v.set, v.where))
-        a.should_modify(self:status())
-      end
+    a.is_sqltbl(self, tbl_name, "update")
+    if not specs then
+        return false
     end
-    self.modified = true
-    return ret_val
-  end)
+
+    return clib.wrap_stmts(self.conn, function()
+        specs = u.is_nested(specs) and specs or { specs }
+        schema = schema and schema or h.get_schema(tbl_name, self)
+
+        local ret_val = nil
+        for _, v in ipairs(specs) do
+            v.set = v.set and v.set or v.values
+            if self:select(tbl_name, { where = v.where })[1] then
+                local stmt = s:parse(self.conn, p.update(tbl_name, { set = v.set, where = v.where }))
+                stmt:bind(p.pre_insert(v.set, schema)[1])
+                stmt:step()
+                stmt:reset()
+                stmt:bind_clear()
+                stmt:finalize()
+                a.should_modify(self:status())
+                ret_val = true
+            else
+                ret_val = self:insert(tbl_name, u.tbl_extend("keep", v.set, v.where))
+                a.should_modify(self:status())
+            end
+        end
+        self.modified = true
+        return ret_val
+    end)
 end
 
 ---Delete a {tbl_name} row/rows based on the {where} closure. If {where == nil}
@@ -549,27 +549,27 @@ end
 ---@todo support querys with `and`
 ---@return boolean: true if operation is successfully, false otherwise.
 function sqlite.db:delete(tbl_name, where)
-  a.is_sqltbl(self, tbl_name, "delete")
+    a.is_sqltbl(self, tbl_name, "delete")
 
-  if not where then
-    return self:execute(p.delete(tbl_name))
-  end
-
-  where = u.is_nested(where) and where or { where }
-  clib.wrap_stmts(self.conn, function()
-    for _, spec in ipairs(where) do
-      local _where = spec.where and spec.where or spec
-      local stmt = s:parse(self.conn, p.delete(tbl_name, { where = _where }))
-      stmt:step()
-      stmt:reset()
-      stmt:finalize()
-      a.should_modify(self:status())
+    if not where then
+        return self:execute(p.delete(tbl_name))
     end
-  end)
 
-  self.modified = true
+    where = u.is_nested(where) and where or { where }
+    clib.wrap_stmts(self.conn, function()
+        for _, spec in ipairs(where) do
+            local _where = spec.where and spec.where or spec
+            local stmt = s:parse(self.conn, p.delete(tbl_name, { where = _where }))
+            stmt:step()
+            stmt:reset()
+            stmt:finalize()
+            a.should_modify(self:status())
+        end
+    end)
 
-  return true
+    self.modified = true
+
+    return true
 end
 
 ---Query from a table with where and join options
@@ -598,24 +598,24 @@ end
 ---@param spec sqlite_query_select
 ---@return table[]
 function sqlite.db:select(tbl_name, spec, schema)
-  a.is_sqltbl(self, tbl_name, "select")
-  return clib.wrap_stmts(self.conn, function()
-    local ret = {}
-    schema = schema and schema or h.get_schema(tbl_name, self)
+    a.is_sqltbl(self, tbl_name, "select")
+    return clib.wrap_stmts(self.conn, function()
+        local ret = {}
+        schema = schema and schema or h.get_schema(tbl_name, self)
 
-    spec = spec or {}
-    spec.select = spec.keys and spec.keys or spec.select
+        spec = spec or {}
+        spec.select = spec.keys and spec.keys or spec.select
 
-    local stmt = s:parse(self.conn, p.select(tbl_name, spec))
-    s.each(stmt, function()
-      table.insert(ret, s.kv(stmt))
+        local stmt = s:parse(self.conn, p.select(tbl_name, spec))
+        s.each(stmt, function()
+            table.insert(ret, s.kv(stmt))
+        end)
+        s.reset(stmt)
+        if s.finalize(stmt) then
+            self.modified = false
+        end
+        return p.post_select(ret, schema)
     end)
-    s.reset(stmt)
-    if s.finalize(stmt) then
-      self.modified = false
-    end
-    return p.post_select(ret, schema)
-  end)
 end
 
 ---Create new sqlite_tbl object.
@@ -644,24 +644,24 @@ end
 ---@see |sqlite.tbl.new|
 ---@return sqlite_tbl
 function sqlite.db:tbl(tbl_name, schema)
-  if type(self) == "string" then
-    schema = tbl_name
-    return tbl.new(self, schema)
-  end
-  return tbl.new(tbl_name, schema, self)
+    if type(self) == "string" then
+        schema = tbl_name
+        return tbl.new(self, schema)
+    end
+    return tbl.new(tbl_name, schema, self)
 end
 
 ---DEPRECATED
 function sqlite.db:table(tbl_name, opts)
-  print "sqlite.lua sqlite:table is deprecated use sqlite:tbl instead"
-  return self:tbl(tbl_name, opts)
+    print("sqlite.lua sqlite:table is deprecated use sqlite:tbl instead")
+    return self:tbl(tbl_name, opts)
 end
 
 ---Sqlite functions sugar wrappers. See `sql/strfun`
-sqlite.db.lib = require "sqlite.strfun"
+sqlite.db.lib = require("sqlite.strfun")
 
 sqlite.db = setmetatable(sqlite.db, {
-  __call = sqlite.db.extend,
+    __call = sqlite.db.extend,
 })
 
 sqlite.db.flags = clib.flags

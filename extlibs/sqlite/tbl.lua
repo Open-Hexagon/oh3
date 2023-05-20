@@ -8,8 +8,8 @@
 ---@brief ]]
 ---@tag sqlite.tbl.lua
 
-local u = require "sqlite.utils"
-local h = require "sqlite.helpers"
+local u = require("sqlite.utils")
+local h = require("sqlite.helpers")
 
 local sqlite = {}
 
@@ -51,28 +51,28 @@ sqlite.tbl.__index = sqlite.tbl
 ---@param db sqlite_db|nil : if nil, then for it to work, it needs setting with sqlite.tbl:set_db().
 ---@return sqlite_tbl
 function sqlite.tbl.new(name, schema, db)
-  schema = schema or {}
+    schema = schema or {}
 
-  local t = setmetatable({
-    db = db,
-    name = name,
-    tbl_schema = u.if_nil(schema.schema, schema),
-  }, sqlite.tbl)
+    local t = setmetatable({
+        db = db,
+        name = name,
+        tbl_schema = u.if_nil(schema.schema, schema),
+    }, sqlite.tbl)
 
-  if db then
-    h.run(function() end, t)
-  end
+    if db then
+        h.run(function() end, t)
+    end
 
-  return setmetatable({}, {
-    __index = function(_, key, ...)
-      if type(key) == "string" then
-        key = key:sub(1, 2) == "__" and key:sub(3, -1) or key
-        if t[key] then
-          return t[key]
-        end
-      end
-    end,
-  })
+    return setmetatable({}, {
+        __index = function(_, key, ...)
+            if type(key) == "string" then
+                key = key:sub(1, 2) == "__" and key:sub(3, -1) or key
+                if t[key] then
+                    return t[key]
+                end
+            end
+        end,
+    })
 end
 
 ---Create or change table schema. If no {schema} is given,
@@ -91,22 +91,22 @@ end
 ---@param schema sqlite_schema_dict
 ---@return sqlite_schema_dict | boolean
 function sqlite.tbl:schema(schema)
-  return h.run(function()
-    local exists = self.db:exists(self.name)
-    if not schema then -- TODO: or table is empty
-      return exists and self.db:schema(self.name) or {}
-    end
-    if not exists or schema.ensure then
-      self.tbl_exists = self.db:create(self.name, schema)
-      return self.tbl_exists
-    end
-    if not schema.ensure then -- TODO: use alter
-      local res = exists and self.db:drop(self.name) or true
-      res = res and self.db:create(self.name, schema) or false
-      self.tbl_schema = schema
-      return res
-    end
-  end, self)
+    return h.run(function()
+        local exists = self.db:exists(self.name)
+        if not schema then -- TODO: or table is empty
+            return exists and self.db:schema(self.name) or {}
+        end
+        if not exists or schema.ensure then
+            self.tbl_exists = self.db:create(self.name, schema)
+            return self.tbl_exists
+        end
+        if not schema.ensure then -- TODO: use alter
+            local res = exists and self.db:drop(self.name) or true
+            res = res and self.db:create(self.name, schema) or false
+            self.tbl_schema = schema
+            return res
+        end
+    end, self)
 end
 
 ---Remove table from database, if the table is already drooped then it returns false.
@@ -120,18 +120,18 @@ end
 ---@see sqlite.db:drop
 ---@return boolean
 function sqlite.tbl:drop()
-  return h.run(function()
-    if not self.db:exists(self.name) then
-      return false
-    end
+    return h.run(function()
+        if not self.db:exists(self.name) then
+            return false
+        end
 
-    local res = self.db:drop(self.name)
-    if res then
-      self.tbl_exists = false
-      self.tbl_schema = nil
-    end
-    return res
-  end, self)
+        local res = self.db:drop(self.name)
+        if res then
+            self.tbl_exists = false
+            self.tbl_schema = nil
+        end
+        return res
+    end, self)
 end
 
 ---Predicate that returns true if the table is empty.
@@ -145,11 +145,11 @@ end
 ---</pre>
 ---@return boolean
 function sqlite.tbl:empty()
-  return h.run(function()
-    if self.db:exists(self.name) then
-      return self.db:eval("select count(*) from " .. self.name)[1]["count(*)"] == 0
-    end
-  end, self)
+    return h.run(function()
+        if self.db:exists(self.name) then
+            return self.db:eval("select count(*) from " .. self.name)[1]["count(*)"] == 0
+        end
+    end, self)
 end
 
 ---Predicate that returns true if the table exists.
@@ -163,9 +163,9 @@ end
 ---</pre>
 ---@return boolean
 function sqlite.tbl:exists()
-  return h.run(function()
-    return self.db:exists(self.name)
-  end, self)
+    return h.run(function()
+        return self.db:exists(self.name)
+    end, self)
 end
 
 ---Get the current number of rows in the table
@@ -178,13 +178,13 @@ end
 ---```
 ---@return number
 function sqlite.tbl:count()
-  return h.run(function()
-    if not self.db:exists(self.name) then
-      return 0
-    end
-    local res = self.db:eval("select count(*) from " .. self.name)
-    return res[1]["count(*)"]
-  end, self)
+    return h.run(function()
+        if not self.db:exists(self.name) then
+            return 0
+        end
+        local res = self.db:eval("select count(*) from " .. self.name)
+        return res[1]["count(*)"]
+    end, self)
 end
 
 ---Query the table and return results.
@@ -210,12 +210,12 @@ end
 ---@return table
 ---@see sqlite.db:select
 function sqlite.tbl:get(query)
-  -- query = query or { query = { all = 1 } }
+    -- query = query or { query = { all = 1 } }
 
-  return h.run(function()
-    local res = self.db:select(self.name, query or { query = { all = 1 } }, self.db_schema)
-    return res
-  end, self)
+    return h.run(function()
+        local res = self.db:select(self.name, query or { query = { all = 1 } }, self.db_schema)
+        return res
+    end, self)
 end
 
 ---Get first match.
@@ -232,7 +232,7 @@ end
 ---@usage ``
 ---@see sqlite.db:select
 function sqlite.tbl:where(where)
-  return where and self:get({ where = where })[1] or nil
+    return where and self:get({ where = where })[1] or nil
 end
 
 ---Iterate over table rows and execute {func}.
@@ -257,22 +257,22 @@ end
 ---@param query sqlite_query_select|nil
 ---@return boolean
 function sqlite.tbl:each(func, query)
-  if type(func) == "table" then
-    func, query = query, func
-  end
-
-  return h.run(function()
-    local rows = self.db:select(self.name, query or {}, self.db_schema)
-    if not rows then
-      return false
+    if type(func) == "table" then
+        func, query = query, func
     end
 
-    for _, row in ipairs(rows) do
-      func(row)
-    end
+    return h.run(function()
+        local rows = self.db:select(self.name, query or {}, self.db_schema)
+        if not rows then
+            return false
+        end
 
-    return rows ~= {} or type(rows) ~= "boolean"
-  end, self)
+        for _, row in ipairs(rows) do
+            func(row)
+        end
+
+        return rows ~= {} or type(rows) ~= "boolean"
+    end, self)
 end
 
 ---Create a new table from iterating over a tbl rows with {func}.
@@ -300,25 +300,25 @@ end
 ---@param query sqlite_query_select
 ---@return table[]
 function sqlite.tbl:map(func, query)
-  if type(func) == "table" then
-    func, query = query, func
-  end
-
-  return h.run(function()
-    local res = {}
-    local rows = self.db:select(self.name, query or {}, self.db_schema)
-    if not rows then
-      return {}
-    end
-    for _, row in ipairs(rows) do
-      local ret = func(row)
-      if ret then
-        table.insert(res, func(row))
-      end
+    if type(func) == "table" then
+        func, query = query, func
     end
 
-    return res
-  end, self)
+    return h.run(function()
+        local res = {}
+        local rows = self.db:select(self.name, query or {}, self.db_schema)
+        if not rows then
+            return {}
+        end
+        for _, row in ipairs(rows) do
+            local ret = func(row)
+            if ret then
+                table.insert(res, func(row))
+            end
+        end
+
+        return res
+    end, self)
 end
 
 ---Sorts a table in-place using a transform. Values are ranked in a custom order of the results of
@@ -340,24 +340,24 @@ end
 ---@param comp function: a comparison function, defaults to the `<` operator
 ---@return table[]
 function sqlite.tbl:sort(query, transform, comp)
-  return h.run(function()
-    local res = self.db:select(self.name, query or { query = { all = 1 } }, self.db_schema)
-    local f = transform or function(r)
-      return r[u.keys(query.where)[1]]
-    end
-    if type(transform) == "string" then
-      f = function(r)
-        return r[transform]
-      end
-    end
-    comp = comp or function(a_, b_)
-      return a_ < b_
-    end
-    table.sort(res, function(a_, b_)
-      return comp(f(a_), f(b_))
-    end)
-    return res
-  end, self)
+    return h.run(function()
+        local res = self.db:select(self.name, query or { query = { all = 1 } }, self.db_schema)
+        local f = transform or function(r)
+            return r[u.keys(query.where)[1]]
+        end
+        if type(transform) == "string" then
+            f = function(r)
+                return r[transform]
+            end
+        end
+        comp = comp or function(a_, b_)
+            return a_ < b_
+        end
+        table.sort(res, function(a_, b_)
+            return comp(f(a_), f(b_))
+        end)
+        return res
+    end, self)
 end
 
 ---Insert rows into a table.
@@ -376,13 +376,13 @@ end
 ---@usage `todos:insert { { ... }, { ... } }` insert multiple items
 ---@return integer: last inserted id
 function sqlite.tbl:insert(rows)
-  return h.run(function()
-    local succ, last_rowid = self.db:insert(self.name, rows, self.db_schema)
-    if succ then
-      self.has_content = self:count() ~= 0 or false
-    end
-    return last_rowid
-  end, self)
+    return h.run(function()
+        local succ, last_rowid = self.db:insert(self.name, rows, self.db_schema)
+        if succ then
+            self.has_content = self:count() ~= 0 or false
+        end
+        return last_rowid
+    end, self)
 end
 
 ---Delete a rows/row or table content based on {where} closure. If {where == nil}
@@ -404,9 +404,9 @@ end
 ---@see sqlite.db:delete
 ---@return boolean
 function sqlite.tbl:remove(where)
-  return h.run(function()
-    return self.db:delete(self.name, where)
-  end, self)
+    return h.run(function()
+        return self.db:delete(self.name, where)
+    end, self)
 end
 
 ---Update table row with where closure and list of values
@@ -431,10 +431,10 @@ end
 ---@see sqlite_query_update
 ---@return boolean
 function sqlite.tbl:update(specs)
-  return h.run(function()
-    local succ = self.db:update(self.name, specs, self.db_schema)
-    return succ
-  end, self)
+    return h.run(function()
+        local succ = self.db:update(self.name, specs, self.db_schema)
+        return succ
+    end, self)
 end
 
 ---Replaces table content with a given set of {rows}.
@@ -453,11 +453,11 @@ end
 ---@see sqlite.db:insert
 ---@return boolean
 function sqlite.tbl:replace(rows)
-  return h.run(function()
-    self.db:delete(self.name)
-    local succ = self.db:insert(self.name, rows, self.db_schema)
-    return succ
-  end, self)
+    return h.run(function()
+        self.db:delete(self.name)
+        local succ = self.db:insert(self.name, rows, self.db_schema)
+        return succ
+    end, self)
 end
 
 ---Changes the db object to which the sqlite_tbl correspond to. If the object is
@@ -465,13 +465,13 @@ end
 ---definition.
 ---@param db sqlite_db
 function sqlite.tbl:set_db(db)
-  self.db = db
+    self.db = db
 end
 
 sqlite.tbl = setmetatable(sqlite.tbl, {
-  __call = function(_, ...)
-    return sqlite.tbl.new(...)
-  end,
+    __call = function(_, ...)
+        return sqlite.tbl.new(...)
+    end,
 })
 
 return sqlite.tbl

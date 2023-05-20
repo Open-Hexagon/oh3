@@ -16,8 +16,8 @@ function love.run()
     end
 
     if args.no_option == nil then
-        game_handler.set_version("21")
-        game_handler.record_start("ohvrvanilla_vittorio_romeo_cube", "pointless", { difficulty_mult = 5 })
+        game_handler.set_version("192")
+        game_handler.record_start("VeeDefault", "easy", { difficulty_mult = 1 })
     else
         game_handler.replay_start(args.no_option)
     end
