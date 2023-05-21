@@ -1,35 +1,33 @@
-local extmath = require "extmath"
-local ease = require "anim.ease"
+local extmath = require("extmath")
 
-local signals = setmetatable({}, { __mode = "k" })
+local weak_values = { __mode = "v" }
+local weak_keys = { __mode = "k" }
+
+local updateable = setmetatable({}, weak_values)
 local persistent = {}
-
----@class Signal
-local Signal = {}
-Signal.__index = Signal
-
----Turns on persistence, preventing the signal from being garbage collected.
-function Signal:persist()
-    persistent[self] = true
-end
-
----Turns off persistence
-function Signal:no_persist()
-    persistent[self] = true
-end
-
----Makes the signal module forget about this signal
-function Signal:release()
-    signals[self] = nil
-    persistent[self] = nil
-end
-
----@alias signalparam number|function|table|Signal
-
 
 local get_value = function(this)
     return this.value
 end
+
+local signal = {}
+
+---@class Signal
+signal.Signal = {}
+
+---Turns on persistence, preventing the signal from being garbage collected.
+function signal.Signal:persist()
+    persistent[self] = true
+end
+
+---Turns off persistence, allowing the signal from being garbage collected.
+function signal.Signal:no_persist()
+    persistent[self] = true
+end
+
+---@alias signalparam number|function|table|Signal
+
+--#region Waveform
 
 ---@class Waveform:Signal
 ---@field private freq Signal
@@ -37,63 +35,36 @@ end
 ---@field private t number
 ---@field private value number
 ---@field private suspended boolean
-local Waveform = setmetatable({}, Signal)
-Waveform.__index = Waveform
-Waveform.__call = get_value
+signal.Waveform = setmetatable({}, signal.Signal)
 
 ---Updates the signal
 ---@param dt number
-function Waveform:update(dt)
-    if self.suspended then return end
+function signal.Waveform:update(dt)
+    if self.suspended then
+        return
+    end
     self.t = self.t + self.freq() * dt
-    if self.t >= 1 then self.t = self.t - 1 end
+    if self.t >= 1 then
+        self.t = self.t - 1
+    end
     self.value = self.curve(self.t)
 end
 
 ---Suspends updates
-function Waveform:suspend()
+function signal.Waveform:suspend()
     self.suspended = true
 end
 
 ---Resumes updates
-function Waveform:resume()
+function signal.Waveform:resume()
     self.suspended = false
 end
 
----@class Lerp:Signal
----@field private a Signal
----@field private b Signal
----@field private t Signal
-local Lerp = setmetatable({}, Signal)
-Lerp.__index = Lerp
-Lerp.__call = get_value
+--#endregion
 
-function Lerp:update()
-    self.value = extmath.lerp(self.a(), self.b(), self.t())
-end
+--#region Queue
 
----@class Sum:Signal
----@field private a Signal
----@field private b Signal
-local Sum = setmetatable({}, Signal)
-Sum.__index = Sum
-Sum.__call = get_value
-
-function Sum:update()
-    self.value = self.a() + self.b()
-end
-
----@class Product:Signal
----@field private a Signal
----@field private b Signal
-local Product = setmetatable({}, Signal)
-Product.__index = Product
-Product.__call = get_value
-
-function Product:update()
-    self.value = self.a() * self.b()
-end
-
+-- Event type enum
 local KEYFRAME_EVENT, WAVEFORM_EVENT, WAIT_EVENT, SET_VALUE_EVENT, CALL_EVENT = 1, 2, 3, 4, 5
 
 ---@class Event
@@ -109,20 +80,18 @@ local KEYFRAME_EVENT, WAVEFORM_EVENT, WAIT_EVENT, SET_VALUE_EVENT, CALL_EVENT = 
 ---@field private value number
 ---@field private processing `KEYFRAME_EVENT`|`WAVEFORM_EVENT`|`WAIT_EVENT`|nil
 ---@field private start_value number
-local Queue = setmetatable({}, Signal)
-Queue.__index = Queue
-Queue.__call = get_value
+signal.Queue = setmetatable({}, signal.Signal)
 
 ---Adds a keyframe event
 ---@param duration number Event duration
 ---@param value number Target value
 ---@param easing? function Easing function
-function Queue:keyframe(duration, value, easing)
+function signal.Queue:keyframe(duration, value, easing)
     ---@type Event
     local newevent = {
         type = KEYFRAME_EVENT,
         value = value,
-        fn = easing or ease.linear,
+        fn = easing or function (t) return t end,
         freq = 1 / duration,
     }
     self.last_event.next = newevent
@@ -132,7 +101,7 @@ end
 ---Adds a waveform event. The value will be set to what `curve` returns for the duration of the event.
 ---@param duration number Event duration
 ---@param curve function A function that accepts one argument ranging from [0, 1] and returns a number.
-function Queue:waveform(duration, curve)
+function signal.Queue:waveform(duration, curve)
     ---@type Event
     local newevent = {
         type = WAVEFORM_EVENT,
@@ -145,7 +114,7 @@ end
 
 ---Adds a wait event.
 ---@param duration number
-function Queue:wait(duration)
+function signal.Queue:wait(duration)
     ---@type Event
     local newevent = {
         type = WAIT_EVENT,
@@ -157,7 +126,7 @@ end
 
 ---Adds an event that instantly sets the value of the signal to `value`
 ---@param value number
-function Queue:set_value(value)
+function signal.Queue:set_value(value)
     ---@type Event
     local newevent = {
         type = SET_VALUE_EVENT,
@@ -169,7 +138,7 @@ end
 
 ---Adds a function call event.
 ---@param fn function
-function Queue:call(fn)
+function signal.Queue:call(fn)
     ---@type Event
     local newevent = {
         type = CALL_EVENT,
@@ -180,7 +149,7 @@ function Queue:call(fn)
 end
 
 ---Stops the queue and deletes all events. The value remains at its last value.
-function Queue:stop()
+function signal.Queue:stop()
     self.current_event = self.last_event
     self.processing = nil
     self.t = 1
@@ -188,8 +157,10 @@ end
 
 ---Updates the signal.
 ---@param dt number
-function Queue:update(dt)
-    if self.suspended then return end
+function signal.Queue:update(dt)
+    if self.suspended then
+        return
+    end
     if self.processing then
         self.t = self.t + self.current_event.next.freq * dt
         if self.t < 1 then
@@ -235,39 +206,106 @@ function Queue:update(dt)
 end
 
 ---Suspends updates
-function Queue:suspend()
+function signal.Queue:suspend()
     self.suspended = true
 end
 
 ---Resumes updates
-function Queue:resume()
+function signal.Queue:resume()
     self.suspended = false
 end
 
--- Square wave function with period 1 and amplitude 1 at value <x> with duty cycle <d>
+--#endregion
+
+--#region Operations
+
+---@class Lerp:Signal
+---@field private a Signal
+---@field private b Signal
+---@field private t Signal
+---@field private value number
+signal.Lerp = setmetatable({}, signal.Signal)
+
+function signal.Lerp:update()
+    self.value = extmath.lerp(self.a(), self.b(), self.t())
+end
+
+---@class Add:Signal
+---@field private a Signal
+---@field private b Signal
+---@field private value number
+signal.Add = setmetatable({}, signal.Signal)
+
+function signal.Add:update()
+    self.value = self.a() + self.b()
+end
+
+---@class Sub:Signal
+---@field private a Signal
+---@field private b Signal
+---@field private value number
+signal.Sub = setmetatable({}, signal.Signal)
+
+function signal.Sub:update()
+    self.value = self.a() - self.b()
+end
+
+---@class Mul:Signal
+---@field private a Signal
+---@field private b Signal
+---@field private value number
+signal.Mul = setmetatable({}, signal.Signal)
+
+function signal.Mul:update()
+    self.value = self.a() * self.b()
+end
+
+---@class Div:Signal
+---@field private a Signal
+---@field private b Signal
+---@field private value number
+signal.Div = setmetatable({}, signal.Signal)
+
+function signal.Div:update()
+    self.value = self.a() / self.b()
+end
+
+--#endregion
+
+-- Square wave function with period 1 and amplitude 1 at value `x` with duty cycle `d`.
 local square = function(x, d)
     local _, frac = math.modf(x)
-    if x < 0 then frac = 1 + frac end
+    if x < 0 then
+        frac = 1 + frac
+    end
     return -extmath.sgn(frac - extmath.clamp(d, 0, 1))
 end
 
--- Asymmetrical triangle wave function with period 1 and amplitude 1 at value <x>
--- Asymmetry can be adjusted with <d>
--- An asymmetry of 1 is equivalent to sawtooth wave
--- An asymmetry of 0 is equivalent to a reversed sawtooth wave
+-- Asymmetrical triangle wave function with period 1 and amplitude 1 at value `x`.
+-- Asymmetry can be adjusted with `d`.
+-- An asymmetry of 1 is equivalent to sawtooth wave.
+-- An asymmetry of 0 is equivalent to a reversed sawtooth wave.
 local triangle = function(x, d)
     x = x % 1
     d = extmath.clamp(d, 0, 1)
     local p, x2 = 1 - d, 2 * x
-    return (x < 0.5 * d) and (x2 / d) or (0.5 * (1 + p) <= x) and ((x2 - 2) / d) or ((1 - x2) / p)
+    if x < 0.5 * d then
+        return x2 / d
+    elseif 0.5 * (1 + p) <= x then
+        return (x2 - 2) / d
+    else
+        return (1 - x2) / p
+    end
 end
 
--- Sawtooth wave function with period 1 and amplitude 1 at value x
+-- Sawtooth wave function with period 1 and amplitude 1 at value x.
 local sawtooth = function(x)
     return 2 * (x - math.floor(0.5 + x))
 end
 
 local M = {}
+
+local const_signal_cache = setmetatable({}, weak_values)
 
 ---Create a new signal.
 ---If value is a `number`, returns the constant signal of that number.
@@ -275,9 +313,16 @@ local M = {}
 ---@param value signalparam
 ---@return Signal|function
 function M.new_signal(value)
-    if type(value) == "number" then return function()
-        return value
-    end end
+    if type(value) == "number" then
+        if const_signal_cache[value] then
+            return const_signal_cache[value]
+        end
+        local newinst = function()
+            return value
+        end
+        const_signal_cache[value] = newinst
+        return newinst
+    end
     return value
 end
 
@@ -292,52 +337,8 @@ function M.new_waveform(freq, curve)
         curve = curve,
         suspended = false,
         value = 0,
-    }, Waveform)
-    signals[newinst] = true
-    return newinst
-end
-
----Creates a new signal that is the lerp of 3 signals `a`, `b`, and `t`.
----@param a signalparam
----@param b signalparam
----@param t signalparam
----@return Lerp
-function M.new_lerp(a, b, t)
-    local newinst = setmetatable({
-        a = M.new_signal(a),
-        b = M.new_signal(b),
-        t = M.new_signal(t),
-        value = 0,
-    }, Lerp)
-    signals[newinst] = true
-    return newinst
-end
-
----Creates a new signal that is the sum of two signals `a` and `b`.
----@param a signalparam
----@param b signalparam
----@return Sum
-function M.new_sum(a, b)
-    local newinst = setmetatable({
-        a = M.new_signal(a),
-        b = M.new_signal(b),
-        value = 0,
-    }, Sum)
-    signals[newinst] = true
-    return newinst
-end
-
----Creates a new signal that is the product of two signals `a` and `b`.
----@param a signalparam
----@param b signalparam
----@return Product
-function M.new_product(a, b)
-    local newinst = setmetatable({
-        a = M.new_signal(a),
-        b = M.new_signal(b),
-        value = 0,
-    }, Product)
-    signals[newinst] = true
+    }, signal.Waveform)
+    table.insert(updateable, newinst)
     return newinst
 end
 
@@ -352,36 +353,98 @@ function M.new_queue(value)
         last_event = dummy_event,
         suspended = false,
         value = value or 0,
-    }, Queue)
-    signals[newinst] = true
+    }, signal.Queue)
+    table.insert(updateable, newinst)
     return newinst
 end
 
-local function get_wrapped_value(this)
-    return this._output()
+---Creates a new signal that is the lerp of 3 signals `a`, `b`, and `t`.
+---@param a signalparam
+---@param b signalparam
+---@param t signalparam
+---@return Lerp
+function M.lerp(a, b, t)
+    local newinst = setmetatable({
+        a = M.new_signal(a),
+        b = M.new_signal(b),
+        t = M.new_signal(t),
+        value = 0,
+    }, signal.Lerp)
+    table.insert(updateable, newinst)
+    return newinst
 end
 
----Wraps composed signals
----@overload fun(output:Signal, input:Waveform): Waveform
----@overload fun(output:Signal, input:Lerp): Lerp
----@overload fun(output:Signal, input:Sum): Sum
----@overload fun(output:Signal, input:Queue): Queue
-function M.wrap(output, input)
+---Creates a new signal that is the sum of two signals `a` and `b`.
+---@param a signalparam
+---@param b signalparam
+---@return Add
+function M.add(a, b)
     local newinst = setmetatable({
-        _output = output
-    }, {
-        __index = input,
-        __call = get_wrapped_value
-    })
+        a = M.new_signal(a),
+        b = M.new_signal(b),
+        value = 0,
+    }, signal.Add)
+    table.insert(updateable, newinst)
+    return newinst
+end
+
+---Creates a new signal that is the difference of two signals `a` and `b`.
+---@param a signalparam
+---@param b signalparam
+---@return Sub
+function M.sub(a, b)
+    local newinst = setmetatable({
+        a = M.new_signal(a),
+        b = M.new_signal(b),
+        value = 0,
+    }, signal.Sub)
+    table.insert(updateable, newinst)
+    return newinst
+end
+
+---Creates a new signal that is the product of two signals `a` and `b`.
+---@param a signalparam
+---@param b signalparam
+---@return Mul
+function M.mul(a, b)
+    local newinst = setmetatable({
+        a = M.new_signal(a),
+        b = M.new_signal(b),
+        value = 0,
+    }, signal.Mul)
+    table.insert(updateable, newinst)
+    return newinst
+end
+
+---Creates a new signal that is the quotient of two signals `a` and `b`.
+---@param a signalparam
+---@param b signalparam
+---@return Div
+function M.div(a, b)
+    local newinst = setmetatable({
+        a = M.new_signal(a),
+        b = M.new_signal(b),
+        value = 0,
+    }, signal.Div)
+    table.insert(updateable, newinst)
     return newinst
 end
 
 ---Updates all signals
 ---@param dt number
 function M.update(dt)
-    for sig, _ in pairs(signals) do
+    for _, sig in ipairs(updateable) do
         sig:update(dt)
     end
+end
+
+for _, class in pairs(signal) do
+    class.__index = class
+    class.__call = get_value
+    class.__add = M.add
+    class.__sub = M.sub
+    class.__mul = M.mul
+    class.__div = M.div
 end
 
 return M
