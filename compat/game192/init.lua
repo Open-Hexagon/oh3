@@ -141,18 +141,22 @@ function public.start(pack_folder, level_id, difficulty_mult)
     end
     game.style.select(style_data)
     game.difficulty_mult = difficulty_mult
+    local segment
+    game.music = game.pack.music[level_data.music_id]
+    if game.music == nil then
+        error("Music with id '" .. level_data.music_id .. "' not found")
+    end
+    if game.first_play then
+        segment = math.random(1, #game.music.segments)
+    end
     if not args.headless then
         love.audio.stop()
         love.audio.play(go_sound)
-        game.music = game.pack.music[level_data.music_id]
-        if game.music == nil then
-            error("Music with id '" .. level_data.music_id .. "' not found")
-        end
         if game.music.source ~= nil then
             if game.first_play then
                 game.music.source:seek(math.floor(game.music.segments[1].time))
             else
-                game.music.source:seek(math.floor(game.music.segments[math.random(1, #game.music.segments)].time))
+                game.music.source:seek(math.floor(game.music.segments[segment].time))
             end
             love.audio.play(game.music.source)
         end
@@ -210,7 +214,6 @@ function public.update(frametime)
         game.blocked_updates = game.blocked_updates - 1
         return
     end
-    game.current_frametime = frametime
     game.real_time = game.real_time + frametime
     frametime = (game.real_time - last_real_time) * 60
     last_real_time = game.real_time
@@ -383,6 +386,7 @@ function public.update(frametime)
     elseif target_frametime > 0.25 then
         target_frametime = 0.25
     end
+    game.current_frametime = target_frametime
     return target_frametime / 60
 end
 
@@ -514,7 +518,7 @@ end
 
 ---runs the game until the player dies without caring about real time
 function public.run_game_until_death()
-    local frametime = 1 / 240
+    local frametime = game.current_frametime / 60
     while not game.status.has_died do
         -- TODO: timescale
         frametime = public.update(frametime) or frametime
