@@ -31,7 +31,7 @@ cws.cw_create = function()
     return create_cw(false, true)
 end
 cws.cw_createDeadly = function()
-    return create_cw(true, false)
+    return create_cw(true, true)
 end
 cws.cw_createNoCollision = function()
     return create_cw(false, false)
