@@ -8,9 +8,11 @@ local ease = require("anim.ease")
 local STOP, TITLE, MENU = 1, 2, 3
 local state = TITLE
 
+-- Side count
 local sides = 6
 local ARC = extmath.tau / 6
 
+-- Colors
 local main_color = { 1, 0.23, 0.13, 1 }
 local panel_colors = {
     { 0.1, 0.02, 0.04, 1 },
@@ -19,12 +21,15 @@ local panel_colors = {
 
 local bicolor_shader = love.graphics.newShader("assets/image/title/bicolor.frag")
 
+-- Game title text
 local title = {}
 
+-- Setup
 function title:load()
-    self.position = signal.new_queue(0.25)
-    self.y_open = signal.new_lerp(layout.TOP, layout.BOTTOM, self.position)
-    self.y_hex = signal.new_lerp(layout.BOTTOM, layout.TOP, self.position)
+    self.position = signal.new_queue(0)
+    self.y_open = signal.lerp(layout.TOP, layout.BOTTOM, self.position)
+    self.y_hex = signal.lerp(layout.BOTTOM, layout.TOP, self.position)
+    self.scale = signal.mul(layout.MINOR, 0.00045)
     do
         self.img_open = love.graphics.newImage("assets/image/title/open.png")
         local width, height = self.img_open:getDimensions()
@@ -37,11 +42,12 @@ function title:load()
         self.img_hex_center = love.math.newTransform()
         self.img_hex_center:translate(width / -2, height / -2)
     end
-    self.disabled = false
+    self.hidden = false
+    self:enter()
 end
 
 function title:enter()
-    title.disabled = false
+    title.hidden = false
     self.position:keyframe(0.2, 0.25, ease.out_back)
     self.position:call(function()
         state = TITLE
@@ -52,31 +58,29 @@ function title:exit()
     self.position:keyframe(0.2, -0.1, ease.out_back)
     self.position:call(function()
         state = MENU
-        title.disabled = true
+        title.hidden = true
     end)
 end
 
 function title:draw()
-    if self.disabled then
+    if self.hidden then
         return
     end
-    local y_open = self.y_open()
-    local y_hex = self.y_hex()
     local x = layout.CENTER_X()
-    local scale = layout.MINOR() * 0.00045
+    local scale = self.scale()
 
     love.graphics.setShader(bicolor_shader)
     bicolor_shader:send("red", main_color)
     bicolor_shader:send("blue", { 1, 1, 1, 1 })
 
     love.graphics.push()
-    love.graphics.translate(x, y_open)
+    love.graphics.translate(x, self.y_open())
     love.graphics.scale(scale)
     love.graphics.draw(self.img_open, self.img_open_center)
     love.graphics.pop()
 
     love.graphics.push()
-    love.graphics.translate(x, y_hex)
+    love.graphics.translate(x, self.y_hex())
     love.graphics.scale(scale)
     love.graphics.draw(self.img_hex, self.img_hex_center)
     love.graphics.pop()
@@ -84,28 +88,56 @@ function title:draw()
     love.graphics.setShader()
 end
 
+-- Background with center hexagon and panels
 local background = {}
 
 function background:load()
     self.angle = signal.new_queue()
-    self:loop()
+    -- self:loop()
     self.panel_radius = layout.MAJOR
 
-    local temp_x = signal.new_queue(0.5)
-    local temp_y = signal.new_queue(0.5)
-    local temp_pivot_radius = signal.new_queue(0.1)
-    local temp_border_thickness = signal.new_queue(0.15)
+    self.x = signal.new_queue(0.5)
+    self.y = signal.new_queue(0.5)
+    -- A percentage of the minor window dimension
+    self.pivot_radius = signal.new_queue(0.1)
+    -- A percentage of the calculated pivot radius
+    self.border_thickness = signal.new_queue(0.15)
 
-    self.x = signal.wrap(signal.new_lerp(layout.LEFT, layout.RIGHT, temp_x), temp_x) --[[@as Queue]]
-    self.y = signal.wrap(signal.new_lerp(layout.TOP, layout.BOTTOM, temp_y), temp_y) --[[@as Queue]]
-    self.pivot_radius = signal.wrap(signal.new_product(layout.MINOR, temp_pivot_radius), temp_pivot_radius) --[[@as Queue]]
-    self.border_thickness =
-        signal.wrap(signal.new_product(self.pivot_radius, temp_border_thickness), temp_border_thickness) --[[@as Queue]]
+    local x_pos = signal.lerp(layout.LEFT, layout.RIGHT, self.x)
+    local y_pos = signal.lerp(layout.TOP, layout.BOTTOM, self.y)
+    local pivot_radius = self.pivot_radius * layout.MINOR
+    local border_thickness = pivot_radius * self.border_thickness
+    function self:draw()
+        local center = {}
+        love.graphics.translate(x_pos(), y_pos())
+        for i = 0, sides - 1 do
+            local a1 = i * ARC + self.angle()
+            local a2 = a1 + ARC
+            local x1, y1 = math.cos(a1), math.sin(a1)
+            local x2, y2 = math.cos(a2), math.sin(a2)
+
+            love.graphics.push()
+            love.graphics.scale(self.panel_radius())
+            love.graphics.setColor(unpack(panel_colors[i % #panel_colors + 1]))
+            love.graphics.polygon("fill", 0, 0, x1, y1, x2, y2)
+            love.graphics.pop()
+
+            love.graphics.setColor(unpack(main_color))
+            local a, b, c, d = transform.scale(pivot_radius(), x1, y1, x2, y2)
+            local e, f, g, h = transform.scale(pivot_radius() - border_thickness(), x2, y2, x1, y1)
+            love.graphics.polygon("fill", a, b, c, d, e, f, g, h)
+            table.insert(center, g)
+            table.insert(center, h)
+        end
+        love.graphics.setColor(unpack(panel_colors[1]))
+        love.graphics.polygon("fill", unpack(center))
+        love.graphics.origin()
+    end
 end
 
 local function angle_loop()
     background.angle:waveform(2, function(t)
-        return extmath.tau / 3 * t
+        return extmath.tau * t
     end)
     background.angle:call(angle_loop)
 end
@@ -114,52 +146,28 @@ function background:loop()
     self.angle:call(angle_loop)
 end
 
-function background:draw()
-    local pivot_radius = self.pivot_radius()
-    local border_thickness = self.border_thickness()
-
-    local center = {}
-    love.graphics.translate(self.x(), self.y())
-    for i = 0, sides - 1 do
-        local a1 = i * ARC + self.angle()
-        local a2 = a1 + ARC
-        local x1, y1 = math.cos(a1), math.sin(a1)
-        local x2, y2 = math.cos(a2), math.sin(a2)
-
-        love.graphics.push()
-        love.graphics.scale(self.panel_radius())
-        love.graphics.setColor(unpack(panel_colors[i % #panel_colors + 1]))
-        love.graphics.polygon("fill", 0, 0, x1, y1, x2, y2)
-        love.graphics.pop()
-
-        love.graphics.setColor(unpack(main_color))
-        local a, b, c, d = transform.scale(pivot_radius, x1, y1, x2, y2)
-        local e, f, g, h = transform.scale(pivot_radius - border_thickness, x2, y2, x1, y1)
-        love.graphics.polygon("fill", a, b, c, d, e, f, g, h)
-        table.insert(center, g)
-        table.insert(center, h)
-    end
-    love.graphics.setColor(unpack(panel_colors[1]))
-    love.graphics.polygon("fill", unpack(center))
-    love.graphics.origin()
-end
-
+-- Individual main menu buttons
 local PanelButton = {}
 PanelButton.__index = PanelButton
 
 function PanelButton:select()
-    self.radius:keyframe(0.15, 0.985, ease.out_sine)
+    self.radius:stop()
+    self.radius:keyframe(1.5, 0.985, ease.out_sine)
     self.selected = true
 end
 
 function PanelButton:deselect()
-    self.radius:keyframe(0.15, 0, ease.out_sine)
+    self.radius:stop()
+    self.radius:keyframe(1.5, 0, ease.out_sine)
     self.selected = false
 end
 
 function PanelButton:draw()
     local outer_radius = background.panel_radius()
     local inner_radius = self.radius()
+    if inner_radius == outer_radius then
+        return
+    end
     love.graphics.translate(background.x(), background.y())
 
     local a1 = self.angle()
@@ -177,12 +185,13 @@ local function new_panel_button(angle)
     local temp = signal.new_queue()
     local newinst = setmetatable({
         angle = angle,
-        radius = signal.wrap(signal.new_lerp(background.panel_radius, background.pivot_radius, temp), temp),
+        radius = signal.lerp(background.panel_radius, background.pivot_radius, temp),
         selected = false,
     }, PanelButton)
     return newinst
 end
 
+-- Handles the wheel of main menu buttons
 local wheel = {}
 
 function wheel:load()
@@ -290,12 +299,12 @@ local M = {}
 function M.load()
     title:load()
     background:load()
-    wheel:load()
+    --wheel:load()
 end
 
 function M.draw()
     background:draw()
-    wheel:draw()
+    --wheel:draw()
     title:draw()
 end
 
@@ -305,7 +314,7 @@ function M.handle_event(name, a, b, c, d, e, f)
     end
     if name == "keypressed" and a == "tab" then
     elseif name == "mousemoved" then
-        wheel:check_cursor(a, b)
+        --wheel:check_cursor(a, b)
         -- selection = nil
         -- for _, btn in pairs(buttonlist) do
         --     if btn:check_cursor(a, b) then
@@ -318,7 +327,7 @@ function M.handle_event(name, a, b, c, d, e, f)
         else
             animate.menu_to_title()
         end
-        wheel:check_cursor(a, b)
+        --wheel:check_cursor(a, b)
     end
 end
 
