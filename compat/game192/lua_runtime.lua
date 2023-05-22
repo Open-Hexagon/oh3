@@ -235,7 +235,7 @@ function lua_runtime.init_env(game, public)
         play_sound(game.assets.get_pack_sound(game.pack, id))
     end
     env.forceIncrement = function()
-        game.incrementDifficulty()
+        game.increment_difficulty()
     end
     local function add_message(message, duration)
         if not args.headless then

@@ -61,7 +61,7 @@ function events.init(game)
     event_executors = {
         level_change = function(event)
             game.status.must_restart = true
-            game.restart_id = event.id:match("/(.*)"):match("/(.*)")
+            game.restart_id = game.pack.folder .. "_" .. event.id:match("/(.*)"):match("/(.*)")
             game.restart_first_time = true
         end,
         menu = function()
@@ -204,21 +204,27 @@ function events.init(game)
             if game.music == nil then
                 error("Music with id '" .. event.id .. "' not found")
             end
-            game.music.source:seek(math.floor(game.music.segments[math.random(1, #game.music.segments)].time))
+            if game.music.source ~= nil then
+                game.music.source:seek(math.floor(game.music.segments[math.random(1, #game.music.segments)].time))
+            end
         end,
         music_set_segment = function(event)
             game.music = game.pack.music[event.id]
             if game.music == nil then
                 error("Music with id '" .. event.id .. "' not found")
             end
-            game.music.source:seek(math.floor(game.music.segments[math.floor((event.segment_index or 0) + 1)].time))
+            if game.music.source ~= nil then
+                game.music.source:seek(math.floor(game.music.segments[math.floor((event.segment_index or 0) + 1)].time))
+            end
         end,
         music_set_seconds = function(event)
             game.music = game.pack.music[event.id]
             if game.music == nil then
                 error("Music with id '" .. event.id .. "' not found")
             end
-            game.music.source:seek(math.floor(event.seconds or 0))
+            if game.music.source ~= nil then
+                game.music.source:seek(math.floor(event.seconds or 0))
+            end
         end,
         style_set = function(event)
             local style_data = game.pack.styles[event.id]
