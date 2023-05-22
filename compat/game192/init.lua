@@ -530,4 +530,10 @@ function public.stop()
     public.running = false
 end
 
+---initialize the game
+---@param data any
+function public.init(data)
+    assets.init(data)
+end
+
 return public

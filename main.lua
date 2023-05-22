@@ -15,9 +15,23 @@ function love.run()
         end
     end
 
+    -- temporary command line menu
+    local packs = game_handler.get_packs()
+    for i = 1, #packs do
+        local pack = packs[i]
+        print(i, pack.name .. " (" .. pack.id .. ")")
+    end
+    print("Enter pack number:")
+    local pack = packs[tonumber(io.input():read())]
+    for i = 1, pack.level_count do
+        print(i, pack.levels[i].name)
+    end
+    print("Enter level number")
+    local level = pack.levels[tonumber(io.input():read())]
+
     if args.no_option == nil then
-        game_handler.set_version("192")
-        game_handler.record_start("VeeDefault", "easy", { difficulty_mult = 1 })
+        game_handler.set_version(tostring(pack.game_version))
+        game_handler.record_start(pack.id, level.id, { difficulty_mult = 1 })
     else
         game_handler.replay_start(args.no_option)
     end

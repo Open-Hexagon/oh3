@@ -18,7 +18,36 @@ local sound_mapping = {
 local audio_path = "assets/audio/"
 local cached_sounds = {}
 
-function assets.init()
+local function decode_json(str, filename)
+    return xpcall(json.decode_jsonc, function(msg)
+        log("Error: can't decode '" .. filename .. "': " .. msg)
+    end, str)
+end
+
+local function file_ext_read_iter(dir, ending)
+    local files = love.filesystem.getDirectoryItems(dir)
+    local index = 0
+    return function()
+        index = index + 1
+        if index > #files then
+            return
+        end
+        while files[index]:sub(-#ending) ~= ending do
+            index = index + 1
+            if index > #files then
+                return
+            end
+        end
+        local contents = love.filesystem.read(dir .. "/" .. files[index])
+        if contents == nil then
+            error("Failed to read '" .. dir .. "/" .. files[index] .. "'")
+        else
+            return contents, files[index]
+        end
+    end
+end
+
+function assets.init(data)
     local pack_folders = love.filesystem.getDirectoryItems(pack_path)
     for i = 1, #pack_folders do
         local folder = pack_folders[i]
@@ -27,14 +56,23 @@ function assets.init()
         pack_data.folder = folder
         local pack_json = json.decode_jsonc(love.filesystem.read(pack_data.path .. "pack.json"))
         pack_data.name = pack_json.name or ""
+
+        data.register_pack(folder, pack_data.name, 192)
+
+        -- level data has to be loaded here for level selection purposes
+        pack_data.levels = {}
+        for contents, filename in file_ext_read_iter(pack_data.path .. "Levels", ".json") do
+            local success, level_json = decode_json(contents, filename)
+            if success then
+                level_json.id = pack_data.folder .. "_" .. level_json.id
+                data.register_level(folder, level_json.id, level_json.name, {
+                    difficulty_mult = level_json.difficulty_multipliers
+                })
+                pack_data.levels[level_json.id] = level_json
+            end
+        end
         packs[folder] = pack_data
     end
-end
-
-local function decode_json(str, filename)
-    return xpcall(json.decode_jsonc, function(msg)
-        log("Error: can't decode '" .. filename .. "': " .. msg)
-    end, str)
 end
 
 function assets.get_pack(folder)
@@ -42,41 +80,9 @@ function assets.get_pack(folder)
     if pack_data == nil then
         error("'" .. pack_path .. folder .. "' does not exist or is not a valid pack.")
     end
-    if pack_data.levels == nil then
+    if pack_data.music == nil then
         folder = pack_path .. folder .. "/"
         log("Loading '" .. pack_data.name .. "' assets")
-        local function file_ext_read_iter(dir, ending)
-            local files = love.filesystem.getDirectoryItems(dir)
-            local index = 0
-            return function()
-                index = index + 1
-                if index > #files then
-                    return
-                end
-                while files[index]:sub(-#ending) ~= ending do
-                    index = index + 1
-                    if index > #files then
-                        return
-                    end
-                end
-                local contents = love.filesystem.read(dir .. "/" .. files[index])
-                if contents == nil then
-                    error("Failed to read '" .. dir .. "/" .. files[index] .. "'")
-                else
-                    return contents, files[index]
-                end
-            end
-        end
-
-        -- level data
-        pack_data.levels = {}
-        for contents, filename in file_ext_read_iter(folder .. "Levels", ".json") do
-            local success, level_json = decode_json(contents, filename)
-            if success then
-                level_json.id = pack_data.folder .. "_" .. level_json.id
-                pack_data.levels[level_json.id] = level_json
-            end
-        end
 
         -- music
         pack_data.music = {}
@@ -139,7 +145,5 @@ function assets.get_pack_sound(pack, id)
     end
     return pack.cached_sounds[id]
 end
-
-assets.init()
 
 return assets

@@ -1,6 +1,7 @@
 local args = require("args")
 local input = require("game_handler.input")
 local Replay = require("game_handler.replay")
+local pack_level_data = require("game_handler.data")
 local profile = require("game_handler.profile")
 
 -- TODO: profile selection / creation
@@ -11,6 +12,9 @@ local games = {
     ["192"] = require("compat.game192"),
     ["21"] = require("compat.game21"),
 }
+for _, game in pairs(games) do
+    game.init(pack_level_data)
+end
 local current_game
 local current_game_version
 local first_play = true
@@ -202,6 +206,12 @@ end
 ---@return Replay|nil
 function game_handler.get_replay()
     return input.replay
+end
+
+---get all packs and relevant data for level selection
+---@return table
+function game_handler.get_packs()
+    return pack_level_data.get_packs()
 end
 
 return game_handler

@@ -40,7 +40,30 @@ local function decode_json(str, filename)
     end, str)
 end
 
-function assets.init()
+        local function file_ext_read_iter(dir, ending)
+            local files = love.filesystem.getDirectoryItems(dir)
+            local index = 0
+            return function()
+                index = index + 1
+                if index > #files then
+                    return
+                end
+                while files[index]:sub(-#ending) ~= ending do
+                    index = index + 1
+                    if index > #files then
+                        return
+                    end
+                end
+                local contents = love.filesystem.read(dir .. "/" .. files[index])
+                if contents == nil then
+                    error("Failed to read " .. dir .. "/" .. files[index])
+                else
+                    return contents, files[index]
+                end
+            end
+        end
+
+function assets.init(data)
     local pack_folders = love.filesystem.getDirectoryItems(pack_path)
     for i = 1, #pack_folders do
         local folder = pack_path .. pack_folders[i]
@@ -60,12 +83,12 @@ function assets.init()
         check_file("pack.json")
         check_file("Scripts")
 
-        local contents = love.filesystem.read(folder .. "/pack.json")
-        if contents == nil then
+        local pack_json_contents = love.filesystem.read(folder .. "/pack.json")
+        if pack_json_contents == nil then
             error("Failed to load pack.json")
         end
-        local success, pack_json = decode_json(contents)
-        if success then
+        local decode_success, pack_json = decode_json(pack_json_contents)
+        if decode_success then
             pack_json.pack_id =
                 assets._build_pack_id(pack_json.disambiguator, pack_json.author, pack_json.name, pack_json.version)
             local index_pack_id = assets._build_pack_id(pack_json.disambiguator, pack_json.author, pack_json.name)
@@ -73,6 +96,20 @@ function assets.init()
             pack_json.pack_name = pack_folders[i]
             metadata_pack_json_map[index_pack_id] = pack_json
             folder_pack_json_map[folder] = pack_json
+
+            data.register_pack(index_pack_id, pack_json.pack_name, 21)
+
+            -- level data has to be loaded here for level selection purposes
+            pack_json.levels = {}
+            for contents, filename in file_ext_read_iter(folder .. "/Levels", ".json") do
+                local success, level_json = decode_json(contents, filename)
+                if success then
+                    data.register_level(index_pack_id, level_json.id, level_json.name, {
+                        difficulty_mult = level_json.difficultyMults
+                    })
+                    pack_json.levels[level_json.id] = level_json
+                end
+            end
         end
     end
 end
@@ -102,6 +139,11 @@ function assets.get_pack(name)
         if pack_data.pack_json == nil then
             error(folder .. " doesn't exist or is not a valid pack!")
         end
+
+        -- move the table to its proper place
+        pack_data.levels = pack_data.pack_json.levels
+        pack_data.pack_json.levels = nil
+
         pack_data.pack_id = pack_data.pack_json.pack_id
         if pack_data.pack_json.dependencies ~= nil then
             for i = 1, #pack_data.pack_json.dependencies do
@@ -120,38 +162,6 @@ function assets.get_pack(name)
         end
 
         log("Loading '" .. pack_data.pack_id .. "' assets")
-
-        local function file_ext_read_iter(dir, ending)
-            local files = love.filesystem.getDirectoryItems(dir)
-            local index = 0
-            return function()
-                index = index + 1
-                if index > #files then
-                    return
-                end
-                while files[index]:sub(-#ending) ~= ending do
-                    index = index + 1
-                    if index > #files then
-                        return
-                    end
-                end
-                local contents = love.filesystem.read(dir .. "/" .. files[index])
-                if contents == nil then
-                    error("Failed to read " .. dir .. "/" .. files[index])
-                else
-                    return contents, files[index]
-                end
-            end
-        end
-
-        -- level data
-        pack_data.levels = {}
-        for contents, filename in file_ext_read_iter(folder .. "/Levels", ".json") do
-            local success, level_json = decode_json(contents, filename)
-            if success then
-                pack_data.levels[level_json.id] = level_json
-            end
-        end
 
         if not args.headless then
             -- music
@@ -417,7 +427,5 @@ function assets.get_image(name)
     end
     return loaded_images[name]
 end
-
-assets.init()
 
 return assets
