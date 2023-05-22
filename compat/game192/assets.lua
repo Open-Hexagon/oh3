@@ -54,7 +54,11 @@ function assets.init(data)
         local pack_data = {}
         pack_data.path = pack_path .. folder .. "/"
         pack_data.folder = folder
-        local pack_json = json.decode_jsonc(love.filesystem.read(pack_data.path .. "pack.json"))
+        local pack_json_path = pack_data.path .. "pack.json"
+        local success, pack_json = decode_json(love.filesystem.read(pack_json_path), pack_json_path)
+        if not success then
+            error("Failed to load '" .. pack_json_path .. "'")
+        end
         pack_data.name = pack_json.name or ""
 
         data.register_pack(folder, pack_data.name, 192)
@@ -62,7 +66,8 @@ function assets.init(data)
         -- level data has to be loaded here for level selection purposes
         pack_data.levels = {}
         for contents, filename in file_ext_read_iter(pack_data.path .. "Levels", ".json") do
-            local success, level_json = decode_json(contents, filename)
+            local level_json
+            success, level_json = decode_json(contents, filename)
             if success then
                 level_json.id = pack_data.folder .. "_" .. level_json.id
                 if level_json.selectable then
