@@ -65,9 +65,11 @@ function assets.init(data)
             local success, level_json = decode_json(contents, filename)
             if success then
                 level_json.id = pack_data.folder .. "_" .. level_json.id
-                data.register_level(folder, level_json.id, level_json.name, {
-                    difficulty_mult = level_json.difficulty_multipliers
-                })
+                if level_json.selectable then
+                    data.register_level(folder, level_json.id, level_json.name, {
+                        difficulty_mult = level_json.difficulty_multipliers
+                    })
+                end
                 pack_data.levels[level_json.id] = level_json
             end
         end
