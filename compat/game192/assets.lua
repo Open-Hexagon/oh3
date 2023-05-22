@@ -73,6 +73,7 @@ function assets.get_pack(folder)
         for contents, filename in file_ext_read_iter(folder .. "Levels", ".json") do
             local success, level_json = decode_json(contents, filename)
             if success then
+                level_json.id = pack_data.folder .. "_" .. level_json.id
                 pack_data.levels[level_json.id] = level_json
             end
         end

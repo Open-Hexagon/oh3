@@ -146,7 +146,7 @@ function public.start(pack_folder, level_id, difficulty_mult)
     if game.music == nil then
         error("Music with id '" .. level_data.music_id .. "' not found")
     end
-    if game.first_play then
+    if not game.first_play then
         segment = math.random(1, #game.music.segments)
     end
     if not args.headless then
