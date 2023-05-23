@@ -3,7 +3,7 @@
 ---@brief ]]
 ---@tag sqlite.db.lua
 
-local u = require("sqlite.utils")
+local u = require("extlibs.sqlite.utils")
 local require = u.require_on_index
 
 local sqlite = {}
@@ -17,12 +17,12 @@ sqlite.db = {}
 sqlite.db.__index = sqlite.db
 sqlite.db.__version = "v1.2.2"
 
-local clib = require("sqlite.defs")
-local s = require("sqlite.stmt")
-local h = require("sqlite.helpers")
-local a = require("sqlite.assert")
-local p = require("sqlite.parser")
-local tbl = require("sqlite.tbl")
+local clib = require("extlibs.sqlite.defs")
+local s = require("extlibs.sqlite.stmt")
+local h = require("extlibs.sqlite.helpers")
+local a = require("extlibs.sqlite.assert")
+local p = require("extlibs.sqlite.parser")
+local tbl = require("extlibs.sqlite.tbl")
 
 ---Creates a new sqlite.lua object, without creating a connection to uri.
 ---|sqlite.new| is identical to |sqlite.db:open| but it without opening sqlite db
@@ -125,7 +125,8 @@ function sqlite.db:extend(conf)
     for tbl_name, schema in pairs(conf) do
         if tbl_name ~= "uri" and tbl_name ~= "opts" and tbl_name ~= "lazy" and u.is_tbl(schema) then
             local name = schema._name and schema._name or tbl_name
-            cls[tbl_name] = schema.set_db and schema or require("sqlite.tbl").new(name, schema, not lazy and db or nil)
+            cls[tbl_name] = schema.set_db and schema
+                or require("extlibs.sqlite.tbl").new(name, schema, not lazy and db or nil)
             if not cls[tbl_name].db then
                 (cls[tbl_name]):set_db(db)
             end

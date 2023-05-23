@@ -8,8 +8,8 @@
 ---@brief ]]
 ---@tag sqlite.tbl.lua
 
-local u = require("sqlite.utils")
-local h = require("sqlite.helpers")
+local u = require("extlibs.sqlite.utils")
+local h = require("extlibs.sqlite.helpers")
 
 local sqlite = {}
 

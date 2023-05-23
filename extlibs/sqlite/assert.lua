@@ -1,6 +1,6 @@
 local M = {}
-local u = require("sqlite.utils")
-local clib = require("sqlite.defs")
+local u = require("extlibs.sqlite.utils")
+local clib = require("extlibs.sqlite.defs")
 
 --- Functions for asseting and erroring out :D
 

@@ -2,7 +2,7 @@
 --- sqlstmt is a collection of methods to deal with sqlite statements.
 ---@brief ]]
 ---@tag sqlstmt
-local clib = require("sqlite.defs")
+local clib = require("extlibs.sqlite.defs")
 local flags = clib.flags
 
 ---@class sqlstmt @Object to deal with sqlite statements

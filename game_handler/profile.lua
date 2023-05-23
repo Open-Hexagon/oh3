@@ -1,4 +1,5 @@
 local sqlite = require("extlibs.sqlite")
+local strfun = require("extlibs.sqlite.strfun")
 
 local profile = {}
 
@@ -24,7 +25,7 @@ function profile.open_or_new(name)
             pack = "text",
             level = "text",
             level_options = "luatable",
-            created = { "timestamp", default = sqlite.lib.strftime("%s", "now") },
+            created = { "timestamp", default = strfun.strftime("%s", "now") },
             time = "real",
             score = "real",
             replay_hash = "text",

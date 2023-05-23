@@ -1,9 +1,9 @@
 local M = {}
 local luv = require("luv")
-local a = require("sqlite.assert")
-local u = require("sqlite.utils")
+local a = require("extlibs.sqlite.assert")
+local u = require("extlibs.sqlite.utils")
 local fmt = string.format
-local P = require("sqlite.parser")
+local P = require("extlibs.sqlite.parser")
 
 ---Get a table schema, or execute a given function to get it
 ---@param tbl_name string

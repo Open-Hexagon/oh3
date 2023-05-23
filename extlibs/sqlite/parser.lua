@@ -1,8 +1,8 @@
-local u = require("sqlite.utils")
-local json = require("sqlite.json")
+local u = require("extlibs.sqlite.utils")
+local json = require("extlibs.sqlite.json")
 local tinsert = table.insert
 local tconcat = table.concat
-local a = require("sqlite.assert")
+local a = require("extlibs.sqlite.assert")
 local M = {}
 
 ---@brief [[

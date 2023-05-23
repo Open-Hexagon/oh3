@@ -8,6 +8,7 @@ A potential rewrite for Open Hexagon by Vittorio Romeo using Love2D.
 Apart from the pure lua dependencies that are present in the repository, the game relies on:
 - Love2D
 - SQLite
+- Luv (this one can be installed with luarocks)
 
 ## Tests
 Run tests with `luajit test/main.lua` in the source directory.
