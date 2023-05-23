@@ -12,7 +12,7 @@ describe("headless games", function()
         },
         ["192"] = {
             pack = "VeeDefault",
-            level = "easy",
+            level = "VeeDefault_easy",
             settings = { difficulty_mult = 1 },
         },
     }
