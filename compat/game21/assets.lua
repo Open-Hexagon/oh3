@@ -113,10 +113,10 @@ function assets.init(data)
                         end
                     end
                     if not has1 then
-                        level_json.difficultyMults[#level_json.difficultyMults+1] = 1
+                        level_json.difficultyMults[#level_json.difficultyMults + 1] = 1
                     end
                     data.register_level(index_pack_id, level_json.id, level_json.name, {
-                        difficulty_mult = level_json.difficultyMults
+                        difficulty_mult = level_json.difficultyMults,
                     })
                     pack_json.levels[level_json.id] = level_json
                 end
