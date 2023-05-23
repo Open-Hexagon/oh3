@@ -40,28 +40,28 @@ local function decode_json(str, filename)
     end, str)
 end
 
-        local function file_ext_read_iter(dir, ending)
-            local files = love.filesystem.getDirectoryItems(dir)
-            local index = 0
-            return function()
-                index = index + 1
-                if index > #files then
-                    return
-                end
-                while files[index]:sub(-#ending) ~= ending do
-                    index = index + 1
-                    if index > #files then
-                        return
-                    end
-                end
-                local contents = love.filesystem.read(dir .. "/" .. files[index])
-                if contents == nil then
-                    error("Failed to read " .. dir .. "/" .. files[index])
-                else
-                    return contents, files[index]
-                end
+local function file_ext_read_iter(dir, ending)
+    local files = love.filesystem.getDirectoryItems(dir)
+    local index = 0
+    return function()
+        index = index + 1
+        if index > #files then
+            return
+        end
+        while files[index]:sub(-#ending) ~= ending do
+            index = index + 1
+            if index > #files then
+                return
             end
         end
+        local contents = love.filesystem.read(dir .. "/" .. files[index])
+        if contents == nil then
+            error("Failed to read " .. dir .. "/" .. files[index])
+        else
+            return contents, files[index]
+        end
+    end
+end
 
 function assets.init(data)
     local pack_folders = love.filesystem.getDirectoryItems(pack_path)
@@ -104,6 +104,17 @@ function assets.init(data)
             for contents, filename in file_ext_read_iter(folder .. "/Levels", ".json") do
                 local success, level_json = decode_json(contents, filename)
                 if success then
+                    level_json.difficultyMults = level_json.difficultyMults or {}
+                    local has1 = false
+                    for j = 1, #level_json.difficultyMults do
+                        if level_json.difficultyMults[j] == 1 then
+                            has1 = true
+                            break
+                        end
+                    end
+                    if not has1 then
+                        level_json.difficultyMults[#level_json.difficultyMults+1] = 1
+                    end
                     data.register_level(index_pack_id, level_json.id, level_json.name, {
                         difficulty_mult = level_json.difficultyMults
                     })

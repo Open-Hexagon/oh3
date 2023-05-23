@@ -27,11 +27,20 @@ function love.run()
         for i = 1, pack.level_count do
             print(i, pack.levels[i].name)
         end
-        print("Enter level number")
+        print("Enter level number:")
         local level = pack.levels[tonumber(io.input():read())]
+        local options = {}
+        for option, values in pairs(level.options) do
+            print(option .. ":")
+            for i = 1, #values do
+                print(i, values[i])
+            end
+            print("Enter value number:")
+            options[option] = values[tonumber(io.input():read())]
+        end
 
         game_handler.set_version(tostring(pack.game_version))
-        game_handler.record_start(pack.id, level.id, { difficulty_mult = 1 })
+        game_handler.record_start(pack.id, level.id, options)
     else
         game_handler.replay_start(args.no_option)
     end

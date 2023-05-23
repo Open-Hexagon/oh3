@@ -71,6 +71,16 @@ function assets.init(data)
             if success then
                 level_json.id = pack_data.folder .. "_" .. level_json.id
                 if level_json.selectable then
+                    level_json.difficulty_multipliers = level_json.difficulty_multipliers or {}
+                    local has1 = false
+                    for j = 1, #level_json.difficulty_multipliers do
+                        if level_json.difficulty_multipliers[j] == 1 then
+                            has1 = true
+                        end
+                    end
+                    if not has1 then
+                        level_json.difficulty_multipliers[#level_json.difficulty_multipliers+1] = 1
+                    end
                     data.register_level(folder, level_json.id, level_json.name, {
                         difficulty_mult = level_json.difficulty_multipliers
                     })
