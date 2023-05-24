@@ -17,7 +17,7 @@ M.top.down = M.bottom
 
 ---Insert a screen in relation to bottommost screen
 ---@param screen Screen
----@param pos integer
+---@param pos integer?
 function M.emplace_bottom(screen, pos)
     pos = pos or 0
     local item = M.bottom
@@ -35,7 +35,7 @@ end
 
 -- Insert a screen in relation to the topmost screen
 ---@param screen Screen
----@param pos integer
+---@param pos integer?
 function M.emplace_top(screen, pos)
     pos = pos or 0
     local item = M.top
