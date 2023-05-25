@@ -20,9 +20,9 @@ function signal.Signal:persist()
     persistent[self] = true
 end
 
----Turns off persistence, allowing the signal from being garbage collected.
+---Turns off persistence, allowing the signal to be garbage collected.
 function signal.Signal:no_persist()
-    persistent[self] = true
+    persistent[self] = nil
 end
 
 ---@alias signalparam number|function|table|Signal
@@ -91,7 +91,9 @@ function signal.Queue:keyframe(duration, value, easing)
     local newevent = {
         type = KEYFRAME_EVENT,
         value = value,
-        fn = easing or function (t) return t end,
+        fn = easing or function(t)
+            return t
+        end,
         freq = 1 / duration,
     }
     self.last_event.next = newevent
@@ -137,6 +139,7 @@ function signal.Queue:set_value(value)
 end
 
 ---Adds a function call event.
+---A call event is instant. If a call event adds itself to the event queue with no delay, this will cause an infinite loop.
 ---@param fn function
 function signal.Queue:call(fn)
     ---@type Event
@@ -151,6 +154,22 @@ end
 ---Stops the queue and deletes all events. The value remains at its last value.
 function signal.Queue:stop()
     self.current_event = self.last_event
+    self.processing = nil
+    self.t = 1
+end
+
+---Evaluates all remaining events. DO NOT run this if call events in the queue iterate on themselves! This will cause an infinite loop.
+function signal.Queue:fast_forward()
+    while self.current_event.next do
+        if self.current_event.next.type == KEYFRAME_EVENT or self.current_event.next.type == SET_VALUE_EVENT then
+            self.value = self.current_event.next.value
+        elseif self.current_event.next.type == WAVEFORM_EVENT then
+            self.value = self.current_event.next.fn(1)
+        elseif self.current_event.next.type == CALL_EVENT then
+            self.current_event.next.fn()
+        end
+        self.current_event = self.current_event.next
+    end
     self.processing = nil
     self.t = 1
 end
