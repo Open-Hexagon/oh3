@@ -148,7 +148,7 @@ static void add_video_stream(OutputStream *ost, AVFormatContext *oc,
 
 	c->codec_id = codec_id;
 
-	//c->bit_rate = 400000;
+	// c->bit_rate = 400000;
 	/* Resolution must be a multiple of two. */
 	c->width = width;
 	c->height = height;

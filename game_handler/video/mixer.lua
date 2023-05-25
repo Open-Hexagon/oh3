@@ -23,14 +23,24 @@ function mixer.load_file(file)
     if decoder:getSampleRate() ~= 44100 then
         error("only sample rates of 44100 are supported")
     end
-    if decoder:getChannelCount() ~= 2 then
-        error("only stereo sound is supported")
-    end
     return decoder
 end
 
 function mixer.play(decoder)
-    playing_decoders[#playing_decoders+1] = decoder
+    playing_decoders[#playing_decoders + 1] = decoder
+    return #playing_decoders
+end
+
+function mixer.stop_all()
+    playing_decoders = {}
+end
+
+function mixer.stop(decoder_index)
+    table.remove(playing_decoders, decoder_index)
+end
+
+function mixer.is_playing(decoder_index, decoder)
+    return playing_decoders[decoder_index] == decoder
 end
 
 function mixer.update(seconds)
@@ -45,9 +55,15 @@ function mixer.update(seconds)
             if to_mix_chunk == nil then
                 table.remove(playing_decoders, i)
             else
-                local to_mix = ffi.cast('uint16_t*', to_mix_chunk:getFFIPointer())
-                for j = 0, to_mix_chunk:getSize() / bytes_per_sample - 1 do
-                    target[j] = target[j] + to_mix[j]
+                local to_mix = ffi.cast("uint16_t*", to_mix_chunk:getFFIPointer())
+                if playing_decoders[i]:getChannelCount() == 1 then
+                    for j = 0, to_mix_chunk:getSize() / bytes_per_sample * 2 - 1, 2 do
+                        target[j] = target[j] + to_mix[j]
+                    end
+                else
+                    for j = 0, to_mix_chunk:getSize() / bytes_per_sample - 1 do
+                        target[j] = target[j] + to_mix[j]
+                    end
                 end
             end
         end

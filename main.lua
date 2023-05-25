@@ -1,17 +1,16 @@
 local log = require("log")(...)
 local args = require("args")
-local game_handler = require("game_handler")
 local config = require("config")
 local global_config = require("global_config")
 
 function love.run()
-    global_config.init(config, game_handler.profile)
-    game_handler.init(config)
-
     if args.headless then
         if args.no_option == nil then
             error("Started headless mode without replay")
         end
+        local game_handler = require("game_handler")
+        global_config.init(config, game_handler.profile)
+        game_handler.init(config)
         game_handler.replay_start(args.no_option)
         game_handler.run_until_death()
         log("Score: " .. game_handler.get_score())
@@ -24,28 +23,31 @@ function love.run()
         if args.no_option == nil then
             error("trying to render replay without replay")
         end
+        local audio_mixer = require("game_handler.video.mixer")
+        local fake_source = require("game_handler.video.fake_source")
         local video_encoder = require("game_handler.video")
         local fps = 60
         local ticks_to_frame = 0
         love.window.setMode(1920, 1080)
-        game_handler.replay_start(args.no_option)
-        -- process events once for the resize
-        love.event.pump()
-        for name, a, b, c, d, e, f in love.event.poll() do
-            if name == "quit" then
-                return a or 0
-            end
-            game_handler.process_event(name, a, b, c, d, e, f)
-        end
         video_encoder.start("output.mp4", 1920, 1080, fps)
+        audio_mixer.set_muxer(video_encoder)
+        fake_source.init(audio_mixer)
         local after_death_frames = 3 * fps
+        local game_handler = require("game_handler")
+        global_config.init(config, game_handler.profile)
+        game_handler.init(config)
+        game_handler.replay_start(args.no_option)
+        game_handler.process_event("resize", 1920, 1080)
+        local frames = 0
         return function()
             if love.graphics.isActive() then
+                frames = frames + 1
                 ticks_to_frame = ticks_to_frame + game_handler.get_tickrate() / fps
                 for _ = 1, ticks_to_frame do
                     ticks_to_frame = ticks_to_frame - 1
                     game_handler.update(false)
                 end
+                fake_source.update(frames / fps)
                 love.timer.step()
                 love.graphics.origin()
                 love.graphics.clear(0, 0, 0, 1)
@@ -63,6 +65,9 @@ function love.run()
         end
     end
 
+    local game_handler = require("game_handler")
+    global_config.init(config, game_handler.profile)
+    game_handler.init(config)
     if args.no_option == nil then
         -- temporary command line menu
         local packs = game_handler.get_packs()
