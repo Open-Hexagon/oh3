@@ -17,6 +17,7 @@ local target_frametime = 1 / 240
 local aspect_ratio = 16 / 9
 local scale = { 1, 1 }
 local screen
+local dead = false
 if not args.headless then
     -- correct aspect ratio initially (before the user resizes the window)
     love.event.push("resize", love.graphics.getDimensions())
@@ -57,6 +58,7 @@ function game_handler.record_start(pack, level, level_settings)
         end
     end
     current_game.death_callback = function()
+        dead = true
         game_handler.save_score()
     end
     current_game.seed = math.floor(love.timer.getTime() * 1000)
@@ -91,7 +93,9 @@ function game_handler.replay_start(file)
             game_handler.set_version(replay.game_version)
         end
         input.replay = replay
-        current_game.death_callback = nil
+        current_game.death_callback = function()
+            dead = true
+        end
         -- TODO: save and restore config later
         for name, value in pairs(replay.data.config) do
             current_game.config.set(name, value)
@@ -153,18 +157,23 @@ function game_handler.save_score()
 end
 
 ---update the game if it's running
-function game_handler.update()
+---@param ensure_tickrate boolean
+function game_handler.update(ensure_tickrate)
     if current_game.running then
-        -- update as much as required depending on passed time
-        local current_time = love.timer.getTime()
-        while current_time - start_time >= target_frametime do
-            start_time = start_time + target_frametime
-            -- allow games to control tick rate dynamically
-            target_frametime = current_game.update(target_frametime) or target_frametime
-            -- reset timings after longer blocking call
-            if current_game.reset_timings then
-                start_time = love.timer.getTime()
+        if ensure_tickrate then
+            -- update as much as required depending on passed time
+            local current_time = love.timer.getTime()
+            while current_time - start_time >= target_frametime do
+                start_time = start_time + target_frametime
+                -- allow games to control tick rate dynamically
+                target_frametime = current_game.update(target_frametime) or target_frametime
+                -- reset timings after longer blocking call
+                if current_game.reset_timings then
+                    start_time = love.timer.getTime()
+                end
             end
+        else
+            target_frametime = current_game.update(target_frametime) or target_frametime
         end
     end
 end
@@ -217,6 +226,12 @@ end
 ---@return table
 function game_handler.get_packs()
     return pack_level_data.get_packs()
+end
+
+---gets if the player is dead
+---@return boolean
+function game_handler.is_dead()
+    return dead
 end
 
 return game_handler
