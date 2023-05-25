@@ -25,17 +25,13 @@ local title = {}
 title.pass = false
 title.position = signal.new_queue(0.25)
 
+function title.fast_forward()
+    title.position:fast_forward()
+end
+
 local y_open = signal.lerp(layout.TOP, layout.BOTTOM, title.position)
 local y_hex = signal.lerp(layout.BOTTOM, layout.TOP, title.position)
 local scale = signal.mul(layout.MINOR, 0.00045)
-
-function title.enter()
-    title.position:keyframe(0.2, 0.25, ease.out_back)
-end
-
-function title.exit()
-    title.position:keyframe(0.2, -0.1, ease.out_back)
-end
 
 function title.draw()
     love.graphics.setShader(bicolor_shader)
@@ -60,7 +56,7 @@ end
 function title.handle_event(name, a, b, c, d, e, f)
     --TODO: if any button is pressed, go to title menu
     if name == "mousereleased" then
-
+        return "title_to_menu"
     end
 end
 

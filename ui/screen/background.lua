@@ -10,6 +10,7 @@ local extmath = require("extmath")
 
 ---@type Screen
 local background = {}
+background.pass = false
 
 -- Can be a float but must be > 2
 background.sides = signal.new_queue(6)
@@ -22,6 +23,9 @@ background.y = signal.new_queue(0.5)
 background.pivot_radius = signal.new_queue(0.1)
 -- A percentage of the calculated pivot radius
 background.border_thickness = signal.new_queue(0.15)
+
+function background.fast_forward()
+end
 
 local function angle_loop()
     background.angle:waveform(5, function(t)
@@ -86,6 +90,10 @@ function background.draw()
     love.graphics.origin()
 end
 
-function background.handle_event(name, a, b, c, d, e, f) end
+function background.handle_event(name, a, b, c, d, e, f)
+    if name == "mousereleased" then
+        return "menu_to_title"
+    end
+end
 
 return background
