@@ -18,6 +18,8 @@ end
 
 function api.supply_video(imagedata)
     test.supply_video(imagedata:getFFIPointer())
+    -- prevent memory leak
+    imagedata:release()
 end
 
 function api.get_audio_buffer_size()

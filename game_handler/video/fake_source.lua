@@ -37,7 +37,6 @@ function fake_source.update(time)
     mixer.update(time)
     for i = 1, #all_sources do
         local source = all_sources[i]
-        --print(source:isPlaying(), source.looping)
         --[[if source.looping and not source:isPlaying() then
             source:play()
         end]]
