@@ -25,10 +25,6 @@ local title = {}
 title.pass = false
 title.position = signal.new_queue(0.25)
 
-function title.fast_forward()
-    title.position:fast_forward()
-end
-
 local y_open = signal.lerp(layout.TOP, layout.BOTTOM, title.position)
 local y_hex = signal.lerp(layout.BOTTOM, layout.TOP, title.position)
 local scale = signal.mul(layout.MINOR, 0.00045)

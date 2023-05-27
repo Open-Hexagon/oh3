@@ -5,6 +5,7 @@ local theme = require("ui.theme")
 local signal = require("anim.signal")
 local transform = require("transform")
 local extmath = require("extmath")
+local ease = require("anim.ease")
 
 -- TODO: match background as level preview
 
@@ -15,7 +16,8 @@ background.pass = false
 -- Can be a float but must be > 2
 background.sides = signal.new_queue(6)
 -- Background angle
-background.angle = signal.new_queue()
+background.radian_speed = signal.new_queue(math.pi / 2)
+background.angle = signal.new_queue(0)
 -- Background coordinates
 background.x = signal.new_queue(0.5)
 background.y = signal.new_queue(0.5)
@@ -24,23 +26,7 @@ background.pivot_radius = signal.new_queue(0.1)
 -- A percentage of the calculated pivot radius
 background.border_thickness = signal.new_queue(0.15)
 
-function background.fast_forward()
-end
-
-local function angle_loop()
-    background.angle:waveform(5, function(t)
-        return extmath.tau * t
-    end)
-    background.angle:call(angle_loop)
-end
-
-function background.loop()
-    background.angle:call(angle_loop)
-end
-
-background.loop()
-
--- Absolute coordinates
+-- Absolute pixel values
 local x_pos = signal.lerp(layout.LEFT, layout.RIGHT, background.x)
 local y_pos = signal.lerp(layout.TOP, layout.BOTTOM, background.y)
 local pivot_radius = background.pivot_radius * layout.MINOR
@@ -93,6 +79,14 @@ end
 function background.handle_event(name, a, b, c, d, e, f)
     if name == "mousereleased" then
         return "menu_to_title"
+    end
+end
+
+function background.update(dt)
+    local radian_speed = background.radian_speed()
+    if radian_speed ~= 0 then
+        local new_angle = (background.angle() + background.radian_speed() * dt) % extmath.tau
+        background.angle:set_immediate_value(new_angle)
     end
 end
 
