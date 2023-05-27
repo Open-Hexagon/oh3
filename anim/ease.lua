@@ -1,4 +1,4 @@
-local extmath = require "extmath"
+local extmath = require("extmath")
 
 local ease = {}
 
@@ -8,6 +8,23 @@ local ease = {}
 
 function ease.linear(x)
     return x
+end
+
+---Returns a custom easing function that follows a quadradic bezier curve with points (0, 0), (x0, y0), (1, 1).
+---@param x0 number
+---@param y0 number
+function ease.new_quad_bezier(x0, y0)
+    if x0 == 0.5 then
+        return function(t0)
+            return 2 * (1 - t0) * t0 * y0 + t0 * t0
+        end
+    end
+    x0 = extmath.clamp(x0, 0, 1)
+    return function(t0)
+        t0 = extmath.clamp(t0, 0, 1)
+        local t = (math.sqrt(x0 * x0 + (1 - 2 * x0) * t0) - x0) / (1 - 2 * x0)
+        return 2 * (1 - t) * t * y0 + t * t
+    end
 end
 
 -- Sine
@@ -154,13 +171,13 @@ do
 
     function ease.in_out_elastic(x)
         x = 20 * extmath.clamp(x, 0, 1)
-        return x < 10 and (x == 0 and 0 or -(2 ^ (x - 10)) * math.sin((x - 11.125) * B) / 2) or
-            (x == 20 and 1 or 2 ^ (-x + 10) * math.sin((x - 11.125) * B) / 2 + 1)
+        return x < 10 and (x == 0 and 0 or -(2 ^ (x - 10)) * math.sin((x - 11.125) * B) / 2)
+            or (x == 20 and 1 or 2 ^ (-x + 10) * math.sin((x - 11.125) * B) / 2 + 1)
     end
 
     function ease.out_elastic(x)
         x = 10 * extmath.clamp(x, 0, 1)
-        return x == 0 and 0 or (x == 10 and 1 or 2 ^ (-x) * math.sin((x - 0.75) * A) + 1)
+        return x == 0 and 0 or (x == 10 and 1 or 2 ^ -x * math.sin((x - 0.75) * A) + 1)
     end
 end
 

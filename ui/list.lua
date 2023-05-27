@@ -12,8 +12,7 @@ local M = {}
 local active_screens = {}
 
 -- Dummy objects
-M.bottom = {}
-M.top = {}
+M.bottom, M.top = {}, {}
 M.bottom.up = M.top
 M.top.down = M.bottom
 
@@ -39,7 +38,7 @@ function M.emplace_bottom(screen, pos)
     active_screens[screen] = true
 end
 
--- Insert a screen in relation to the topmost screen
+---Insert a screen in relation to the topmost screen
 ---@param screen Screen
 ---@param pos integer?
 function M.emplace_top(screen, pos)
@@ -88,10 +87,20 @@ end
 function M.handle_event(name, a, b, c, d, e, f)
     local screen = M.top.down
     while screen.down do
-        if not screen.pass then
+        if not screen.pass and screen.handle_event then
             return screen.handle_event(name, a, b, c, d, e, f)
         end
         screen = screen.down
+    end
+end
+
+function M.update(dt)
+    local screen = M.bottom.up
+    while screen.up do
+        if screen.update then
+            screen.update(dt)
+        end
+        screen = screen.up
     end
 end
 

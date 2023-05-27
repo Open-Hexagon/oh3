@@ -65,10 +65,10 @@ end
 --#region Queue
 
 -- Event type enum
-local KEYFRAME_EVENT, WAVEFORM_EVENT, WAIT_EVENT, SET_VALUE_EVENT, CALL_EVENT = 1, 2, 3, 4, 5
+local KEYFRAME_EVENT, WAVEFORM_EVENT, WAIT_EVENT, SET_VALUE_EVENT, CALL_EVENT, RELATIVE_KEYFRAME_EVENT = 1, 2, 3, 4, 5, 6
 
 ---@class Event
----@field type `KEYFRAME_EVENT`|`WAVEFORM_EVENT`|`WAIT_EVENT`|`SET_VALUE_EVENT`|`CALL_EVENT`
+---@field type `KEYFRAME_EVENT`|`WAVEFORM_EVENT`|`WAIT_EVENT`|`SET_VALUE_EVENT`|`CALL_EVENT`|`RELATIVE_KEYFRAME_EVENT`
 ---@field next Event?
 ---@field value number?
 ---@field fn function?
@@ -78,15 +78,34 @@ local KEYFRAME_EVENT, WAVEFORM_EVENT, WAIT_EVENT, SET_VALUE_EVENT, CALL_EVENT = 
 ---@field private current_event Event
 ---@field private last_event Event
 ---@field private value number
----@field private processing `KEYFRAME_EVENT`|`WAVEFORM_EVENT`|`WAIT_EVENT`|nil
+---@field private processing `KEYFRAME_EVENT`|`WAVEFORM_EVENT`|`WAIT_EVENT`|`RELATIVE_KEYFRAME_EVENT`|nil
 ---@field private start_value number
 signal.Queue = setmetatable({}, signal.Signal)
 
----Adds a keyframe event
+---Adds a keyframe event.
 ---@param duration number Event duration
----@param value number Target value
+---@param value number Absolute target value
 ---@param easing? function Easing function
 function signal.Queue:keyframe(duration, value, easing)
+    ---@type Event
+    local newevent = {
+        type = KEYFRAME_EVENT,
+        value = value,
+        fn = easing or function(t)
+            return t
+        end,
+        freq = 1 / duration,
+    }
+    self.last_event.next = newevent
+    self.last_event = newevent
+end
+
+
+--- TODO: Adds a keyframe event which works relative to the current value.
+---@param duration number Event duration
+---@param value number Relative target value
+---@param easing? function Easing function
+function signal.Queue:relative_keyframe(duration, value, easing)
     ---@type Event
     local newevent = {
         type = KEYFRAME_EVENT,
@@ -149,6 +168,13 @@ function signal.Queue:call(fn)
     }
     self.last_event.next = newevent
     self.last_event = newevent
+end
+
+---Sets the value of the queue. If events that update the value are being processed,
+---this value will get overwritten on the next update.
+---@param value number
+function signal.Queue:set_immediate_value(value)
+    self.value = value
 end
 
 ---Stops the queue and deletes all events. The value remains at its last value.
