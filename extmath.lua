@@ -16,8 +16,12 @@ end
 ---@param b number
 ---@return number
 function extmath.clamp(t, a, b)
-    if t < a then return a end
-    if t > b then return b end
+    if t < a then
+        return a
+    end
+    if t > b then
+        return b
+    end
     return t
 end
 
@@ -37,7 +41,9 @@ do
             min, max = y, x
         end
         local z = alpha * max + beta * min
-        if max < z then return z end
+        if max < z then
+            return z
+        end
         return max
     end
 end
@@ -70,6 +76,17 @@ end
 ---@return number
 function extmath.map(t, a, b, c, d)
     return c + ((d - c) / (b - a)) * (t - a)
+end
+
+function extmath.cubic_bezier(x0, y0, x1, y1, x2, y2, x3, y3, t)
+    local u = 1 - t
+    local uuu = u * u * u
+    local uut3 = 3 * u * u * t
+    local utt3 = 3 * u * t * t
+    local ttt = t * t * t
+    local x = uuu * x0 + uut3 * x1 + utt3 * x2 + ttt * x3
+    local y = uuu * y0 + uut3 * y1 + utt3 * y2 + ttt * y3
+    return x, y
 end
 
 return extmath
