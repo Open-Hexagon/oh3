@@ -216,7 +216,7 @@ function lua_runtime.init_env(game, public, assets)
         return game.status.get_time_seconds()
     end
     env.l_resetTime = function()
-        game.status.resetTime()
+        game.status.reset_time()
     end
     make_accessors("l", "Pulse", game.status, "pulse")
     make_accessors("l", "PulseDirection", game.status, "pulse_direction")
