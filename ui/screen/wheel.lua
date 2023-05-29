@@ -1,38 +1,52 @@
-
-local background = require("ui.screens.background")
+local background_dimension = require("ui.screen.background").dimension
 local theme = require("ui.theme")
 local transform = require("transform")
 local ease = require("anim.ease")
 local signal = require("anim.signal")
+local extmath = require("extmath")
+local layout = require("ui.layout")
 
 -- Title menu
 
+---@type Screen
+local wheel = {}
+wheel.angle = 0
+
 -- Individual main menu buttons
+---@class PanelButton
+---@field a1 number
+---@field a2 number
+---@field condition function
+---@field radius Queue
 local PanelButton = {}
 PanelButton.__index = PanelButton
 
 function PanelButton:select()
     self.radius:stop()
-    self.radius:keyframe(1.5, 0.985, ease.out_sine)
-    self.selected = true
+    self.radius:keyframe(0.15, 0.985, ease.out_sine)
 end
 
 function PanelButton:deselect()
     self.radius:stop()
-    self.radius:keyframe(1.5, 0, ease.out_sine)
-    self.selected = false
+    self.radius:keyframe(0.15, 0, ease.out_sine)
+end
+
+function PanelButton:check_angle(angle)
+    return self.condition(angle, self.a1, self.a2)
 end
 
 function PanelButton:draw()
-    local outer_radius = background.panel_radius()
-    local inner_radius = self.radius()
-    if inner_radius == outer_radius then
+    local radius = self.radius()
+    if radius == 0 then
         return
     end
-    love.graphics.translate(background.x(), background.y())
 
-    local a1 = self.angle()
-    local a2 = a1 + ARC
+    local outer_radius = layout.major
+    local inner_radius = extmath.lerp(outer_radius, background_dimension.pivot_radius(), radius)
+
+    love.graphics.translate(background_dimension.x(), background_dimension.y())
+    local angle = background_dimension.angle() + wheel.angle
+    local a1, a2 = self.a1 + angle, self.a2 + angle
     local x1, y1 = math.cos(a1), math.sin(a1)
     local x2, y2 = math.cos(a2), math.sin(a2)
     love.graphics.setColor(theme.title.main_color)
@@ -42,83 +56,91 @@ function PanelButton:draw()
     love.graphics.origin()
 end
 
-local function new_panel_button(angle)
-    local temp = signal.new_queue()
+local function new_panel_button(a1, a2, condition)
     local newinst = setmetatable({
-        angle = angle,
-        radius = signal.lerp(background.panel_radius, background.pivot_radius, temp),
-        selected = false,
+        a1 = a1,
+        a2 = a2,
+        condition = condition
     }, PanelButton)
+    newinst.radius = signal.new_queue(0)
     return newinst
 end
 
-local wheel = {}
+--[[
+    -5pi/6, -3pi/6
+    -3pi/6, -pi/6
+    pi/6, 3pi/6
+    3pi/6, 5pi/6
+    5pi/6, -5pi/6
+]]
 
-
-function wheel:load()
-    self.angle = signal.new_queue()
-    self.panels = {}
-    for i = -3, 2 do
-        self.panels[i] = new_panel_button(signal.new_sum(self.angle, (i - 0.5) * ARC))
+local panels = {}
+do
+    local function between(angle, a1, a2)
+        return a1 <= angle and angle < a2
     end
-    self.disable_selection()
-    self.disable_drawing()
+    local function not_between(angle, a1, a2)
+        return not (a1 <= angle and angle < a2)
+    end
+    local pi56, pi12, pi16 = 5 * math.pi / 6, math.pi / 2, math.pi / 6
+    table.insert(panels, new_panel_button(-pi16, pi16, between)) -- Play
+    table.insert(panels, new_panel_button(pi16, pi12, between)) -- Exit
+    table.insert(panels, new_panel_button(-pi56, pi56, not_between)) -- Settings
 end
 
-function wheel:check_cursor(x, y)
-    if self.selection_disabled then
-        return
+---@type PanelButton?
+local selection
+
+local function clear_selection()
+    if selection then
+        selection:deselect()
+        selection = nil
     end
+end
+
+local function check_cursor(x, y)
     local x0, y0 = layout.width * 0.35, layout.center_y
     x, y = x - x0, y - y0
-    if extmath.alpha_max_beta_min(x, y) < background.pivot_radius() * 0.866 then
+    if extmath.alpha_max_beta_min(x, y) < background_dimension.pivot_radius() * 0.866 then
+        -- Cursor is in center
+        print("center")
     else
-        x, y = transform.rotate(math.pi / 6, x, y)
         local angle = math.atan2(y, x)
-        for i, panel in pairs(self.panels) do
-            local a1 = i * ARC
-            local a2 = a1 + ARC
-            if i * ARC < angle and angle < a2 then
-                if not panel.selected then
+        for _, panel in pairs(panels) do
+            if panel:check_angle(angle) then
+                if selection ~= panel then
+                    clear_selection()
                     panel:select()
+                    selection = panel
                 end
-            else
-                if panel.selected then
-                    panel:deselect()
-                end
+                return
             end
         end
     end
+    clear_selection()
 end
 
-function wheel:draw()
-    if self.drawing_disabled then
-        return
-    end
-    for _, panel in pairs(self.panels) do
+function wheel.open()
+    local x, y = love.mouse.getPosition()
+    check_cursor(x, y)
+end
+
+function wheel.draw()
+    for _, panel in pairs(panels) do
         panel:draw()
     end
 end
 
-function wheel.disable_selection()
-    wheel.selection_disabled = true
-    for _, panel in pairs(wheel.panels) do
-        if panel.selected then
-            panel:deselect()
+function wheel.handle_event(name, a, b, c, d, e, f)
+    if name == "mousefocus" and not a then
+        clear_selection()
+    elseif name == "mousemoved" then
+        check_cursor(a, b)
+    elseif name == "mousereleased" then
+        if not selection then
+            return "menu_to_title"
         end
     end
 end
-function wheel.enable_selection()
-    wheel.selection_disabled = false
-end
 
-function wheel.disable_drawing()
-    wheel.drawing_disabled = true
-end
-function wheel.enable_drawing()
-    wheel.drawing_disabled = false
-end
-
-function wheel.handle_event(name, a, b, c, d, e, f) end
-
-return wheel
+return { screen = wheel }

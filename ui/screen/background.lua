@@ -5,7 +5,6 @@ local theme = require("ui.theme")
 local signal = require("anim.signal")
 local transform = require("transform")
 local extmath = require("extmath")
-local ease = require("anim.ease")
 
 -- TODO: match background as level preview
 
@@ -27,14 +26,16 @@ background.pivot_radius = signal.new_queue(0.1)
 background.border_thickness = signal.new_queue(0.15)
 
 -- Absolute pixel values
-local x_pos = signal.lerp(layout.LEFT, layout.RIGHT, background.x)
-local y_pos = signal.lerp(layout.TOP, layout.BOTTOM, background.y)
-local pivot_radius = background.pivot_radius * layout.MINOR
-local border_thickness = pivot_radius * background.border_thickness
+local dimension = {}
+dimension.angle = background.angle
+dimension.x = signal.lerp(layout.LEFT, layout.RIGHT, background.x)
+dimension.y = signal.lerp(layout.TOP, layout.BOTTOM, background.y)
+dimension.pivot_radius = background.pivot_radius * layout.MINOR
+dimension.border_thickness = dimension.pivot_radius * background.border_thickness
 
 function background.draw()
     local center = {}
-    love.graphics.translate(x_pos(), y_pos())
+    love.graphics.translate(dimension.x(), dimension.y())
 
     local sides = background.sides()
     local isides = math.floor(sides)
@@ -52,8 +53,8 @@ function background.draw()
         love.graphics.pop()
 
         love.graphics.setColor(unpack(theme.title.main_color))
-        local a, b, c, d = transform.scale(pivot_radius(), x1, y1, x2, y2)
-        local e, f, g, h = transform.scale(pivot_radius() - border_thickness(), x2, y2, x1, y1)
+        local a, b, c, d = transform.scale(dimension.pivot_radius(), x1, y1, x2, y2)
+        local e, f, g, h = transform.scale(dimension.pivot_radius() - dimension.border_thickness(), x2, y2, x1, y1)
         love.graphics.polygon("fill", a, b, c, d, e, f, g, h)
         table.insert(center, g)
         table.insert(center, h)
@@ -90,4 +91,4 @@ function background.update(dt)
     end
 end
 
-return background
+return { screen = background, dimension = dimension }

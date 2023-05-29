@@ -1,7 +1,7 @@
 local screens = {
-    background = require("ui.screen.background"),
-    title = require("ui.screen.title"),
-    wheel = require("ui.screen.wheel"),
+    background = require("ui.screen.background").screen,
+    title = require("ui.screen.title").screen,
+    wheel = require("ui.screen.wheel").screen,
 }
 
 return screens

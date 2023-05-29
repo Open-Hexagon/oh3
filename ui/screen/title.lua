@@ -25,9 +25,11 @@ local title = {}
 title.pass = false
 title.position = signal.new_queue(0.25)
 
-local y_open = signal.lerp(layout.TOP, layout.BOTTOM, title.position)
-local y_hex = signal.lerp(layout.BOTTOM, layout.TOP, title.position)
-local scale = signal.mul(layout.MINOR, 0.00045)
+local dimension = {}
+dimension.y_open = signal.lerp(layout.TOP, layout.BOTTOM, title.position)
+dimension.y_hex = signal.lerp(layout.BOTTOM, layout.TOP, title.position)
+-- Both of these aren't true signals so mul has to be explicitly called
+dimension.scale = signal.mul(layout.MINOR, 0.00045)
 
 function title.draw()
     love.graphics.setShader(bicolor_shader)
@@ -35,14 +37,14 @@ function title.draw()
     bicolor_shader:send("blue", theme.title.text_outline_color)
 
     love.graphics.push()
-    love.graphics.translate(layout.center_x, y_open())
-    love.graphics.scale(scale())
+    love.graphics.translate(layout.center_x, dimension.y_open())
+    love.graphics.scale(dimension.scale())
     love.graphics.draw(img_open, img_open_centered)
     love.graphics.pop()
 
     love.graphics.push()
-    love.graphics.translate(layout.center_x, y_hex())
-    love.graphics.scale(scale())
+    love.graphics.translate(layout.center_x, dimension.y_hex())
+    love.graphics.scale(dimension.scale())
     love.graphics.draw(img_hex, img_hex_centered)
     love.graphics.pop()
 
@@ -56,4 +58,4 @@ function title.handle_event(name, a, b, c, d, e, f)
     end
 end
 
-return title
+return {screen = title, dimension = dimension}
