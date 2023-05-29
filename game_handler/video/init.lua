@@ -2,8 +2,8 @@ local ffi = require("ffi")
 
 ffi.cdef([[
 int start(const char *filename, const int width, const int height, const int framerate);
-void supply_video(const void *videoData);
-void supply_audio(void *audioData, const int bytes);
+int supply_video(const void *videoData);
+int supply_audio(void *audioData, const int bytes);
 int get_audio_buffer_size();
 void cleanup();
 ]])
@@ -17,7 +17,9 @@ function api.start(filename, width, height, framerate)
 end
 
 function api.supply_video(imagedata)
-    test.supply_video(imagedata:getFFIPointer())
+    if test.supply_video(imagedata:getFFIPointer()) ~= 0 then
+        error("Failed sending video frame.")
+    end
     -- prevent memory leak
     imagedata:release()
 end
@@ -27,7 +29,9 @@ function api.get_audio_buffer_size()
 end
 
 function api.supply_audio(sound_data)
-    test.supply_audio(sound_data:getFFIPointer(), sound_data:getSize())
+    if test.supply_audio(sound_data:getFFIPointer(), sound_data:getSize()) ~= 0 then
+        error("Failed sending audio frame.")
+    end
 end
 
 function api.cleanup()

@@ -1,33 +1,4 @@
-/*
- * Copyright (c) 2003 Fabrice Bellard
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
-
-/**
- * @file libavformat muxing API usage example
- * @example mux.c
- *
- * Generate a synthetic audio and video signal and mux them to a media file in
- * any supported libavformat format. The default codecs are used.
- */
-
+// This file is adapted from the ffmpeg muxing example.
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avassert.h>
@@ -43,8 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define STREAM_PIX_FMT AV_PIX_FMT_YUV420P /* default pix_fmt */
-
+#define STREAM_PIX_FMT AV_PIX_FMT_YUV420P
 #define SCALE_FLAGS SWS_BICUBIC
 
 // a wrapper around a single output AVStream
@@ -148,7 +118,6 @@ static void add_video_stream(OutputStream *ost, AVFormatContext *oc,
 
 	c->codec_id = codec_id;
 
-	// c->bit_rate = 400000;
 	/* Resolution must be a multiple of two. */
 	c->width = width;
 	c->height = height;
@@ -159,6 +128,8 @@ static void add_video_stream(OutputStream *ost, AVFormatContext *oc,
 	 * identical to 1. */
 	ost->st->time_base = (AVRational){1, framerate};
 	c->time_base = ost->st->time_base;
+
+	// TODO: make customizable
 	av_opt_set(c->priv_data, "preset", "slow", 0);
 	av_opt_set(c->priv_data, "crf", "23", 0);
 
@@ -167,18 +138,6 @@ static void add_video_stream(OutputStream *ost, AVFormatContext *oc,
 	c->gop_size = 12; /* emit one intra frame every twelve
 			     frames at most */
 	c->pix_fmt = STREAM_PIX_FMT;
-	if (c->codec_id == AV_CODEC_ID_MPEG2VIDEO) {
-		/* just for testing, we also add B-frames */
-		c->max_b_frames = 2;
-	}
-	if (c->codec_id == AV_CODEC_ID_MPEG1VIDEO) {
-		/* Needed to avoid using macroblocks in which
-		 * some coeffs overflow. This does not happen
-		 * with normal video, it just happens here as
-		 * the motion of the chroma plane does not match
-		 * the luma plane. */
-		c->mb_decision = 2;
-	}
 
 	/* Some formats want stream headers to be separate. */
 	if (oc->oformat->flags & AVFMT_GLOBALHEADER)
@@ -327,8 +286,7 @@ static void open_audio(AVFormatContext *oc, const AVCodec *codec,
 	}
 }
 
-/* Prepare a 16 bit dummy audio frame of 'frame_size' samples and
- * 'nb_channels' channels. */
+/* Prepare a 16 bit audio frame. */
 static AVFrame *get_audio_frame(OutputStream *ost, void *audioData,
 				const int bytes) {
 	AVFrame *frame = ost->tmp_frame;
@@ -356,7 +314,6 @@ static AVFrame *get_audio_frame(OutputStream *ost, void *audioData,
 
 /*
  * encode one audio frame and send it to the muxer
- * return 1 when encoding is finished, 0 otherwise
  */
 static int write_audio_frame(AVFormatContext *oc, OutputStream *ost,
 			     void *audioData, const int bytes) {
@@ -513,20 +470,19 @@ int i;
 
 /*
  * encode one video frame and send it to the muxer
- * return 1 when encoding is finished, 0 otherwise
  */
 static int write_video_frame(AVFormatContext *oc, OutputStream *ost,
 			     const void *videoData) {
-	write_frame(oc, ost->enc, ost->st, get_video_frame(ost, videoData),
-		    ost->tmp_pkt);
+	return write_frame(oc, ost->enc, ost->st,
+			   get_video_frame(ost, videoData), ost->tmp_pkt);
 }
 
-void supply_video(const void *videoData) {
-	write_video_frame(oc, &video_st, videoData);
+int supply_video(const void *videoData) {
+	return write_video_frame(oc, &video_st, videoData);
 }
 
-void supply_audio(void *audioData, const int bytes) {
-	write_audio_frame(oc, &audio_st, audioData, bytes);
+int supply_audio(void *audioData, const int bytes) {
+	return write_audio_frame(oc, &audio_st, audioData, bytes);
 }
 
 int get_audio_buffer_size() {
