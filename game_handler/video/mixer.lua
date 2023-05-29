@@ -80,8 +80,8 @@ function mixer.update(seconds)
                 else
                     local to_mix = ffi.cast("int16_t*", to_mix_chunk:getFFIPointer())
                     if playing_decoders[i]:getChannelCount() == 1 then
-                        for j = 0, to_mix_chunk:getSize() / bytes_per_sample * 2 - 1, 2 do
-                            target[j] = clamp_signal(target[j] + clamp_signal(to_mix[j]))
+                        for j = 0, to_mix_chunk:getSize() / bytes_per_sample - 1 do
+                            target[j] = clamp_signal(target[j] + clamp_signal(to_mix[math.floor(j / 2)]))
                         end
                     else
                         for j = 0, to_mix_chunk:getSize() / bytes_per_sample - 1 do
