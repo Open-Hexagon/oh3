@@ -1,6 +1,5 @@
 local signal = require("anim.signal")
 local layout = require("ui.layout")
-local ease = require("anim.ease")
 local theme = require("ui.theme")
 
 -- Assets
@@ -52,8 +51,7 @@ function title.draw()
 end
 
 function title.handle_event(name, a, b, c, d, e, f)
-    --TODO: if any button is pressed, go to title menu
-    if name == "mousereleased" then
+    if name == "keyreleased" or name == "mousereleased" then
         return "title_to_menu"
     end
 end

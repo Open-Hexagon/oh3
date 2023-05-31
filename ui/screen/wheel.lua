@@ -132,7 +132,12 @@ function wheel.draw()
 end
 
 function wheel.handle_event(name, a, b, c, d, e, f)
-    if name == "mousefocus" and not a then
+    if name == "keyreleased" then
+        if a == "escape" then
+            clear_selection()
+            return "menu_to_title"
+        end
+    elseif name == "mousefocus" and not a then
         clear_selection()
     elseif name == "mousemoved" then
         check_cursor(a, b)

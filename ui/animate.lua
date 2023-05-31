@@ -31,13 +31,15 @@ function animate.title_to_menu()
     end)
 
     screen.background.x:fast_forward()
-    screen.background.pivot_radius:fast_forward()
+    screen.background.x:keyframe(0.25, 0.375, ease.out_back)
 
-    screen.background.x:keyframe(0.25, 0.35, ease.out_back)
+    screen.background.pivot_radius:fast_forward()
     screen.background.pivot_radius:keyframe(0.3, 0.2, ease.out_back)
 
-    -- This could possibly be simplified
+    screen.background.radian_speed:fast_forward()
     screen.background.radian_speed:set_immediate_value(0)
+
+    -- This could possibly be simplified
     local angle = screen.background.angle()
     local target = angle + math.pi
     target = target - target % (extmath.tau / 3) + math.pi / 6
@@ -63,6 +65,7 @@ function animate.menu_to_title()
     screen.background.pivot_radius:keyframe(0.25, 0.1, ease.out_sine)
 
     screen.background.angle:fast_forward()
+
     screen.background.radian_speed:set_immediate_value(4 * extmath.tau)
     screen.background.radian_speed:keyframe(0.25, math.pi / 2)
 end
