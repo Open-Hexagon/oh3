@@ -26,16 +26,14 @@ background.pivot_radius = signal.new_queue(0.1)
 background.border_thickness = signal.new_queue(0.15)
 
 -- Absolute pixel values
-local dimension = {}
-dimension.angle = background.angle
-dimension.x = signal.lerp(layout.LEFT, layout.RIGHT, background.x)
-dimension.y = signal.lerp(layout.TOP, layout.BOTTOM, background.y)
-dimension.pivot_radius = background.pivot_radius * layout.MINOR
-dimension.border_thickness = dimension.pivot_radius * background.border_thickness
+background.abs_x = signal.lerp(layout.LEFT, layout.RIGHT, background.x)
+background.abs_y = signal.lerp(layout.TOP, layout.BOTTOM, background.y)
+background.abs_pivot_radius = background.pivot_radius * layout.MINOR
+background.abs_border_thickness = background.abs_pivot_radius * background.border_thickness
 
 function background.draw()
     local center = {}
-    love.graphics.translate(dimension.x(), dimension.y())
+    love.graphics.translate(background.abs_x(), background.abs_y())
 
     local sides = background.sides()
     local isides = math.floor(sides)
@@ -52,27 +50,27 @@ function background.draw()
         love.graphics.polygon("fill", 0, 0, x1, y1, x2, y2)
         love.graphics.pop()
 
-        love.graphics.setColor(unpack(theme.title.main_color))
-        local a, b, c, d = transform.scale(dimension.pivot_radius(), x1, y1, x2, y2)
-        local e, f, g, h = transform.scale(dimension.pivot_radius() - dimension.border_thickness(), x2, y2, x1, y1)
+        love.graphics.setColor(unpack(theme.background_main_color))
+        local a, b, c, d = transform.scale(background.abs_pivot_radius(), x1, y1, x2, y2)
+        local e, f, g, h = transform.scale(background.abs_pivot_radius() - background.abs_border_thickness(), x2, y2, x1, y1)
         love.graphics.polygon("fill", a, b, c, d, e, f, g, h)
         table.insert(center, g)
         table.insert(center, h)
     end
 
-    local angle = background.angle()
-    local a1 = angle
+    love.graphics.rotate(background.angle())
+    local a1 = 0
     local a2
     for i = 1, isides do
-        a2 = i * arc + angle
-        draw_sector(a1, a2, theme.title.panel_colors[i % #theme.title.panel_colors + 1])
+        a2 = i * arc
+        draw_sector(a1, a2, theme.background_panel_colors[i % #theme.background_panel_colors + 1])
         a1 = a2
     end
     if sides ~= isides then
-        draw_sector(a1, angle, theme.title.panel_colors[1])
+        draw_sector(a1, 0, theme.background_panel_colors[1])
     end
 
-    love.graphics.setColor(unpack(theme.title.panel_colors[1]))
+    love.graphics.setColor(unpack(theme.background_panel_colors[1]))
     love.graphics.polygon("fill", unpack(center))
     love.graphics.origin()
 end
@@ -91,4 +89,4 @@ function background.update(dt)
     end
 end
 
-return { screen = background, dimension = dimension }
+return background

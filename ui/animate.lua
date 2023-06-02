@@ -34,10 +34,13 @@ function animate.title_to_menu()
     screen.background.x:keyframe(0.25, 0.375, ease.out_back)
 
     screen.background.pivot_radius:fast_forward()
-    screen.background.pivot_radius:keyframe(0.3, 0.2, ease.out_back)
+    screen.background.pivot_radius:keyframe(0.25, 0.2, ease.out_back)
 
     screen.background.radian_speed:fast_forward()
     screen.background.radian_speed:set_immediate_value(0)
+
+    screen.wheel.text_radius:fast_forward()
+    screen.wheel.text_radius:keyframe(0.25, 1, ease.out_back)
 
     -- This could possibly be simplified
     local angle = screen.background.angle()
@@ -47,6 +50,7 @@ function animate.title_to_menu()
     -- Insert menu buttons under title
     list.emplace_top(screen.wheel, 1)
     screen.wheel.angle = extmath.tau - target
+
 end
 
 function animate.menu_to_title()
@@ -57,9 +61,6 @@ function animate.menu_to_title()
 
     screen.background.x:fast_forward()
     screen.background.x:keyframe(0.25, 0.5, ease.out_sine)
-    screen.background.x:call(function()
-        list.remove(screen.wheel)
-    end)
 
     screen.background.pivot_radius:fast_forward()
     screen.background.pivot_radius:keyframe(0.25, 0.1, ease.out_sine)
@@ -68,6 +69,12 @@ function animate.menu_to_title()
 
     screen.background.radian_speed:set_immediate_value(4 * extmath.tau)
     screen.background.radian_speed:keyframe(0.25, math.pi / 2)
+
+    screen.wheel.text_radius:fast_forward()
+    screen.wheel.text_radius:keyframe(0.25, 0, ease.out_back)
+    screen.wheel.text_radius:call(function()
+        list.remove(screen.wheel)
+    end)
 end
 
 function animate.open_settings() end
