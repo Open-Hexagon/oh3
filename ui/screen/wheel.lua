@@ -94,11 +94,10 @@ end
 ---@param condition function
 ---@param icon_path string
 ---@param atext number
----@param text_horizontal_offset number
 ---@param text string
 ---@param text_scale number
 ---@return PanelButton
-local function new_panel_button(a1, a2, condition, icon_path, atext, text_horizontal_offset, text, text_scale)
+local function new_panel_button(a1, a2, condition, icon_path, atext, text, text_scale)
     local newinst = setmetatable({
         radius = signal.new_queue(0),
         a1 = a1,
@@ -112,7 +111,8 @@ local function new_panel_button(a1, a2, condition, icon_path, atext, text_horizo
     newinst.icon_centering = image.get_centering_transform(width, height)
     newinst.icon_size = width
     newinst.text_transform = love.math.newTransform()
-    newinst.text_transform:translate(text_horizontal_offset, theme.img_font_height / -2)
+    local text_width = theme.img_font:getWidth(text)
+    newinst.text_transform:translate(text_width / -2, theme.img_font_height / -2)
     newinst.text_scale = signal.mul(layout.MINOR, text_scale)
     return newinst
 end
@@ -135,18 +135,17 @@ do
     end
     local pi56, pi12, pi16 = 5 * math.pi / 6, math.pi / 2, math.pi / 6
 
-    local play = new_panel_button(-pi16, pi16, between, "assets/image/title/play.png", 0, 0, "PLAY", 0.0005)
+    local play = new_panel_button(-pi16, pi16, between, "assets/image/main_menu_icons/play.png", 0, "PLAY", 0.0005)
 
     local exit =
-        new_panel_button(pi16, pi12, between, "assets/image/title/exit.png", math.pi / 3, -450, "EXIT", 0.00025)
+        new_panel_button(pi16, pi12, between, "assets/image/main_menu_icons/exit.png", math.pi / 3, "EXIT", 0.00025)
 
     local settings = new_panel_button(
         -pi56,
         pi56,
         not_between,
-        "assets/image/title/settings.png",
+        "assets/image/main_menu_icons/settings.png",
         math.pi,
-        -1000,
         "SETTINGS",
         0.00015
     )

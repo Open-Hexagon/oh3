@@ -4,9 +4,9 @@ local theme = require("ui.theme")
 local image = require("ui.image")
 
 -- Assets
-local img_open = love.graphics.newImage("assets/image/title/open.png")
+local img_open = love.graphics.newImage("assets/image/text/open.png")
 local img_open_centering = image.get_centering_transform(img_open:getDimensions())
-local img_hex = love.graphics.newImage("assets/image/title/hexagon.png")
+local img_hex = love.graphics.newImage("assets/image/text/hexagon.png")
 local img_hex_centering = image.get_centering_transform(img_hex:getDimensions())
 
 -- Game title text

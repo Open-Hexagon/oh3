@@ -40,7 +40,7 @@ function animate.title_to_menu()
     screen.background.radian_speed:set_immediate_value(0)
 
     screen.wheel.text_radius:fast_forward()
-    screen.wheel.text_radius:keyframe(0.25, 1, ease.out_back)
+    screen.wheel.text_radius:keyframe(0.25, 1, ease.out_quint)
 
     -- This could possibly be simplified
     local angle = screen.background.angle()
@@ -71,7 +71,7 @@ function animate.menu_to_title()
     screen.background.radian_speed:keyframe(0.25, math.pi / 2)
 
     screen.wheel.text_radius:fast_forward()
-    screen.wheel.text_radius:keyframe(0.25, 0, ease.out_back)
+    screen.wheel.text_radius:keyframe(0.25, 0, ease.out_quint)
     screen.wheel.text_radius:call(function()
         list.remove(screen.wheel)
     end)
