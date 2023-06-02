@@ -14,10 +14,10 @@ background.pass = false
 
 -- Can be a float but must be > 2
 background.sides = signal.new_queue(6)
--- Background angle
 background.radian_speed = signal.new_queue(math.pi / 2)
+-- Absolute background angle
 background.angle = signal.new_queue(0)
--- Background coordinates
+-- Background coordinates in relation to screen edges
 background.x = signal.new_queue(0.5)
 background.y = signal.new_queue(0.5)
 -- A percentage of the minor window dimension

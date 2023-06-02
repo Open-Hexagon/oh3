@@ -14,24 +14,25 @@ local wheel = {}
 wheel.angle = 0
 
 wheel.text_radius = signal.new_queue(0)
-wheel.abs_text_radius = signal.lerp(layout.MAJOR, background.abs_pivot_radius * 2, wheel.text_radius)
+wheel.abs_text_radius = signal.lerp(layout.MAJOR, background.abs_x + background.abs_pivot_radius, wheel.text_radius)
 
 ---@type PanelButton?
 local selection
 
 -- Individual main menu buttons
 ---@class PanelButton
----@field a1 number
----@field a2 number
----@field condition function
----@field radius Queue
----@field atext number
----@field text_transform love.Transform
----@field icon love.Image
----@field icon_centering love.Transform
----@field icon_size number
----@field text string
----@field text_scale Signal
+---@field a1 number Detection angle 1
+---@field a2 number Detection angle 2
+---@field condition function Determines whether the mouse cursor angle is correct
+---@field radius Queue Radius of selection highlight
+---@field text string Text
+---@field text_angle number Angle at which text appears
+---@field text_radius Signal Distance from background center
+---@field text_scale Signal Text scale
+---@field text_transform love.Transform Sets the text anchor point to it's center
+---@field icon love.Image Image that shows up in the center hexagon
+---@field icon_centering love.Transform Centers the image
+---@field icon_size number Absolute pixel size of the icon (it should be a square).
 local PanelButton = {}
 PanelButton.__index = PanelButton
 
@@ -70,12 +71,14 @@ function PanelButton:draw()
     theme.bicolor_shader:send(theme.TEXT_OUTLINE_COLOR_UNIFORM, theme.text_color)
 
     love.graphics.setFont(theme.img_font)
-    local text_radius = wheel.abs_text_radius()
-    local xt, yt = math.cos(self.atext) * text_radius, math.sin(self.atext) * text_radius
+    local text_radius = self.text_radius()
+    local xt, yt = math.cos(self.text_angle) * text_radius, math.sin(self.text_angle) * text_radius
     love.graphics.push()
     love.graphics.translate(xt, yt)
     love.graphics.scale(self.text_scale())
     love.graphics.print(self.text, self.text_transform)
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.points(0, 0)
     love.graphics.pop()
 
     if selection == self then
@@ -89,30 +92,35 @@ function PanelButton:draw()
     love.graphics.setShader()
 end
 
+---Creates a new panel button
 ---@param a1 number
 ---@param a2 number
 ---@param condition function
 ---@param icon_path string
----@param atext number
+---@param text_angle number
 ---@param text string
+---@param text_radius Signal
 ---@param text_scale number
 ---@return PanelButton
-local function new_panel_button(a1, a2, condition, icon_path, atext, text, text_scale)
+local function new_panel_button(a1, a2, condition, icon_path, text_angle, text, text_radius, text_scale)
     local newinst = setmetatable({
         radius = signal.new_queue(0),
         a1 = a1,
         a2 = a2,
         condition = condition,
-        atext = atext,
-        text = text,
+        text_angle = text_angle,
     }, PanelButton)
+
     newinst.icon = love.graphics.newImage(icon_path)
     local width, height = newinst.icon:getDimensions()
     newinst.icon_centering = image.get_centering_transform(width, height)
     newinst.icon_size = width
+
+    newinst.text = text
     newinst.text_transform = love.math.newTransform()
     local text_width = theme.img_font:getWidth(text)
     newinst.text_transform:translate(text_width / -2, theme.img_font_height / -2)
+    newinst.text_radius = text_radius
     newinst.text_scale = signal.mul(layout.MINOR, text_scale)
     return newinst
 end
@@ -128,27 +136,24 @@ end
 local panels = {}
 do
     local function between(angle, a1, a2)
-        return a1 <= angle and angle < a2
+        return a1 < angle and angle < a2
     end
     local function not_between(angle, a1, a2)
-        return not (a1 <= angle and angle < a2)
+        return not (a1 < angle and angle < a2)
     end
     local pi56, pi12, pi16 = 5 * math.pi / 6, math.pi / 2, math.pi / 6
 
-    local play = new_panel_button(-pi16, pi16, between, "assets/image/main_menu_icons/play.png", 0, "PLAY", 0.0005)
+    local play_icon = "assets/image/main_menu_icons/play.png"
+    local play_text_radius = signal.lerp(layout.MAJOR, (layout.RIGHT - background.abs_x + background.abs_pivot_radius) * 0.5, wheel.text_radius)
+    local play = new_panel_button(-pi16, pi16, between, play_icon, 0, "PLAY", play_text_radius, 0.0005)
 
-    local exit =
-        new_panel_button(pi16, pi12, between, "assets/image/main_menu_icons/exit.png", math.pi / 3, "EXIT", 0.00025)
+    local exit_icon = "assets/image/main_menu_icons/exit.png"
+    local exit_text_radius = signal.lerp(layout.MAJOR, (layout.BOTTOM - background.abs_y + background.abs_pivot_radius) * 0.55, wheel.text_radius)
+    local exit = new_panel_button(pi16, pi12, between, exit_icon, math.pi / 3, "EXIT", exit_text_radius, 0.00025)
 
-    local settings = new_panel_button(
-        -pi56,
-        pi56,
-        not_between,
-        "assets/image/main_menu_icons/settings.png",
-        math.pi,
-        "SETTINGS",
-        0.00015
-    )
+    local settings_icon = "assets/image/main_menu_icons/settings.png"
+    local settings_text_radius = signal.lerp(layout.MAJOR, (background.abs_x + background.abs_pivot_radius) * 0.5, wheel.text_radius)
+    local settings = new_panel_button(-pi56, pi56, not_between, settings_icon, math.pi, "SETTINGS", settings_text_radius, 0.00015)
 
     panels.play = play
     panels.exit = exit
@@ -163,7 +168,7 @@ local function clear_selection()
 end
 
 local function check_cursor(x, y)
-    local x0, y0 = layout.width * 0.35, layout.center_y
+    local x0, y0 = background.abs_x(), background.abs_y()
     x, y = x - x0, y - y0
     if extmath.alpha_max_beta_min(x, y) < background.abs_pivot_radius() then
         -- Cursor is in center
