@@ -77,8 +77,6 @@ function PanelButton:draw()
     love.graphics.translate(xt, yt)
     love.graphics.scale(self.text_scale())
     love.graphics.print(self.text, self.text_transform)
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.points(0, 0)
     love.graphics.pop()
 
     if selection == self then
@@ -100,7 +98,7 @@ end
 ---@param text_angle number
 ---@param text string
 ---@param text_radius Signal
----@param text_scale number
+---@param text_scale Signal
 ---@return PanelButton
 local function new_panel_button(a1, a2, condition, icon_path, text_angle, text, text_radius, text_scale)
     local newinst = setmetatable({
@@ -121,7 +119,7 @@ local function new_panel_button(a1, a2, condition, icon_path, text_angle, text, 
     local text_width = theme.img_font:getWidth(text)
     newinst.text_transform:translate(text_width / -2, theme.img_font_height / -2)
     newinst.text_radius = text_radius
-    newinst.text_scale = signal.mul(layout.MINOR, text_scale)
+    newinst.text_scale = text_scale
     return newinst
 end
 
@@ -143,18 +141,40 @@ do
     end
     local pi56, pi12, pi16 = 5 * math.pi / 6, math.pi / 2, math.pi / 6
 
-    local play_icon = "assets/image/main_menu_icons/play.png"
-    local play_text_radius = signal.lerp(layout.MAJOR, (layout.RIGHT - background.abs_x + background.abs_pivot_radius) * 0.5, wheel.text_radius)
-    local play = new_panel_button(-pi16, pi16, between, play_icon, 0, "PLAY", play_text_radius, 0.0005)
+    local play
+    do
+        local icon = "assets/image/main_menu_icons/play.png"
+        local text_radius = signal.lerp(
+            layout.MAJOR,
+            (layout.RIGHT - background.abs_x + background.abs_pivot_radius) * 0.5,
+            wheel.text_radius
+        )
+        local text_width = theme.img_font:getWidth("PLAY")
+        local text_scale = (layout.RIGHT - background.abs_x - background.abs_pivot_radius) * 0.60 / text_width
+        play = new_panel_button(-pi16, pi16, between, icon, 0, "PLAY", text_radius, text_scale)
+    end
 
-    local exit_icon = "assets/image/main_menu_icons/exit.png"
-    local exit_text_radius = signal.lerp(layout.MAJOR, (layout.BOTTOM - background.abs_y + background.abs_pivot_radius) * 0.55, wheel.text_radius)
-    local exit = new_panel_button(pi16, pi12, between, exit_icon, math.pi / 3, "EXIT", exit_text_radius, 0.00025)
+    local exit
+    do
+        local icon = "assets/image/main_menu_icons/exit.png"
+        local text_radius = signal.lerp(
+            layout.MAJOR,
+            (layout.BOTTOM - background.abs_y + background.abs_pivot_radius) * 0.6,
+            wheel.text_radius
+        )
+        local text_scale = (layout.BOTTOM - background.abs_y - background.abs_pivot_radius) * 0.25 / theme.img_font_height
+        exit = new_panel_button(pi16, pi12, between, icon, math.pi / 3, "EXIT", text_radius, text_scale)
+    end
 
-    local settings_icon = "assets/image/main_menu_icons/settings.png"
-    local settings_text_radius = signal.lerp(layout.MAJOR, (background.abs_x + background.abs_pivot_radius) * 0.5, wheel.text_radius)
-    local settings = new_panel_button(-pi56, pi56, not_between, settings_icon, math.pi, "SETTINGS", settings_text_radius, 0.00015)
-
+    local settings
+    do
+        local icon = "assets/image/main_menu_icons/settings.png"
+        local text_radius =
+            signal.lerp(layout.MAJOR, (background.abs_x + background.abs_pivot_radius) * 0.5, wheel.text_radius)
+        local text_width = theme.img_font:getWidth("SETTINGS")
+        local text_scale = (background.abs_x - background.abs_pivot_radius) * 0.75 / text_width
+        settings = new_panel_button(-pi56, pi56, not_between, icon, math.pi, "SETTINGS", text_radius, text_scale)
+    end
     panels.play = play
     panels.exit = exit
     panels.settings = settings
@@ -168,7 +188,8 @@ local function clear_selection()
 end
 
 local function check_cursor(x, y)
-    local x0, y0 = background.abs_x(), background.abs_y()
+    -- Should match the final position of the background center
+    local x0, y0 = layout.width * 0.375, layout.center_y
     x, y = x - x0, y - y0
     if extmath.alpha_max_beta_min(x, y) < background.abs_pivot_radius() then
         -- Cursor is in center

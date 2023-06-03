@@ -34,7 +34,7 @@ function animate.title_to_menu()
     screen.background.x:keyframe(0.25, 0.375, ease.out_back)
 
     screen.background.pivot_radius:fast_forward()
-    screen.background.pivot_radius:keyframe(0.25, 0.2, ease.out_back)
+    screen.background.pivot_radius:keyframe(0.25, 0.175, ease.out_back)
 
     screen.background.radian_speed:fast_forward()
     screen.background.radian_speed:set_immediate_value(0)
