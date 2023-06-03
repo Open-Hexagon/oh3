@@ -30,15 +30,19 @@ function animate.title_to_menu()
         list.remove(screen.title)
     end)
 
+    -- Move the background left
     screen.background.x:fast_forward()
     screen.background.x:keyframe(0.25, 0.375, ease.out_back)
 
+    -- Make the center polygon bigger
     screen.background.pivot_radius:fast_forward()
     screen.background.pivot_radius:keyframe(0.25, 0.175, ease.out_back)
 
+    -- Set radian_speed to 0 to surrender control to direct angle control
     screen.background.radian_speed:fast_forward()
     screen.background.radian_speed:set_immediate_value(0)
 
+    -- Move menu text
     screen.wheel.text_radius:fast_forward()
     screen.wheel.text_radius:keyframe(0.25, 1, ease.out_quint)
 
@@ -54,22 +58,28 @@ function animate.title_to_menu()
 end
 
 function animate.menu_to_title()
+    -- Insert the title screen on top
     screen.title.position:fast_forward()
     screen.title.pass = false
     list.emplace_top(screen.title)
     screen.title.position:keyframe(0.25, 0.25, ease.out_back)
 
+    -- Move the background back to the center
     screen.background.x:fast_forward()
     screen.background.x:keyframe(0.25, 0.5, ease.out_sine)
 
+    -- Revert the pivot_radius
     screen.background.pivot_radius:fast_forward()
     screen.background.pivot_radius:keyframe(0.25, 0.1, ease.out_sine)
 
+    -- Process all direct angle events to surrender control to radian_speed
     screen.background.angle:fast_forward()
 
+    -- Increase radian_speed
     screen.background.radian_speed:set_immediate_value(4 * extmath.tau)
     screen.background.radian_speed:keyframe(0.25, math.pi / 2)
 
+    -- Remove menu text
     screen.wheel.text_radius:fast_forward()
     screen.wheel.text_radius:keyframe(0.25, 0, ease.out_quint)
     screen.wheel.text_radius:call(function()

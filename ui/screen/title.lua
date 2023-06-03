@@ -2,6 +2,7 @@ local signal = require("anim.signal")
 local layout = require("ui.layout")
 local theme = require("ui.theme")
 local image = require("ui.image")
+local mouse = require("mouse_button")
 
 -- Assets
 local img_open = love.graphics.newImage("assets/image/text/open.png")
@@ -42,8 +43,14 @@ function title.draw()
 end
 
 function title.handle_event(name, a, b, c, d, e, f)
-    if name == "keyreleased" or name == "mousereleased" then
-        return "title_to_menu"
+    if name == "keyreleased" then
+        if a == "escape" or a == "return" then
+            return "title_to_menu"
+        end
+    elseif name == "mousereleased" then
+        if c == mouse.LEFT then
+            return "title_to_menu"
+        end
     end
 end
 
