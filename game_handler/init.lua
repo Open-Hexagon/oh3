@@ -26,7 +26,6 @@ game_handler.profile = require("game_handler.profile")
 -- TODO: profile selection / creation
 game_handler.profile.open_or_new("test")
 
-
 ---initialize all games (has to be called before doing anything)
 ---@param config any
 function game_handler.init(config)

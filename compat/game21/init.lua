@@ -425,7 +425,9 @@ function public.update(frametime)
                     return x * x * x * (x * (x * 6 - 15) + 10)
                 end
                 next_rotation = next_rotation
-                    + math.abs((get_smoother_step(0, game.level_status.fast_spin, game.status.fast_spin) / 3.5) * 17)
+                    + math.abs(
+                            (get_smoother_step(0, game.level_status.fast_spin, game.status.fast_spin) / 3.5) * 17
+                        )
                         * get_sign(next_rotation)
                 game.status.fast_spin = game.status.fast_spin - frametime
             end
