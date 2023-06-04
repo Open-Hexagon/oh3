@@ -1,8 +1,13 @@
 local log = require("log")(...)
 local args = require("args")
 local game_handler = require("game_handler")
+local config = require("config")
+local global_config = require("global_config")
 
 function love.run()
+    global_config.init(config, game_handler.profile)
+    game_handler.init(config)
+
     if args.headless then
         if args.no_option == nil then
             error("Started headless mode without replay")
@@ -39,7 +44,7 @@ function love.run()
             options[option] = values[tonumber(io.input():read())]
         end
 
-        game_handler.set_version(tostring(pack.game_version))
+        game_handler.set_version(pack.game_version)
         game_handler.record_start(pack.id, level.id, options)
     else
         game_handler.replay_start(args.no_option)

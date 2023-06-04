@@ -8,7 +8,6 @@ local set_color = require("compat.game21.color_transform")
 local Particles = require("compat.game21.particles")
 local assets = require("compat.game21.assets")
 local public = {
-    config = require("compat.game21.config"),
     running = false,
     dm_is_only_setting = true,
 }
@@ -56,52 +55,10 @@ local player_layer_colors = {}
 local death_shake_translate = { 0, 0 }
 local current_trail_color = { 0, 0, 0, 0 }
 local swap_particle_info = { x = 0, y = 0, angle = 0 }
+
+-- initialized in init function
 local layer_shader, message_font, go_sound, swap_blip_sound, level_up_sound, restart_sound, select_sound, small_circle, trail_particles, swap_particles
-if not args.headless then
-    layer_shader = love.graphics.newShader(
-        [[
-            attribute vec2 instance_position;
-            attribute vec4 instance_color;
-            varying vec4 instance_color_out;
 
-            vec4 position(mat4 transform_projection, vec4 vertex_position)
-            {
-                instance_color_out = instance_color / 255.0;
-                vertex_position.xy += instance_position;
-                return transform_projection * vertex_position;
-            }
-        ]],
-        [[
-            varying vec4 instance_color_out;
-
-            vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
-            {
-                return instance_color_out;
-            }
-        ]]
-    )
-    message_font = assets.get_font("OpenSquare-Regular.ttf", 32 * public.config.get("text_scale"))
-    go_sound = assets.get_sound("go.ogg")
-    swap_blip_sound = assets.get_sound("swap_blip.ogg")
-    level_up_sound = assets.get_sound("level_up.ogg")
-    restart_sound = assets.get_sound("restart.ogg")
-    select_sound = assets.get_sound("select.ogg")
-    small_circle = assets.get_image("smallCircle.png")
-    trail_particles = Particles:new(small_circle, function(p, frametime)
-        p.color[4] = p.color[4] - trail_particles.alpha_decay / 255 * frametime
-        p.scale = p.scale * 0.98
-        local distance = game.status.radius + 2.4
-        p.x, p.y = math.cos(p.angle) * distance, math.sin(p.angle) * distance
-        return p.color[4] <= 3 / 255
-    end, public.config.get("player_trail_alpha"), public.config.get("player_trail_decay"))
-    swap_particles = Particles:new(small_circle, function(p, frametime)
-        p.color[4] = p.color[4] - 3.5 / 255 * frametime
-        p.scale = p.scale * 0.98
-        p.x = p.x + math.cos(p.angle) * p.speed_mult * frametime
-        p.y = p.y + math.sin(p.angle) * p.speed_mult * frametime
-        return p.color[4] <= 3 / 255
-    end)
-end
 local spawn_swap_particles_ready = false
 local must_spawn_swap_particles = false
 
@@ -457,21 +414,23 @@ function public.update(frametime)
             game.status.pulse3D_direction = 1
         end
         -- update rotation
-        local next_rotation = game.level_status.rotation_speed * 10
-        if game.status.fast_spin > 0 then
-            local function get_sign(num)
-                return (num > 0 and 1 or (num == 0 and 0 or -1))
+        if public.config.get("rotation") then
+            local next_rotation = game.level_status.rotation_speed * 10
+            if game.status.fast_spin > 0 then
+                local function get_sign(num)
+                    return (num > 0 and 1 or (num == 0 and 0 or -1))
+                end
+                local function get_smoother_step(edge0, edge1, x)
+                    x = math.max(0, math.min(1, (x - edge0) / (edge1 - edge0)))
+                    return x * x * x * (x * (x * 6 - 15) + 10)
+                end
+                next_rotation = next_rotation
+                    + math.abs((get_smoother_step(0, game.level_status.fast_spin, game.status.fast_spin) / 3.5) * 17)
+                        * get_sign(next_rotation)
+                game.status.fast_spin = game.status.fast_spin - frametime
             end
-            local function get_smoother_step(edge0, edge1, x)
-                x = math.max(0, math.min(1, (x - edge0) / (edge1 - edge0)))
-                return x * x * x * (x * (x * 6 - 15) + 10)
-            end
-            next_rotation = next_rotation
-                + math.abs((get_smoother_step(0, game.level_status.fast_spin, game.status.fast_spin) / 3.5) * 17)
-                    * get_sign(next_rotation)
-            game.status.fast_spin = game.status.fast_spin - frametime
+            game.current_rotation = game.current_rotation + next_rotation * frametime
         end
-        game.current_rotation = game.current_rotation + next_rotation * frametime
 
         if game.status.camera_shake <= 0 then
             death_shake_translate[1] = 0
@@ -818,8 +777,54 @@ end
 
 ---initialize the game
 ---@param data any
-function public.init(data)
+function public.init(data, config)
     assets.init(data)
+    public.config = config
+    if not args.headless then
+        layer_shader = love.graphics.newShader(
+            [[
+                attribute vec2 instance_position;
+                attribute vec4 instance_color;
+                varying vec4 instance_color_out;
+
+                vec4 position(mat4 transform_projection, vec4 vertex_position)
+                {
+                    instance_color_out = instance_color / 255.0;
+                    vertex_position.xy += instance_position;
+                    return transform_projection * vertex_position;
+                }
+            ]],
+            [[
+                varying vec4 instance_color_out;
+
+                vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
+                {
+                    return instance_color_out;
+                }
+            ]]
+        )
+        message_font = assets.get_font("OpenSquare-Regular.ttf", 32 * public.config.get("text_scale"))
+        go_sound = assets.get_sound("go.ogg")
+        swap_blip_sound = assets.get_sound("swap_blip.ogg")
+        level_up_sound = assets.get_sound("level_up.ogg")
+        restart_sound = assets.get_sound("restart.ogg")
+        select_sound = assets.get_sound("select.ogg")
+        small_circle = assets.get_image("smallCircle.png")
+        trail_particles = Particles:new(small_circle, function(p, frametime)
+            p.color[4] = p.color[4] - trail_particles.alpha_decay / 255 * frametime
+            p.scale = p.scale * 0.98
+            local distance = game.status.radius + 2.4
+            p.x, p.y = math.cos(p.angle) * distance, math.sin(p.angle) * distance
+            return p.color[4] <= 3 / 255
+        end, public.config.get("player_trail_alpha"), public.config.get("player_trail_decay"))
+        swap_particles = Particles:new(small_circle, function(p, frametime)
+            p.color[4] = p.color[4] - 3.5 / 255 * frametime
+            p.scale = p.scale * 0.98
+            p.x = p.x + math.cos(p.angle) * p.speed_mult * frametime
+            p.y = p.y + math.sin(p.angle) * p.speed_mult * frametime
+            return p.color[4] <= 3 / 255
+        end)
+    end
 end
 
 return public

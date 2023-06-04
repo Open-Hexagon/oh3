@@ -2,19 +2,11 @@ local args = require("args")
 local input = require("game_handler.input")
 local Replay = require("game_handler.replay")
 local pack_level_data = require("game_handler.data")
-local profile = require("game_handler.profile")
-
--- TODO: profile selection / creation
-profile.open_or_new("test")
-
 local game_handler = {}
 local games = {
     ["192"] = require("compat.game192"),
     ["21"] = require("compat.game21"),
 }
-for _, game in pairs(games) do
-    game.init(pack_level_data)
-end
 local current_game
 local current_game_version
 local first_play = true
@@ -29,16 +21,29 @@ if not args.headless then
     -- correct aspect ratio initially (before the user resizes the window)
     love.event.push("resize", love.graphics.getDimensions())
 end
+game_handler.profile = require("game_handler.profile")
+
+-- TODO: profile selection / creation
+game_handler.profile.open_or_new("test")
+
+
+---initialize all games (has to be called before doing anything)
+---@param config any
+function game_handler.init(config)
+    for _, game in pairs(games) do
+        game.init(pack_level_data, config)
+    end
+end
 
 ---set the game version to use
----@param version string should be "192" or "21"
+---@param version number
 function game_handler.set_version(version)
-    current_game = games[version]
+    current_game = games[tostring(version)]
     current_game.set_input_handler(input)
     if current_game == nil then
         error("Game with version '" .. version .. "' does not exist or is unsupported.")
     end
-    current_game_version = tonumber(version)
+    current_game_version = version
 end
 
 ---start a level and start recording a replay
@@ -58,7 +63,7 @@ function game_handler.record_start(pack, level, level_settings)
     input.replay = Replay:new()
     input.replay:set_game_data(
         current_game_version,
-        current_game.config.get_all(),
+        current_game.config.get_all(current_game_version),
         first_play,
         pack,
         level,
@@ -83,7 +88,7 @@ function game_handler.replay_start(file)
     if love.filesystem.getInfo(file) then
         local replay = Replay:new(file)
         if replay.game_version ~= current_game_version then
-            game_handler.set_version(tostring(replay.game_version))
+            game_handler.set_version(replay.game_version)
         end
         input.replay = replay
         current_game.death_callback = nil
@@ -144,7 +149,7 @@ end
 ---save the score and replay of the current attempt (gets called automatically on death)
 function game_handler.save_score()
     local elapsed_time = love.timer.getTime() - real_start_time
-    profile.save_score(current_game.get_score(), elapsed_time, input.replay)
+    game_handler.profile.save_score(current_game.get_score(), elapsed_time, input.replay)
 end
 
 ---update the game if it's running

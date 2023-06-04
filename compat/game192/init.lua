@@ -5,7 +5,6 @@ local DynamicQuads = require("compat.game21.dynamic_quads")
 local Timeline = require("compat.game192.timeline")
 local set_color = require("compat.game21.color_transform")
 local public = {
-    config = require("compat.game192.config"),
     running = false,
     dm_is_only_setting = true,
 }
@@ -532,8 +531,9 @@ end
 
 ---initialize the game
 ---@param data any
-function public.init(data)
+function public.init(data, config)
     assets.init(data)
+    public.config = config
 end
 
 return public
