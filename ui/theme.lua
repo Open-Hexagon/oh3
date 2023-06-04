@@ -2,8 +2,7 @@
 local theme = {}
 theme.text_color = { 1, 1, 1, 1 }
 theme.border_color = { 1, 1, 1, 1 }
-
-theme.element_background_color = { 0, 0, 0, 0.5 }
+theme.element_background_color = { 0.25, 0.25, 0.25, 1 }
 
 theme.background_main_color = { 1, 0.23, 0.13, 1 }
 theme.background_panel_colors = {
@@ -25,9 +24,20 @@ theme.img_font = love.graphics.newImageFont(
     [[ !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~]],
     0
 )
-theme.img_font_height = 360
+theme.IMG_FONT_HEIGHT = theme.img_font:getHeight()
 
-theme.font = love.graphics.newFont("assets/font/OpenSquare-Regular.ttf")
+theme.open_square_font = {}
+setmetatable(theme.open_square_font, theme.open_square_font)
+theme.open_square_font.__index = function (this, index)
+    this[index] = love.graphics.newFont("assets/font/OpenSquare-Regular.ttf", index)
+    return this[index]
+end
 
+theme.open_square_bold_font = {}
+setmetatable(theme.open_square_bold_font, theme.open_square_bold_font)
+theme.open_square_bold_font.__index = function (this, index)
+    this[index] = love.graphics.newFont("assets/font/OpenSquare-Bold.ttf", index)
+    return this[index]
+end
 
 return theme
