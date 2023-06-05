@@ -11,6 +11,7 @@ local signal = require("anim.signal")
 local extmath = require("extmath")
 local transform = require("transform")
 local mouse = require("mouse_button")
+local controller = require("controller")
 
 -- Title menu
 
@@ -229,8 +230,12 @@ local function update_cursor_selection(x, y)
 end
 
 function wheel:open()
-    local x, y = love.mouse.getPosition()
-    update_cursor_selection(x, y)
+    if controller.last_used_controller == controller.KEYBOARD then
+       selection = panels.play
+    elseif controller.last_used_controller == controller.MOUSE then
+        local x, y = love.mouse.getPosition()
+        update_cursor_selection(x, y)
+    end
     selection:select()
 end
 

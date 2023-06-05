@@ -1,5 +1,6 @@
 local ui = require("ui")
 local signal = require("anim.signal")
+local controller = require("controller")
 
 function love.load(arg)
     ui.load()
@@ -42,6 +43,8 @@ function love.run()
             if name == "quit" then
                 return a or 0
             end
+
+            controller.update_last_used_controller(name)
 
             if name == "resize" then
                 ui.resize()
