@@ -18,12 +18,12 @@ M.MAX_TEXT_WIDTH = 500
 M.MINIMUM_WIDTH = 500
 
 ---@class PopUp:Screen
----@field cursor_is_hovering boolean
----@field selection RectangularButton
----@field default RectangularButton
----@field scale Queue
----@field message TextBox
+---@field selection RectangularButton The currently selected button
+---@field cursor_is_hovering boolean True when the cursor is hovering over any button
+---@field default RectangularButton The default button
 ---@field buttons RectangularButton[]
+---@field message TextBox
+---@field scale Queue
 local PopUp = {}
 PopUp.__index = PopUp
 
@@ -42,6 +42,11 @@ function PopUp:draw()
     love.graphics.origin()
 end
 
+---Checks whether the cursor is overlapping any buttons and updates selection.
+---Returns cursor_is_hovering.
+---@param x number
+---@param y number
+---@return boolean
 function PopUp:update_cursor_selection(x, y)
     for _, btn in ipairs(self.buttons) do
         if btn:check_cursor(x - layout.center_x, y - layout.center_y) then
@@ -51,39 +56,40 @@ function PopUp:update_cursor_selection(x, y)
                 btn:select()
                 self.selection = btn
             end
-            return
+            return self.cursor_is_hovering
         end
     end
     self.cursor_is_hovering = false
+    return self.cursor_is_hovering
 end
 
 function PopUp:on_insert()
-    if controller.last_used_controller == controller.KEYBOARD then
-        if self.selection ~= self.default then
-            self.selection:deselect()
-            self.default:select()
-            self.selection = self.default
-        end
-    elseif controller.last_used_controller == controller.MOUSE then
-        local x, y = love.mouse.getPosition()
-        self:update_cursor_selection(x, y)
-        if not self.cursor_is_hovering then
-            self.selection:deselect()
-            self.selection = self.default
-            self.selection:select()
-        end
+    -- Pop-ups reset to the default option once opened. Unless the mouse was last used and happens to be hovering over a button.
+    if
+        not (
+            controller.last_used_controller == controller.MOUSE
+            and self:update_cursor_selection(love.mouse.getPosition())
+        )
+    then
+        self:select_default()
     end
 
+    -- Play the opening animation
     self.pass = false
     self.scale:fast_forward()
     self.scale:keyframe(0.05, 1)
 end
 
+-- Selects current option and closes
 function PopUp:close()
     if self.selection.event then
         self.selection.event()
     end
+
+    -- Reinitialize the screen below
     self.down:on_insert()
+
+    -- Play the closing animation and remove self once completed
     self.pass = true
     self.scale:fast_forward()
     self.scale:keyframe(0.05, 0)
@@ -92,10 +98,16 @@ function PopUp:close()
     end)
 end
 
-function PopUp:default_close()
+-- Selects the default option
+function PopUp:select_default()
     self.selection:deselect()
     self.selection = self.default
     self.selection:select()
+end
+
+-- Close while selecting the default option
+function PopUp:default_close()
+    self:select_default()
     self:close()
 end
 
@@ -116,7 +128,7 @@ function PopUp:handle_event(name, a, b, c, d, e, f)
             temp:select()
             self.selection = temp
         end
-    elseif name == "mousemoved" then
+    elseif name == "mousemoved" or name == "mousepressed" then
         self:update_cursor_selection(a, b)
     elseif name == "mousereleased" then
         if c == mouse.LEFT and self.cursor_is_hovering then
