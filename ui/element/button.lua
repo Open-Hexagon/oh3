@@ -16,6 +16,7 @@ M.HIGHLIGHT_WIDTH = 4
 ---Aligned rectangular button
 ---@class RectangularButton:Selectable
 ---@field element Element
+---@field event function?
 local RectangularButton = {}
 RectangularButton.__index = RectangularButton
 
@@ -52,7 +53,7 @@ end
 
 ---Creates a new rectangular button.
 ---@param element Element
----@param event function
+---@param event function?
 ---@return RectangularButton
 function M.new_rectangular_button(element, event)
     local newinst = setmetatable({

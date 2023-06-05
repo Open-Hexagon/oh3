@@ -231,7 +231,7 @@ end
 
 function wheel:on_insert()
     if controller.last_used_controller == controller.KEYBOARD then
-       selection = panels.play
+        selection = panels.play
     elseif controller.last_used_controller == controller.MOUSE then
         local x, y = love.mouse.getPosition()
         update_cursor_selection(x, y)
@@ -248,7 +248,7 @@ function wheel:draw()
     love.graphics.origin()
 end
 
-local exit_confirmation = pop_up.new_pop_up("ARE YOU SURE YOU WANT TO EXIT?", "EXIT", love.event.quit)
+local exit_confirmation = pop_up.new_pop_up("ARE YOU SURE YOU WANT TO EXIT?", "EXIT", love.event.quit, "CLOSE")
 
 local function perform_selection()
     if selection == panels.exit then
@@ -268,7 +268,11 @@ function wheel:handle_event(name, a, b, c, d, e, f)
         if a == "escape" then
             selection:deselect()
             return "menu_to_title"
-        elseif a == "up" or a == "down" or a == "left" or a == "right" then
+        elseif a == "return" then
+            perform_selection()
+        end
+    elseif name == "keypressed" then
+        if a == "up" or a == "down" or a == "left" or a == "right" then
             local temp = selection[a]
             if not temp then
                 return
@@ -276,11 +280,7 @@ function wheel:handle_event(name, a, b, c, d, e, f)
             selection:deselect()
             temp:select()
             selection = temp
-        elseif a == "return" then
-            perform_selection()
         end
-    -- elseif name == "mousefocus" and not a then
-    --     clear_selection()
     elseif name == "mousemoved" then
         update_cursor_selection(a, b)
     elseif name == "mousereleased" then
