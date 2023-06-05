@@ -231,17 +231,7 @@ local function update_cursor_selection(x, y)
 end
 
 function wheel:on_insert()
-    if controller.last_used_controller == controller.KEYBOARD then
-        selection = panels.play
-        selection:select()
-    elseif controller.last_used_controller == controller.MOUSE then
-        local x, y = love.mouse.getPosition()
-        update_cursor_selection(x, y)
-        if not cursor_is_hovering then
-            selection = panels.play
-        end
-        selection:select()
-    end
+    selection:select()
 end
 
 function wheel:draw()
@@ -253,7 +243,7 @@ function wheel:draw()
     love.graphics.origin()
 end
 
-local exit_confirmation = pop_up.new_pop_up("ARE YOU SURE YOU WANT TO EXIT?", "EXIT", love.event.quit, "CLOSE")
+local exit_confirmation = pop_up.new_pop_up("ARE YOU SURE YOU WANT TO EXIT?", "EXIT", love.event.quit, "BACK")
 
 local function perform_selection()
     if selection == panels.exit then
