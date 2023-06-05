@@ -11,7 +11,7 @@ local theme = require("ui.theme")
 
 local M = {}
 M.HIGHLIGHT_COLOR = theme.background_main_color
-M.HIGHLIGHT_WIDTH = 4
+M.HIGHLIGHT_WIDTH = 6
 
 ---Aligned rectangular button
 ---@class RectangularButton:Selectable
@@ -46,7 +46,7 @@ function RectangularButton:draw()
         local offset = M.HIGHLIGHT_WIDTH * 0.5 + 1
         local x, y = self.element.x() - offset, self.element.y() - offset
         local width, height = self.element.width() + 2 * offset, self.element.height() + 2 * offset
-        love.graphics.setLineWidth(4)
+        love.graphics.setLineWidth(M.HIGHLIGHT_WIDTH)
         love.graphics.rectangle("line", x, y, width, height)
     end
 end
