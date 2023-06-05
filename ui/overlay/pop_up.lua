@@ -1,9 +1,11 @@
 local layout = require("ui.layout")
 local text_box = require("ui.element.text_box")
-local theme = require("ui.theme")
 local button = require("ui.element.button")
 local list = require("ui.list")
 local signal = require("anim.signal")
+
+local mouse = require("mouse_button")
+local controller = require("controller")
 
 local M = {}
 M.BUTTON_SPACING = 20
@@ -16,7 +18,9 @@ M.MAX_TEXT_WIDTH = 500
 M.MINIMUM_WIDTH = 500
 
 ---@class PopUp:Screen
+---@field cursor_is_hovering boolean
 ---@field selection RectangularButton
+---@field default RectangularButton
 ---@field scale Queue
 ---@field message TextBox
 ---@field buttons RectangularButton[]
@@ -38,13 +42,47 @@ function PopUp:draw()
     love.graphics.origin()
 end
 
+function PopUp:update_cursor_selection(x, y)
+    for _, btn in ipairs(self.buttons) do
+        if btn:check_cursor(x - layout.center_x, y - layout.center_y) then
+            self.cursor_is_hovering = true
+            if self.selection ~= btn then
+                self.selection:deselect()
+                btn:select()
+                self.selection = btn
+            end
+            return
+        end
+    end
+    self.cursor_is_hovering = false
+end
+
 function PopUp:on_insert()
+    if controller.last_used_controller == controller.KEYBOARD then
+        if self.selection ~= self.default then
+            self.selection:deselect()
+            self.default:select()
+            self.selection = self.default
+        end
+    elseif controller.last_used_controller == controller.MOUSE then
+        local x, y = love.mouse.getPosition()
+        self:update_cursor_selection(x, y)
+        if not self.cursor_is_hovering then
+            self.selection:deselect()
+            self.selection = self.default
+            self.selection:select()
+        end
+    end
+
     self.pass = false
     self.scale:fast_forward()
     self.scale:keyframe(0.05, 1)
 end
 
 function PopUp:close()
+    if self.selection.event then
+        self.selection.event()
+    end
     self.down:on_insert()
     self.pass = true
     self.scale:fast_forward()
@@ -54,20 +92,18 @@ function PopUp:close()
     end)
 end
 
+function PopUp:default_close()
+    self.selection:deselect()
+    self.selection = self.default
+    self.selection:select()
+    self:close()
+end
+
 function PopUp:handle_event(name, a, b, c, d, e, f)
     if name == "keyreleased" then
         if a == "escape" then -- Enters the last option
-            self.selection:deselect()
-            self.selection = self.buttons[#self.buttons]
-            self.selection:select()
-            if self.selection.event then
-                self.selection.event()
-            end
-            self:close()
+            self:default_close()
         elseif a == "return" then -- Enters the currently selection
-            if self.selection.event then
-                self.selection.event()
-            end
             self:close()
         end
     elseif name == "keypressed" then
@@ -79,6 +115,14 @@ function PopUp:handle_event(name, a, b, c, d, e, f)
             self.selection:deselect()
             temp:select()
             self.selection = temp
+        end
+    elseif name == "mousemoved" then
+        self:update_cursor_selection(a, b)
+    elseif name == "mousereleased" then
+        if c == mouse.LEFT and self.cursor_is_hovering then
+            self:close()
+        elseif c == mouse.BUTTON_4 then
+            self:default_close()
         end
     end
 end
@@ -148,7 +192,8 @@ function M.new_pop_up(text, ...)
         new_screen.buttons[button_count - (i - 1)].left = new_screen.buttons[button_count - (i - 1) - 1]
     end
 
-    new_screen.selection = new_screen.buttons[#new_screen.buttons]
+    new_screen.default = new_screen.buttons[#new_screen.buttons]
+    new_screen.selection = new_screen.default
     new_screen.selection:select()
 
     new_screen.scale = signal.new_queue(0)

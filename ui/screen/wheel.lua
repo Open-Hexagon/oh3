@@ -43,13 +43,13 @@ local PanelButton = {}
 PanelButton.__index = PanelButton
 
 function PanelButton:select()
-    self.radius:stop()
+    self.radius:fast_forward()
     self.radius:keyframe(0.15, 0.985, ease.out_sine)
     self.selected = true
 end
 
 function PanelButton:deselect()
-    self.radius:stop()
+    self.radius:fast_forward()
     self.radius:keyframe(0.15, 0, ease.out_sine)
     self.selected = false
 end
@@ -212,6 +212,7 @@ local function update_cursor_selection(x, y)
     x, y = x - x0, y - y0
     if extmath.alpha_max_beta_min(x, y) < background.abs_pivot_radius() then
         -- Cursor is in center
+        print("center")
     else
         local angle = math.atan2(y, x)
         for _, panel in pairs(panels) do
@@ -232,11 +233,15 @@ end
 function wheel:on_insert()
     if controller.last_used_controller == controller.KEYBOARD then
         selection = panels.play
+        selection:select()
     elseif controller.last_used_controller == controller.MOUSE then
         local x, y = love.mouse.getPosition()
         update_cursor_selection(x, y)
+        if not cursor_is_hovering then
+            selection = panels.play
+        end
+        selection:select()
     end
-    selection:select()
 end
 
 function wheel:draw()
@@ -281,7 +286,7 @@ function wheel:handle_event(name, a, b, c, d, e, f)
             temp:select()
             selection = temp
         end
-    elseif name == "mousemoved" then
+    elseif name == "mousemoved" or name == "mousepressed" then
         update_cursor_selection(a, b)
     elseif name == "mousereleased" then
         if c == mouse.LEFT then

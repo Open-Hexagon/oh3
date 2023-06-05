@@ -28,7 +28,7 @@ RectangularButton.__index = RectangularButton
 function RectangularButton:check_cursor(x, y)
     local left, top = self.element.x(), self.element.y()
     local right, bottom = left + self.element.width(), top + self.element.height()
-    return left <= x and x < right and top <= y and y < bottom
+    return left < x and x < right and top < y and y < bottom
 end
 
 function RectangularButton:select()
