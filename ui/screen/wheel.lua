@@ -1,11 +1,15 @@
-local background = require("ui.screen.background")
+local list = require("ui.list")
 local theme = require("ui.theme")
-local transform = require("transform")
+local image = require("ui.image")
+local layout = require("ui.layout")
+local background = require("ui.screen.background")
+local pop_up = require("ui.overlay.pop_up")
+
 local ease = require("anim.ease")
 local signal = require("anim.signal")
+
 local extmath = require("extmath")
-local layout = require("ui.layout")
-local image = require("ui.image")
+local transform = require("transform")
 local mouse = require("mouse_button")
 
 -- Title menu
@@ -21,8 +25,7 @@ wheel.abs_text_radius = signal.lerp(layout.MAJOR, background.abs_x + background.
 local selection
 
 ---Individual main menu buttons
----@class PanelButton
----@field selected boolean
+---@class PanelButton:Selectable
 ---@field a1 number Detection angle 1
 ---@field a2 number Detection angle 2
 ---@field condition function Determines whether the mouse cursor angle is correct
@@ -31,14 +34,10 @@ local selection
 ---@field text_angle number Angle at which text appears
 ---@field text_radius Signal Distance from background center
 ---@field text_scale Signal Text scale
----@field text_transform love.Transform Sets the text anchor point to it's center
+---@field text_transform love.Transform Sets the text anchor point to its center
 ---@field icon love.Image Image that shows up in the center hexagon
 ---@field icon_centering love.Transform Centers the image
 ---@field icon_size number Absolute pixel size of the icon (it should be a square).
----@field up PanelButton?
----@field down PanelButton?
----@field left PanelButton?
----@field right PanelButton?
 local PanelButton = {}
 PanelButton.__index = PanelButton
 
@@ -78,13 +77,12 @@ function PanelButton:draw()
     theme.bicolor_shader:send(theme.TEXT_COLOR_UNIFORM, theme.background_main_color)
     theme.bicolor_shader:send(theme.TEXT_OUTLINE_COLOR_UNIFORM, theme.text_color)
 
-    love.graphics.setFont(theme.img_font)
     local text_radius = self.text_radius()
     local xt, yt = math.cos(self.text_angle) * text_radius, math.sin(self.text_angle) * text_radius
     love.graphics.push()
     love.graphics.translate(xt, yt)
     love.graphics.scale(self.text_scale())
-    love.graphics.print(self.text, self.text_transform)
+    love.graphics.print(self.text, theme.img_font, self.text_transform)
     love.graphics.pop()
 
     if self.selected then
@@ -126,7 +124,7 @@ local function new_panel_button(a1, a2, condition, icon_path, text_angle, text, 
     newinst.text = text
     newinst.text_transform = love.math.newTransform()
     local text_width = theme.img_font:getWidth(text)
-    newinst.text_transform:translate(text_width / -2, theme.img_font_height / -2)
+    newinst.text_transform:translate(text_width / -2, theme.IMG_FONT_HEIGHT / -2)
     newinst.text_radius = text_radius
     newinst.text_scale = text_scale
     return newinst
@@ -173,7 +171,7 @@ do
         )
         local text_scale = (layout.BOTTOM - background.abs_y - background.abs_pivot_radius)
             * 0.25
-            / theme.img_font_height
+            / theme.IMG_FONT_HEIGHT
         exit = new_panel_button(pi16, pi12, between, icon, math.pi / 3, "EXIT", text_radius, text_scale)
     end
 
@@ -230,24 +228,27 @@ local function update_cursor_selection(x, y)
     cursor_is_hovering = false
 end
 
-function wheel.open()
+function wheel:open()
     local x, y = love.mouse.getPosition()
     update_cursor_selection(x, y)
     selection:select()
 end
 
-function wheel.draw()
+function wheel:draw()
     love.graphics.translate(background.abs_x(), background.abs_y())
-    love.graphics.rotate(background.angle() + wheel.angle)
+    love.graphics.rotate(background.angle() + self.angle)
     for _, panel in pairs(panels) do
         panel:draw()
     end
     love.graphics.origin()
 end
 
+local exit_confirmation = pop_up.new_pop_up("ARE YOU SURE YOU WANT TO EXIT?", "EXIT", love.event.quit)
+
 local function perform_selection()
     if selection == panels.exit then
-        love.event.quit()
+        selection:deselect()
+        list.emplace_above(exit_confirmation, wheel)
     elseif selection == panels.play then
         -- TODO: level select
         print("play")
@@ -257,7 +258,7 @@ local function perform_selection()
     end
 end
 
-function wheel.handle_event(name, a, b, c, d, e, f)
+function wheel:handle_event(name, a, b, c, d, e, f)
     if name == "keyreleased" then
         if a == "escape" then
             selection:deselect()

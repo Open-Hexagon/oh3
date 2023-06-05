@@ -31,11 +31,11 @@ background.abs_y = signal.lerp(layout.TOP, layout.BOTTOM, background.y)
 background.abs_pivot_radius = background.pivot_radius * layout.MINOR
 background.abs_border_thickness = background.abs_pivot_radius * background.border_thickness
 
-function background.draw()
+function background:draw()
     local center = {}
-    love.graphics.translate(background.abs_x(), background.abs_y())
+    love.graphics.translate(self.abs_x(), self.abs_y())
 
-    local sides = background.sides()
+    local sides = self.sides()
     local isides = math.floor(sides)
 
     local arc = extmath.tau / sides
@@ -51,14 +51,14 @@ function background.draw()
         love.graphics.pop()
 
         love.graphics.setColor(unpack(theme.background_main_color))
-        local a, b, c, d = transform.scale(background.abs_pivot_radius(), x1, y1, x2, y2)
-        local e, f, g, h = transform.scale(background.abs_pivot_radius() - background.abs_border_thickness(), x2, y2, x1, y1)
+        local a, b, c, d = transform.scale(self.abs_pivot_radius(), x1, y1, x2, y2)
+        local e, f, g, h = transform.scale(self.abs_pivot_radius() - self.abs_border_thickness(), x2, y2, x1, y1)
         love.graphics.polygon("fill", a, b, c, d, e, f, g, h)
         table.insert(center, g)
         table.insert(center, h)
     end
 
-    love.graphics.rotate(background.angle())
+    love.graphics.rotate(self.angle())
     local a1 = 0
     local a2
     for i = 1, isides do
@@ -75,17 +75,17 @@ function background.draw()
     love.graphics.origin()
 end
 
-function background.handle_event(name, a, b, c, d, e, f)
+function background:handle_event(name, a, b, c, d, e, f)
     if name == "mousereleased" then
         return "menu_to_title"
     end
 end
 
-function background.update(dt)
-    local radian_speed = background.radian_speed()
+function background:update(dt)
+    local radian_speed = self.radian_speed()
     if radian_speed ~= 0 then
-        local new_angle = (background.angle() + background.radian_speed() * dt) % extmath.tau
-        background.angle:set_immediate_value(new_angle)
+        local new_angle = (self.angle() + self.radian_speed() * dt) % extmath.tau
+        self.angle:set_immediate_value(new_angle)
     end
 end
 

@@ -4,6 +4,7 @@
 local list = require("ui.list")
 local layout = require("ui.layout")
 local animate = require("ui.animate")
+local element = require("ui.element")
 
 local screen = require("ui.screen")
 
@@ -34,6 +35,7 @@ end
 -- Should be called after a window resize
 function ui.resize()
     layout.resize()
+    element.resize()
 end
 
 return ui
