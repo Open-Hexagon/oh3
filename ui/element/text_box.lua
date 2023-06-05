@@ -48,7 +48,6 @@ end
 
 function TextBox:resize()
     local width, height = self.width(), self.height()
-    print(width, height)
     self.text_canvas = love.graphics.newCanvas(width, height - M.MARGIN_WIDTH)
 end
 

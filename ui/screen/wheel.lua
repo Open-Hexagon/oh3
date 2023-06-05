@@ -229,7 +229,7 @@ local function update_cursor_selection(x, y)
     cursor_is_hovering = false
 end
 
-function wheel:open()
+function wheel:on_insert()
     if controller.last_used_controller == controller.KEYBOARD then
        selection = panels.play
     elseif controller.last_used_controller == controller.MOUSE then

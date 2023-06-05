@@ -13,8 +13,8 @@ M.top.down = M.bottom
 ---@param screen Screen
 ---@param pos integer?
 function M.emplace_bottom(screen, pos)
-    if screen.open then
-        screen:open()
+    if screen.on_insert then
+        screen:on_insert()
     end
     if active_screens[screen] then
         error("Tried to insert an already active screen")
@@ -38,8 +38,8 @@ end
 ---@param screen Screen
 ---@param pos integer?
 function M.emplace_top(screen, pos)
-    if screen.open then
-        screen:open()
+    if screen.on_insert then
+        screen:on_insert()
     end
     if active_screens[screen] then
         error("Tried to insert an already active screen")
@@ -64,8 +64,8 @@ end
 ---@param base_screen Screen
 ---@param pos integer?
 function M.emplace_above(screen, base_screen, pos)
-    if screen.open then
-        screen:open()
+    if screen.on_insert then
+        screen:on_insert()
     end
     if active_screens[screen] then
         error("Tried to insert an already active screen")
@@ -90,8 +90,8 @@ end
 ---@param base_screen Screen
 ---@param pos integer?
 function M.emplace_below(screen, base_screen, pos)
-    if screen.open then
-        screen:open()
+    if screen.on_insert then
+        screen:on_insert()
     end
     if active_screens[screen] then
         error("Tried to insert an already active screen")
@@ -114,9 +114,6 @@ end
 ---Removes a specific screen from the list
 ---@param screen Screen
 function M.remove(screen)
-    if screen.close then
-        screen:close()
-    end
     if not active_screens[screen] then
         error("Tried to remove an inactive screen")
     end

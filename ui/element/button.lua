@@ -50,6 +50,10 @@ function RectangularButton:draw()
     end
 end
 
+---Creates a new rectangular button.
+---@param element Element
+---@param event function
+---@return RectangularButton
 function M.new_rectangular_button(element, event)
     local newinst = setmetatable({
         element = element,
