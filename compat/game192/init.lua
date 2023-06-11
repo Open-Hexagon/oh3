@@ -4,7 +4,7 @@ local assets = require("compat.game192.assets")
 local DynamicQuads = require("compat.game21.dynamic_quads")
 local Timeline = require("compat.game192.timeline")
 local set_color = require("compat.game21.color_transform")
-local json = require("extlibs.json.json-beautify")
+local make_fake_config = require("compat.game192.fake_config")
 local public = {
     running = false,
     dm_is_only_setting = true,
@@ -168,7 +168,7 @@ function public.start(pack_folder, level_id, difficulty_mult)
     game.vfs.pack_path = love.filesystem.getSaveDirectory() .. "/" .. game.pack.path
     game.vfs.pack_folder_name = game.pack.folder
     local files = {
-        ["config.json"] = json.beautify(public.config.get_all(192))
+        ["config.json"] = make_fake_config(public.config),
     }
     game.vfs.load_files(files)
 

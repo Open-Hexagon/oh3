@@ -1,0 +1,51 @@
+local json = require("extlibs.json.json-beautify")
+
+return function(config)
+    local t = {}
+    t.online = true
+    t.official = config.get("official_mode")
+    t.fullscreen = love.window.getFullscreen()
+    t.fullscreen_auto_resolution = true
+    t.fullscreen_width = love.graphics.getWidth()
+    t.fullscreen_height = love.graphics.getHeight()
+    t.windowed_auto_resolution = true
+    t.windowed_width = love.graphics.getWidth()
+    t.windowed_height = love.graphics.getHeight()
+    t.auto_zoom_factor = true
+    t.zoom_factor = 1
+    t.pixel_multiplier = 1
+    t.static_frametime = false
+    t.static_frametime_value = 1
+    t.limit_fps = false
+    t.vsync = false
+    t.no_rotation = not config.get("rotation")
+    t.no_background = not config.get("background")
+    t.black_and_white = config.get("black_and_white")
+    t.pulse_enabled = config.get("pulse")
+    t.beatpulse_enabled = config.get("beatpulse")
+    t["3D_enabled"] = config.get("3D_enabled")
+    t["3D_multiplier"] = config.get("3D_multiplier")
+    t["3D_max_depth"] = config.get("3D_max_depth")
+    t.flash_enabled = config.get("flash")
+    t.no_sound = false
+    t.no_music = false
+    t.sound_volume = 100
+    t.music_volume = 100
+    t.player_speed = config.get("player_speed")
+    t.player_focus_speed = config.get("player_focus_speed")
+    t.player_size = config.get("player_size")
+    t.auto_restart = false
+    t.debug = false
+    t.show_messages = config.get("messages")
+    t.change_styles = true
+    t.change_music = true
+    t.invincible = config.get("invincible")
+    t.t_rotate_ccw = { { "kLeft" } }
+    t.t_rotate_cw = { { "kRight" } }
+    t.t_focus = { { "kLShift" } }
+    t.t_exit = { { "kEscape" } }
+    t.t_force_restart = { { "kR" }, { "kUp" } }
+    t.t_restart = { { "kReturn" }, { "kSpace" } }
+    t.t_screenshot = { { "kF12" } }
+    return json.beautify(t)
+end
