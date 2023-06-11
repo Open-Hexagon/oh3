@@ -129,12 +129,14 @@ end
 
 -- have to actually draw later because of 3d
 function player.draw_cap(sides, style, black_and_white)
-    local r, g, b, a = style.get_second_color()
-    if black_and_white then
-        r, g, b, a = 0, 0, 0, 0
+    if sides > 2 then
+        local r, g, b, a = style.get_second_color()
+        if black_and_white then
+            r, g, b, a = 0, 0, 0, 0
+        end
+        set_color(r, g, b, a)
+        love.graphics.polygon("fill", unpack(cap_vertices, 1, sides * 2))
     end
-    set_color(r, g, b, a)
-    love.graphics.polygon("fill", unpack(cap_vertices, 1, sides * 2))
 end
 
 return player
