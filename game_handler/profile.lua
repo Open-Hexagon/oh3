@@ -38,6 +38,32 @@ function profile.open_or_new(name)
     current_profile = name
 end
 
+---get all persistent data stored in the database for a pack
+---@param pack_id string
+---@return table?
+function profile.get_data(pack_id)
+    local matches = database.custom_data:get({ where = { pack = pack_id } })
+    if #matches == 0 then
+        return nil
+    elseif #matches == 1 then
+        return matches[1].data
+    else
+        error("Found " .. #matches .. " matches for primary key value '" .. pack_id .. "' which should be impossible!")
+    end
+end
+
+---store any persistent data for a pack in the database (overwrites data for the pack if it already has some)
+---@param pack_id string
+---@param data table
+function profile.store_data(pack_id, data)
+    database:open()
+    database:update("custom_data", {
+        where = { pack = pack_id },
+        set = { data = data },
+    })
+    database:close()
+end
+
 ---save a score into the profile's database and save the replay as well
 ---@param score number
 ---@param time number

@@ -170,6 +170,11 @@ function public.start(pack_folder, level_id, difficulty_mult)
     local files = {
         ["config.json"] = make_fake_config(public.config),
     }
+    if public.persistent_data ~= nil then
+        for path, contents in pairs(public.persistent_data) do
+            files[path] = contents
+        end
+    end
     game.vfs.load_files(files)
 
     game.message_text = ""
@@ -546,6 +551,20 @@ end
 function public.init(data, config)
     assets.init(data)
     public.config = config
+end
+
+---updates the persistent data
+function public.update_save_data()
+    local files = game.vfs.dump_files()
+    files["config.json"] = nil
+    local has_files = false
+    for _, _ in pairs(files) do
+        has_files = true
+        break
+    end
+    if has_files then
+        public.persistent_data = files
+    end
 end
 
 return public

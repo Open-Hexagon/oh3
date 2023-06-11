@@ -23,9 +23,6 @@ if not args.headless then
 end
 game_handler.profile = require("game_handler.profile")
 
--- TODO: profile selection / creation
-game_handler.profile.open_or_new("test")
-
 ---initialize all games (has to be called before doing anything)
 ---@param config any
 function game_handler.init(config)
@@ -57,7 +54,14 @@ function game_handler.record_start(pack, level, level_settings)
     end
     current_game.death_callback = function()
         game_handler.save_score()
+        if current_game.update_save_data ~= nil then
+            current_game.update_save_data()
+        end
+        if current_game.persistent_data ~= nil then
+            game_handler.profile.store_data(pack, current_game.persistent_data)
+        end
     end
+    current_game.persistent_data = game_handler.profile.get_data(pack)
     current_game.seed = math.floor(love.timer.getTime() * 1000)
     input.replay = Replay:new()
     input.replay:set_game_data(
