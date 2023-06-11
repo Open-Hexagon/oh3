@@ -103,11 +103,12 @@ vfs.io.open = function(path, mode)
             if path:sub(1, 5) == "Packs" then
                 local new_path = vfs.pack_path .. path:sub(8 + #vfs.pack_folder_name)
                 new_path = new_path:gsub("\\", "/"):gsub("%.%./", "")
-                local file, error_msg = io.open(new_path)
-                if file == nil then
+                local file = love.filesystem.newFile(new_path)
+                local success, error_msg = file:open("r")
+                if not success then
                     error("Error loading file '" .. new_path .. "': " .. error_msg)
                 end
-                local contents = file:read("*a")
+                local contents = file:read()
                 file:close()
                 file = new_file()
                 file:write(contents)

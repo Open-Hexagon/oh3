@@ -165,7 +165,7 @@ function public.start(pack_folder, level_id, difficulty_mult)
 
     -- virtual filesystem init
     game.vfs.clear()
-    game.vfs.pack_path = love.filesystem.getSaveDirectory() .. "/" .. game.pack.path
+    game.vfs.pack_path = game.pack.path
     game.vfs.pack_folder_name = game.pack.folder
     local files = {
         ["config.json"] = make_fake_config(public.config),
