@@ -5,6 +5,9 @@ local config = require("config")
 local global_config = require("global_config")
 
 function love.run()
+    -- make sure no level accesses malicious files via symlinks
+    love.filesystem.setSymlinksEnabled(false)
+
     global_config.init(config, game_handler.profile)
     game_handler.init(config)
 

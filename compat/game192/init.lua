@@ -4,6 +4,7 @@ local assets = require("compat.game192.assets")
 local DynamicQuads = require("compat.game21.dynamic_quads")
 local Timeline = require("compat.game192.timeline")
 local set_color = require("compat.game21.color_transform")
+local json = require("extlibs.json.json-beautify")
 local public = {
     running = false,
     dm_is_only_setting = true,
@@ -16,6 +17,7 @@ local game = {
     lua_runtime = require("compat.game192.lua_runtime"),
     events = require("compat.game192.events"),
     walls = require("compat.game192.walls"),
+    vfs = require("compat.game192.virtual_filesystem"),
     difficulty_mult = 1,
     restart_id = "",
     restart_first_time = false,
@@ -160,6 +162,16 @@ function public.start(pack_folder, level_id, difficulty_mult)
             love.audio.play(game.music.source)
         end
     end
+
+    -- virtual filesystem init
+    game.vfs.clear()
+    game.vfs.pack_path = love.filesystem.getSaveDirectory() .. "/" .. game.pack.path
+    game.vfs.pack_folder_name = game.pack.folder
+    local files = {
+        ["config.json"] = json.beautify(public.config.get_all(192))
+    }
+    game.vfs.load_files(files)
+
     game.message_text = ""
     game.events.init(game)
     game.status.reset()

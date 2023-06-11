@@ -204,8 +204,9 @@ function events.init(game)
             if game.music == nil then
                 error("Music with id '" .. event.id .. "' not found")
             end
+            local segment = math.random(1, #game.music.segments)
             if game.music.source ~= nil then
-                game.music.source:seek(math.floor(game.music.segments[math.random(1, #game.music.segments)].time))
+                game.music.source:seek(math.floor(game.music.segments[segment].time))
             end
         end,
         music_set_segment = function(event)

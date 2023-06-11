@@ -142,6 +142,7 @@ function lua_runtime.init_env(game, public)
             execute = function(command)
                 log("Level attempted to execute potentially malicious command: '" .. command .. "'")
             end,
+            remove = game.vfs.remove,
         },
         next = next,
         error = error,
@@ -159,11 +160,24 @@ function lua_runtime.init_env(game, public)
         ipairs = ipairs,
         pairs = pairs,
         print = print,
+        tostring = tostring,
+        io = game.vfs.io,
         -- allowing manual random seed setting, the randomseed calls will be recorded in the replay in order (with their seed) (TODO)
         math = math,
     }
     env = lua_runtime.env
     env._G = env
+    env.dofile = function(path)
+        local file = game.vfs.io.open(path, "r")
+        local code = file:read("*a")
+        file:close()
+        local func = loadstring(code)
+        if func == nil then
+            error("Failed executing virtual file '" .. path .. "'")
+        end
+        setfenv(func, env)
+        return func()
+    end
     local function make_get_set_functions(tbl, name)
         env["get" .. name .. "ValueInt"] = function(field)
             return utils.round_to_even(tonumber(tbl[field] or 0))
