@@ -3,6 +3,12 @@ local utils = {}
 
 -- fixes case insensitive paths
 function utils.get_real_path(path)
+    -- remove trailing spaces
+    while path:sub(-1) == " " do
+        path = path:sub(1, -2)
+    end
+
+    -- fix capitalization
     local real_path = ""
     for segment in path:gmatch("[^/]+") do
         if love.filesystem.getInfo(real_path .. segment) then
