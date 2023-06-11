@@ -1,51 +1,97 @@
-local json = require("extlibs.json.json-beautify")
-
 return function(config)
-    local t = {}
-    t.online = true
-    t.official = config.get("official_mode")
-    t.fullscreen = love.window.getFullscreen()
-    t.fullscreen_auto_resolution = true
-    t.fullscreen_width = love.graphics.getWidth()
-    t.fullscreen_height = love.graphics.getHeight()
-    t.windowed_auto_resolution = true
-    t.windowed_width = love.graphics.getWidth()
-    t.windowed_height = love.graphics.getHeight()
-    t.auto_zoom_factor = true
-    t.zoom_factor = 1
-    t.pixel_multiplier = 1
-    t.static_frametime = false
-    t.static_frametime_value = 1
-    t.limit_fps = false
-    t.vsync = false
-    t.no_rotation = not config.get("rotation")
-    t.no_background = not config.get("background")
-    t.black_and_white = config.get("black_and_white")
-    t.pulse_enabled = config.get("pulse")
-    t.beatpulse_enabled = config.get("beatpulse")
-    t["3D_enabled"] = config.get("3D_enabled")
-    t["3D_multiplier"] = config.get("3D_multiplier")
-    t["3D_max_depth"] = config.get("3D_max_depth")
-    t.flash_enabled = config.get("flash")
-    t.no_sound = false
-    t.no_music = false
-    t.sound_volume = 100
-    t.music_volume = 100
-    t.player_speed = config.get("player_speed")
-    t.player_focus_speed = config.get("player_focus_speed")
-    t.player_size = config.get("player_size")
-    t.auto_restart = false
-    t.debug = false
-    t.show_messages = config.get("messages")
-    t.change_styles = true
-    t.change_music = true
-    t.invincible = config.get("invincible")
-    t.t_rotate_ccw = { { "kLeft" } }
-    t.t_rotate_cw = { { "kRight" } }
-    t.t_focus = { { "kLShift" } }
-    t.t_exit = { { "kEscape" } }
-    t.t_force_restart = { { "kR" }, { "kUp" } }
-    t.t_restart = { { "kReturn" }, { "kSpace" } }
-    t.t_screenshot = { { "kF12" } }
-    return json.beautify(t)
+    local config_str = [[{
+        // Online capabilities
+        "online": true,
+
+        // Official mode - if set to false, you won't be eligible for online scores - this setting ignores some of the customizable options
+        "official": <official>,
+
+        // Window options
+        "fullscreen": <fullscreen>,
+        "fullscreen_auto_resolution": true,
+        "fullscreen_width": <width>,
+        "fullscreen_height": <height>,
+        "windowed_auto_resolution": true,
+        "windowed_width": <width>,
+        "windowed_height": <height>,
+        "auto_zoom_factor": true, // Ignored in official mode
+        "zoom_factor": 1,
+        "pixel_multiplier": 1,
+        
+        // FPS options
+        "static_frametime": false, // Ignored in official mode
+        "static_frametime_value": 1,
+        "limit_fps": false,
+        "vsync": false,
+        
+        // Graphical options
+        "no_rotation": <no_rotation>, // Ignored in official mode
+        "no_background": <no_background>, // Ignored in official mode
+        "black_and_white": <black_and_white>, // Ignored in official mode
+        "pulse_enabled": <pulse_enabled>, // Ignored in official mode
+        "beatpulse_enabled": <beatpulse_enabled>, // Ignored in official mode
+        "3D_enabled": <3D_enabled>,
+        "3D_multiplier": <3D_multiplier>,
+        "3D_max_depth": <3D_max_depth>,
+        "flash_enabled": <flash_enabled>,
+        
+        // Audio options
+        "no_sound": false,
+        "no_music": false,
+        "sound_volume": 100,
+        "music_volume": 100,	
+        
+        // Player options
+        "player_speed": <player_speed>, // Ignored in official mode
+        "player_focus_speed": <player_focus_speed>, // Ignored in official mode
+        "player_size": <player_size>, // Ignored in official mode
+        "auto_restart": false,
+        
+        // Scripting options
+        "debug": false,
+        "show_messages": <show_messages>,
+        "change_styles": true,
+        "change_music": true,
+        
+        // Cheats
+        "invincible": <invincible>, // Ignored in official mode
+
+        // Inputs
+        "t_rotate_ccw":		[ ["kLeft"] ],
+        "t_rotate_cw":		[ ["kRight"] ],
+        "t_focus":			[ ["kLShift"] ],
+        "t_exit": 			[ ["kEscape"] ],
+        "t_force_restart": 	[ ["kR"], ["kUp"] ],
+        "t_restart":		[ ["kReturn"], ["kSpace"] ],
+        "t_screenshot":		[ ["kF12"] ]
+    }]]
+    local function setv(fake_name, value)
+        local n
+        config_str, n = config_str:gsub("<" .. fake_name .. ">", tostring(value))
+        if n == 0 then
+            error(fake_name .. " not found in config string.")
+        end
+    end
+    local function set(fake_name, name)
+        setv(fake_name, config.get(name))
+    end
+    set("official", "official_mode")
+    setv("fullscreen", love.window.getFullscreen())
+    setv("width", love.graphics.getWidth())
+    setv("height", love.graphics.getHeight())
+    setv("no_rotation", not config.get("rotation"))
+    setv("no_background", not config.get("background"))
+    set("black_and_white", "black_and_white")
+    set("pulse_enabled", "pulse")
+    set("beatpulse_enabled", "beatpulse")
+    set("3D_enabled", "3D_enabled")
+    set("3D_multiplier", "3D_multiplier")
+    set("3D_max_depth", "3D_max_depth")
+    set("flash_enabled", "flash")
+    set("player_speed", "player_speed")
+    set("player_focus_speed", "player_focus_speed")
+    set("player_size", "player_size")
+    set("show_messages", "messages")
+    set("invincible", "invincible")
+    return config_str
 end
