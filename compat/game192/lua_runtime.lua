@@ -134,7 +134,7 @@ function lua_runtime.init_env(game, public)
                 clock_count = clock_count + 1
                 if clock_count > block_threshold then
                     -- blocking call (something like: `while os.clock() < x do ...`)
-                    game.real_time = game.real_time + game.current_frametime
+                    game.real_time = game.real_time + game.current_frametime / 60
                     game.blocked_updates = game.blocked_updates + 1
                 end
                 return game.real_time
