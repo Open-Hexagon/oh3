@@ -14,6 +14,11 @@ function level.set(level_data)
     end
     current_data = setmetatable(tmp_values, {
         __index = function(_, k)
+            if k == "id" then
+                -- undo folder prefix when level gets the id
+                local v = level_data[k]
+                return v:sub(v:find("_") + 1)
+            end
             return level_data[k] or (default_values[k] or 0)
         end,
     })
