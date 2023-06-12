@@ -53,13 +53,14 @@ function game_handler.record_start(pack, level, level_settings)
         end
     end
     current_game.death_callback = function()
-        game_handler.save_score()
         if current_game.update_save_data ~= nil then
             current_game.update_save_data()
         end
         if current_game.persistent_data ~= nil then
+            input.replay.data.persistent_data = current_game.persistent_data
             game_handler.profile.store_data(pack, current_game.persistent_data)
         end
+        game_handler.save_score()
     end
     current_game.persistent_data = game_handler.profile.get_data(pack)
     current_game.seed = math.floor(love.timer.getTime() * 1000)
@@ -93,6 +94,7 @@ function game_handler.replay_start(file)
         if replay.game_version ~= current_game_version then
             game_handler.set_version(replay.game_version)
         end
+        current_game.persistent_data = replay.data.persistent_data
         input.replay = replay
         current_game.death_callback = nil
         -- TODO: save and restore config later

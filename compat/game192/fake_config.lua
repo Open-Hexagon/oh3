@@ -7,13 +7,13 @@ return function(config)
         "official": <official>,
 
         // Window options
-        "fullscreen": <fullscreen>,
+        "fullscreen": true,
         "fullscreen_auto_resolution": true,
-        "fullscreen_width": <width>,
-        "fullscreen_height": <height>,
+        "fullscreen_width": 1024,
+        "fullscreen_height": 768,
         "windowed_auto_resolution": true,
-        "windowed_width": <width>,
-        "windowed_height": <height>,
+        "windowed_width": 1024,
+        "windowed_height": 768,
         "auto_zoom_factor": true, // Ignored in official mode
         "zoom_factor": 1,
         "pixel_multiplier": 1,
@@ -76,9 +76,6 @@ return function(config)
         setv(fake_name, config.get(name))
     end
     set("official", "official_mode")
-    setv("fullscreen", love.window.getFullscreen())
-    setv("width", love.graphics.getWidth())
-    setv("height", love.graphics.getHeight())
     setv("no_rotation", not config.get("rotation"))
     setv("no_background", not config.get("background"))
     set("black_and_white", "black_and_white")

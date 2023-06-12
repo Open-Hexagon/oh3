@@ -1,6 +1,5 @@
 -- wrapper for game inputs to automate replay recording
 local input = {
-    custom_keybinds = {},
     replay = nil,
 }
 local recording = false
@@ -53,11 +52,8 @@ function input.update()
     end
     if replaying then
         time = time + 1
-        local state_changes = input.replay:get_key_state_changes(time)
-        if state_changes ~= nil then
-            for i = 1, #state_changes, 2 do
-                input_state[state_changes[i]] = state_changes[i + 1]
-            end
+        for key, state in input.replay:get_key_state_changes(time) do
+            input_state[key] = state
         end
     end
 end
@@ -68,20 +64,14 @@ end
 ---@param key love.KeyConstant|number use number for mouse buttons
 ---@return boolean
 function input.get(key)
-    local key_name
-    if input.custom_keybinds[key] ~= nil then
-        key_name = input.custom_keybinds[key]
-    else
-        key_name = key
-    end
     if replaying then
         return input_state[key] or false
     end
     local state
     if type(key) == "number" then
-        state = love.mouse.isDown(key_name)
+        state = love.mouse.isDown(key)
     else
-        state = love.keyboard.isDown(key_name)
+        state = love.keyboard.isDown(key)
     end
     if recording then
         if input.replay == nil then

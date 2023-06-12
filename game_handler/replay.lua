@@ -2,10 +2,12 @@ local msgpack = require("extlibs.msgpack.msgpack")
 
 ---@class Replay
 ---@field data table
+---@field input_data table
 ---@field game_version number
 ---@field first_play boolean
 ---@field pack_id string
 ---@field level_id string
+---@field key_index_map table
 local replay = {}
 replay.__index = replay
 
@@ -15,9 +17,12 @@ replay.__index = replay
 function replay:new(path)
     local obj = setmetatable({
         data = {
-            inputs = {},
             seeds = {},
+            keys = {},
+            input_times = {},
         },
+        input_data = {},
+        key_index_map = {},
     }, replay)
     if path ~= nil then
         obj:_read(path)
@@ -26,12 +31,21 @@ function replay:new(path)
 end
 
 ---gets the key state changes (not the key state) for a specified tick
----the table is formatted like this: {<key>, <state>, <key>, <state>, ...}
----nil means that no inputs changed at the time
+---the return value is an iterator over: key, state
 ---@param time number
----@return table?
+---@return function?
 function replay:get_key_state_changes(time)
-    return self.data.inputs[time]
+    local state_changes = self.input_data[time]
+    if state_changes == nil then
+        return function()
+            return nil
+        end
+    end
+    local index = -1
+    return function()
+        index = index + 2
+        return self.data.keys[state_changes[index]], state_changes[index + 1]
+    end
 end
 
 ---set the level and the settings the game was started with
@@ -55,9 +69,14 @@ end
 ---@param state boolean
 ---@param time number timestamp (in ticks)
 function replay:record_input(key, state, time)
-    self.data.inputs[time] = self.data.inputs[time] or {}
-    local state_changes = self.data.inputs[time]
-    state_changes[#state_changes + 1] = key
+    if self.key_index_map[key] == nil then
+        local len = #self.data.keys + 1
+        self.data.keys[len] = key
+        self.key_index_map[key] = len
+    end
+    self.input_data[time] = self.input_data[time] or {}
+    local state_changes = self.input_data[time]
+    state_changes[#state_changes + 1] = self.key_index_map[key]
     state_changes[#state_changes + 1] = state
 end
 
@@ -67,18 +86,31 @@ function replay:record_seed(seed)
 end
 
 function replay:_get_compressed()
-    -- the old game's format version was 0, so we call this 1 now
     local header = love.data.pack(
         "string",
         ">BBBzz",
-        1,
+        1, -- the old game's format version was 0, so we call this 1 now
         self.game_version,
         self.first_play and 1 or 0,
         self.pack_id,
         self.level_id
     )
+    for time, _ in pairs(self.input_data) do
+        self.data.input_times[#self.data.input_times + 1] = time
+    end
+    table.sort(self.data.input_times)
     local data = msgpack.pack(self.data)
-    return love.data.compress("data", "zlib", header .. data, 9)
+    local input_data = ""
+    for i = 1, #self.data.input_times do
+        local time = self.data.input_times[i]
+        local state_changes = self.input_data[time]
+        input_data = input_data .. love.data.pack("string", ">B", #state_changes / 2)
+        for j = 1, #state_changes, 2 do
+            local key, state = state_changes[j], state_changes[j + 1]
+            input_data = input_data .. love.data.pack("string", ">BB", key, state and 1 or 0)
+        end
+    end
+    return love.data.compress("data", "zlib", header .. data .. input_data, 9)
 end
 
 ---gets the hash of the replay and also returns the compressed data as it needs to be computed to get the hash already
@@ -113,7 +145,20 @@ function replay:_read(path)
     end
     self.game_version, self.first_play, self.pack_id, self.level_id, offset = love.data.unpack(">BBzz", data, offset)
     self.first_play = self.first_play == 1
-    _, self.data = msgpack.unpack(data, offset - 1)
+    offset, self.data = msgpack.unpack(data, offset - 1)
+    offset = offset + 1
+    for i = 1, #self.data.input_times do
+        local time = self.data.input_times[i]
+        self.input_data[time] = {}
+        local changes
+        changes, offset = love.data.unpack(">B", data, offset)
+        for j = 1, changes * 2, 2 do
+            local key, state
+            key, state, offset = love.data.unpack(">BB", data, offset)
+            self.input_data[time][j] = key
+            self.input_data[time][j + 1] = state == 1
+        end
+    end
 end
 
 return replay

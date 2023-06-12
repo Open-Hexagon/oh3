@@ -63,11 +63,10 @@ describe("Replay files", function()
         assert.is_false(loaded_rp.first_play)
         for time, state in pairs(to_record) do
             local state_changes = loaded_rp:get_key_state_changes(time)
-            local index = 1
             for key, bool in pairs(state) do
-                assert.is.equal(state_changes[index], key)
-                assert.is.equal(state_changes[index + 1], bool)
-                index = index + 2
+                local rp_key, rp_bool = state_changes()
+                assert.is.equal(key, rp_key)
+                assert.is.equal(bool, rp_bool)
             end
         end
     end)
