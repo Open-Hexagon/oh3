@@ -70,6 +70,23 @@ end
 ---@param replay Replay
 function profile.save_score(score, time, replay)
     local hash, data = replay:get_hash()
+    local dir = replay_path .. hash:sub(1, 2) .. "/"
+    if not love.filesystem.getInfo(dir) then
+        love.filesystem.createDirectory(dir)
+    end
+    local n
+    local path = dir .. hash
+    -- in case a replay actually has a duplicate hash (which is almost impossible) add some random numbers to it
+    if love.filesystem.getInfo(path) then
+        path = path .. 0
+        n = 0
+        while love.filesystem.getInfo(path) do
+            n = n + 1
+            path = path:sub(1, -2) .. n
+        end
+        hash = hash .. n
+        print("added", n)
+    end
     database:open()
     database:insert("scores", {
         pack = replay.pack_id,
@@ -80,11 +97,6 @@ function profile.save_score(score, time, replay)
         replay_hash = hash,
     })
     database:close()
-    local dir = replay_path .. hash:sub(1, 2) .. "/"
-    if not love.filesystem.getInfo(dir) then
-        love.filesystem.createDirectory(dir)
-    end
-    local path = dir .. hash
     replay:save(path, data)
 end
 
