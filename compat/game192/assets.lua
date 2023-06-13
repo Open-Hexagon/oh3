@@ -32,6 +32,14 @@ local function file_ext_read_iter(dir, ending, virt_folder)
     for file in pairs(virt_folder) do
         files[#files+1] = file
     end
+    for i = virt_start_index - 1, 1, -1 do
+        for j = virt_start_index, #files do
+            if files[j] == files[i] then
+                table.remove(files, i)
+                virt_start_index = virt_start_index - 1
+            end
+        end
+    end
     local index = 0
     return function()
         index = index + 1
