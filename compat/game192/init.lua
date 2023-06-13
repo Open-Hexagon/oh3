@@ -542,9 +542,11 @@ function public.stop()
 end
 
 ---initialize the game
----@param data any
-function public.init(data, config)
-    assets.init(data)
+---@param data table
+---@param config table
+---@param all_persistent_data table
+function public.init(data, config, all_persistent_data)
+    assets.init(data, all_persistent_data)
     public.config = config
 end
 

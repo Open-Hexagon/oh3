@@ -52,6 +52,18 @@ function profile.get_data(pack_id)
     end
 end
 
+---get all persistent data from the profile (pack_id/data as key/value pairs)
+---@return table
+function profile.get_all_data()
+    local rows = database.custom_data:get()
+    local result = {}
+    for i = 1, #rows do
+        local row = rows[i]
+        result[row.pack] = row.data
+    end
+    return result
+end
+
 ---store any persistent data for a pack in the database (overwrites data for the pack if it already has some)
 ---@param pack_id string
 ---@param data table

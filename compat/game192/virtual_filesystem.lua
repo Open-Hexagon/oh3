@@ -1,3 +1,4 @@
+local utils = require("compat.game192.utils")
 local vfs = {
     pack_path = "",
     pack_folder_name = "",
@@ -62,6 +63,24 @@ vfs.dump_files = function()
         file:seek("set", 0)
         files[path] = file:read("*a")
         file:close()
+    end
+    return files
+end
+
+vfs.dump_real_files_recurse = function()
+    local files = {}
+    for path, file in pairs(virtual_filesystem) do
+        -- not dumping file outside Packs folder (irrelevant for asset loading)
+        if path:sub(1, 5) == "Packs" then
+            path = path:gsub("\\", "/"):gsub("%.%./", ""):sub(7)
+            local keys = {}
+            for segment in path:gmatch("([^/]+)") do
+                keys[#keys+1] = segment
+            end
+            file:seek("set", 0)
+            utils.insert_path(files, keys, file:read("*a"))
+            file:close()
+        end
     end
     return files
 end
