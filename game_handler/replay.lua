@@ -1,4 +1,5 @@
 local msgpack = require("extlibs.msgpack.msgpack")
+local bit = require("bit")
 
 ---@class Replay
 ---@field data table
@@ -139,24 +140,83 @@ function replay:_read(path)
     file:open("r")
     local data = love.data.decompress("string", "zlib", file:read("data"))
     file:close()
-    local version, offset = love.data.unpack(">B", data)
-    if version > 1 or version < 1 then
+    local version, offset = love.data.unpack(">I4", data)
+    if version == 0 then
+        -- old replay format
+        self.game_version = 21
+        self.data.keys = {"left", "right", "space", "lshift"}
+        self.data.config = {
+            key_left = "left",
+            key_right = "right",
+            key_swap = "space",
+            key_focus = "lshift",
+            invincible = true
+        }
+        -- the old format is platform specific, so let's make some assumptions to make it more consistent:
+        -- sizeof(size_t) = 8
+        -- sizeof(unsigned long long) = 8
+        local function read_str()
+            local len, str
+            len, offset = love.data.unpack("<I4", data, offset)
+            str, offset = love.data.unpack("<c" .. len, data, offset)
+            return str
+        end
+        -- TODO: add player name property to replays
+        local _ = read_str()
+        self.data.seeds[1], offset = love.data.unpack("<I8", data, offset)
+        local input_len
+        input_len, offset = love.data.unpack("<I8", data, offset)
+        local state = {0, 0, 0, 0}
+        for tick = 1, input_len do
+            local input_bitmask
+            input_bitmask, offset = love.data.unpack("<B", data, offset)
+            local changed = {}
+            for input = 1, 4 do
+                local key_state = bit.band(bit.rshift(input_bitmask, input - 1), 1)
+                if state[input] ~= key_state then
+                    state[input] = key_state
+                    changed[#changed+1] = input
+                    changed[#changed+1] = key_state == 1
+                end
+            end
+            if #changed ~= 0 then
+                self.data.input_times[#self.data.input_times+1] = tick
+                self.input_data[tick] = changed
+            end
+        end
+        self.pack_id = read_str()
+        self.level_id = read_str()
+        -- no need to prefix level id with pack id
+        self.level_id = self.level_id:sub(#self.pack_id + 2)
+        -- version is not used for indexing packs in this version of the game
+        self.pack_id = self.pack_id:match("(.*)_")
+
+        self.first_play, offset = love.data.unpack("<B", data, offset)
+        self.first_play = self.first_play == 1
+        local dm
+        -- TODO: check if this works on all platforms (float and double are native size)
+        dm, offset = love.data.unpack("<f", data, offset)
+        self.data.level_settings = { difficulty_mult = dm }
+        -- TODO: store scores in replays maybe?
+        local _ = love.data.unpack("<d", data, offset) / 60
+    elseif version > 1 or version < 1 then
         error("Unsupported replay format version '" .. version .. "'.")
-    end
-    self.game_version, self.first_play, self.pack_id, self.level_id, offset = love.data.unpack(">BBzz", data, offset)
-    self.first_play = self.first_play == 1
-    offset, self.data = msgpack.unpack(data, offset - 1)
-    offset = offset + 1
-    for i = 1, #self.data.input_times do
-        local time = self.data.input_times[i]
-        self.input_data[time] = {}
-        local changes
-        changes, offset = love.data.unpack(">B", data, offset)
-        for j = 1, changes * 2, 2 do
-            local key, state
-            key, state, offset = love.data.unpack(">BB", data, offset)
-            self.input_data[time][j] = key
-            self.input_data[time][j + 1] = state == 1
+    else
+        self.game_version, self.first_play, self.pack_id, self.level_id, offset = love.data.unpack(">BBzz", data, offset)
+        self.first_play = self.first_play == 1
+        offset, self.data = msgpack.unpack(data, offset - 1)
+        offset = offset + 1
+        for i = 1, #self.data.input_times do
+            local time = self.data.input_times[i]
+            self.input_data[time] = {}
+            local changes
+            changes, offset = love.data.unpack(">B", data, offset)
+            for j = 1, changes * 2, 2 do
+                local key, state
+                key, state, offset = love.data.unpack(">BB", data, offset)
+                self.input_data[time][j] = key
+                self.input_data[time][j + 1] = state == 1
+            end
         end
     end
 end
