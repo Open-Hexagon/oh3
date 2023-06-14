@@ -30,7 +30,7 @@ local function file_ext_read_iter(dir, ending, virt_folder)
     local files = love.filesystem.getDirectoryItems(dir)
     local virt_start_index = #files + 1
     for file in pairs(virt_folder) do
-        files[#files+1] = file
+        files[#files + 1] = file
     end
     for i = virt_start_index - 1, 1, -1 do
         for j = virt_start_index, #files do
@@ -92,7 +92,9 @@ function assets.init(data, persistent_data)
 
         -- level data has to be loaded here for level selection purposes
         pack_data.levels = {}
-        for contents, filename in file_ext_read_iter(pack_data.path .. "Levels", ".json", pack_data.virtual_pack_folder.Levels) do
+        for contents, filename in
+            file_ext_read_iter(pack_data.path .. "Levels", ".json", pack_data.virtual_pack_folder.Levels)
+        do
             local level_json
             success, level_json = decode_json(contents, filename)
             if success then

@@ -144,13 +144,12 @@ function replay:_read(path)
     if version == 0 then
         -- old replay format
         self.game_version = 21
-        self.data.keys = {"left", "right", "space", "lshift"}
+        self.data.keys = { "left", "right", "space", "lshift" }
         self.data.config = {
             key_left = "left",
             key_right = "right",
             key_swap = "space",
             key_focus = "lshift",
-            invincible = true
         }
         -- the old format is platform specific, so let's make some assumptions to make it more consistent:
         -- sizeof(size_t) = 8
@@ -166,7 +165,7 @@ function replay:_read(path)
         self.data.seeds[1], offset = love.data.unpack("<I8", data, offset)
         local input_len
         input_len, offset = love.data.unpack("<I8", data, offset)
-        local state = {0, 0, 0, 0}
+        local state = { 0, 0, 0, 0 }
         for tick = 1, input_len do
             local input_bitmask
             input_bitmask, offset = love.data.unpack("<B", data, offset)
@@ -175,12 +174,12 @@ function replay:_read(path)
                 local key_state = bit.band(bit.rshift(input_bitmask, input - 1), 1)
                 if state[input] ~= key_state then
                     state[input] = key_state
-                    changed[#changed+1] = input
-                    changed[#changed+1] = key_state == 1
+                    changed[#changed + 1] = input
+                    changed[#changed + 1] = key_state == 1
                 end
             end
             if #changed ~= 0 then
-                self.data.input_times[#self.data.input_times+1] = tick
+                self.data.input_times[#self.data.input_times + 1] = tick
                 self.input_data[tick] = changed
             end
         end
@@ -202,7 +201,8 @@ function replay:_read(path)
     elseif version > 1 or version < 1 then
         error("Unsupported replay format version '" .. version .. "'.")
     else
-        self.game_version, self.first_play, self.pack_id, self.level_id, offset = love.data.unpack(">BBzz", data, offset)
+        self.game_version, self.first_play, self.pack_id, self.level_id, offset =
+            love.data.unpack(">BBzz", data, offset)
         self.first_play = self.first_play == 1
         offset, self.data = msgpack.unpack(data, offset - 1)
         offset = offset + 1

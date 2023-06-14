@@ -75,7 +75,7 @@ vfs.dump_real_files_recurse = function()
             path = path:gsub("\\", "/"):gsub("%.%./", ""):sub(7)
             local keys = {}
             for segment in path:gmatch("([^/]+)") do
-                keys[#keys+1] = segment
+                keys[#keys + 1] = segment
             end
             file:seek("set", 0)
             utils.insert_path(files, keys, file:read("*a"))
