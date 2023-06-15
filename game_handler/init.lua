@@ -65,7 +65,6 @@ function game_handler.record_start(pack, level, level_settings)
         game_handler.save_score()
     end
     current_game.persistent_data = game_handler.profile.get_data(pack)
-    current_game.seed = math.floor(love.timer.getTime() * 1000)
     input.replay = Replay:new()
     input.replay:set_game_data(
         current_game_version,
@@ -87,7 +86,7 @@ function game_handler.record_start(pack, level, level_settings)
     target_frametime = current_game.update(target_frametime) or target_frametime
 end
 
----read a replay file and run the game with its inputs and seed
+---read a replay file and run the game with its inputs and seeds
 ---@param file string
 function game_handler.replay_start(file)
     -- TODO: don't require full path

@@ -124,6 +124,9 @@ function game.get_main_color(black_and_white)
 end
 
 function public.start(pack_folder, level_id, difficulty_mult)
+    local seed = math.floor(love.timer.getTime() * 1000)
+    math.randomseed(game.input.next_seed(seed))
+
     game.real_time = 0
     last_real_time = 0
     public.running = true

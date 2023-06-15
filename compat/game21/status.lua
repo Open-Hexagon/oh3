@@ -49,11 +49,11 @@ function status.get_time_seconds()
 end
 
 function status.get_current_tp()
-    return status.get_total_accumulated_frametime_in_seconds() * 1000
+    return math.floor(status.get_total_accumulated_frametime_in_seconds() * 1000)
 end
 
 function status.get_time_tp()
-    return status.get_played_accumulated_frametime_in_seconds() * 1000
+    return math.floor(status.get_played_accumulated_frametime_in_seconds() * 1000)
 end
 
 function status.get_level_start_tp()

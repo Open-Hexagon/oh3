@@ -32,7 +32,7 @@ function timeline:append_wait_for(duration)
 end
 
 function timeline:append_wait_for_seconds(seconds)
-    self:append_wait_for(seconds * 1000)
+    self:append_wait_for(math.floor(seconds * 1000))
 end
 
 function timeline:append_wait_for_sixths(sixths)

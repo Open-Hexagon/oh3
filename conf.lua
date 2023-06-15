@@ -29,7 +29,7 @@ function love.conf(t)
         t.modules.sound = false
         t.modules.system = false
         t.modules.thread = false
-        t.modules.timer = false
+        t.modules.timer = true
         t.modules.touch = false
         t.modules.video = false
         t.modules.window = false

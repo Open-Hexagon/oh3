@@ -1,5 +1,6 @@
 local log = require("log")(...)
 local args = require("args")
+local utils = require("compat.game192.utils")
 local lua_runtime = {
     env = {},
 }
@@ -145,11 +146,20 @@ function lua_runtime.init_env(game, public, assets)
     env = lua_runtime.env
     env._G = env
     local function make_accessors(prefix, name, t, f)
-        env[prefix .. "_set" .. name] = function(value)
-            t[f] = value
-        end
-        env[prefix .. "_get" .. name] = function()
-            return t[f]
+        if type(t[f]) == "number" then
+            env[prefix .. "_set" .. name] = function(value)
+                t[f] = utils.float_round(value)
+            end
+            env[prefix .. "_get" .. name] = function()
+                return utils.float_round(t[f])
+            end
+        else
+            env[prefix .. "_set" .. name] = function(value)
+                t[f] = value
+            end
+            env[prefix .. "_get" .. name] = function()
+                return t[f]
+            end
         end
     end
     local function make_accessor(prefix, name, t, f)
@@ -473,27 +483,35 @@ function lua_runtime.init_env(game, public, assets)
         return args.headless
     end
     env.u_rndReal = function()
-        -- u_rndReal = math.random wouldn't ignore args
-        return math.random()
+        return game.rng.get_real(0, 1)
     end
     env.u_rndIntUpper = function(upper)
-        return math.random(1, upper)
+        return game.rng.get_int(1, upper)
     end
     env.u_rndInt = function(lower, upper)
-        return math.random(lower, upper)
+        return game.rng.get_int(lower, upper)
     end
     env.u_rndSwitch = function(mode, lower, upper)
         if mode == 0 then
-            return math.random()
+            return env.u_rndReal()
         elseif mode == 1 then
-            return math.random(1, upper)
+            return env.u_rndIntUpper(upper)
         elseif mode == 2 then
-            return math.random(lower, upper)
+            return env.u_rndInt(lower, upper)
         end
         return 0
     end
+    env.math.random = function(a, b)
+        if a == nil and b == nil then
+            return env.u_rndSwitch(0, 0, 0)
+        elseif b == nil then
+            return env.u_rndSwitch(1, 0, a)
+        else
+            return env.u_rndSwitch(2, a, b)
+        end
+    end
     env.u_getAttemptRandomSeed = function()
-        return game.seed
+        return game.rng.get_seed()
     end
     env.u_inMenu = function()
         -- the lua env shouldn't be active in the menu?

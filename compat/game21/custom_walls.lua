@@ -1,3 +1,4 @@
+local utils = require("compat.game192.utils")
 local extra_math = require("compat.game21.math")
 local custom_walls = {}
 local free_handles = {}
@@ -48,24 +49,24 @@ cws.cw_destroy = function(handle)
 end
 cws.cw_setVertexPos = function(handle, vertex, x, y)
     is_valid_handle(handle)
-    custom_walls[handle].vertices[vertex * 2 + 1] = x
-    custom_walls[handle].vertices[vertex * 2 + 2] = y
+    custom_walls[handle].vertices[vertex * 2 + 1] = utils.float_round(x)
+    custom_walls[handle].vertices[vertex * 2 + 2] = utils.float_round(y)
 end
 cws.cw_moveVertexPos = function(handle, vertex, offset_x, offset_y)
     is_valid_handle(handle)
-    custom_walls[handle].vertices[vertex * 2 + 1] = custom_walls[handle].vertices[vertex * 2 + 1] + offset_x
-    custom_walls[handle].vertices[vertex * 2 + 2] = custom_walls[handle].vertices[vertex * 2 + 2] + offset_y
+    custom_walls[handle].vertices[vertex * 2 + 1] = custom_walls[handle].vertices[vertex * 2 + 1] + utils.float_round(offset_x)
+    custom_walls[handle].vertices[vertex * 2 + 2] = custom_walls[handle].vertices[vertex * 2 + 2] + utils.float_round(offset_y)
 end
 cws.cw_moveVertexPos4Same = function(handle, offset_x, offset_y)
     is_valid_handle(handle)
-    custom_walls[handle].vertices[1] = custom_walls[handle].vertices[1] + offset_x
-    custom_walls[handle].vertices[2] = custom_walls[handle].vertices[2] + offset_y
-    custom_walls[handle].vertices[3] = custom_walls[handle].vertices[3] + offset_x
-    custom_walls[handle].vertices[4] = custom_walls[handle].vertices[4] + offset_y
-    custom_walls[handle].vertices[5] = custom_walls[handle].vertices[5] + offset_x
-    custom_walls[handle].vertices[6] = custom_walls[handle].vertices[6] + offset_y
-    custom_walls[handle].vertices[7] = custom_walls[handle].vertices[7] + offset_x
-    custom_walls[handle].vertices[8] = custom_walls[handle].vertices[8] + offset_y
+    custom_walls[handle].vertices[1] = utils.float_round(custom_walls[handle].vertices[1] + utils.float_round(offset_x))
+    custom_walls[handle].vertices[2] = utils.float_round(custom_walls[handle].vertices[2] + utils.float_round(offset_y))
+    custom_walls[handle].vertices[3] = utils.float_round(custom_walls[handle].vertices[3] + utils.float_round(offset_x))
+    custom_walls[handle].vertices[4] = utils.float_round(custom_walls[handle].vertices[4] + utils.float_round(offset_y))
+    custom_walls[handle].vertices[5] = utils.float_round(custom_walls[handle].vertices[5] + utils.float_round(offset_x))
+    custom_walls[handle].vertices[6] = utils.float_round(custom_walls[handle].vertices[6] + utils.float_round(offset_y))
+    custom_walls[handle].vertices[7] = utils.float_round(custom_walls[handle].vertices[7] + utils.float_round(offset_x))
+    custom_walls[handle].vertices[8] = utils.float_round(custom_walls[handle].vertices[8] + utils.float_round(offset_y))
 end
 cws.cw_setVertexColor = function(handle, vertex, r, g, b, a)
     is_valid_handle(handle)
@@ -76,14 +77,14 @@ cws.cw_setVertexColor = function(handle, vertex, r, g, b, a)
 end
 cws.cw_setVertexPos4 = function(handle, x0, y0, x1, y1, x2, y2, x3, y3)
     is_valid_handle(handle)
-    custom_walls[handle].vertices[1] = x0
-    custom_walls[handle].vertices[2] = y0
-    custom_walls[handle].vertices[3] = x1
-    custom_walls[handle].vertices[4] = y1
-    custom_walls[handle].vertices[5] = x2
-    custom_walls[handle].vertices[6] = y2
-    custom_walls[handle].vertices[7] = x3
-    custom_walls[handle].vertices[8] = y3
+    custom_walls[handle].vertices[1] = utils.float_round(x0)
+    custom_walls[handle].vertices[2] = utils.float_round(y0)
+    custom_walls[handle].vertices[3] = utils.float_round(x1)
+    custom_walls[handle].vertices[4] = utils.float_round(y1)
+    custom_walls[handle].vertices[5] = utils.float_round(x2)
+    custom_walls[handle].vertices[6] = utils.float_round(y2)
+    custom_walls[handle].vertices[7] = utils.float_round(x3)
+    custom_walls[handle].vertices[8] = utils.float_round(y3)
 end
 cws.cw_setVertexColor4 = function(handle, r0, g0, b0, a0, r1, g1, b1, a1, r2, g2, b2, a2, r3, g3, b3, a3)
     is_valid_handle(handle)
@@ -172,7 +173,8 @@ function cws.iter()
 end
 
 function cws.handle_collision(movement, radius, player, frametime)
-    local radius_squared = radius ^ 2
+    radius = utils.float_round(radius)
+    local radius_squared = utils.float_round(radius ^ 2)
     do
         local collided
         for cw in cws.iter() do

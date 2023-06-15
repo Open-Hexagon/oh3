@@ -162,11 +162,16 @@ function lua_runtime.init_env(game, public)
         print = print,
         tostring = tostring,
         io = game.vfs.io,
-        -- allowing manual random seed setting, the randomseed calls will be recorded in the replay in order (with their seed) (TODO)
-        math = math,
+        -- allowing manual random seed setting, the randomseed calls will be recorded in the replay in order (with their seed)
+        math = {
+            randomseed = function(seed)
+                math.randomseed(game.input.next_seed(seed))
+            end
+        },
     }
     env = lua_runtime.env
     env._G = env
+    env.math = setmetatable(env.math, {__index=math})
     env.dofile = function(path)
         local file = game.vfs.io.open(path, "r")
         local code = file:read("*a")

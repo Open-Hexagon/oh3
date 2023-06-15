@@ -162,11 +162,17 @@ function replay:_read(path)
         end
         -- TODO: add player name property to replays
         local _ = read_str()
-        self.data.seeds[1], offset = love.data.unpack("<I8", data, offset)
+        local seed
+        seed, offset = love.data.unpack("<I8", data, offset)
+        for i = 1, 2 do
+            self.data.seeds[i] = seed
+        end
         local input_len
         input_len, offset = love.data.unpack("<I8", data, offset)
         local state = { 0, 0, 0, 0 }
+        local last_tick = 0
         for tick = 1, input_len do
+            last_tick = tick
             local input_bitmask
             input_bitmask, offset = love.data.unpack("<B", data, offset)
             local changed = {}
@@ -182,6 +188,16 @@ function replay:_read(path)
                 self.data.input_times[#self.data.input_times + 1] = tick
                 self.input_data[tick] = changed
             end
+        end
+        local need_change = {}
+        for i = 1, 4 do
+            if state[i] == 1 then
+                need_change[#need_change+1] = i
+                need_change[#need_change+1] = false
+            end
+        end
+        if #need_change ~= 0 then
+            self.input_data[last_tick + 1] = need_change
         end
         self.pack_id = read_str()
         self.level_id = read_str()

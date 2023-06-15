@@ -3,6 +3,7 @@ local player = {}
 local timer = require("compat.game21.timer")
 local extra_math = require("compat.game21.math")
 local get_color_from_hue = require("compat.game21.hue").get_color
+local utils = require("compat.game192.utils")
 
 local base_thickness = 5
 local unfocused_triangle_width = 3
@@ -159,6 +160,7 @@ function player.kill(fatal)
 end
 
 local collision_padding = 0.5
+
 local function get_normalized(x, y)
     if x == 0 and y == 0 then
         return 0, 0
@@ -269,24 +271,19 @@ function player.wall_push(movement_dir, radius, wall, radius_squared, frametime)
     test_pos_y = _last_pos[2] + push_vel_y
     local is_in = extra_math.point_in_polygon(wall.vertices, test_pos_x, test_pos_y)
     if is_in then
-        _pre_push_pos[1], _pre_push_pos[2] = test_pos_x, test_pos_y
-        local saved
-        saved, test_pos_x, test_pos_y = player.check_wall_collision_escape(wall, test_pos_x, test_pos_y, radius_squared)
-        local nx, ny = get_normalized(test_pos_x - _pre_push_pos[1], test_pos_y - _pre_push_pos[2])
-        is_in = saved
-        if saved then
-            _pos[1] = test_pos_x + nx * collision_padding
-            _pos[2] = test_pos_y + ny * collision_padding
-            _angle = math.atan2(_pos[2], _pos[1])
-            player.update_position(radius)
-        end
-    else
-        _pos[1] = test_pos_x
-        _pos[2] = test_pos_y
-        _angle = math.atan2(_pos[2], _pos[1])
-        player.update_position(radius)
+        return true
     end
-    return is_in
+    local saved
+    saved, test_pos_x, test_pos_y = player.check_wall_collision_escape(wall, test_pos_x, test_pos_y, radius_squared)
+    if not saved then
+        return true
+    end
+    local nx, ny = get_normalized(test_pos_x - _pre_push_pos[1], test_pos_y - _pre_push_pos[2])
+    _pos[1] = test_pos_x + nx * collision_padding
+    _pos[2] = test_pos_y + ny * collision_padding
+    _angle = math.atan2(_pos[2], _pos[1])
+    player.update_position(radius)
+    return false
 end
 
 local function get_closest_line_circle_intersection(pos, p1_x, p1_y, p2_x, p2_y, radius_squared)
@@ -294,7 +291,7 @@ local function get_closest_line_circle_intersection(pos, p1_x, p1_y, p2_x, p2_y,
     if result_count == 1 then
         return v1_x, v1_y
     elseif result_count == 2 then
-        if (v1_x - pos[1]) ^ 2 + (v1_y - pos[2]) ^ 2 > (v2_x - pos[1]) ^ 2 + (v2_y - pos[2]) then
+        if (v1_x - pos[1]) ^ 2 + (v1_y - pos[2]) ^ 2 > (v2_x - pos[1]) ^ 2 + (v2_y - pos[2]) ^ 2 then
             return v2_x, v2_y
         else
             return v1_x, v1_y
@@ -367,24 +364,19 @@ function player.cw_push(movement_dir, radius, wall, radius_squared, frametime)
     local test_pos_y = _last_pos[2] + push_vel_y
     local is_in = extra_math.point_in_polygon(wall.vertices, test_pos_x, test_pos_y)
     if is_in then
-        _pre_push_pos[1], _pre_push_pos[2] = test_pos_x, test_pos_y
-        local saved
-        saved, test_pos_x, test_pos_y = player.check_wall_collision_escape(wall, test_pos_x, test_pos_y, radius_squared)
-        local nx, ny = get_normalized(test_pos_x - _pre_push_pos[1], test_pos_y - _pre_push_pos[2])
-        is_in = saved
-        if saved then
-            _pos[1] = test_pos_x + nx * collision_padding
-            _pos[2] = test_pos_y + ny * collision_padding
-            _angle = math.atan2(_pos[2], _pos[1])
-            player.update_position(radius)
-        end
-    else
-        _pos[1] = test_pos_x
-        _pos[2] = test_pos_y
-        _angle = math.atan2(_pos[2], _pos[1])
-        player.update_position(radius)
+        return true
     end
-    return is_in
+    local saved
+    saved, test_pos_x, test_pos_y = player.check_wall_collision_escape(wall, test_pos_x, test_pos_y, radius_squared)
+    if not saved then
+        return true
+    end
+    local nx, ny = get_normalized(test_pos_x - _pre_push_pos[1], test_pos_y - _pre_push_pos[2])
+    _pos[1] = test_pos_x + nx * collision_padding
+    _pos[2] = test_pos_y + ny * collision_padding
+    _angle = math.atan2(_pos[2], _pos[1])
+    player.update_position(radius)
+    return false
 end
 
 local function move_towards(value, target, step)

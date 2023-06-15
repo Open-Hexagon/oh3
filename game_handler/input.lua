@@ -7,7 +7,6 @@ local input_state = {}
 local time = 0
 local replaying = false
 local seed_index = 0
-local original = math.randomseed
 
 ---starts recording all new inputs
 function input.record_start()
@@ -15,16 +14,11 @@ function input.record_start()
     recording = true
     time = 0
     input_state = {}
-    math.randomseed = function(seed)
-        input.replay:record_seed(seed)
-        original(seed)
-    end
 end
 
 ---stops recording inputs
 function input.record_stop()
     recording = false
-    math.randomseed = original
 end
 
 ---start replaying the active replay
@@ -34,9 +28,20 @@ function input.replay_start()
     time = 0
     seed_index = 0
     input_state = {}
-    math.randomseed = function()
+end
+
+---save the next seed when recording or get the next seed when replaying
+---@param seed number
+---@return number?
+function input.next_seed(seed)
+    if recording then
+        input.replay:record_seed(seed)
+        return seed
+    elseif replaying then
         seed_index = seed_index + 1
-        original(input.replay.data.seeds[seed_index])
+        return input.replay.data.seeds[seed_index]
+    else
+        return seed
     end
 end
 

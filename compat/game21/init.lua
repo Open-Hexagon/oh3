@@ -7,6 +7,7 @@ local Tris = require("compat.game21.dynamic_tris")
 local set_color = require("compat.game21.color_transform")
 local Particles = require("compat.game21.particles")
 local assets = require("compat.game21.assets")
+local utils = require("compat.game192.utils")
 local public = {
     running = false,
     dm_is_only_setting = true,
@@ -35,6 +36,7 @@ local game = {
     walls = require("compat.game21.walls"),
     custom_walls = require("compat.game21.custom_walls"),
     flash_color = { 0, 0, 0, 0 },
+    rng = require("extlibs.random"),
 }
 local wall_quads, pivot_quads, player_tris, cap_tris
 if args.headless then
@@ -67,7 +69,8 @@ local must_spawn_swap_particles = false
 ---@param level_id string
 ---@param difficulty_mult number
 function public.start(pack_id, level_id, difficulty_mult)
-    math.randomseed(public.seed)
+    local seed = math.floor(love.timer.getTime() * 1000)
+    math.randomseed(game.input.next_seed(seed))
     math.random()
     game.pack_data = assets.get_pack_from_id(pack_id)
     game.level_data = game.pack_data.levels[level_id]
@@ -102,6 +105,9 @@ function public.start(pack_id, level_id, difficulty_mult)
             love.audio.play(game.music.source)
         end
     end
+
+    game.rng.init_rng()
+    game.rng.set_seed(game.input.next_seed(game.rng.get_seed()))
 
     game.main_timeline:clear()
     game.event_timeline:clear()
@@ -228,13 +234,13 @@ end
 function game.increment_difficulty()
     playsound(level_up_sound)
     local sign_mult = game.level_status.rotation_speed > 0 and 1 or -1
-    game.level_status.rotation_speed = game.level_status.rotation_speed
-        + game.level_status.rotation_speed_inc * sign_mult
+    game.level_status.rotation_speed = utils.float_round(game.level_status.rotation_speed
+        + utils.float_round(game.level_status.rotation_speed_inc) * sign_mult)
     if math.abs(game.level_status.rotation_speed) > game.level_status.rotation_speed_max then
-        game.level_status.rotation_speed = game.level_status.rotation_speed_max * sign_mult
+        game.level_status.rotation_speed = utils.float_round(game.level_status.rotation_speed_max * sign_mult)
     end
     game.level_status.rotation_speed = -game.level_status.rotation_speed
-    game.status.fast_spin = game.level_status.fast_spin
+    game.status.fast_spin = utils.float_round(game.level_status.fast_spin)
 end
 
 ---update the game
@@ -328,7 +334,7 @@ function public.update(frametime)
             end
 
             if game.must_change_sides and game.walls.empty() then
-                local side_number = math.random(game.level_status.sides_min, game.level_status.sides_max)
+                local side_number = game.rng.get_int(game.level_status.sides_min, game.level_status.sides_max)
                 game.level_status.speed_mult = game.level_status.speed_mult + game.level_status.speed_inc
                 game.level_status.delay_mult = game.level_status.delay_mult + game.level_status.delay_inc
                 if game.level_status.rnd_side_changes_enabled then
@@ -370,12 +376,15 @@ function public.update(frametime)
             game.status.radius = radius_min * (game.status.pulse / game.level_status.pulse_min) + game.status.beat_pulse
 
             if not game.level_status.manual_pulse_control then
+                game.status.pulse_delay = utils.float_round(game.status.pulse_delay)
                 if game.status.pulse_delay <= 0 then
                     local pulse_add = game.status.pulse_direction > 0 and game.level_status.pulse_speed
                         or -game.level_status.pulse_speed_r
                     local pulse_limit = game.status.pulse_direction > 0 and game.level_status.pulse_max
                         or game.level_status.pulse_min
-                    game.status.pulse = game.status.pulse + pulse_add * frametime * game.get_music_dm_sync_factor()
+                    pulse_add = utils.float_round(pulse_add)
+                    pulse_limit = utils.float_round(pulse_limit)
+                    game.status.pulse = utils.float_round(game.status.pulse + pulse_add * frametime * game.get_music_dm_sync_factor())
                     if
                         (game.status.pulse_direction > 0 and game.status.pulse >= pulse_limit)
                         or (game.status.pulse_direction < 0 and game.status.pulse <= pulse_limit)
@@ -383,11 +392,11 @@ function public.update(frametime)
                         game.status.pulse = pulse_limit
                         game.status.pulse_direction = -game.status.pulse_direction
                         if game.status.pulse_direction < 0 then
-                            game.status.pulse_delay = game.level_status.pulse_delay_max
+                            game.status.pulse_delay = utils.float_round(game.level_status.pulse_delay_max)
                         end
                     end
                 end
-                game.status.pulse_delay = game.status.pulse_delay - frametime * game.get_music_dm_sync_factor()
+                game.status.pulse_delay = utils.float_round(game.status.pulse_delay - frametime * game.get_music_dm_sync_factor())
             end
 
             if not public.config.get("black_and_white") then
@@ -406,11 +415,11 @@ function public.update(frametime)
             game.level_status.rotation_speed = game.level_status.rotation_speed * 0.99
         end
 
-        game.status.pulse3D = game.status.pulse3D
-            + game.style.pseudo_3D_pulse_speed * game.status.pulse3D_direction * frametime
-        if game.status.pulse3D > game.style.pseudo_3D_pulse_max then
+        game.status.pulse3D = utils.float_round(game.status.pulse3D
+            + utils.float_round(game.style.pseudo_3D_pulse_speed) * game.status.pulse3D_direction * frametime)
+        if game.status.pulse3D > utils.float_round(game.style.pseudo_3D_pulse_max) then
             game.status.pulse3D_direction = -1
-        elseif game.status.pulse3D < game.style.pseudo_3D_pulse_min then
+        elseif game.status.pulse3D < utils.float_round(game.style.pseudo_3D_pulse_min) then
             game.status.pulse3D_direction = 1
         end
         -- update rotation
@@ -439,16 +448,17 @@ function public.update(frametime)
             death_shake_translate[2] = 0
         else
             game.status.camera_shake = game.status.camera_shake - frametime
-            death_shake_translate[1] = (1 - math.random() * 2) * game.status.camera_shake
-            death_shake_translate[2] = (1 - math.random() * 2) * game.status.camera_shake
+            local i = game.status.camera_shake
+            death_shake_translate[1] = game.rng.get_real(-i, i)
+            death_shake_translate[2] = game.rng.get_real(-i, i)
         end
 
         if not game.status.has_died then
-            math.random(math.abs(game.status.pulse * 1000))
-            math.random(math.abs(game.status.pulse3D * 1000))
-            math.random(math.abs(game.status.fast_spin * 1000))
-            math.random(math.abs(game.status.flash_effect * 1000))
-            math.random(math.abs(game.level_status.rotation_speed * 1000))
+            game.rng.advance(game.status.pulse)
+            game.rng.advance(game.status.pulse3D)
+            game.rng.advance(game.status.fast_spin)
+            game.rng.advance(game.status.flash_effect)
+            game.rng.advance(game.level_status.rotation_speed)
         end
 
         -- update trail color (also used for swap particles)
