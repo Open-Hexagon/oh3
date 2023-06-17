@@ -1,3 +1,5 @@
 .vscode/
 Packs/
 .luarc.json
+*.ohr.z
+*.mp4

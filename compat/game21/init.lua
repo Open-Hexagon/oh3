@@ -36,7 +36,7 @@ local game = {
     walls = require("compat.game21.walls"),
     custom_walls = require("compat.game21.custom_walls"),
     flash_color = { 0, 0, 0, 0 },
-    rng = require("extlibs.random"),
+    rng = require("compat.game21.random"),
 }
 local wall_quads, pivot_quads, player_tris, cap_tris
 if args.headless then
@@ -106,7 +106,6 @@ function public.start(pack_id, level_id, difficulty_mult)
         end
     end
 
-    game.rng.init_rng()
     game.rng.set_seed(game.input.next_seed(game.rng.get_seed()))
 
     game.main_timeline:clear()
@@ -454,11 +453,11 @@ function public.update(frametime)
         end
 
         if not game.status.has_died then
-            game.rng.advance(game.status.pulse)
-            game.rng.advance(game.status.pulse3D)
-            game.rng.advance(game.status.fast_spin)
-            game.rng.advance(game.status.flash_effect)
-            game.rng.advance(game.level_status.rotation_speed)
+            game.rng.advance(math.abs(game.status.pulse))
+            game.rng.advance(math.abs(game.status.pulse3D))
+            game.rng.advance(math.abs(game.status.fast_spin))
+            game.rng.advance(math.abs(game.status.flash_effect))
+            game.rng.advance(math.abs(game.level_status.rotation_speed))
         end
 
         -- update trail color (also used for swap particles)
