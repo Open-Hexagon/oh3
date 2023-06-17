@@ -142,6 +142,11 @@ function lua_runtime.init_env(game, public, assets)
         pairs = pairs,
         print = print,
         math = math,
+        load = function(...)
+            local f = load(...)
+            setfenv(f, lua_runtime.env)
+            return f
+        end,
     }
     env = lua_runtime.env
     env._G = env

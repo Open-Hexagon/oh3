@@ -10,7 +10,7 @@ local function set_color_data_defaults(data)
     data.dynamic_darkness = data.dynamic_darkness or 1
     data.hue_shift = data.hue_shift or 0
     data.offset = data.offset or 0
-    data.color = data.value or { 0, 0, 0, 255 }
+    data.value = data.value or { 0, 0, 0, 255 }
     data.pulse = data.pulse or { 0, 0, 0, 255 }
     data.result = { 0, 0, 0, 0 }
 
