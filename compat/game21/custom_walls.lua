@@ -54,8 +54,10 @@ cws.cw_setVertexPos = function(handle, vertex, x, y)
 end
 cws.cw_moveVertexPos = function(handle, vertex, offset_x, offset_y)
     is_valid_handle(handle)
-    custom_walls[handle].vertices[vertex * 2 + 1] = custom_walls[handle].vertices[vertex * 2 + 1] + utils.float_round(offset_x)
-    custom_walls[handle].vertices[vertex * 2 + 2] = custom_walls[handle].vertices[vertex * 2 + 2] + utils.float_round(offset_y)
+    custom_walls[handle].vertices[vertex * 2 + 1] = custom_walls[handle].vertices[vertex * 2 + 1]
+        + utils.float_round(offset_x)
+    custom_walls[handle].vertices[vertex * 2 + 2] = custom_walls[handle].vertices[vertex * 2 + 2]
+        + utils.float_round(offset_y)
 end
 cws.cw_moveVertexPos4Same = function(handle, offset_x, offset_y)
     is_valid_handle(handle)

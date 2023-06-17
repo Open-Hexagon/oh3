@@ -233,8 +233,9 @@ end
 function game.increment_difficulty()
     playsound(level_up_sound)
     local sign_mult = game.level_status.rotation_speed > 0 and 1 or -1
-    game.level_status.rotation_speed = utils.float_round(game.level_status.rotation_speed
-        + utils.float_round(game.level_status.rotation_speed_inc) * sign_mult)
+    game.level_status.rotation_speed = utils.float_round(
+        game.level_status.rotation_speed + utils.float_round(game.level_status.rotation_speed_inc) * sign_mult
+    )
     if math.abs(game.level_status.rotation_speed) > game.level_status.rotation_speed_max then
         game.level_status.rotation_speed = utils.float_round(game.level_status.rotation_speed_max * sign_mult)
     end
@@ -383,7 +384,8 @@ function public.update(frametime)
                         or game.level_status.pulse_min
                     pulse_add = utils.float_round(pulse_add)
                     pulse_limit = utils.float_round(pulse_limit)
-                    game.status.pulse = utils.float_round(game.status.pulse + pulse_add * frametime * game.get_music_dm_sync_factor())
+                    game.status.pulse =
+                        utils.float_round(game.status.pulse + pulse_add * frametime * game.get_music_dm_sync_factor())
                     if
                         (game.status.pulse_direction > 0 and game.status.pulse >= pulse_limit)
                         or (game.status.pulse_direction < 0 and game.status.pulse <= pulse_limit)
@@ -395,7 +397,8 @@ function public.update(frametime)
                         end
                     end
                 end
-                game.status.pulse_delay = utils.float_round(game.status.pulse_delay - frametime * game.get_music_dm_sync_factor())
+                game.status.pulse_delay =
+                    utils.float_round(game.status.pulse_delay - frametime * game.get_music_dm_sync_factor())
             end
 
             if not public.config.get("black_and_white") then
@@ -414,8 +417,10 @@ function public.update(frametime)
             game.level_status.rotation_speed = game.level_status.rotation_speed * 0.99
         end
 
-        game.status.pulse3D = utils.float_round(game.status.pulse3D
-            + utils.float_round(game.style.pseudo_3D_pulse_speed) * game.status.pulse3D_direction * frametime)
+        game.status.pulse3D = utils.float_round(
+            game.status.pulse3D
+                + utils.float_round(game.style.pseudo_3D_pulse_speed) * game.status.pulse3D_direction * frametime
+        )
         if game.status.pulse3D > utils.float_round(game.style.pseudo_3D_pulse_max) then
             game.status.pulse3D_direction = -1
         elseif game.status.pulse3D < utils.float_round(game.style.pseudo_3D_pulse_min) then

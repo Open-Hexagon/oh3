@@ -198,8 +198,8 @@ function replay:_read(path)
         local need_change = {}
         for i = 1, 4 do
             if state[i] == 1 then
-                need_change[#need_change+1] = i
-                need_change[#need_change+1] = false
+                need_change[#need_change + 1] = i
+                need_change[#need_change + 1] = false
             end
         end
         if #need_change ~= 0 then

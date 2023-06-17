@@ -8,7 +8,8 @@ function t.get_orbit(start_pos, angle, distance, result)
     start_pos[1] = utils.float_round(start_pos[1])
     start_pos[2] = utils.float_round(start_pos[2])
     if result == nil then
-        return utils.float_round(start_pos[1] + cos(angle) * distance), utils.float_round(start_pos[2] + sin(angle) * distance)
+        return utils.float_round(start_pos[1] + cos(angle) * distance),
+            utils.float_round(start_pos[2] + sin(angle) * distance)
     else
         result[1] = utils.float_round(start_pos[1] + cos(angle) * distance)
         result[2] = utils.float_round(start_pos[2] + sin(angle) * distance)
