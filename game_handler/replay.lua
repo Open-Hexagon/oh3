@@ -160,15 +160,21 @@ function replay:_read(path)
             str, offset = love.data.unpack("<c" .. len, data, offset)
             return str
         end
+        local function read_uint64()
+            local part1, part2
+            part1, offset = love.data.unpack("<I4", data, offset)
+            part2, offset = love.data.unpack("<I4", data, offset)
+            return bit.lshift(part2 * 1ULL, 32) + part1 * 1ULL
+        end
         -- TODO: add player name property to replays
         local _ = read_str()
-        local seed
-        seed, offset = love.data.unpack("<I8", data, offset)
-        for i = 1, 2 do
-            self.data.seeds[i] = seed
-        end
+        local seed = read_uint64()
+        -- even if not correct, the first seed is only used for music segment (which was random in replays from this version)
+        self.data.seeds[1] = tonumber(seed)
+        self.data.seeds[2] = seed
         local input_len
-        input_len, offset = love.data.unpack("<I8", data, offset)
+        -- may cause issues with replays longer than ~9000 years
+        input_len = tonumber(read_uint64())
         local state = { 0, 0, 0, 0 }
         local last_tick = 0
         for tick = 1, input_len do
