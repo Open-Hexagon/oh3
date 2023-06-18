@@ -89,7 +89,7 @@ end
 function replay:_get_compressed()
     local header = love.data.pack(
         "string",
-        ">BBBzz",
+        ">I4BBzz",
         1, -- the old game's format version was 0, so we call this 1 now
         self.game_version,
         self.first_play and 1 or 0,
