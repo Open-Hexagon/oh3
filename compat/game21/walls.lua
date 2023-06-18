@@ -70,8 +70,7 @@ end
 function walls.update(frametime, radius)
     local half_radius = 0.5 * radius
     local outer_bounds = _level_status.wall_spawn_distance * 1.1
-    local del_queue = {}
-    for i = 1, #_walls do
+    for i = #_walls, 1, -1 do
         local wall = _walls[i]
         if wall.accel ~= 0 then
             wall.speed = wall.speed + wall.accel * frametime
@@ -87,9 +86,9 @@ function walls.update(frametime, radius)
         local points_out_of_bounds = 0
         local move_distance
         if wall.curving then
-            move_distance = wall.old_speed * 5 * frametime
+            move_distance = utils.float_round(wall.old_speed * 5 * frametime)
         else
-            move_distance = wall.speed * 5 * frametime
+            move_distance = utils.float_round(wall.speed * 5 * frametime)
         end
         for vertex = 1, 8, 2 do
             local x, y = wall.vertices[vertex], wall.vertices[vertex + 1]
@@ -105,9 +104,6 @@ function walls.update(frametime, radius)
                 wall.vertices[vertex + 1] = y - y / magnitude * move_distance
             end
         end
-        if points_on_center == 4 or points_out_of_bounds == 4 then
-            table.insert(del_queue, 1, i)
-        end
         if wall.curving and wall.speed ~= 0 then
             local angle = wall.speed / 60 * frametime
             local sin, cos = math.sin(angle), math.cos(angle)
@@ -117,9 +113,9 @@ function walls.update(frametime, radius)
                 wall.vertices[vertex + 1] = x * sin + y * cos
             end
         end
-    end
-    for _, i in pairs(del_queue) do
-        table.remove(_walls, i)
+        if points_on_center == 4 or points_out_of_bounds == 4 then
+            table.remove(_walls, i)
+        end
     end
 end
 
@@ -171,8 +167,7 @@ end
 
 function walls.handle_collision(move, frametime, player, radius)
     local collided = false
-    radius = utils.float_round(radius)
-    local radius_squared = utils.float_round(radius ^ 2 + 8)
+    local radius_squared = radius ^ 2 + 8
     for wall in walls.iter() do
         if extra_math.point_in_polygon(wall.vertices, player.get_position()) then
             if player.get_just_swapped() then

@@ -3,7 +3,6 @@ local player = {}
 local timer = require("compat.game21.timer")
 local extra_math = require("compat.game21.math")
 local get_color_from_hue = require("compat.game21.hue").get_color
-local utils = require("compat.game192.utils")
 
 local base_thickness = 5
 local unfocused_triangle_width = 3

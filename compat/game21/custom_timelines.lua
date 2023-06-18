@@ -72,7 +72,7 @@ function custom_timelines.add_lua_functions(game)
     function lua.ct_waitUntilS(handle, time)
         local timeline = custom_timelines.get(handle)
         timeline:append_wait_until_fn(function()
-            return game.status.get_level_start_tp() + time * 1000
+            return game.status.get_level_start_tp() + math.floor(time * 1000)
         end)
     end
 end

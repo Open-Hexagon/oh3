@@ -408,7 +408,7 @@ function lua_runtime.init_env(game, public, assets)
     end
     env.t_waitUntilS = function(time)
         game.main_timeline:append_wait_until_fn(function()
-            return game.status.get_level_start_tp() + time * 1000
+            return game.status.get_level_start_tp() + math.floor(time * 1000)
         end)
     end
 
@@ -441,7 +441,7 @@ function lua_runtime.init_env(game, public, assets)
     end
     env.e_waitUntilS = function(time)
         game.event_timeline:append_wait_until_fn(function()
-            return game.status.get_level_start_tp() + time * 1000
+            return game.status.get_level_start_tp() + math.floor(time * 1000)
         end)
     end
     local function add_message(message, duration, sound_toggle)

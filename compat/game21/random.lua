@@ -24,6 +24,7 @@ function rng.get_seed()
 end
 
 function rng.advance(delta)
+    -- floor is ok, delta is always positive
     delta = math.floor(delta)
     local acc_mult = 1
     local cur_mult = multiplier
@@ -49,11 +50,15 @@ function rng.get_real(a, b)
     return sum / tmp * (b - a) + a
 end
 
+local function to_int(num)
+    return num < 0 and math.ceil(num) or math.floor(num)
+end
+
 local rng_max = 4294967295
 local rng_range = rng_max
 function rng.get_int(a, b)
-    a = math.floor(a)
-    b = math.floor(b)
+    a = to_int(a)
+    b = to_int(b)
     local range = b - a
     local ret
     if rng_range > range then
