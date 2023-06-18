@@ -208,7 +208,7 @@ function player.check_wall_collision_escape(wall, pos_x, pos_y, radius_squared)
     local vx_increment = wall.speed == nil and 1 or 2
     local killing_side = wall.killing_side or 0
     local function assign_result()
-        temp_distance = (vec1_x - _pos[1]) ^ 2 + (vec1_y - _pos[2]) ^ 2
+        temp_distance = (vec1_x - pos_x) ^ 2 + (vec1_y - pos_y) ^ 2
         if temp_distance < safe_distance then
             pos_x = vec1_x
             pos_y = vec1_y
