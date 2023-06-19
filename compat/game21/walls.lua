@@ -29,10 +29,11 @@ function walls.wall(
     min_speed,
     max_speed,
     ping_pong,
-    curving
+    curving,
+    speed_data_wall_thing
 )
     hue_modifier = hue_modifier or 0
-    side = math.floor(side)
+    side = side > 0 and math.floor(side) or math.ceil(side)
     speed_mult = speed_mult or 1
     acceleration = acceleration or 0
     min_speed = min_speed or 0
@@ -43,8 +44,9 @@ function walls.wall(
     local sin, cos = math.sin, math.cos
     local vertices = {}
     local function set_vertex(vertex_angle, dist)
-        vertices[#vertices + 1] = cos(vertex_angle) * dist
-        vertices[#vertices + 1] = sin(vertex_angle) * dist
+        vertex_angle = utils.float_round(vertex_angle)
+        vertices[#vertices + 1] = utils.float_round(cos(vertex_angle) * dist)
+        vertices[#vertices + 1] = utils.float_round(sin(vertex_angle) * dist)
     end
     set_vertex(angle - div, distance)
     set_vertex(angle + div, distance)
@@ -52,13 +54,18 @@ function walls.wall(
     set_vertex(angle - div + _level_status.wall_angle_right, distance + thickness + _level_status.wall_skew_right)
     if not curving then
         speed_mult = speed_mult * speed_mult_dm
+        if not speed_data_wall_thing then
+            min_speed = min_speed * speed_mult_dm
+            max_speed = max_speed * speed_mult_dm
+            acceleration = acceleration / math.pow(difficulty_mult, 0.65)
+        end
     end
     local wall_table = {
         vertices = vertices,
         speed = speed_mult,
-        accel = acceleration / math.pow(difficulty_mult, 0.65),
-        min_speed = min_speed * speed_mult_dm,
-        max_speed = max_speed * speed_mult_dm,
+        accel = acceleration,
+        min_speed = min_speed,
+        max_speed = max_speed,
         hue_modifier = hue_modifier,
         ping_pong = ping_pong and -1 or 1,
         old_speed = speed_mult_dm, -- used for curving walls actual speed (only curve needs accel)
@@ -93,18 +100,20 @@ function walls.update(frametime, radius)
         for vertex = 1, 8, 2 do
             local x, y = wall.vertices[vertex], wall.vertices[vertex + 1]
             local x_dist, y_dist = math.abs(x), math.abs(y)
-            if x_dist > outer_bounds or y_dist > outer_bounds then
-                points_out_of_bounds = points_out_of_bounds + 1
-            end
             if x_dist < half_radius and y_dist < half_radius then
                 points_on_center = points_on_center + 1
             else
+                if x_dist > outer_bounds or y_dist > outer_bounds then
+                    points_out_of_bounds = points_out_of_bounds + 1
+                end
                 local magnitude = math.sqrt(x ^ 2 + y ^ 2)
-                wall.vertices[vertex] = x - x / magnitude * move_distance
-                wall.vertices[vertex + 1] = y - y / magnitude * move_distance
+                wall.vertices[vertex] = utils.float_round(x - x / magnitude * move_distance)
+                wall.vertices[vertex + 1] = utils.float_round(y - y / magnitude * move_distance)
             end
         end
-        if wall.curving and wall.speed ~= 0 then
+        if points_on_center == 4 or points_out_of_bounds == 4 then
+            table.remove(_walls, i)
+        elseif wall.curving and wall.speed ~= 0 then
             local angle = wall.speed / 60 * frametime
             local sin, cos = math.sin(angle), math.cos(angle)
             for vertex = 1, 8, 2 do
@@ -112,9 +121,6 @@ function walls.update(frametime, radius)
                 wall.vertices[vertex] = x * cos - y * sin
                 wall.vertices[vertex + 1] = x * sin + y * cos
             end
-        end
-        if points_on_center == 4 or points_out_of_bounds == 4 then
-            table.remove(_walls, i)
         end
     end
 end

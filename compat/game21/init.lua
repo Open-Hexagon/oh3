@@ -11,6 +11,7 @@ local utils = require("compat.game192.utils")
 local public = {
     running = false,
     dm_is_only_setting = true,
+    first_play = true,
 }
 local game = {
     lua_runtime = require("compat.game21.lua_runtime"),
@@ -32,7 +33,6 @@ local game = {
     message_timeline = Timeline:new(),
     main_timeline = Timeline:new(),
     custom_timelines = require("compat.game21.custom_timelines"),
-    first_play = true,
     walls = require("compat.game21.walls"),
     custom_walls = require("compat.game21.custom_walls"),
     flash_color = { 0, 0, 0, 0 },
@@ -94,7 +94,7 @@ function public.start(pack_id, level_id, difficulty_mult)
         end
         game.refresh_music_pitch()
         local segment
-        if game.first_play then
+        if public.first_play then
             segment = game.music.segments[1]
         else
             segment = game.music.segments[math.random(1, #game.music.segments)]
@@ -126,13 +126,13 @@ function public.start(pack_id, level_id, difficulty_mult)
 
     game.current_rotation = 0
     game.must_change_sides = false
-    if not game.first_play then
+    if not public.first_play then
         game.lua_runtime.run_fn_if_exists("onPreUnload")
     end
     game.lua_runtime.init_env(game, public, assets)
     game.lua_runtime.run_lua_file(game.pack_data.path .. "/" .. game.level_data.luaFile)
     public.running = true
-    if game.first_play then
+    if public.first_play then
         playsound(select_sound)
     else
         game.lua_runtime.run_fn_if_exists("onUnload")
@@ -233,8 +233,8 @@ end
 function game.increment_difficulty()
     playsound(level_up_sound)
     local sign_mult = game.level_status.rotation_speed > 0 and 1 or -1
-    game.level_status.rotation_speed = game.level_status.rotation_speed
-        + game.level_status.rotation_speed_inc * sign_mult
+    game.level_status.rotation_speed =
+        utils.float_round(game.level_status.rotation_speed + game.level_status.rotation_speed_inc * sign_mult)
     if math.abs(game.level_status.rotation_speed) > game.level_status.rotation_speed_max then
         game.level_status.rotation_speed = game.level_status.rotation_speed_max * sign_mult
     end
@@ -409,6 +409,7 @@ function public.update(frametime)
             then
                 game.perform_player_kill()
             end
+            game.custom_walls.update_old_vertices()
         else
             game.level_status.rotation_speed = game.level_status.rotation_speed * 0.99
         end

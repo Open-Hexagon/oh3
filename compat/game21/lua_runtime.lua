@@ -142,6 +142,7 @@ function lua_runtime.init_env(game, public, assets)
         pairs = pairs,
         print = print,
         math = math,
+        tostring = tostring,
         load = function(...)
             local f = load(...)
             setfenv(f, lua_runtime.env)
@@ -153,6 +154,9 @@ function lua_runtime.init_env(game, public, assets)
     local function make_accessors(prefix, name, t, f)
         if type(t[f]) == "number" then
             env[prefix .. "_set" .. name] = function(value)
+                if type(value) ~= "number" then
+                    value = 0
+                end
                 t[f] = utils.float_round(value)
             end
             env[prefix .. "_get" .. name] = function()
@@ -322,9 +326,13 @@ function lua_runtime.init_env(game, public, assets)
             if music == nil then
                 lua_runtime.error("Music with id '" .. music_id .. "' doesn't exist!")
             else
+                if game.music ~= nil and game.music.source ~= nil then
+                    love.audio.stop(game.music.source)
+                end
                 game.music = music
                 game.refresh_music_pitch()
                 game.music.source:seek(game.music.segments[segment + 1].time)
+                game.music.source:play()
             end
         end
     end
@@ -334,9 +342,13 @@ function lua_runtime.init_env(game, public, assets)
             if music == nil then
                 lua_runtime.error("Music with id '" .. music_id .. "' doesn't exist!")
             else
+                if game.music ~= nil and game.music.source ~= nil then
+                    love.audio.stop(game.music.source)
+                end
                 game.music = music
                 game.refresh_music_pitch()
                 game.music.source:seek(seconds)
+                game.music.source:play()
             end
         end
     end
@@ -393,7 +405,7 @@ function lua_runtime.init_env(game, public, assets)
         game.main_timeline:append_do(fn)
     end
     env.t_clear = function()
-        game.main_timeline:clear()
+        game.main_timeline:clear(true)
     end
     env.t_kill = function()
         game.main_timeline:append_do(function()
@@ -423,6 +435,7 @@ function lua_runtime.init_env(game, public, assets)
             game.death(true)
         end)
     end
+
     env.e_stopTime = function(duration)
         game.event_timeline:append_do(function()
             game.status.pause_time(duration / 60)
@@ -466,14 +479,14 @@ function lua_runtime.init_env(game, public, assets)
     end
     env.e_messageAddImportant = function(message, duration)
         game.event_timeline:append_do(function()
-            if game.first_play then
+            if public.first_play then
                 add_message(message, duration, true)
             end
         end)
     end
     env.e_messageAddImportantSilent = function(message, duration)
         game.event_timeline:append_do(function()
-            if game.first_play then
+            if public.first_play then
                 add_message(message, duration, false)
             end
         end)
@@ -482,6 +495,16 @@ function lua_runtime.init_env(game, public, assets)
         -- yes the game really does not do this with the event timeline like all the other e_ functions
         game.message_timeline:clear()
     end
+
+    -- deprecated
+    env.m_messageAdd = env.e_messageAdd
+    env.m_messageAddImportant = env.e_messageAddImportant
+    env.m_messageAddImportantSilent = env.e_messageAddImportantSilent
+    env.m_clearMessages = env.e_clearMessages
+    env.e_eventWaitS = env.e_waitS
+    env.u_eventKill = env.e_kill
+    env.u_kill = env.t_kill
+    env.u_playSound = env.a_playSound
 
     -- Utility functions
     env.u_isHeadless = function()
@@ -619,7 +642,8 @@ function lua_runtime.init_env(game, public, assets)
         min_speed,
         max_speed,
         ping_pong,
-        curving
+        curving,
+        speed_data_wall_thing
     )
         game.main_timeline:append_do(function()
             game.walls.wall(
@@ -633,7 +657,8 @@ function lua_runtime.init_env(game, public, assets)
                 min_speed,
                 max_speed,
                 ping_pong,
-                curving
+                curving,
+                speed_data_wall_thing
             )
         end)
     end
@@ -656,7 +681,7 @@ function lua_runtime.init_env(game, public, assets)
         max_speed,
         ping_pong
     )
-        wall(hue_modifier, side, thickness, speed_mult, acceleration, min_speed, max_speed, ping_pong)
+        wall(hue_modifier, side, thickness, speed_mult, acceleration, min_speed, max_speed, ping_pong, false, true)
     end
     env.w_wallHModCurveData = function(
         hue_modifier,
@@ -840,6 +865,7 @@ function lua_runtime.init_env(game, public, assets)
             return io.open(filename, mode == "rb" and mode or "r")
         end,
     }
+
     log("initialized environment")
 end
 
@@ -849,7 +875,8 @@ end
 
 function lua_runtime.run_fn_if_exists(name, ...)
     if env[name] ~= nil then
-        xpcall(run_fn, lua_runtime.error, name, ...)
+        local _, ret = xpcall(run_fn, lua_runtime.error, name, ...)
+        return ret
     end
 end
 

@@ -211,7 +211,10 @@ function cws.handle_collision(movement, radius, player, frametime)
             return true
         end
     end
-    -- update old vertices (only required for collisions)
+    return false
+end
+
+function cws.update_old_vertices()
     for cw in cws.iter() do
         if cw.collision then
             for i = 1, 8 do
@@ -219,7 +222,6 @@ function cws.handle_collision(movement, radius, player, frametime)
             end
         end
     end
-    return false
 end
 
 function cws.draw(wall_quads)

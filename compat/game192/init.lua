@@ -8,6 +8,7 @@ local make_fake_config = require("compat.game192.fake_config")
 local public = {
     running = false,
     dm_is_only_setting = true,
+    first_play = true,
 }
 local game = {
     style = require("compat.game192.style"),
@@ -21,7 +22,6 @@ local game = {
     difficulty_mult = 1,
     restart_id = "",
     restart_first_time = false,
-    first_play = true,
     main_timeline = Timeline:new(),
     message_timeline = Timeline:new(),
     effect_timeline = Timeline:new(),
@@ -150,14 +150,14 @@ function public.start(pack_folder, level_id, difficulty_mult)
     if game.music == nil then
         error("Music with id '" .. level_data.music_id .. "' not found")
     end
-    if not game.first_play then
+    if not public.first_play then
         segment = math.random(1, #game.music.segments)
     end
     if not args.headless then
         love.audio.stop()
         love.audio.play(go_sound)
         if game.music.source ~= nil then
-            if game.first_play then
+            if public.first_play then
                 game.music.source:seek(math.floor(game.music.segments[1].time))
             else
                 game.music.source:seek(math.floor(game.music.segments[segment].time))
@@ -195,7 +195,7 @@ function public.start(pack_folder, level_id, difficulty_mult)
     game.message_timeline:reset()
     game.effect_timeline:clear()
     game.effect_timeline:reset()
-    if not game.first_play then
+    if not public.first_play then
         game.lua_runtime.run_fn_if_exists("onUnload")
     end
     game.lua_runtime.init_env(game, public)
@@ -384,7 +384,7 @@ function public.update(frametime)
     end
     -- only for level change, real restarts will happen externally
     if game.status.must_restart then
-        game.first_play = game.restart_first_time
+        public.first_play = game.restart_first_time
         public.start(game.pack.folder, game.restart_id, game.difficulty_mult)
     end
     -- TODO: invalidate score if not official status invalid set or fps limit maybe?

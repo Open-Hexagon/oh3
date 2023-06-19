@@ -65,6 +65,10 @@ function game_handler.record_start(pack, level, level_settings)
         game_handler.save_score()
     end
     current_game.persistent_data = game_handler.profile.get_data(pack)
+
+    -- TODO: false when retrying
+    first_play = true
+
     input.replay = Replay:new()
     input.replay:set_game_data(
         current_game_version,
@@ -97,6 +101,8 @@ function game_handler.replay_start(file)
         end
         current_game.persistent_data = replay.data.persistent_data
         input.replay = replay
+        first_play = replay.first_play
+        current_game.first_play = first_play
         current_game.death_callback = nil
         -- TODO: save and restore config later
         for name, value in pairs(replay.data.config) do

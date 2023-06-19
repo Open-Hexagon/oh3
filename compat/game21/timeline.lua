@@ -8,9 +8,11 @@ function timeline:new()
     }, timeline)
 end
 
-function timeline:clear()
+function timeline:clear(no_reset_index)
     self._actions = {}
-    self._current_index = 1
+    if not no_reset_index then
+        self._current_index = 1
+    end
 end
 
 function timeline:append_do(func)

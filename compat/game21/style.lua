@@ -1,6 +1,7 @@
 local args = require("args")
 local Tris = require("compat.game21.dynamic_tris")
 local get_color_from_hue = require("compat.game21.hue").get_color
+local utils = require("compat.game192.utils")
 local style = {}
 
 local function set_color_data_defaults(data)
@@ -29,6 +30,9 @@ local function parse_cap_color(obj)
             return 1 -- just use main color
         elseif obj == "main_darkened" then
             return 2 -- use main color but divide rgb by 1.4
+        else
+            -- invalid string, return default
+            return 4
         end
     else
         local legacy = obj.legacy
@@ -111,6 +115,11 @@ function style.select(style_data)
         set_color_data_defaults(colors[i])
         _color_datas[i] = colors[i]
         _colors[i] = colors[i].result
+    end
+    for key, value in pairs(style) do
+        if type(value) == "number" then
+            style[key] = utils.float_round(value)
+        end
     end
 end
 

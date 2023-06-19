@@ -35,6 +35,41 @@ function assets._build_pack_id(disambiguator, author, name, version)
 end
 
 local function decode_json(str, filename)
+    -- not a good way but hardcoding some known cases
+    str = str:gsub(": 00 }", ": 0 }")
+    str = str:gsub(", 00", ", 0")
+    str = str:gsub("%[00,", "%[0,")
+    str = str:gsub("055%]", "55%]")
+    -- remove multiline comments
+    while str:find("/*", 0, true) and str:find("*/", 0, true) do
+        local cstart = str:find("/*", 0, true)
+        local cend = str:find("*/", 0, true)
+        str = str:sub(1, cstart - 1) .. str:sub(cend + 2)
+    end
+    -- replace control characters in strings
+    local offset = 0
+    local strings = {}
+    while true do
+        local start_quote = str:find('"', offset)
+        if start_quote == nil then
+            break
+        end
+        offset = start_quote + 1
+        local end_quote = str:find('"', offset)
+        if end_quote == nil then
+            break
+        end
+        offset = end_quote + 1
+        local contents = str:sub(start_quote + 1, end_quote - 1)
+        if contents:find("\n") then
+            strings[#strings + 1] = contents
+            contents = contents:gsub("\n", "\\n"):gsub("\r", "\\r")
+            strings[#strings + 1] = contents
+            str = str:sub(1, start_quote) .. contents .. str:sub(end_quote)
+            offset = str:find('"', start_quote + 1) + 1
+        end
+    end
+    -- catch decode errors
     return xpcall(json.decode_jsonc, function(msg)
         log("Error: can't decode '" .. filename .. "': " .. msg)
     end, str)

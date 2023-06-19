@@ -404,9 +404,10 @@ function json.decode_jsonc(str)
     while statusTop > 0 do
         decode_item()
     end
-    if string_find(statusBuf, "[^ \t\r\n]", statusPos) then
+    -- don't complain about trailing garbage
+    --[[if string_find(statusBuf, "[^ \t\r\n]", statusPos) then
         decode_error("trailing garbage")
-    end
+    end]]
     return res
 end
 

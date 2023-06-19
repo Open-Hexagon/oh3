@@ -309,16 +309,17 @@ function player.cw_push(movement_dir, radius, wall, radius_squared, frametime)
     for i = 0, 3 do
         local j = (i - 1) % 4
         if j ~= wall.killing_side then
-            _collision_polygon[1] = wall.vertices[1]
-            _collision_polygon[2] = wall.vertices[2]
-            for k = 3, 6 do
-                _collision_polygon[k] = wall.old_vertices[k]
-            end
-            _collision_polygon[7] = wall.vertices[7]
-            _collision_polygon[8] = wall.vertices[8]
+            local vert_i = i * 2 + 1
+            local vert_j = j * 2 + 1
+            _collision_polygon[1] = wall.vertices[vert_i]
+            _collision_polygon[2] = wall.vertices[vert_i + 1]
+            _collision_polygon[3] = wall.old_vertices[vert_i]
+            _collision_polygon[4] = wall.old_vertices[vert_i + 1]
+            _collision_polygon[5] = wall.old_vertices[vert_j]
+            _collision_polygon[6] = wall.old_vertices[vert_j + 1]
+            _collision_polygon[7] = wall.vertices[vert_j]
+            _collision_polygon[8] = wall.vertices[vert_j + 1]
             if extra_math.point_in_polygon(_collision_polygon, unpack(_last_pos)) then
-                local vert_i = i * 2 + 1
-                local vert_j = j * 2 + 1
                 local i1_x, i1_y = get_closest_line_circle_intersection(
                     _last_pos,
                     wall.old_vertices[vert_i],
@@ -341,7 +342,7 @@ function player.cw_push(movement_dir, radius, wall, radius_squared, frametime)
                         push_vel_y = i2_y - i1_y
                         local n_push_vel_x, n_push_vel_y = get_normalized(push_vel_x, push_vel_y)
                         local n_last_pos_x, n_last_pos_y = get_normalized(unpack(_last_pos))
-                        if math.abs(n_push_vel_x * n_last_pos_x + n_push_vel_y + n_last_pos_y) > push_dot_threshold then
+                        if math.abs(n_push_vel_x * n_last_pos_x + n_push_vel_y * n_last_pos_y) > push_dot_threshold then
                             push_vel_x = 0
                             push_vel_y = 0
                         end

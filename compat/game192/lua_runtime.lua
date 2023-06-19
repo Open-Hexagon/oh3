@@ -269,7 +269,7 @@ function lua_runtime.init_env(game, public)
         end
     end
     env.messageAdd = function(message, duration)
-        if config.get("messages") and game.first_play then
+        if config.get("messages") and public.first_play then
             add_message(message, duration)
         end
     end
