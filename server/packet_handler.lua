@@ -29,6 +29,10 @@ local function read_str(data, offset)
     return love.data.unpack(">c" .. len, data, offset)
 end
 
+local function write_str(str)
+    return love.data.pack("string", ">I4c" .. #str, #str, str)
+end
+
 local handlers = {
     -- get the public key from the client and send our own after generating receive and transmit keys
     public_key = function(data, client)
@@ -65,7 +69,7 @@ local handlers = {
         name, offset = read_str(data, offset)
         password_hash, offset = read_str(data, offset)
         local function send_fail(err)
-            client.send_packet("registration_failure", love.data.pack("string", ">I4c" .. #err, #err, err))
+            client.send_packet("registration_failure", write_str(err))
         end
         if #name > 32 then
             send_fail("Name too long, max is 32 characters")
@@ -75,7 +79,46 @@ local handlers = {
             send_fail("User with name '" .. name .. "' already registered")
         else
             database.register(name, steam_id, password_hash)
+            print("Successfully registered new user '" .. name .. "'")
             client.send_packet("registration_success")
+        end
+    end,
+    login = function(data, client)
+        local steam_id, offset = read_uint64(data)
+        steam_id = tostring(steam_id):sub(1, -4)
+        local name, password_hash
+        name, offset = read_str(data, offset)
+        password_hash, offset = read_str(data, offset)
+        local function send_fail(err)
+            client.send_packet("login_failure", write_str(err))
+        end
+        if #name > 32 then
+            send_fail("Name too long, max is 32 characters")
+        elseif not database.user_exists_by_steam_id(steam_id) then
+            send_fail("User with steam id '" .. steam_id .. "' not registered")
+        elseif not database.user_exists_by_name(name) then
+            send_fail("User with name '" .. name .. "' not registered")
+        else
+            local user = database.get_user(name, steam_id)
+            if user then
+                if user.password_hash ~= password_hash then
+                    send_fail("Invalid password for user matching '" .. steam_id .. "' and '" .. name .. "'")
+                else
+                    local login_token = sodium.randombytes_buf(8)
+                    database.remove_login_tokens(steam_id)
+                    database.add_login_token(steam_id, login_token)
+                    client.login_data = {
+                        steam_id = steam_id,
+                        username = name,
+                        password_hash = password_hash,
+                        login_token = login_token,
+                    }
+                    print("Successfully logged in user '" .. name .. "'")
+                    client.send_packet("login_success", login_token .. write_str(name))
+                end
+            else
+                send_fail("No user matching '" .. steam_id .. "' and '" .. name .. "' registered")
+            end
         end
     end,
     heartbeat = function() end,

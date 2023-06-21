@@ -23,7 +23,7 @@ function api.open()
             password_hash = "text",
         },
         scores = {
-            steam_id = "integer",
+            steam_id = "text",
             pack = "text",
             level = "text",
             level_options = "luatable",
@@ -32,8 +32,27 @@ function api.open()
             score = "real",
             replay_hash = "text",
         },
+        login_tokens = {
+            steam_id = { "text", unique = true },
+            created = { "timestamp", default = strfun.strftime("%s", "now") },
+            token = { "text", unique = true, primary = true },
+        }
     })
     database:open()
+end
+
+---remove all login tokens for a user with the given steam id
+---@param steam_id string
+function api.remove_login_tokens(steam_id)
+    database:delete("login_tokens", { where = { steam_id = steam_id } })
+end
+
+---add a login token to the database
+---@param steam_id string
+---@param token any
+function api.add_login_token(steam_id, token)
+    token = love.data.encode("string", "base64", token)
+    database:insert("login_tokens", { steam_id = steam_id, token = token })
 end
 
 ---check if a user exists in the database
@@ -50,13 +69,30 @@ function api.user_exists_by_steam_id(steam_id)
     return #database:select("users", { where = { steam_id = steam_id } }) > 0
 end
 
+---get the row of a user in the database
+---@param name string
+---@param steam_id string
+---@return table|nil
+function api.get_user(name, steam_id)
+    local results = database:select("users", { where = { username = name, steam_id = steam_id} })
+    if #results == 0 then
+        return
+    end
+    results[1].password_hash = love.data.decode("string", "base64", results[1].password_hash)
+    return results[1]
+end
+
 ---register a new user in the database (returns true on success)
 ---@param username string
 ---@param steam_id integer
 ---@param password_hash string
 ---@return boolean
 function api.register(username, steam_id, password_hash)
-    return database:insert("users", { steam_id = steam_id, username = username, password_hash = password_hash })
+    return database:insert("users", {
+        steam_id = steam_id,
+        username = username,
+        password_hash = love.data.encode("string", "base64", password_hash)
+    })
 end
 
 ---save a score into the database and save the replay
