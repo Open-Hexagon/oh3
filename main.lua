@@ -11,6 +11,13 @@ function love.run()
     global_config.init(config, game_handler.profile)
     game_handler.init(config)
 
+    if args.server then
+        require("server")
+        return function()
+            return 0
+        end
+    end
+
     if args.headless then
         if args.no_option == nil then
             error("Started headless mode without replay")
