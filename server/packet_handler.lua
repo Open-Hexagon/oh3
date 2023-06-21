@@ -3,6 +3,7 @@ local sodium = require("luasodium")
 
 local packet_handler = {}
 local server_pk, server_sk = sodium.crypto_kx_keypair()
+local database
 
 local function sodium_key_to_string(key)
     local offset = 1
@@ -13,6 +14,19 @@ local function sodium_key_to_string(key)
         string_key = string_key .. part
     end
     return string_key
+end
+
+local function read_uint64(data, offset)
+    local part1, part2
+    part1, offset = love.data.unpack(">I4", data, offset)
+    part2, offset = love.data.unpack(">I4", data, offset)
+    return bit.lshift(part1 * 1ULL, 32) + part2 * 1ULL, offset
+end
+
+local function read_str(data, offset)
+    local len
+    len, offset = love.data.unpack(">I4", data, offset)
+    return love.data.unpack(">c" .. len, data, offset)
 end
 
 local handlers = {
@@ -44,6 +58,26 @@ local handlers = {
             print("Got encoded packet before getting client's RT keys!")
         end
     end,
+    register = function(data, client)
+        local steam_id, offset = read_uint64(data)
+        steam_id = tostring(steam_id):sub(1, -4)
+        local name, password_hash
+        name, offset = read_str(data, offset)
+        password_hash, offset = read_str(data, offset)
+        local function send_fail(err)
+            client.send_packet("registration_failure", love.data.pack("string", ">I4c" .. #err, #err, err))
+        end
+        if #name > 32 then
+            send_fail("Name too long, max is 32 characters")
+        elseif database.user_exists_by_steam_id(steam_id) then
+            send_fail("User with steam id '" .. steam_id .. "' already registered")
+        elseif database.user_exists_by_name(name) then
+            send_fail("User with name '" .. name .. "' already registered")
+        else
+            database.register(name, steam_id, password_hash)
+            client.send_packet("registration_success")
+        end
+    end,
     heartbeat = function() end,
     disconnect = function() end,
 }
@@ -54,6 +88,10 @@ function packet_handler.process(packet_type, data, client)
     else
         print("Unhandled packet type: " .. packet_type)
     end
+end
+
+function packet_handler.set_database(db)
+    database = db
 end
 
 return packet_handler

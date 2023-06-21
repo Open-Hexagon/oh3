@@ -27,7 +27,10 @@ game_handler.profile = require("game_handler.profile")
 ---@param config any
 function game_handler.init(config)
     -- 1.92 needs persistent data for asset loading as it can overwrite any file
-    local persistent_data = game_handler.profile.get_all_data()
+    local persistent_data
+    if not args.server then
+        persistent_data = game_handler.profile.get_all_data()
+    end
     for _, game in pairs(games) do
         game.init(pack_level_data, config, persistent_data)
     end

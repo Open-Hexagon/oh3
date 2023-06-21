@@ -84,7 +84,7 @@ function assets.init(data, persistent_data)
 
         vfs.clear()
         local virtual_pack_folder
-        if persistent_data[folder] ~= nil then
+        if persistent_data ~= nil and persistent_data[folder] ~= nil then
             vfs.load_files(persistent_data[folder])
             virtual_pack_folder = vfs.dump_real_files_recurse()[folder]
         end

@@ -1,5 +1,6 @@
 local packet_handler = require("server.packet_handler")
 local packet_types = require("server.packet_types")
+local database = require("server.database")
 local uv = require("luv")
 
 local function create_server(host, port, on_connection)
@@ -21,7 +22,6 @@ local function create_server(host, port, on_connection)
 end
 
 local function process_packet(data, client)
-    print("received packet: " .. data)
     local protocol_version, game_version_major, game_version_minor, game_version_micro, packet_type, offset = love.data.unpack(">BBBBB", data, 3)
     if data:sub(1, 2) ~= "oh" then
         return "wrong preamble bytes"
@@ -52,6 +52,7 @@ local server = create_server("0.0.0.0", 50505, function(client)
     local data = ""
     local client_data = {
         send_packet = function(packet_type, contents)
+            contents = contents or ""
             local type_num
             for i = 1, #packet_types.server_to_client do
                 if packet_types.server_to_client[i] == packet_type then
@@ -108,4 +109,7 @@ end)
 
 print("TCP server listening on port " .. server:getsockname().port)
 
+database.open()
+packet_handler.set_database(database)
 uv.run()
+database.close()
