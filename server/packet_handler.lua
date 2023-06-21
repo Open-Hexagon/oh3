@@ -121,6 +121,19 @@ local handlers = {
             end
         end
     end,
+    logout = function(data, client)
+        local steam_id, offset = read_uint64(data)
+        steam_id = tostring(steam_id):sub(1, -4)
+        if client.login_data then
+            if database.user_exists_by_steam_id(steam_id) and client.login_data.steam_id == steam_id then
+                database.remove_login_tokens(client.login_data.steam_id)
+                client.login_data = nil
+                client.send_packet("logout_success")
+            else
+                client.send_packet("logout_failure")
+            end
+        end
+    end,
     heartbeat = function() end,
     disconnect = function() end,
 }
