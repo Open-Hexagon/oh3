@@ -334,8 +334,8 @@ function public.update(frametime)
 
             if game.must_change_sides and game.walls.empty() then
                 local side_number = game.rng.get_int(game.level_status.sides_min, game.level_status.sides_max)
-                game.level_status.speed_mult = game.level_status.speed_mult + game.level_status.speed_inc
-                game.level_status.delay_mult = game.level_status.delay_mult + game.level_status.delay_inc
+                game.level_status.speed_mult = utils.float_round(game.level_status.speed_mult + game.level_status.speed_inc)
+                game.level_status.delay_mult = utils.float_round(game.level_status.delay_mult + game.level_status.delay_inc)
                 if game.level_status.rnd_side_changes_enabled then
                     game.set_sides(side_number)
                 end
