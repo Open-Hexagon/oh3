@@ -30,8 +30,7 @@ function replay.read(replay_obj, data, offset)
         part2, offset = love.data.unpack("<I4", data, offset)
         return bit.lshift(part2 * 1ULL, 32) + part1 * 1ULL
     end
-    -- TODO: add player name property to replays
-    local _ = read_str()
+    replay_obj.player_name = read_str()
     local seed = read_uint64()
     -- even if not correct, the first seed is only used for music segment (which was random in replays from this version)
     replay_obj.data.seeds[1] = tonumber(seed)
@@ -82,8 +81,7 @@ function replay.read(replay_obj, data, offset)
     -- TODO: check if this works on all platforms (float and double are native size)
     dm, offset = love.data.unpack("<f", data, offset)
     replay_obj.data.level_settings = { difficulty_mult = dm }
-    -- TODO: store scores in replays maybe?
-    local _ = love.data.unpack("<d", data, offset) / 60
+    replay_obj.score = love.data.unpack("<d", data, offset) / 60
 end
 
 return replay

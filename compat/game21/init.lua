@@ -758,14 +758,14 @@ function public.set_input_handler(input)
     game.input = input
 end
 
----get the current score (gets the custom score if one exists)
+---get the current score
 ---@return number
 function public.get_score()
-    if game.level_status.score_overwritten then
-        return game.status.get_custom_score()
-    else
-        return game.status.get_played_accumulated_frametime_in_seconds()
-    end
+    -- ignore custom score for now as the current game also does that
+    --if game.level_status.score_overwritten then
+    --    return game.status.get_custom_score()
+    --end
+    return game.status.get_played_accumulated_frametime_in_seconds()
 end
 
 ---runs the game until the player dies without caring about real time

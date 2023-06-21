@@ -15,6 +15,12 @@ end
 local database
 local current_profile
 
+---get the current profile name
+---@return string
+function profile.get_current_profile()
+    return current_profile
+end
+
 ---open or create a new profile
 ---@param name string
 function profile.open_or_new(name)
@@ -77,10 +83,9 @@ function profile.store_data(pack_id, data)
 end
 
 ---save a score into the profile's database and save the replay as well
----@param score number
 ---@param time number
 ---@param replay Replay
-function profile.save_score(score, time, replay)
+function profile.save_score(time, replay)
     local hash, data = replay:get_hash()
     local dir = replay_path .. hash:sub(1, 2) .. "/"
     if not love.filesystem.getInfo(dir) then
@@ -97,7 +102,6 @@ function profile.save_score(score, time, replay)
             path = path:sub(1, -2) .. n
         end
         hash = hash .. n
-        print("added", n)
     end
     database:open()
     database:insert("scores", {
@@ -105,7 +109,7 @@ function profile.save_score(score, time, replay)
         level = replay.level_id,
         level_options = replay.data.level_settings,
         time = time,
-        score = score,
+        score = replay.score,
         replay_hash = hash,
     })
     database:close()

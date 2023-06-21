@@ -74,6 +74,7 @@ function game_handler.record_start(pack, level, level_settings)
         current_game_version,
         current_game.config.get_all(current_game_version),
         first_play,
+        game_handler.profile.get_current_profile(),
         pack,
         level,
         level_settings
@@ -161,7 +162,8 @@ end
 ---save the score and replay of the current attempt (gets called automatically on death)
 function game_handler.save_score()
     local elapsed_time = love.timer.getTime() - real_start_time
-    game_handler.profile.save_score(current_game.get_score(), elapsed_time, input.replay)
+    input.replay.score = current_game.get_score()
+    game_handler.profile.save_score(elapsed_time, input.replay)
 end
 
 ---update the game if it's running
