@@ -206,8 +206,9 @@ function packet_handler.process(packet_type, data, client)
     end
 end
 
-function packet_handler.set_database(db)
+function packet_handler.init(db)
     database = db
+    game.init()
 end
 
 function packet_handler.stop_game()

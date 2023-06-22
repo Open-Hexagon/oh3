@@ -1,8 +1,13 @@
+local msgpack = require("extlibs.msgpack.msgpack")
 local replay = require("game_handler.replay")
 local game_handler = require("game_handler")
 local database = require("server.database")
 local config = require("config")
 local uv = require("luv")
+
+database.set_identity(1)
+
+local replay_path = database.get_replay_path()
 
 game_handler.init(config)
 local level_validators = {}
@@ -21,7 +26,28 @@ end
 love.thread.getChannel("ranked_levels"):push(level_validators)
 
 local time_tolerance = 3
+local score_tolerance = 0.2
 local max_processing_time = 10
+
+local function save_replay(replay_obj, hash, data)
+    local dir = replay_path .. hash:sub(1, 2) .. "/"
+    if not love.filesystem.getInfo(dir) then
+        love.filesystem.createDirectory(dir)
+    end
+    local n
+    local path = dir .. hash
+    -- in case a replay actually has a duplicate hash (which is almost impossible) add some random numbers to it
+    if love.filesystem.getInfo(path) then
+        path = path .. 0
+        n = 0
+        while love.filesystem.getInfo(path) do
+            n = n + 1
+            path = path:sub(1, -2) .. n
+        end
+        hash = hash .. n
+    end
+    replay_obj:save(path, data)
+end
 
 local function verify_replay(compressed_replay, time, steam_id)
     local start = uv.hrtime()
@@ -35,10 +61,22 @@ local function verify_replay(compressed_replay, time, steam_id)
         return false
     end)
     local score = game_handler.get_score()
-    if score == decoded_replay.score then
+    if score + score_tolerance > decoded_replay.score and score - score_tolerance < decoded_replay.score then
         if time + time_tolerance > score and time - time_tolerance < score then
-            database.save_score(time, decoded_replay, steam_id)
-            print("replay verified, score saved")
+            print("replay verified")
+            local hash, data = decoded_replay:get_hash()
+            if database.save_score(
+                time,
+                steam_id,
+                decoded_replay.pack_id,
+                decoded_replay.level_id,
+                msgpack.pack(decoded_replay.data.level_settings),
+                score,
+                hash
+            ) then
+                save_replay(decoded_replay, hash, data)
+                print("Saved new score")
+            end
         else
             print("time between packets of " .. time .. " does not match score of " .. score)
         end
@@ -47,7 +85,6 @@ local function verify_replay(compressed_replay, time, steam_id)
     end
 end
 
-database.open()
 local run = true
 while run do
     local cmd = love.thread.getChannel("game_commands"):demand()
@@ -57,4 +94,3 @@ while run do
         run = false
     end
 end
-database.close()
