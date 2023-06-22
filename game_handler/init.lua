@@ -95,38 +95,42 @@ function game_handler.record_start(pack, level, level_settings)
 end
 
 ---read a replay file and run the game with its inputs and seeds
----@param file string
-function game_handler.replay_start(file)
-    -- TODO: don't require full path
-    if love.filesystem.getInfo(file) then
-        local replay = Replay:new(file)
-        if replay.game_version ~= current_game_version then
-            game_handler.set_version(replay.game_version)
-        end
-        current_game.persistent_data = replay.data.persistent_data
-        input.replay = replay
-        first_play = replay.first_play
-        current_game.first_play = first_play
-        current_game.death_callback = nil
-        -- TODO: save and restore config later
-        for name, value in pairs(replay.data.config) do
-            current_game.config.set(name, value)
-        end
-        input.replay_start()
-        if current_game.dm_is_only_setting then
-            current_game.start(replay.pack_id, replay.level_id, replay.data.level_settings.difficulty_mult)
-        else
-            current_game.start(replay.pack_id, replay.level_id, replay.data.level_settings)
-        end
-        if not args.headless then
-            start_time = love.timer.getTime()
-            real_start_time = start_time
-        end
-        target_frametime = 1 / 240
-        target_frametime = current_game.update(target_frametime) or target_frametime
+---@param file_or_replay_obj string|Replay
+function game_handler.replay_start(file_or_replay_obj)
+    local replay
+    if type(file_or_replay_obj) == "table" then
+        replay = file_or_replay_obj
     else
-        error("Replay file at '" .. file .. "' does not exist")
+        if love.filesystem.getInfo(file_or_replay_obj) then
+            replay = Replay:new(file_or_replay_obj)
+        else
+            error("Replay file at '" .. file_or_replay_obj .. "' does not exist")
+        end
     end
+    if replay.game_version ~= current_game_version then
+        game_handler.set_version(replay.game_version)
+    end
+    current_game.persistent_data = replay.data.persistent_data
+    input.replay = replay
+    first_play = replay.first_play
+    current_game.first_play = first_play
+    current_game.death_callback = nil
+    -- TODO: save and restore config later
+    for name, value in pairs(replay.data.config) do
+        current_game.config.set(name, value)
+    end
+    input.replay_start()
+    if current_game.dm_is_only_setting then
+        current_game.start(replay.pack_id, replay.level_id, replay.data.level_settings.difficulty_mult)
+    else
+        current_game.start(replay.pack_id, replay.level_id, replay.data.level_settings)
+    end
+    if not args.headless then
+        start_time = love.timer.getTime()
+        real_start_time = start_time
+    end
+    target_frametime = 1 / 240
+    target_frametime = current_game.update(target_frametime) or target_frametime
 end
 
 ---stops the game (it will not be updated or rendered anymore)
@@ -220,8 +224,9 @@ function game_handler.get_tickrate()
 end
 
 ---run the game until the player dies without drawing it and without matching real time
-function game_handler.run_until_death()
-    current_game.run_game_until_death()
+---@param stop_condition function?
+function game_handler.run_until_death(stop_condition)
+    current_game.run_game_until_death(stop_condition)
 end
 
 ---gets the current replay (nil if there is none)

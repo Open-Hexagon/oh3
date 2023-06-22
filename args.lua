@@ -1,3 +1,10 @@
+if arg == nil then
+    -- called from thread (running in server)
+    return {
+        server = true,
+        headless = true,
+    }
+end
 local args = love.arg.parseGameArguments(arg)
 local ret = {}
 -- tests are always run in headless mode

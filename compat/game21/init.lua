@@ -8,6 +8,7 @@ local set_color = require("compat.game21.color_transform")
 local Particles = require("compat.game21.particles")
 local assets = require("compat.game21.assets")
 local utils = require("compat.game192.utils")
+local uv = require("luv")
 local public = {
     running = false,
     dm_is_only_setting = true,
@@ -69,7 +70,7 @@ local must_spawn_swap_particles = false
 ---@param level_id string
 ---@param difficulty_mult number
 function public.start(pack_id, level_id, difficulty_mult)
-    local seed = math.floor(love.timer.getTime() * 1000)
+    local seed = uv.hrtime()
     math.randomseed(game.input.next_seed(seed))
     math.random()
     game.pack_data = assets.get_pack_from_id(pack_id)
@@ -769,10 +770,14 @@ function public.get_score()
 end
 
 ---runs the game until the player dies without caring about real time
-function public.run_game_until_death()
+---@param stop_condition function?
+function public.run_game_until_death(stop_condition)
     while not game.status.has_died do
         -- TODO: timescale
         public.update(1 / 240)
+        if stop_condition and stop_condition() then
+            return
+        end
     end
 end
 

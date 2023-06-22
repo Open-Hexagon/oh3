@@ -5,6 +5,7 @@ local DynamicQuads = require("compat.game21.dynamic_quads")
 local Timeline = require("compat.game192.timeline")
 local set_color = require("compat.game21.color_transform")
 local make_fake_config = require("compat.game192.fake_config")
+local uv = require("luv")
 local public = {
     running = false,
     dm_is_only_setting = true,
@@ -124,7 +125,7 @@ function game.get_main_color(black_and_white)
 end
 
 function public.start(pack_folder, level_id, difficulty_mult)
-    local seed = math.floor(love.timer.getTime() * 1000)
+    local seed = math.floor(uv.hrtime() * 1000)
     math.randomseed(game.input.next_seed(seed))
 
     game.real_time = 0
@@ -531,11 +532,15 @@ function public.get_score()
 end
 
 ---runs the game until the player dies without caring about real time
-function public.run_game_until_death()
+---@param stop_condition function?
+function public.run_game_until_death(stop_condition)
     local frametime = game.current_frametime / 60
     while not game.status.has_died do
         -- TODO: timescale
         frametime = public.update(frametime) or frametime
+        if stop_condition and stop_condition() then
+            return
+        end
     end
 end
 

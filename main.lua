@@ -1,40 +1,24 @@
 local log = require("log")(...)
 local args = require("args")
-local game_handler = require("game_handler")
-local config = require("config")
-local global_config = require("global_config")
 
 function love.run()
     -- make sure no level accesses malicious files via symlinks
     love.filesystem.setSymlinksEnabled(false)
 
-    global_config.init(config, game_handler.profile)
-    game_handler.init(config)
-
     if args.server then
         -- game21 compat server (made for old clients)
-        local level_validators = {}
-        local packs = game_handler.get_packs()
-        for j = 1, #packs do
-            local pack = packs[j]
-            if pack.game_version == 21 then
-                for k = 1, pack.level_count do
-                    local level = pack.levels[k]
-                    for i = 1, #level.options.difficulty_mult do
-                        level_validators[#level_validators + 1] = pack.id .. "_" .. level.id .. "_m_" .. level.options.difficulty_mult[i]
-                    end
-                end
-            end
-        end
-        love.thread.getChannel("ranked_levels"):push(level_validators)
-        local thread = love.thread.newThread("server/main.lua")
-        thread:start()
+        require("server")
         return function()
-            local replay_data = love.thread.getChannel("replays_to_verify"):demand()
-            print("Got a replay")
-            -- TODO: decoding, verifying, sending back result
+            return 0
         end
     end
+
+    local game_handler = require("game_handler")
+    local config = require("config")
+    local global_config = require("global_config")
+
+    global_config.init(config, game_handler.profile)
+    game_handler.init(config)
 
     if args.headless then
         if args.no_option == nil then

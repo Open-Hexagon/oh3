@@ -29,8 +29,23 @@ function replay:new(path)
         score = 0,
     }, replay)
     if path ~= nil then
-        obj:_read(path)
+        if not love.filesystem.getInfo(path) then
+            error("Could not find replay at '" .. path .. "'")
+        end
+        local file = love.filesystem.newFile(path)
+        file:open("r")
+        obj:_read(file:read("data"))
+        file:close()
     end
+    return obj
+end
+
+---loads a replay from zlib compressed data
+---@param data string|love.CompressedData
+---@return Replay
+function replay:new_from_data(data)
+    local obj = replay:new()
+    obj:_read(data)
     return obj
 end
 
@@ -141,14 +156,8 @@ function replay:save(path, data)
     file:close()
 end
 
-function replay:_read(path)
-    if not love.filesystem.getInfo(path) then
-        error("Could not find replay at '" .. path .. "'")
-    end
-    local file = love.filesystem.newFile(path)
-    file:open("r")
-    local data = love.data.decompress("string", "zlib", file:read("data"))
-    file:close()
+function replay:_read(compressed_data)
+    local data = love.data.decompress("string", "zlib", compressed_data)
     local version, offset = love.data.unpack(">I4", data)
     if version == 0 then
         old_replay.read(self, data, offset)

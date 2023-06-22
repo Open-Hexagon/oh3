@@ -114,6 +114,7 @@ local handlers = {
                         username = name,
                         password_hash = password_hash,
                         login_token = login_token,
+                        ready = false,
                     }
                     print("Successfully logged in user '" .. name .. "'")
                     client.send_packet("login_success", login_token .. write_str(name))
@@ -154,6 +155,45 @@ local handlers = {
             end
         end
     end,
+    ready = function(data, client)
+        local login_token = data
+        if client.login_data and client.login_data.login_token == login_token then
+            client.login_data.ready = true
+        else
+            print("client sent ready with invalid login token")
+        end
+    end,
+    started_game = function(data, client)
+        local login_token = data:sub(1, 8)
+        if client.login_data and client.login_data.login_token == login_token then
+            if client.login_data.ready then
+                client.current_level = read_str(data, 9)
+                client.start_time = love.timer.getTime()
+                print("client started game on " .. client.current_level)
+            else
+                print("client sent started_game packet before ready")
+            end
+        else
+            print("client started game with invalid login token")
+        end
+    end,
+    compressed_replay = function(data, client)
+        local login_token = data:sub(1, 8)
+        -- logged in
+        if client.login_data and client.login_data.login_token == login_token then
+            -- started game earlier
+            if client.login_data.ready and client.current_level then
+                print("game ended, verifying replay...")
+                -- skip reading replay size, it's not required
+                game.verify_replay_and_save_score(data:sub(9 + 8), love.timer.getTime() - client.start_time, client.login_data.steam_id)
+                client.current_level = nil
+            else
+                print("sent compressed replay without client being ready or having started a game")
+            end
+        else
+            print("sent compressed replay with invalid login token")
+        end
+    end,
     heartbeat = function() end,
     disconnect = function() end,
 }
@@ -168,6 +208,10 @@ end
 
 function packet_handler.set_database(db)
     database = db
+end
+
+function packet_handler.stop_game()
+    game.stop()
 end
 
 return packet_handler
