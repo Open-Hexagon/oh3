@@ -82,6 +82,18 @@ function api.get_user(name, steam_id)
     return results[1]
 end
 
+---get the row of a user in the database
+---@param steam_id string
+---@return table|nil
+function api.get_user_by_steam_id(steam_id)
+    local results = database:select("users", { where = { steam_id = steam_id} })
+    if #results == 0 then
+        return
+    end
+    results[1].password_hash = love.data.decode("string", "base64", results[1].password_hash)
+    return results[1]
+end
+
 ---register a new user in the database (returns true on success)
 ---@param username string
 ---@param steam_id integer
@@ -157,6 +169,49 @@ function api.save_score(time, steam_id, pack, level, level_options, score, hash)
     end
 end
 
+---get the top scores on a level and the score for the steam id
+---@param pack any
+---@param level any
+---@param level_options any
+---@param steam_id any
+---@return table
+---@return table?
+function api.get_leaderboard(pack, level, level_options, steam_id)
+    level_options = love.data.encode("string", "base64", level_options)
+    local results = database:select("scores", {
+        where = {
+            pack = pack,
+            level = level,
+            level_options = level_options,
+        },
+    })
+    local times = {}
+    local scores_by_time = {}
+    for i = 1, #results do
+        local score = results[i]
+        times[#times + 1] = score.score
+        scores_by_time[score.score] = score
+    end
+    table.sort(times)
+    local ret = {}
+    local user_score
+    for i = #times, 1, -1 do
+        local score = scores_by_time[times[i]]
+        local user = api.get_user_by_steam_id(score.steam_id)
+        local name = user and user.username or "deleted user"
+        ret[#ret + 1] = {
+            position = #times - i + 1,
+            user_name = name,
+            timestamp = score.created,
+            value = times[i],
+        }
+        if score.steam_id == steam_id then
+            user_score = ret[#ret]
+        end
+    end
+    return ret, user_score
+end
+
 ---delete a user with all their scores and replays
 ---@param steam_id any
 function api.delete(steam_id)
@@ -183,10 +238,14 @@ while run do
     if cmd[1] == "stop" then
         run = false
     else
-        local fn = api[cmd[1]]
-        table.remove(cmd, 1)
-        local ret = fn(unpack(cmd))
-        love.thread.getChannel("db_out" .. thread_id):push(ret)
+        xpcall(function()
+            local fn = api[cmd[1]]
+            table.remove(cmd, 1)
+            local ret = {fn(unpack(cmd))}
+            love.thread.getChannel("db_out" .. thread_id):push(ret)
+        end, function(err)
+            love.thread.getChannel("db_out" .. thread_id):push({"error", err})
+        end)
     end
 end
 database:close()

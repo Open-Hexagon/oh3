@@ -7,6 +7,10 @@ function game.init()
     if not game.level_validators then
         error("failed getting level ids from thread: " .. (thread:getError() or "no error"))
     end
+    game.levels = love.thread.getChannel("ranked_levels"):demand(1)
+    if not game.levels then
+        error("failed getting levels from thread: " .. (thread:getError() or "no error"))
+    end
 end
 
 function game.verify_replay_and_save_score(compressed_replay, time, steam_id)

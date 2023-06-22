@@ -1,3 +1,5 @@
+local utils = require("compat.game192.utils")
+local msgpack = require("extlibs.msgpack.msgpack")
 local packet_types = require("server.packet_types")
 local version = require("server.version")
 local sodium = require("luasodium")
@@ -5,6 +7,8 @@ local game = require("server.game")
 
 local packet_handler = {}
 local server_pk, server_sk = sodium.crypto_kx_keypair()
+local level_validator_map = {}
+local level_validator_to_id = {}
 local database
 
 local function sodium_key_to_string(key)
@@ -124,6 +128,60 @@ local handlers = {
             end
         end
     end,
+    request_top_scores_and_own_score = function(data, client)
+        local login_token = data:sub(1, 8)
+        if client.login_data and client.login_data.login_token == login_token then
+            if client.login_data.ready then
+                local level = read_str(data, 9)
+                if level_validator_map[level] then
+                    local packet_data = write_str(level)
+                    local actual_level = level_validator_to_id[level]
+                    if actual_level.pack == nil or actual_level.level == nil or actual_level.difficulty_mults == nil then
+                        print("Unsupported level: " .. level)
+                    else
+                        local sub_string = level:sub(#level)
+                        local count = 1
+                        while not sub_string:find("_m_") do
+                            sub_string = level:sub(#level - count)
+                            count = count + 1
+                        end
+                        sub_string = sub_string:gsub("_m_", "")
+                        local opts = {
+                            difficulty_mult = utils.float_round(tonumber(sub_string))
+                        }
+                        print("Getting leaderboard for '" .. actual_level.level .. "' from '" .. actual_level.pack .. "'")
+                        local leaderboard, own_score = database.get_leaderboard(
+                            actual_level.pack,
+                            actual_level.level,
+                            msgpack.pack(opts),
+                            client.login_data.steam_id
+                        )
+                        local len = math.min(6, #leaderboard)
+                        packet_data = packet_data .. love.data.pack("string", ">I8", len)
+                        for i = 1, len do
+                            local score = leaderboard[i]
+                            packet_data = packet_data
+                                .. love.data.pack("string", ">I4", score.position)
+                                .. write_str(score.user_name)
+                                .. love.data.pack("string", ">I8", score.timestamp)
+                                .. love.data.pack("string", "<d", score.value)
+                        end
+                        packet_data = packet_data .. love.data.pack("string", ">B", own_score == nil and 0 or 1)
+                        if own_score then
+                            packet_data = packet_data
+                                .. love.data.pack("string", ">I4", own_score.position)
+                                .. write_str(own_score.user_name)
+                                .. love.data.pack("string", ">I8", own_score.timestamp)
+                                .. love.data.pack("string", "<d", own_score.value)
+                        end
+                        client.send_packet("top_scores_and_own_score", packet_data)
+                    end
+                else
+                    print("Requested leaderboards for unsupported level validator.")
+                end
+            end
+        end
+    end,
     request_server_status = function(data, client)
         local login_token = data
         if client.login_data and client.login_data.login_token == login_token then
@@ -209,6 +267,15 @@ end
 function packet_handler.init(db)
     database = db
     game.init()
+    for i = 1, #game.level_validators do
+        level_validator_map[game.level_validators[i]] = true
+        local _, dms = msgpack.unpack(game.levels[i * 3])
+        level_validator_to_id[game.level_validators[i]] = {
+            pack = game.levels[i * 3 - 2],
+            level = game.levels[i * 3 - 1],
+            difficulty_mults = dms,
+        }
+    end
 end
 
 function packet_handler.stop_game()

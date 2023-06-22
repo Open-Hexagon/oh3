@@ -13,12 +13,16 @@ end
 
 function db.execute(cmd)
     love.thread.getChannel("db_cmd"):push({calling_thread, unpack(cmd)})
-    return love.thread.getChannel("db_out" .. calling_thread):demand()
+    local result = love.thread.getChannel("db_out" .. calling_thread):demand()
+    if result[1] == "error" then
+        error("Error while calling 'database." .. cmd[1] .. "':\n" .. result[2])
+    end
+    return unpack(result)
 end
 
 function db.stop()
     if thread:isRunning() then
-        love.thread.getChannel("db_cmd"):push({"stop"})
+        love.thread.getChannel("db_cmd"):push({calling_thread, "stop"})
         thread:wait()
     else
         print("error in db thread:\n", thread:getError())

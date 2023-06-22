@@ -72,8 +72,6 @@ function replay.read(replay_obj, data, offset)
     replay_obj.level_id = read_str()
     -- no need to prefix level id with pack id
     replay_obj.level_id = replay_obj.level_id:sub(#replay_obj.pack_id + 2)
-    -- version is not used for indexing packs in this version of the game
-    replay_obj.pack_id = replay_obj.pack_id:match("(.*)_")
 
     replay_obj.first_play, offset = love.data.unpack("<B", data, offset)
     replay_obj.first_play = replay_obj.first_play == 1
