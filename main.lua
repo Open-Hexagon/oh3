@@ -12,9 +12,27 @@ function love.run()
     game_handler.init(config)
 
     if args.server then
-        require("server")
+        -- game21 compat server (made for old clients)
+        local level_validators = {}
+        local packs = game_handler.get_packs()
+        for j = 1, #packs do
+            local pack = packs[j]
+            if pack.game_version == 21 then
+                for k = 1, pack.level_count do
+                    local level = pack.levels[k]
+                    for i = 1, #level.options.difficulty_mult do
+                        level_validators[#level_validators + 1] = pack.id .. "_" .. level.id .. "_m_" .. level.options.difficulty_mult[i]
+                    end
+                end
+            end
+        end
+        love.thread.getChannel("ranked_levels"):push(level_validators)
+        local thread = love.thread.newThread("server/main.lua")
+        thread:start()
         return function()
-            return 0
+            local replay_data = love.thread.getChannel("replays_to_verify"):demand()
+            print("Got a replay")
+            -- TODO: decoding, verifying, sending back result
         end
     end
 

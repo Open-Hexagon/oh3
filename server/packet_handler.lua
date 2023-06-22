@@ -1,5 +1,7 @@
 local packet_types = require("server.packet_types")
+local version = require("server.version")
 local sodium = require("luasodium")
+local game = require("server.game")
 
 local packet_handler = {}
 local server_pk, server_sk = sodium.crypto_kx_keypair()
@@ -119,6 +121,24 @@ local handlers = {
             else
                 send_fail("No user matching '" .. steam_id .. "' and '" .. name .. "' registered")
             end
+        end
+    end,
+    request_server_status = function(data, client)
+        local login_token = data
+        if client.login_data and client.login_data.login_token == login_token then
+            local packet_data = love.data.pack(
+                "string",
+                ">Bi4i4i4I8",
+                version.PROTOCOL_VERSION,
+                version.GAME_VERSION[1],
+                version.GAME_VERSION[2],
+                version.GAME_VERSION[3],
+                #game.level_validators
+            )
+            for i = 1, #game.level_validators do
+                packet_data = packet_data .. write_str(game.level_validators[i])
+            end
+            client.send_packet("server_status", packet_data)
         end
     end,
     logout = function(data, client)

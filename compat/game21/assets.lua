@@ -5,6 +5,7 @@ local json = require("extlibs.json.jsonc")
 local loaded_packs = {}
 local pack_path = "packs21/"
 local metadata_pack_json_map = {}
+local pack_id_json_map = {}
 local folder_pack_json_map = {}
 local sound_mapping = {
     ["beep.ogg"] = "click.ogg",
@@ -130,9 +131,10 @@ function assets.init(data)
             assets.pack_ids[#assets.pack_ids + 1] = index_pack_id
             pack_json.pack_name = pack_folders[i]
             metadata_pack_json_map[index_pack_id] = pack_json
+            pack_id_json_map[pack_json.pack_id] = pack_json
             folder_pack_json_map[folder] = pack_json
 
-            data.register_pack(index_pack_id, pack_json.pack_name, 21)
+            data.register_pack(pack_json.pack_id, pack_json.pack_name, 21)
 
             -- level data has to be loaded here for level selection purposes
             pack_json.levels = {}
@@ -150,7 +152,7 @@ function assets.init(data)
                     if not has1 then
                         level_json.difficultyMults[#level_json.difficultyMults + 1] = 1
                     end
-                    data.register_level(index_pack_id, level_json.id, level_json.name, {
+                    data.register_level(pack_json.pack_id, level_json.id, level_json.name, {
                         difficulty_mult = level_json.difficultyMults,
                     })
                     pack_json.levels[level_json.id] = level_json
@@ -167,7 +169,11 @@ end
 function assets.get_pack_from_id(id)
     local pack = metadata_pack_json_map[id]
     if pack == nil then
-        error("Pack with id '" .. id .. "' not found.")
+        -- try again with full id map
+        pack = pack_id_json_map[id]
+        if pack == nil then
+            error("Pack with id '" .. id .. "' not found.")
+        end
     end
     return assets.get_pack(pack.pack_name)
 end

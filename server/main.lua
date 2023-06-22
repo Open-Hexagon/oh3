@@ -1,6 +1,7 @@
 local packet_handler = require("server.packet_handler")
 local packet_types = require("server.packet_types")
 local database = require("server.database")
+local version = require("server.version")
 local uv = require("luv")
 
 local function create_server(host, port, on_connection)
@@ -26,10 +27,10 @@ local function process_packet(data, client)
     if data:sub(1, 2) ~= "oh" then
         return "wrong preamble bytes"
     end
-    if protocol_version ~= 0 then
+    if protocol_version ~= version.PROTOCOL_VERSION then
         return "wrong protocol version"
     end
-    if game_version_major ~= 2 then
+    if game_version_major ~= version.GAME_VERSION[1] then
         return "wrong game major version"
     end
     if not game_version_minor then
@@ -63,7 +64,15 @@ local server = create_server("0.0.0.0", 50505, function(client)
             if not type_num then
                 print("Attempted to send packet with invalid type: " .. packet_type)
             else
-                contents = "oh" .. love.data.pack("string", ">BBBBB", 0, 2, 1, 7, type_num) .. contents
+                contents = "oh" .. love.data.pack(
+                    "string",
+                    ">BBBBB",
+                    version.PROTOCOL_VERSION,
+                    version.GAME_VERSION[1],
+                    version.GAME_VERSION[2],
+                    version.GAME_VERSION[3],
+                    type_num
+                ) .. contents
                 local packet = love.data.pack("string", ">I4", #contents) .. contents
                 client:write(packet)
             end
@@ -108,6 +117,12 @@ local server = create_server("0.0.0.0", 50505, function(client)
 end)
 
 print("TCP server listening on port " .. server:getsockname().port)
+
+local signal = uv.new_signal()
+signal:start("sigint", function(sig)
+    print("got " .. sig .. ", shutting down")
+    os.exit(1)
+end)
 
 database.open()
 packet_handler.set_database(database)
