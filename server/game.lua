@@ -14,7 +14,7 @@ function game.init()
 end
 
 function game.verify_replay_and_save_score(compressed_replay, time, steam_id)
-    love.thread.getChannel("game_commands"):push({"rp", compressed_replay, time, steam_id})
+    love.thread.getChannel("game_commands"):push({"verify_replay", compressed_replay, time, steam_id})
 end
 
 function game.stop()

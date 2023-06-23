@@ -8,6 +8,7 @@ local uv = require("luv")
 database.set_identity(1)
 
 local replay_path = database.get_replay_path()
+local api = {}
 
 game_handler.init(config)
 local level_validators = {}
@@ -55,7 +56,7 @@ local function save_replay(replay_obj, hash, data)
     replay_obj:save(path, data)
 end
 
-local function verify_replay(compressed_replay, time, steam_id)
+function api.verify_replay(compressed_replay, time, steam_id)
     local start = uv.hrtime()
     local decoded_replay = replay:new_from_data(compressed_replay)
     game_handler.replay_start(decoded_replay)
@@ -94,9 +95,15 @@ end
 local run = true
 while run do
     local cmd = love.thread.getChannel("game_commands"):demand()
-    if cmd[1] == "rp" then
-        verify_replay(cmd[2], cmd[3], cmd[4])
-    elseif cmd[1] == "stop" then
+    if cmd[1] == "stop" then
         run = false
+    else
+        xpcall(function()
+            local fn = api[cmd[1]]
+            table.remove(cmd, 1)
+            fn(unpack(cmd))
+        end, function(err)
+            print("Error while verifying replay:\n", err)
+        end)
     end
 end

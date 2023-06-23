@@ -206,7 +206,11 @@ function api.get_leaderboard(pack, level, level_options, steam_id)
             value = times[i],
         }
         if score.steam_id == steam_id then
-            user_score = ret[#ret]
+            user_score = {}
+            for k, v in pairs(ret[#ret]) do
+                user_score[k] = v
+            end
+            user_score.position = user_score.position - 1
         end
     end
     return ret, user_score
