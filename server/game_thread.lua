@@ -38,7 +38,7 @@ local api = {}
 
 local time_tolerance = 3
 local score_tolerance = 0.2
-local max_processing_time = 10
+local max_processing_time = 300
 
 local function save_replay(replay_obj, hash, data)
     local dir = replay_path .. hash:sub(1, 2) .. "/"
