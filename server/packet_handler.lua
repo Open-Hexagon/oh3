@@ -90,6 +90,24 @@ local handlers = {
             client.send_packet("registration_success")
         end
     end,
+    delete_account = function(data, client)
+        local steam_id, offset = read_uint64(data)
+        steam_id = tostring(steam_id):sub(1, -4)
+        local password_hash = read_str(data, offset)
+        local function send_fail(err)
+            client.send_packet("delete_account_failure", write_str(err))
+        end
+        local user = database.get_user_by_steam_id(steam_id)
+        if not user then
+            send_fail("No user with steam id '" .. steam_id .. "' registered")
+        elseif user.password_hash ~= password_hash then
+            send_fail("Invalid password for user matching '" .. steam_id .. "'")
+        else
+            database.remove_login_tokens(steam_id)
+            database.delete(steam_id)
+            client.send_packet("delete_account_success")
+        end
+    end,
     login = function(data, client)
         local steam_id, offset = read_uint64(data)
         steam_id = tostring(steam_id):sub(1, -4)
