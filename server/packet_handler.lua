@@ -155,18 +155,11 @@ local handlers = {
                 if level_validator_map[level] then
                     local packet_data = write_str(level)
                     local actual_level = level_validator_to_id[level]
-                    if actual_level.pack == nil or actual_level.level == nil or actual_level.difficulty_mults == nil then
+                    if actual_level.pack == nil or actual_level.level == nil or actual_level.difficulty_mult == nil then
                         log("Unsupported level: " .. level)
                     else
-                        local sub_string = level:sub(#level)
-                        local count = 1
-                        while not sub_string:find("_m_") do
-                            sub_string = level:sub(#level - count)
-                            count = count + 1
-                        end
-                        sub_string = sub_string:gsub("_m_", "")
                         local opts = {
-                            difficulty_mult = utils.float_round(tonumber(sub_string))
+                            difficulty_mult = utils.float_round(actual_level.difficulty_mult)
                         }
                         log("Getting leaderboard for '" .. actual_level.level .. "' from '" .. actual_level.pack .. "'")
                         local leaderboard, own_score = database.get_leaderboard(
@@ -288,11 +281,10 @@ function packet_handler.init(db)
     game.init()
     for i = 1, #game.level_validators do
         level_validator_map[game.level_validators[i]] = true
-        local _, dms = msgpack.unpack(game.levels[i * 3])
         level_validator_to_id[game.level_validators[i]] = {
             pack = game.levels[i * 3 - 2],
             level = game.levels[i * 3 - 1],
-            difficulty_mults = dms,
+            difficulty_mult = game.levels[i * 3],
         }
     end
 end

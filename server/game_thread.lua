@@ -1,15 +1,10 @@
-local log = require("log")(...)
+local log_name, as_thread = ...
+local log = require("log")(log_name)
 local msgpack = require("extlibs.msgpack.msgpack")
 local replay = require("game_handler.replay")
 local game_handler = require("game_handler")
-local database = require("server.database")
 local config = require("config")
 local uv = require("luv")
-
-database.set_identity(1)
-
-local replay_path = database.get_replay_path()
-local api = {}
 
 game_handler.init(config)
 local level_validators = {}
@@ -20,18 +15,26 @@ for j = 1, #packs do
     if pack.game_version == 21 then
         for k = 1, pack.level_count do
             local level = pack.levels[k]
-            local encoded_opts = msgpack.pack(level.options.difficulty_mult)
             for i = 1, #level.options.difficulty_mult do
                 level_validators[#level_validators + 1] = pack.id .. "_" .. level.id .. "_m_" .. level.options.difficulty_mult[i]
                 levels[#levels + 1] = pack.id
                 levels[#levels + 1] = level.id
-                levels[#levels + 1] = encoded_opts
+                levels[#levels + 1] = level.options.difficulty_mult[i]
             end
         end
     end
 end
-love.thread.getChannel("ranked_levels"):push(level_validators)
-love.thread.getChannel("ranked_levels"):push(levels)
+
+local database, replay_path
+if as_thread then
+    database = require("server.database")
+    database.set_identity(1)
+    replay_path = database.get_replay_path()
+    love.thread.getChannel("ranked_levels"):push(level_validators)
+    love.thread.getChannel("ranked_levels"):push(levels)
+end
+
+local api = {}
 
 local time_tolerance = 3
 local score_tolerance = 0.2
@@ -93,18 +96,22 @@ function api.verify_replay(compressed_replay, time, steam_id)
     end
 end
 
-local run = true
-while run do
-    local cmd = love.thread.getChannel("game_commands"):demand()
-    if cmd[1] == "stop" then
-        run = false
-    else
-        xpcall(function()
-            local fn = api[cmd[1]]
-            table.remove(cmd, 1)
-            fn(unpack(cmd))
-        end, function(err)
-            log("Error while verifying replay:\n", err)
-        end)
+if as_thread then
+    local run = true
+    while run do
+        local cmd = love.thread.getChannel("game_commands"):demand()
+        if cmd[1] == "stop" then
+            run = false
+        else
+            xpcall(function()
+                local fn = api[cmd[1]]
+                table.remove(cmd, 1)
+                fn(unpack(cmd))
+            end, function(err)
+                log("Error while verifying replay:\n", err)
+            end)
+        end
     end
+else
+    return {level_validators, levels}
 end

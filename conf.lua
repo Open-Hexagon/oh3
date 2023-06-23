@@ -28,7 +28,7 @@ function love.conf(t)
         t.modules.physics = false
         t.modules.sound = false
         t.modules.system = false
-        t.modules.thread = args.server
+        t.modules.thread = args.server or args.migrate
         t.modules.timer = true
         t.modules.touch = false
         t.modules.video = false

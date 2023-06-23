@@ -1,4 +1,5 @@
-local log = require("log")(...)
+local log_name, as_thread = ...
+local log = require("log")(log_name)
 local sqlite = require("extlibs.sqlite")
 local strfun = require("extlibs.sqlite.strfun")
 local api = {}
@@ -115,7 +116,7 @@ end
 ---@param level string
 ---@param level_options any
 ---@param score number
----@param hash string
+---@param hash string?
 ---@return boolean
 function api.save_score(time, steam_id, pack, level, level_options, score, hash)
     level_options = love.data.encode("string", "base64", level_options)
@@ -146,12 +147,14 @@ function api.save_score(time, steam_id, pack, level, level_options, score, hash)
             log("Score is worse than pb, discarding")
             return false
         end
-        -- remove old replay
-        local folder = replay_path .. results[1].replay_hash:sub(1, 2) .. "/"
-        local path = folder .. results[1].replay_hash
-        love.filesystem.remove(path)
-        if #love.filesystem.getDirectoryItems(folder) == 0 then
-            love.filesystem.remove(folder)
+        if results[1].replay_hash then
+            -- remove old replay
+            local folder = replay_path .. results[1].replay_hash:sub(1, 2) .. "/"
+            local path = folder .. results[1].replay_hash
+            love.filesystem.remove(path)
+            if #love.filesystem.getDirectoryItems(folder) == 0 then
+                love.filesystem.remove(folder)
+            end
         end
         database:update("scores", {
             where = {
@@ -234,23 +237,33 @@ function api.delete(steam_id)
     database:delete("users", { where = { steam_id = steam_id } })
 end
 
-database:open()
-local run = true
-while run do
-    local cmd = love.thread.getChannel("db_cmd"):demand()
-    local thread_id = cmd[1]
-    table.remove(cmd, 1)
-    if cmd[1] == "stop" then
-        run = false
-    else
-        xpcall(function()
-            local fn = api[cmd[1]]
-            table.remove(cmd, 1)
-            local ret = {fn(unpack(cmd))}
-            love.thread.getChannel("db_out" .. thread_id):push(ret)
-        end, function(err)
-            love.thread.getChannel("db_out" .. thread_id):push({"error", err})
-        end)
+if as_thread then
+    database:open()
+    local run = true
+    while run do
+        local cmd = love.thread.getChannel("db_cmd"):demand()
+        local thread_id = cmd[1]
+        table.remove(cmd, 1)
+        if cmd[1] == "stop" then
+            run = false
+        else
+            xpcall(function()
+                local fn = api[cmd[1]]
+                table.remove(cmd, 1)
+                local ret = {fn(unpack(cmd))}
+                love.thread.getChannel("db_out" .. thread_id):push(ret)
+            end, function(err)
+                love.thread.getChannel("db_out" .. thread_id):push({"error", err})
+            end)
+        end
     end
+    database:close()
+else
+    function api.open()
+        database:open()
+    end
+    function api.close()
+        database:close()
+    end
+    return api
 end
-database:close()

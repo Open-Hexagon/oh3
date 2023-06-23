@@ -5,6 +5,17 @@ function love.run()
     -- make sure no level accesses malicious files via symlinks
     love.filesystem.setSymlinksEnabled(false)
 
+    if args.migrate then
+        -- migrate a ranking database from the old game to the new format
+        if args.no_option == nil then
+            error("Called migrate without a database to migrate")
+        end
+        require("server.migrate")(args.no_option)
+        return function()
+            return 0
+        end
+    end
+
     if args.server then
         -- game21 compat server (made for old clients)
         require("server")

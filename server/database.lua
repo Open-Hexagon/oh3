@@ -5,7 +5,7 @@ local calling_thread
 
 function db.init()
     thread = love.thread.newThread("server/database_thread.lua")
-    thread:start("server.database_thread")
+    thread:start("server.database_thread", true)
 end
 
 function db.set_identity(thread_id)

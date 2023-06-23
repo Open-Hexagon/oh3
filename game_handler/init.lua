@@ -28,7 +28,7 @@ game_handler.profile = require("game_handler.profile")
 function game_handler.init(config)
     -- 1.92 needs persistent data for asset loading as it can overwrite any file
     local persistent_data
-    if not args.server then
+    if not args.server and not args.migrate then
         persistent_data = game_handler.profile.get_all_data()
     end
     for _, game in pairs(games) do
