@@ -1,3 +1,4 @@
+local log = require("log")(...)
 local msgpack = require("extlibs.msgpack.msgpack")
 local replay = require("game_handler.replay")
 local game_handler = require("game_handler")
@@ -62,7 +63,7 @@ function api.verify_replay(compressed_replay, time, steam_id)
     game_handler.replay_start(decoded_replay)
     game_handler.run_until_death(function()
         if uv.hrtime() - start > max_processing_time * 1000000000 then
-            print("exceeded max processing time")
+            log("exceeded max processing time")
             return true
         end
         return false
@@ -70,7 +71,7 @@ function api.verify_replay(compressed_replay, time, steam_id)
     local score = game_handler.get_score()
     if score + score_tolerance > decoded_replay.score and score - score_tolerance < decoded_replay.score then
         if time + time_tolerance > score and time - time_tolerance < score then
-            print("replay verified")
+            log("replay verified, score: " .. score)
             local hash, data = decoded_replay:get_hash()
             if database.save_score(
                 time,
@@ -82,13 +83,13 @@ function api.verify_replay(compressed_replay, time, steam_id)
                 hash
             ) then
                 save_replay(decoded_replay, hash, data)
-                print("Saved new score")
+                log("Saved new score")
             end
         else
-            print("time between packets of " .. time .. " does not match score of " .. score)
+            log("time between packets of " .. time .. " does not match score of " .. score)
         end
     else
-        print("The replay's score of " .. decoded_replay.score .. " does not match the actual score of " .. score)
+        log("The replay's score of " .. decoded_replay.score .. " does not match the actual score of " .. score)
     end
 end
 
@@ -103,7 +104,7 @@ while run do
             table.remove(cmd, 1)
             fn(unpack(cmd))
         end, function(err)
-            print("Error while verifying replay:\n", err)
+            log("Error while verifying replay:\n", err)
         end)
     end
 end

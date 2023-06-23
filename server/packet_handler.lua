@@ -1,3 +1,4 @@
+local log = require("log")(...)
 local utils = require("compat.game192.utils")
 local msgpack = require("extlibs.msgpack.msgpack")
 local packet_types = require("server.packet_types")
@@ -43,11 +44,11 @@ local handlers = {
     -- get the public key from the client and send our own after generating receive and transmit keys
     public_key = function(data, client)
         client.key = data
-        print("client pub key: " .. sodium_key_to_string(client.key))
+        log("client pub key: " .. sodium_key_to_string(client.key))
         client.receive_key, client.transmit_key = sodium.crypto_kx_server_session_keys(server_pk, server_sk, client.key)
-        print("Calculated RT keys:")
-        print(sodium_key_to_string(client.receive_key))
-        print(sodium_key_to_string(client.transmit_key))
+        log("Calculated RT keys:")
+        log(sodium_key_to_string(client.receive_key))
+        log(sodium_key_to_string(client.transmit_key))
         client.send_packet("public_key", server_pk)
     end,
     -- decrypt an encrypted message from the client and call the packet handler again
@@ -60,12 +61,12 @@ local handlers = {
             local packet_type = love.data.unpack(">B", message)
             local str_type = packet_types.client_to_server[packet_type]
             if str_type == nil then
-                print("Got an invalid packet type: " .. packet_type)
+                log("Got an invalid packet type: '" .. packet_type .. "'")
             else
                 packet_handler.process(str_type, message:sub(2), client)
             end
         else
-            print("Got encoded packet before getting client's RT keys!")
+            log("Got encoded packet before getting client's RT keys!")
         end
     end,
     register = function(data, client)
@@ -85,7 +86,7 @@ local handlers = {
             send_fail("User with name '" .. name .. "' already registered")
         else
             database.register(name, steam_id, password_hash)
-            print("Successfully registered new user '" .. name .. "'")
+            log("Successfully registered new user '" .. name .. "'")
             client.send_packet("registration_success")
         end
     end,
@@ -120,7 +121,7 @@ local handlers = {
                         login_token = login_token,
                         ready = false,
                     }
-                    print("Successfully logged in user '" .. name .. "'")
+                    log("Successfully logged in user '" .. name .. "'")
                     client.send_packet("login_success", login_token .. write_str(name))
                 end
             else
@@ -137,7 +138,7 @@ local handlers = {
                     local packet_data = write_str(level)
                     local actual_level = level_validator_to_id[level]
                     if actual_level.pack == nil or actual_level.level == nil or actual_level.difficulty_mults == nil then
-                        print("Unsupported level: " .. level)
+                        log("Unsupported level: " .. level)
                     else
                         local sub_string = level:sub(#level)
                         local count = 1
@@ -149,7 +150,7 @@ local handlers = {
                         local opts = {
                             difficulty_mult = utils.float_round(tonumber(sub_string))
                         }
-                        print("Getting leaderboard for '" .. actual_level.level .. "' from '" .. actual_level.pack .. "'")
+                        log("Getting leaderboard for '" .. actual_level.level .. "' from '" .. actual_level.pack .. "'")
                         local leaderboard, own_score = database.get_leaderboard(
                             actual_level.pack,
                             actual_level.level,
@@ -177,7 +178,7 @@ local handlers = {
                         client.send_packet("top_scores_and_own_score", packet_data)
                     end
                 else
-                    print("Requested leaderboards for unsupported level validator.")
+                    log("Requested leaderboards for unsupported level validator.")
                 end
             end
         end
@@ -218,7 +219,7 @@ local handlers = {
         if client.login_data and client.login_data.login_token == login_token then
             client.login_data.ready = true
         else
-            print("client sent ready with invalid login token")
+            log("client sent ready with invalid login token")
         end
     end,
     started_game = function(data, client)
@@ -227,12 +228,12 @@ local handlers = {
             if client.login_data.ready then
                 client.current_level = read_str(data, 9)
                 client.start_time = love.timer.getTime()
-                print("client started game on " .. client.current_level)
+                log("client started game on " .. client.current_level)
             else
-                print("client sent started_game packet before ready")
+                log("client sent started_game packet before ready")
             end
         else
-            print("client started game with invalid login token")
+            log("client started game with invalid login token")
         end
     end,
     compressed_replay = function(data, client)
@@ -241,15 +242,15 @@ local handlers = {
         if client.login_data and client.login_data.login_token == login_token then
             -- started game earlier
             if client.login_data.ready and client.current_level then
-                print("game ended, verifying replay...")
+                log("game ended, verifying replay...")
                 -- skip reading replay size, it's not required
                 game.verify_replay_and_save_score(data:sub(9 + 8), love.timer.getTime() - client.start_time, client.login_data.steam_id)
                 client.current_level = nil
             else
-                print("sent compressed replay without client being ready or having started a game")
+                log("sent compressed replay without client being ready or having started a game")
             end
         else
-            print("sent compressed replay with invalid login token")
+            log("sent compressed replay with invalid login token")
         end
     end,
     heartbeat = function() end,
@@ -260,7 +261,7 @@ function packet_handler.process(packet_type, data, client)
     if handlers[packet_type] then
         handlers[packet_type](data, client)
     else
-        print("Unhandled packet type: " .. packet_type)
+        log("Unhandled packet type: '" .. packet_type .. "'")
     end
 end
 

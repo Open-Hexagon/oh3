@@ -1,10 +1,11 @@
+local log = require("log")(...)
 local db = {}
 local thread
 local calling_thread
 
 function db.init()
     thread = love.thread.newThread("server/database_thread.lua")
-    thread:start()
+    thread:start("server.database_thread")
 end
 
 function db.set_identity(thread_id)
@@ -25,7 +26,7 @@ function db.stop()
         love.thread.getChannel("db_cmd"):push({calling_thread, "stop"})
         thread:wait()
     else
-        print("error in db thread:\n", thread:getError())
+        log("error in db thread:\n", thread:getError())
     end
 end
 

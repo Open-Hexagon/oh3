@@ -1,3 +1,4 @@
+local log = require("log")(...)
 local sqlite = require("extlibs.sqlite")
 local strfun = require("extlibs.sqlite.strfun")
 local api = {}
@@ -139,10 +140,10 @@ function api.save_score(time, steam_id, pack, level, level_options, score, hash)
         return true
     else
         if #results > 1 then
-            print("Player has more than one score on the same ranking!")
+            log("Player has more than one score on the same ranking!")
         end
         if results[1].score > score then
-            print("Score is worse than pb, discarding")
+            log("Score is worse than pb, discarding")
             return false
         end
         -- remove old replay

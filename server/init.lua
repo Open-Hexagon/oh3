@@ -1,3 +1,4 @@
+local log = require("log")(...)
 local packet_handler = require("server.packet_handler")
 local packet_types = require("server.packet_types")
 local database = require("server.database")
@@ -64,7 +65,7 @@ local server = create_server("0.0.0.0", 50505, function(client)
                 end
             end
             if not type_num then
-                print("Attempted to send packet with invalid type: " .. packet_type)
+                log("Attempted to send packet with invalid type: '" .. packet_type .. "'")
             else
                 contents = "oh" .. love.data.pack(
                     "string",
@@ -80,10 +81,10 @@ local server = create_server("0.0.0.0", 50505, function(client)
             end
         end
     }
-    print("Connection from " .. name)
+    log("Connection from " .. name)
     client:read_start(function(err, chunk)
         if err then
-            print("Closing connection from " .. name .. " due to error: ", err)
+            log("Closing connection from " .. name .. " due to error: ", err)
             client:close()
         end
 
@@ -99,7 +100,7 @@ local server = create_server("0.0.0.0", 50505, function(client)
                         if err then
                             -- client sends wrong packets (e.g. wrong protocol version)
                             client:close()
-                            print("Closing connection to " .. name .. ". Reason: " .. err)
+                            log("Closing connection to " .. name .. ". Reason: " .. err)
                             return
                         end
                         data = data:sub(pending_packet_size + 1)
@@ -112,20 +113,20 @@ local server = create_server("0.0.0.0", 50505, function(client)
                 end
             end
         else
-            print("Client from " .. name .. " disconnected")
+            log("Client from " .. name .. " disconnected")
             client:close()
         end
     end)
 end)
 
-print("TCP server listening on port " .. server:getsockname().port)
+log("Server listening on port " .. server:getsockname().port)
 
 local signal = uv.new_signal()
 signal:start("sigint", function(sig)
-    print("got " .. sig .. ", shutting down")
-    print("waiting for game to stop...")
+    log("got " .. sig .. ", shutting down")
+    log("waiting for game to stop...")
     packet_handler.stop_game()
-    print("waiting for database to stop...")
+    log("waiting for database to stop...")
     database.stop()
     os.exit(1)
 end)
