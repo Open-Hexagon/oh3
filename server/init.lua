@@ -119,7 +119,7 @@ local server = create_server("0.0.0.0", 50505, function(client)
     end)
 end)
 
-log("Server listening on port " .. server:getsockname().port)
+log("listening")
 
 local signal = uv.new_signal()
 signal:start("sigint", function(sig)
