@@ -86,6 +86,7 @@ local server = create_server("0.0.0.0", 50505, function(client)
         if err then
             log("Closing connection from " .. name .. " due to error: ", err)
             client:close()
+            return
         end
 
         if chunk then
