@@ -26,7 +26,8 @@ local function create_server(host, port, on_connection)
 end
 
 local function process_packet(data, client)
-    local protocol_version, game_version_major, game_version_minor, game_version_micro, packet_type, offset = love.data.unpack(">BBBBB", data, 3)
+    local protocol_version, game_version_major, game_version_minor, game_version_micro, packet_type, offset =
+        love.data.unpack(">BBBBB", data, 3)
     if data:sub(1, 2) ~= "oh" then
         return "wrong preamble bytes"
     end
@@ -67,19 +68,21 @@ local server = create_server("0.0.0.0", 50505, function(client)
             if not type_num then
                 log("Attempted to send packet with invalid type: '" .. packet_type .. "'")
             else
-                contents = "oh" .. love.data.pack(
-                    "string",
-                    ">BBBBB",
-                    version.PROTOCOL_VERSION,
-                    version.GAME_VERSION[1],
-                    version.GAME_VERSION[2],
-                    version.GAME_VERSION[3],
-                    type_num
-                ) .. contents
+                contents = "oh"
+                    .. love.data.pack(
+                        "string",
+                        ">BBBBB",
+                        version.PROTOCOL_VERSION,
+                        version.GAME_VERSION[1],
+                        version.GAME_VERSION[2],
+                        version.GAME_VERSION[3],
+                        type_num
+                    )
+                    .. contents
                 local packet = love.data.pack("string", ">I4", #contents) .. contents
                 client:write(packet)
             end
-        end
+        end,
     }
     log("Connection from " .. name)
     client:read_start(function(err, chunk)

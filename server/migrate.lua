@@ -33,12 +33,31 @@ return function(old_db_path)
     for i = 1, #scores do
         local score = scores[i]
         local actual_level = level_validator_to_id[score.levelValidator]
-        if actual_level == nil or actual_level.pack == nil or actual_level.level == nil or actual_level.difficulty_mult == nil then
+        if
+            actual_level == nil
+            or actual_level.pack == nil
+            or actual_level.level == nil
+            or actual_level.difficulty_mult == nil
+        then
             print("Missing '" .. score.levelValidator .. "' for migration")
         else
-            print(actual_level.pack, actual_level.level, actual_level.difficulty_mult, score.value, score["cast(userSteamId as text)"], score.timestamp)
-            local opts = {difficulty_mult = utils.float_round(actual_level.difficulty_mult)}
-            database.save_score(score.value, score["cast(userSteamId as text)"], actual_level.pack, actual_level.level, msgpack.pack(opts), score.value)
+            print(
+                actual_level.pack,
+                actual_level.level,
+                actual_level.difficulty_mult,
+                score.value,
+                score["cast(userSteamId as text)"],
+                score.timestamp
+            )
+            local opts = { difficulty_mult = utils.float_round(actual_level.difficulty_mult) }
+            database.save_score(
+                score.value,
+                score["cast(userSteamId as text)"],
+                actual_level.pack,
+                actual_level.level,
+                msgpack.pack(opts),
+                score.value
+            )
         end
     end
     old_database:close()

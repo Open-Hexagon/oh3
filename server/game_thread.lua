@@ -16,7 +16,11 @@ for j = 1, #packs do
         for k = 1, pack.level_count do
             local level = pack.levels[k]
             for i = 1, #level.options.difficulty_mult do
-                level_validators[#level_validators + 1] = pack.id .. "_" .. level.id .. "_m_" .. level.options.difficulty_mult[i]
+                level_validators[#level_validators + 1] = pack.id
+                    .. "_"
+                    .. level.id
+                    .. "_m_"
+                    .. level.options.difficulty_mult[i]
                 levels[#levels + 1] = pack.id
                 levels[#levels + 1] = level.id
                 levels[#levels + 1] = level.options.difficulty_mult[i]
@@ -76,15 +80,17 @@ function api.verify_replay(compressed_replay, time, steam_id)
         if time + time_tolerance > score and time - time_tolerance < score then
             log("replay verified, score: " .. score)
             local hash, data = decoded_replay:get_hash()
-            if database.save_score(
-                time,
-                steam_id,
-                decoded_replay.pack_id,
-                decoded_replay.level_id,
-                msgpack.pack(decoded_replay.data.level_settings),
-                score,
-                hash
-            ) then
+            if
+                database.save_score(
+                    time,
+                    steam_id,
+                    decoded_replay.pack_id,
+                    decoded_replay.level_id,
+                    msgpack.pack(decoded_replay.data.level_settings),
+                    score,
+                    hash
+                )
+            then
                 save_replay(decoded_replay, hash, data)
                 log("Saved new score")
             end
@@ -113,5 +119,5 @@ if as_thread then
         end
     end
 else
-    return {level_validators, levels}
+    return { level_validators, levels }
 end

@@ -15,12 +15,12 @@ function game.init()
 end
 
 function game.verify_replay_and_save_score(compressed_replay, time, steam_id)
-    love.thread.getChannel("game_commands"):push({"verify_replay", compressed_replay, time, steam_id})
+    love.thread.getChannel("game_commands"):push({ "verify_replay", compressed_replay, time, steam_id })
 end
 
 function game.stop()
     if thread:isRunning() then
-        love.thread.getChannel("game_commands"):push({"stop"})
+        love.thread.getChannel("game_commands"):push({ "stop" })
         thread:wait()
     else
         log("Got error in game thread:\n", thread:getError())

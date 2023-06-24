@@ -34,7 +34,7 @@ local database = sqlite({
         steam_id = { "text", unique = true },
         created = { "timestamp", default = strfun.strftime("%s", "now") },
         token = { "text", unique = true, primary = true },
-    }
+    },
 })
 
 ---get the replay path
@@ -76,7 +76,7 @@ end
 ---@param steam_id string
 ---@return table|nil
 function api.get_user(name, steam_id)
-    local results = database:select("users", { where = { username = name, steam_id = steam_id} })
+    local results = database:select("users", { where = { username = name, steam_id = steam_id } })
     if #results == 0 then
         return
     end
@@ -88,7 +88,7 @@ end
 ---@param steam_id string
 ---@return table|nil
 function api.get_user_by_steam_id(steam_id)
-    local results = database:select("users", { where = { steam_id = steam_id} })
+    local results = database:select("users", { where = { steam_id = steam_id } })
     if #results == 0 then
         return
     end
@@ -105,7 +105,7 @@ function api.register(username, steam_id, password_hash)
     return database:insert("users", {
         steam_id = steam_id,
         username = username,
-        password_hash = love.data.encode("string", "base64", password_hash)
+        password_hash = love.data.encode("string", "base64", password_hash),
     })
 end
 
@@ -167,6 +167,7 @@ function api.save_score(time, steam_id, pack, level, level_options, score, hash)
                 time = time,
                 score = score,
                 replay_hash = hash,
+                created = os.time(),
             },
         })
         return true
@@ -195,7 +196,7 @@ function api.get_leaderboard(pack, level, level_options, steam_id)
         local score = results[i]
         times[#times + 1] = score.score
         if scores_by_time[score.score] == nil then
-            scores_by_time[score.score] = {score}
+            scores_by_time[score.score] = { score }
         else
             scores_by_time[score.score][#scores_by_time[score.score] + 1] = score
         end
@@ -262,10 +263,10 @@ if as_thread then
             xpcall(function()
                 local fn = api[cmd[1]]
                 table.remove(cmd, 1)
-                local ret = {fn(unpack(cmd))}
+                local ret = { fn(unpack(cmd)) }
                 love.thread.getChannel("db_out" .. thread_id):push(ret)
             end, function(err)
-                love.thread.getChannel("db_out" .. thread_id):push({"error", err})
+                love.thread.getChannel("db_out" .. thread_id):push({ "error", err })
             end)
         end
     end

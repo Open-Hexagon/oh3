@@ -159,7 +159,7 @@ local handlers = {
                         log("Unsupported level: " .. level)
                     else
                         local opts = {
-                            difficulty_mult = utils.float_round(actual_level.difficulty_mult)
+                            difficulty_mult = utils.float_round(actual_level.difficulty_mult),
                         }
                         log("Getting leaderboard for '" .. actual_level.level .. "' from '" .. actual_level.pack .. "'")
                         local leaderboard, own_score = database.get_leaderboard(
@@ -255,7 +255,11 @@ local handlers = {
             if client.login_data.ready and client.current_level then
                 log("game ended, verifying replay...")
                 -- skip reading replay size, it's not required
-                game.verify_replay_and_save_score(data:sub(9 + 8), love.timer.getTime() - client.start_time, client.login_data.steam_id)
+                game.verify_replay_and_save_score(
+                    data:sub(9 + 8),
+                    love.timer.getTime() - client.start_time,
+                    client.login_data.steam_id
+                )
                 client.current_level = nil
             else
                 log("sent compressed replay without client being ready or having started a game")
