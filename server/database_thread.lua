@@ -194,13 +194,25 @@ function api.get_leaderboard(pack, level, level_options, steam_id)
     for i = 1, #results do
         local score = results[i]
         times[#times + 1] = score.score
-        scores_by_time[score.score] = score
+        if scores_by_time[score.score] == nil then
+            scores_by_time[score.score] = {score}
+        else
+            scores_by_time[score.score][#scores_by_time[score.score] + 1] = score
+        end
     end
     table.sort(times)
     local ret = {}
     local user_score
+    local time_count = 1
+    local last_time
     for i = #times, 1, -1 do
-        local score = scores_by_time[times[i]]
+        if times[i] ~= last_time then
+            time_count = 1
+        end
+        local scores_for_time = scores_by_time[times[i]]
+        local score = scores_for_time[time_count]
+        time_count = time_count + 1
+        last_time = times[i]
         local user = api.get_user_by_steam_id(score.steam_id)
         local name = user and user.username or "deleted user"
         ret[#ret + 1] = {
