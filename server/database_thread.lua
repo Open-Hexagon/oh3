@@ -117,8 +117,9 @@ end
 ---@param level_options any
 ---@param score number
 ---@param hash string?
+---@param timestamp integer?
 ---@return boolean
-function api.save_score(time, steam_id, pack, level, level_options, score, hash)
+function api.save_score(time, steam_id, pack, level, level_options, score, hash, timestamp)
     level_options = love.data.encode("string", "base64", level_options)
     local results = database:select("scores", {
         where = {
@@ -137,6 +138,7 @@ function api.save_score(time, steam_id, pack, level, level_options, score, hash)
             time = time,
             score = score,
             replay_hash = hash,
+            created = timestamp,
         })
         return true
     else
@@ -167,7 +169,7 @@ function api.save_score(time, steam_id, pack, level, level_options, score, hash)
                 time = time,
                 score = score,
                 replay_hash = hash,
-                created = os.time(),
+                created = timestamp or os.time(),
             },
         })
         return true

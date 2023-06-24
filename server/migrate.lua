@@ -27,7 +27,9 @@ return function(old_db_path)
     for i = 1, #users do
         local user = users[i]
         local hash = love.data.decode("string", "hex", user["hex(passwordHash)"])
-        database.register(user.name, user["cast(steamId as text)"], hash)
+        if not database.user_exists_by_steam_id(user["cast(steamId as text)"]) then
+            database.register(user.name, user["cast(steamId as text)"], hash)
+        end
     end
     local scores = old_database:eval("SELECT cast(userSteamId as text), levelValidator, value, timestamp FROM scores")
     for i = 1, #scores do
@@ -56,7 +58,9 @@ return function(old_db_path)
                 actual_level.pack,
                 actual_level.level,
                 msgpack.pack(opts),
-                score.value
+                score.value,
+                nil,
+                score.timestamp
             )
         end
     end
