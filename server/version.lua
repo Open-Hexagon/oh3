@@ -1,4 +1,6 @@
 return {
-    GAME_VERSION = { 2, 1, 7 },
-    PROTOCOL_VERSION = 0,
+    COMPAT_GAME_VERSION = { 2, 1, 7 },
+    COMPAT_PROTOCOL_VERSION = 0,
+    GAME_VERSION = { 3, 0, 0 },
+    PROTOCOL_VERSION = 1,
 }

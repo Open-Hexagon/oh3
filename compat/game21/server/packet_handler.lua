@@ -1,7 +1,7 @@
 local log = require("log")(...)
 local utils = require("compat.game192.utils")
 local msgpack = require("extlibs.msgpack.msgpack")
-local packet_types = require("server.packet_types")
+local packet_types = require("compat.game21.server.packet_types")
 local version = require("server.version")
 local sodium = require("luasodium")
 local game = require("server.game")
@@ -49,7 +49,7 @@ local handlers = {
         log("Calculated RT keys:")
         log(sodium_key_to_string(client.receive_key))
         log(sodium_key_to_string(client.transmit_key))
-        client.send_packet("public_key", server_pk)
+        client.send_packet21("public_key", server_pk)
     end,
     -- decrypt an encrypted message from the client and call the packet handler again
     encrypted_msg = function(data, client)
@@ -76,7 +76,7 @@ local handlers = {
         name, offset = read_str(data, offset)
         password_hash, offset = read_str(data, offset)
         local function send_fail(err)
-            client.send_packet("registration_failure", write_str(err))
+            client.send_packet21("registration_failure", write_str(err))
         end
         if #name > 32 then
             send_fail("Name too long, max is 32 characters")
@@ -87,7 +87,7 @@ local handlers = {
         else
             database.register(name, steam_id, password_hash)
             log("Successfully registered new user '" .. name .. "'")
-            client.send_packet("registration_success")
+            client.send_packet21("registration_success")
         end
     end,
     delete_account = function(data, client)
@@ -95,7 +95,7 @@ local handlers = {
         steam_id = tostring(steam_id):sub(1, -4)
         local password_hash = read_str(data, offset)
         local function send_fail(err)
-            client.send_packet("delete_account_failure", write_str(err))
+            client.send_packet21("delete_account_failure", write_str(err))
         end
         local user = database.get_user_by_steam_id(steam_id)
         if not user then
@@ -105,7 +105,7 @@ local handlers = {
         else
             database.remove_login_tokens(steam_id)
             database.delete(steam_id)
-            client.send_packet("delete_account_success")
+            client.send_packet21("delete_account_success")
         end
     end,
     login = function(data, client)
@@ -115,7 +115,7 @@ local handlers = {
         name, offset = read_str(data, offset)
         password_hash, offset = read_str(data, offset)
         local function send_fail(err)
-            client.send_packet("login_failure", write_str(err))
+            client.send_packet21("login_failure", write_str(err))
         end
         if #name > 32 then
             send_fail("Name too long, max is 32 characters")
@@ -140,7 +140,7 @@ local handlers = {
                         ready = false,
                     }
                     log("Successfully logged in user '" .. name .. "'")
-                    client.send_packet("login_success", login_token .. write_str(name))
+                    client.send_packet21("login_success", login_token .. write_str(name))
                 end
             else
                 send_fail("No user matching '" .. steam_id .. "' and '" .. name .. "' registered")
@@ -186,7 +186,7 @@ local handlers = {
                                 .. love.data.pack("string", ">I8", own_score.timestamp)
                                 .. love.data.pack("string", "<d", own_score.value)
                         end
-                        client.send_packet("top_scores_and_own_score", packet_data)
+                        client.send_packet21("top_scores_and_own_score", packet_data)
                     end
                 else
                     log("Requested leaderboards for unsupported level validator.")
@@ -200,16 +200,16 @@ local handlers = {
             local packet_data = love.data.pack(
                 "string",
                 ">Bi4i4i4I8",
-                version.PROTOCOL_VERSION,
-                version.GAME_VERSION[1],
-                version.GAME_VERSION[2],
-                version.GAME_VERSION[3],
+                version.COMPAT_PROTOCOL_VERSION,
+                version.COMPAT_GAME_VERSION[1],
+                version.COMPAT_GAME_VERSION[2],
+                version.COMPAT_GAME_VERSION[3],
                 #game.level_validators
             )
             for i = 1, #game.level_validators do
                 packet_data = packet_data .. write_str(game.level_validators[i])
             end
-            client.send_packet("server_status", packet_data)
+            client.send_packet21("server_status", packet_data)
         end
     end,
     logout = function(data, client)
@@ -219,9 +219,9 @@ local handlers = {
             if database.user_exists_by_steam_id(steam_id) and client.login_data.steam_id == steam_id then
                 database.remove_login_tokens(client.login_data.steam_id)
                 client.login_data = nil
-                client.send_packet("logout_success")
+                client.send_packet21("logout_success")
             else
-                client.send_packet("logout_failure")
+                client.send_packet21("logout_failure")
             end
         end
     end,

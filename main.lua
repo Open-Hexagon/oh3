@@ -10,7 +10,7 @@ function love.run()
         if args.no_option == nil then
             error("Called migrate without a database to migrate")
         end
-        require("server.migrate")(args.no_option)
+        require("compat.game21.server.migrate")(args.no_option)
         return function()
             return 0
         end

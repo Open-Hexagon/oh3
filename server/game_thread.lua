@@ -7,35 +7,12 @@ local config = require("config")
 local uv = require("luv")
 
 game_handler.init(config)
-local level_validators = {}
-local levels = {}
-local packs = game_handler.get_packs()
-for j = 1, #packs do
-    local pack = packs[j]
-    if pack.game_version == 21 then
-        for k = 1, pack.level_count do
-            local level = pack.levels[k]
-            for i = 1, #level.options.difficulty_mult do
-                level_validators[#level_validators + 1] = pack.id
-                    .. "_"
-                    .. level.id
-                    .. "_m_"
-                    .. level.options.difficulty_mult[i]
-                levels[#levels + 1] = pack.id
-                levels[#levels + 1] = level.id
-                levels[#levels + 1] = level.options.difficulty_mult[i]
-            end
-        end
-    end
-end
 
 local database, replay_path
 if as_thread then
     database = require("server.database")
     database.set_identity(1)
     replay_path = database.get_replay_path()
-    love.thread.getChannel("ranked_levels"):push(level_validators)
-    love.thread.getChannel("ranked_levels"):push(levels)
 end
 
 local api = {}
@@ -102,6 +79,36 @@ function api.verify_replay(compressed_replay, time, steam_id)
     end
 end
 
+function api.get_levels21()
+    local level_validators = {}
+    local levels = {}
+    local packs = game_handler.get_packs()
+    for j = 1, #packs do
+        local pack = packs[j]
+        if pack.game_version == 21 then
+            for k = 1, pack.level_count do
+                local level = pack.levels[k]
+                for i = 1, #level.options.difficulty_mult do
+                    level_validators[#level_validators + 1] = pack.id
+                        .. "_"
+                        .. level.id
+                        .. "_m_"
+                        .. level.options.difficulty_mult[i]
+                    levels[#levels + 1] = pack.id
+                    levels[#levels + 1] = level.id
+                    levels[#levels + 1] = level.options.difficulty_mult[i]
+                end
+            end
+        end
+    end
+    if as_thread then
+        love.thread.getChannel("ranked_levels"):push(level_validators)
+        love.thread.getChannel("ranked_levels"):push(levels)
+    else
+        return {level_validators, levels}
+    end
+end
+
 if as_thread then
     local run = true
     while run do
@@ -119,5 +126,5 @@ if as_thread then
         end
     end
 else
-    return { level_validators, levels }
+    return api.get_levels21()
 end
