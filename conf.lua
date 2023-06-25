@@ -4,8 +4,13 @@ function love.conf(t)
     if not args.headless then
         t.window.title = "Open Hexagon"
         t.window.icon = "assets/image/icon.png"
-        t.window.width = 960
-        t.window.height = 540
+        if args.render then
+            t.window.width = 1920
+            t.window.height = 1080
+        else
+            t.window.width = 960
+            t.window.height = 540
+        end
         t.window.resizable = true
         t.window.minwidth = 640
         t.window.minheight = 360

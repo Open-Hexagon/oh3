@@ -16,6 +16,13 @@ Luv and luasodium can be installed with luarocks. The lua version has to be spec
 luarocks --lua-version 5.1 luv luasodium
 ```
 
+## Video Export
+You need to compile `game_handler/video/encode.c` for this to work.
+```
+gcc encode.c -shared -fPIC -o libencode.so -lavformat -lavcodec -lavutil -lm -lswresample -lswscale
+```
+Then run the game with the right `LD_LIBRARY_PATH` to find the lib.
+
 ## Tests
 Run tests with `luajit test/main.lua` in the source directory.
 Generate coverage statistics with `luajit test/main.lua --coverage`

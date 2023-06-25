@@ -11,6 +11,7 @@ local ret = {}
 ret.headless = love.filesystem.getIdentity() == "ohtest"
 ret.server = false
 ret.migrate = false
+ret.render = false
 for i = 1, #args do
     if args[i] == "--headless" then
         ret.headless = true
@@ -20,6 +21,9 @@ for i = 1, #args do
     elseif args[i] == "--migrate" then
         ret.headless = true
         ret.migrate = true
+    elseif args[i] == "--render" then
+        ret.render = true
+        ret.headless = false
     else
         ret.no_option = args[i]
     end
