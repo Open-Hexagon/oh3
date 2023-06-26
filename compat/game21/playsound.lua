@@ -1,6 +1,6 @@
 return function(source)
     if source ~= nil then
         source:seek(0)
-        love.audio.play(source)
+        source:play()
     end
 end

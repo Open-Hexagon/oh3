@@ -327,7 +327,7 @@ function lua_runtime.init_env(game, public, assets)
                 lua_runtime.error("Music with id '" .. music_id .. "' doesn't exist!")
             else
                 if game.music ~= nil and game.music.source ~= nil then
-                    love.audio.stop(game.music.source)
+                    game.music.source:stop()
                 end
                 game.music = music
                 game.refresh_music_pitch()
@@ -343,7 +343,7 @@ function lua_runtime.init_env(game, public, assets)
                 lua_runtime.error("Music with id '" .. music_id .. "' doesn't exist!")
             else
                 if game.music ~= nil and game.music.source ~= nil then
-                    love.audio.stop(game.music.source)
+                    game.music.source:stop()
                 end
                 game.music = music
                 game.refresh_music_pitch()

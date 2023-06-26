@@ -21,6 +21,7 @@ local audio_path = "assets/audio/"
 local cached_sounds = {}
 local loaded_fonts = {}
 local loaded_images = {}
+local audio_module
 
 local assets = {
     pack_ids = {},
@@ -99,7 +100,8 @@ local function file_ext_read_iter(dir, ending)
     end
 end
 
-function assets.init(data)
+function assets.init(data, audio)
+    audio_module = audio
     local pack_folders = love.filesystem.getDirectoryItems(pack_path)
     for i = 1, #pack_folders do
         local folder = pack_path .. pack_folders[i]
@@ -227,9 +229,8 @@ function assets.get_pack(name)
                     end
                     if
                         not pcall(function()
-                            music_json.source =
-                                love.audio.newSource(folder .. "/Music/" .. music_json.file_name, "stream")
-                            music_json.source:setLooping(true)
+                            music_json.source = audio_module.new_stream(folder .. "/Music/" .. music_json.file_name)
+                            music_json.source.looping = true
                         end)
                     then
                         log("Error: failed to load '" .. music_json.file_name .. "'")
@@ -451,14 +452,14 @@ end
 function assets.get_sound(id)
     id = sound_mapping[id] or id
     if cached_sounds[id] == nil then
-        cached_sounds[id] = love.audio.newSource(audio_path .. id, "static")
+        cached_sounds[id] = audio_module.new_static(audio_path .. id)
     end
     return cached_sounds[id]
 end
 
 function assets.get_pack_sound(pack, id)
     if pack.cached_sounds[id] == nil then
-        pack.cached_sounds[id] = love.audio.newSource(pack.path .. "/Sounds/" .. id, "static")
+        pack.cached_sounds[id] = audio_module.new_static(pack.path .. "/Sounds/" .. id)
     end
     return pack.cached_sounds[id]
 end

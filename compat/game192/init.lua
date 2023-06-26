@@ -35,11 +35,6 @@ local game = {
 local shake_move = { 0, 0 }
 local beep_sound, death_sound, game_over_sound, go_sound, level_up_sound, message_font, layer_shader, main_quads
 if not args.headless then
-    beep_sound = assets.get_sound("beep.ogg")
-    death_sound = assets.get_sound("death.ogg")
-    game_over_sound = assets.get_sound("game_over.ogg")
-    go_sound = assets.get_sound("go.ogg")
-    level_up_sound = assets.get_sound("level_up.ogg")
     message_font = love.graphics.newFont("assets/font/imagine.ttf", 40)
     layer_shader = love.graphics.newShader(
         [[
@@ -163,7 +158,7 @@ function public.start(pack_folder, level_id, difficulty_mult)
             else
                 game.music.source:seek(math.floor(game.music.segments[segment].time))
             end
-            love.audio.play(game.music.source)
+            game.music.source:play()
         end
     end
 
@@ -295,7 +290,7 @@ function public.update(frametime)
                 end)
                 game.status.has_died = true
                 if not args.headless and game.music.source ~= nil then
-                    love.audio.stop(game.music.source)
+                    game.music.source:stop()
                 end
                 if public.death_callback ~= nil then
                     public.death_callback()
@@ -553,9 +548,18 @@ end
 ---@param data table
 ---@param config table
 ---@param all_persistent_data table
-function public.init(data, config, all_persistent_data)
-    assets.init(data, all_persistent_data)
+---@param audio table?
+function public.init(data, config, all_persistent_data, audio)
+    assets.init(data, all_persistent_data, audio)
     public.config = config
+    game.audio = audio
+    if not args.headless then
+        beep_sound = assets.get_sound("beep.ogg")
+        death_sound = assets.get_sound("death.ogg")
+        game_over_sound = assets.get_sound("game_over.ogg")
+        go_sound = assets.get_sound("go.ogg")
+        level_up_sound = assets.get_sound("level_up.ogg")
+    end
 end
 
 ---updates the persistent data

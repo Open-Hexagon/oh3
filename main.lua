@@ -46,19 +46,17 @@ function love.run()
         if args.no_option == nil then
             error("trying to render replay without replay")
         end
-        local audio_mixer = require("game_handler.video.mixer")
-        local fake_source = require("game_handler.video.fake_source")
+        local audio = require("game_handler.video.audio")
         local video_encoder = require("game_handler.video")
         local fps = 60
         local ticks_to_frame = 0
         love.window.setMode(1920, 1080)
         video_encoder.start("output.mp4", 1920, 1080, fps)
-        audio_mixer.set_muxer(video_encoder)
-        fake_source.init(audio_mixer)
+        audio.set_muxer(video_encoder)
         local after_death_frames = 3 * fps
         local game_handler = require("game_handler")
         global_config.init(config, game_handler.profile)
-        game_handler.init(config)
+        game_handler.init(config, audio)
         game_handler.replay_start(args.no_option)
         game_handler.process_event("resize", 1920, 1080)
         local frames = 0
@@ -70,7 +68,7 @@ function love.run()
                     ticks_to_frame = ticks_to_frame - 1
                     game_handler.update(false)
                 end
-                fake_source.update(frames / fps)
+                audio.update(frames / fps)
                 love.timer.step()
                 love.graphics.origin()
                 love.graphics.clear(0, 0, 0, 1)

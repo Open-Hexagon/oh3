@@ -26,14 +26,15 @@ game_handler.profile = require("game_handler.profile")
 
 ---initialize all games (has to be called before doing anything)
 ---@param config any
-function game_handler.init(config)
+function game_handler.init(config, audio)
+    audio = audio or require("audio")
     -- 1.92 needs persistent data for asset loading as it can overwrite any file
     local persistent_data
     if not args.server and not args.migrate then
         persistent_data = game_handler.profile.get_all_data()
     end
     for _, game in pairs(games) do
-        game.init(pack_level_data, config, persistent_data)
+        game.init(pack_level_data, config, persistent_data, audio)
     end
 end
 

@@ -103,7 +103,7 @@ function public.start(pack_id, level_id, difficulty_mult)
         game.status.beat_pulse_delay = game.status.beat_pulse_delay + (segment.beat_pulse_delay_offset or 0)
         if game.music.source ~= nil then
             game.music.source:seek(segment.time)
-            love.audio.play(game.music.source)
+            game.music.source:play()
         end
     end
 
@@ -176,7 +176,7 @@ function game.death(force)
             game.lua_runtime.run_fn_if_exists("onDeath")
             game.status.camera_shake = 45 * public.config.get("camera_shake_mult")
             if not args.headless and game.music ~= nil and game.music.source ~= nil then
-                love.audio.stop(game.music.source)
+                game.music.source:stop()
             end
             game.flash_color[1] = 255
             game.flash_color[2] = 255
@@ -215,7 +215,7 @@ function game.refresh_music_pitch()
             -- pitch can't be 0, setting it to almost 0, not sure if this could cause issues
             pitch = 0.001
         end
-        game.music.source:setPitch(pitch)
+        game.music.source:set_pitch(pitch)
     end
 end
 
@@ -788,9 +788,12 @@ end
 
 ---initialize the game
 ---@param data any
-function public.init(data, config)
-    assets.init(data)
+---@param config any
+---@param audio any
+function public.init(data, config, _, audio)
+    assets.init(data, audio)
     public.config = config
+    game.audio = audio
     if not args.headless then
         layer_shader = love.graphics.newShader(
             [[
