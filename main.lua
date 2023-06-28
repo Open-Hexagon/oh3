@@ -73,6 +73,14 @@ function love.run()
         game_handler.process_event("resize", 1920, 1080)
         local frames = 0
         return function()
+            love.event.pump()
+            for name, a in love.event.poll() do
+                if name == "quit" then
+                    log("Aborting video rendering.")
+                    video_encoder.stop()
+                    return a or 0
+                end
+            end
             if love.graphics.isActive() then
                 frames = frames + 1
                 ticks_to_frame = ticks_to_frame + game_handler.get_tickrate() / fps
