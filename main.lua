@@ -51,8 +51,8 @@ function love.run()
         local fps = 60
         local ticks_to_frame = 0
         love.window.setMode(1920, 1080)
-        video_encoder.start("output.mp4", 1920, 1080, fps)
-        audio.set_muxer(video_encoder)
+        video_encoder.start("output.mp4", 1920, 1080, fps, audio.sample_rate)
+        audio.set_encoder(video_encoder)
         local after_death_frames = 3 * fps
         local game_handler = require("game_handler")
         global_config.init(config, game_handler.profile)
@@ -68,17 +68,17 @@ function love.run()
                     ticks_to_frame = ticks_to_frame - 1
                     game_handler.update(false)
                 end
-                audio.update(frames / fps)
+                audio.update(1 / fps)
                 love.timer.step()
                 love.graphics.origin()
                 love.graphics.clear(0, 0, 0, 1)
                 game_handler.draw()
-                love.graphics.captureScreenshot(video_encoder.supply_video)
+                love.graphics.captureScreenshot(video_encoder.supply_video_data)
                 love.graphics.present()
                 if game_handler.is_dead() then
                     after_death_frames = after_death_frames - 1
                     if after_death_frames <= 0 then
-                        video_encoder.cleanup()
+                        video_encoder.stop()
                         return 0
                     end
                 end

@@ -1,41 +1,53 @@
 local ffi = require("ffi")
 
 ffi.cdef([[
-int start(const char *filename, const int width, const int height, const int framerate);
-int supply_video(const void *videoData);
-int supply_audio(void *audioData, const int bytes);
-int get_audio_buffer_size();
-void cleanup();
+int start_encoding(const char* file, const int width, const int height, const int framerate, const int sample_rate);
+int get_audio_frame_size();
+int supply_audio_data(const void* audio_data);
+int supply_video_data(const void* video_data);
+void stop_encoding();
 ]])
-local test = ffi.load("encode")
+
+local clib = ffi.load("encode")
 local api = {}
 
-function api.start(filename, width, height, framerate)
-    if test.start(filename, width, height, framerate) ~= 0 then
+---start encoding a video file
+---@param filename string
+---@param width integer
+---@param height integer
+---@param framerate integer
+---@param sample_rate integer
+function api.start(filename, width, height, framerate, sample_rate)
+    if width % 2 == 1 or height % 2 == 1 then
+        error("width and height must be a multiple of 2.")
+    end
+    if clib.start_encoding(filename, width, height, framerate, sample_rate) ~= 0 then
         error("Failed to initialize ffmpeg.")
     end
+    api.audio_frame_size = clib.get_audio_frame_size()
 end
 
-function api.supply_video(imagedata)
-    if test.supply_video(imagedata:getFFIPointer()) ~= 0 then
+---add a video frame
+---@param imagedata love.ImageData
+function api.supply_video_data(imagedata)
+    if clib.supply_video_data(imagedata:getFFIPointer()) ~= 0 then
         error("Failed sending video frame.")
     end
     -- prevent memory leak
     imagedata:release()
 end
 
-function api.get_audio_buffer_size()
-    return test.get_audio_buffer_size()
-end
-
-function api.supply_audio(sound_data)
-    if test.supply_audio(sound_data:getFFIPointer(), sound_data:getSize()) ~= 0 then
+---add an audio frame
+---@param audiodata love.SoundData
+function api.supply_audio_data(audiodata)
+    if clib.supply_audio_data(audiodata:getFFIPointer()) ~= 0 then
         error("Failed sending audio frame.")
     end
 end
 
-function api.cleanup()
-    test.cleanup()
+---stop encoding the video
+function api.stop()
+    clib.stop_encoding()
 end
 
 return api
