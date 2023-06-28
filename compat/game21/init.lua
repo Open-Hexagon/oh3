@@ -791,7 +791,7 @@ end
 ---@param config any
 ---@param audio any
 function public.init(data, config, _, audio)
-    assets.init(data, audio)
+    assets.init(data, audio, config)
     public.config = config
     game.audio = audio
     if not args.headless then

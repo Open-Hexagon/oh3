@@ -17,7 +17,7 @@ local sound_mapping = {
     ["swapBlip.ogg"] = "swap_blip.ogg",
 }
 local audio_path = "assets/audio/"
-local audio_module
+local audio_module, sound_volume, music_volume
 local cached_sounds = {}
 
 local function decode_json(str, filename)
@@ -67,8 +67,10 @@ local function file_ext_read_iter(dir, ending, virt_folder)
     end
 end
 
-function assets.init(data, persistent_data, audio)
+function assets.init(data, persistent_data, audio, config)
     audio_module = audio
+    sound_volume = config.get("sound_volume")
+    music_volume = config.get("music_volume")
     local pack_folders = love.filesystem.getDirectoryItems(pack_path)
     for i = 1, #pack_folders do
         local folder = pack_folders[i]
@@ -146,6 +148,7 @@ function assets.get_pack(folder)
                         not pcall(function()
                             music_json.source = audio_module.new_stream(folder .. "Music/" .. music_json.file_name)
                             music_json.source.looping = true
+                            music_json.source.volume = music_volume
                         end)
                     then
                         log("Error: failed to load '" .. music_json.file_name .. "'")
@@ -182,6 +185,7 @@ function assets.get_sound(id)
     id = sound_mapping[id] or id
     if cached_sounds[id] == nil then
         cached_sounds[id] = audio_module.new_static(audio_path .. id)
+        cached_sounds[id].volume = sound_volume
     end
     return cached_sounds[id]
 end
@@ -189,6 +193,7 @@ end
 function assets.get_pack_sound(pack, id)
     if pack.cached_sounds[id] == nil then
         pack.cached_sounds[id] = audio_module.new_static(pack.path .. "Sounds/" .. id:match("_(.*)"))
+        pack.cached_sounds[id].volume = sound_volume
     end
     return pack.cached_sounds[id]
 end

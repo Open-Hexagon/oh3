@@ -19,6 +19,8 @@ local function add_setting(name, default, can_change_in_offical, game_version)
 end
 
 add_setting("official_mode", true, false, { 192, 20, 21, 3 })
+add_setting("sound_volume", 1, true, { 192, 20, 21, 3 })
+add_setting("music_volume", 1, true, { 192, 20, 21, 3 })
 add_setting("beatpulse", true, false, { 192, 21 })
 add_setting("pulse", true, false, { 192, 21 })
 add_setting("player_size", 7.3, false, { 192, 21 })

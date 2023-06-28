@@ -54,6 +54,7 @@ function audio.new_static(file)
         pitch = 1,
         looping = false,
         playing = false,
+        volume = 1,
         file = file,
     }, audio)
     loaded_audio[#loaded_audio + 1] = obj
@@ -72,6 +73,7 @@ function audio.new_stream(file)
         pitch = 1,
         looping = false,
         playing = false,
+        volume = 1,
         file = file,
     }, audio)
     loaded_audio[#loaded_audio + 1] = obj
@@ -154,11 +156,11 @@ function audio.update(delta)
                     local v1, v2 = target_data:getSample(buffer_pos, 1), target_data:getSample(buffer_pos, 2)
                     if obj.data:getChannelCount() == 2 then
                         -- stereo
-                        v1 = clamp_signal(v1 + obj.data:getSample(obj.position % sample_count, 1))
-                        v2 = clamp_signal(v2 + obj.data:getSample(obj.position % sample_count, 2))
+                        v1 = clamp_signal(v1 + obj.volume * obj.data:getSample(obj.position % sample_count, 1))
+                        v2 = clamp_signal(v2 + obj.volume * obj.data:getSample(obj.position % sample_count, 2))
                     else
                         -- mono
-                        v1 = clamp_signal(v1 + obj.data:getSample(obj.position % sample_count))
+                        v1 = clamp_signal(v1 + obj.volume * obj.data:getSample(obj.position % sample_count))
                         v2 = v1
                     end
                     target_data:setSample(buffer_pos, 1, v1)

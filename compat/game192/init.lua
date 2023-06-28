@@ -550,7 +550,7 @@ end
 ---@param all_persistent_data table
 ---@param audio table?
 function public.init(data, config, all_persistent_data, audio)
-    assets.init(data, all_persistent_data, audio)
+    assets.init(data, all_persistent_data, audio, config)
     public.config = config
     game.audio = audio
     if not args.headless then

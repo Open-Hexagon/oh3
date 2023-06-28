@@ -358,7 +358,7 @@ function lua_runtime.init_env(game, public, assets)
             if sound == nil then
                 lua_runtime.error("Sound with id '" .. sound_id .. "' doesn't exist!")
             else
-                love.audio.play(sound)
+                sound:play()
             end
         end
     end
@@ -375,7 +375,7 @@ function lua_runtime.init_env(game, public, assets)
     env.a_playPackSound = function(sound_id)
         local sound = get_pack_sound(sound_id)
         if sound ~= nil then
-            love.audio.play(sound)
+            sound:play()
         end
     end
     env.a_syncMusicToDM = function(value)
