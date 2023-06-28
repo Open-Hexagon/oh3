@@ -22,7 +22,14 @@ local function resample(data, pitch, duration)
             local old_pos = new_pos * to_old_mult
             local last_pos = math.floor(old_pos)
             local last_sample = data:getSample(last_pos, channel)
-            local next_sample = data:getSample(math.ceil(old_pos), channel)
+            local next_pos = math.ceil(old_pos)
+            if next_pos >= data:getSampleCount() then
+                if new_pos ~= new_data:getSampleCount() - 1 then
+                    error("out of range sample not on last sample")
+                end
+                break
+            end
+            local next_sample = data:getSample(next_pos, channel)
             local fract = old_pos - last_pos
             -- interpolate between last_sample and next_sample with fract
             -- linear (sounds bad): value = last_sample * (1 - fract) + next_sample * fract
@@ -142,6 +149,7 @@ function audio.update(delta)
                             obj.data = obj.decoder:decode()
                             if obj.data == nil then
                                 obj.playing = false
+                                obj:seek(0)
                                 break
                             end
                             if obj.data:getSampleRate() ~= SAMPLE_RATE or obj.sample_rate ~= obj.data:getSampleRate() then
@@ -150,6 +158,7 @@ function audio.update(delta)
                             sample_count = obj.data:getSampleCount()
                         else
                             obj.playing = false
+                            obj:seek(0)
                             break
                         end
                     end

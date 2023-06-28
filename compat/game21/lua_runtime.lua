@@ -114,9 +114,9 @@ local keycode_conversion = {
 
 function lua_runtime.error(msg)
     if not args.headless then
-        love.audio.play(error_sound)
+        error_sound:play()
     end
-    log("Error: " .. msg)
+    log(debug.traceback("Error: " .. msg))
 end
 
 function lua_runtime.init_env(game, public, assets)
