@@ -1,9 +1,21 @@
 local log = require("log")(...)
 local args = require("args")
 
+local function add_require_path(path)
+    love.filesystem.setRequirePath(love.filesystem.getRequirePath() .. ";" .. path)
+end
+
+local function add_c_require_path(path)
+    love.filesystem.setCRequirePath(love.filesystem.getCRequirePath() .. ";" .. path)
+end
+
 function love.run()
     -- make sure no level accesses malicious files via symlinks
     love.filesystem.setSymlinksEnabled(false)
+
+    -- find luasodium and luv
+    add_require_path("extlibs/?.lua")
+    add_c_require_path("lib/??")
 
     if args.migrate then
         -- migrate a ranking database from the old game to the new format

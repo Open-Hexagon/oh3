@@ -3,3 +3,7 @@ Packs/
 .luarc.json
 *.ohr.z
 *.mp4
+build/
+lib/
+extlibs/luasodium
+extlibs/luasodium.lua

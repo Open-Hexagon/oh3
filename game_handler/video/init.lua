@@ -8,7 +8,15 @@ int supply_video_data(const void* video_data);
 void stop_encoding();
 ]])
 
-local clib = ffi.load("encode")
+local clib
+local os = love.system.getOS()
+if os == "OS X" or os == "iOS" then
+    clib = ffi.load("lib/libencode.dylib")
+elseif os == "Windows" then
+    clib = ffi.load("lib/libencode.dll")
+elseif os == "Linux" or os == "Android" then
+    clib = ffi.load("lib/libencode.so")
+end
 local api = {}
 
 ---start encoding a video file

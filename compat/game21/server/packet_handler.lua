@@ -3,7 +3,7 @@ local utils = require("compat.game192.utils")
 local msgpack = require("extlibs.msgpack.msgpack")
 local packet_types = require("compat.game21.server.packet_types")
 local version = require("server.version")
-local sodium = require("luasodium")
+local sodium = require("extlibs.luasodium")
 local game = require("server.game")
 
 local packet_handler = {}
