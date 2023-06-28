@@ -20,6 +20,7 @@ local api = {}
 local time_tolerance = 3
 local score_tolerance = 0.2
 local max_processing_time = 300
+local render_top_scores = false
 
 local function save_replay(replay_obj, hash, data)
     local dir = replay_path .. hash:sub(1, 2) .. "/"
@@ -39,6 +40,7 @@ local function save_replay(replay_obj, hash, data)
         hash = hash .. n
     end
     replay_obj:save(path, data)
+    return path
 end
 
 function api.verify_replay(compressed_replay, time, steam_id)
@@ -57,19 +59,33 @@ function api.verify_replay(compressed_replay, time, steam_id)
         if time + time_tolerance > score and time - time_tolerance < score then
             log("replay verified, score: " .. score)
             local hash, data = decoded_replay:get_hash()
+            local packed_level_settings = msgpack.pack(decoded_replay.data.level_settings)
             if
                 database.save_score(
                     time,
                     steam_id,
                     decoded_replay.pack_id,
                     decoded_replay.level_id,
-                    msgpack.pack(decoded_replay.data.level_settings),
+                    packed_level_settings,
                     score,
                     hash
                 )
             then
-                save_replay(decoded_replay, hash, data)
+                local replay_save_path = save_replay(decoded_replay, hash, data)
                 log("Saved new score")
+                if
+                    render_top_scores
+                    and database.is_top_score(
+                        decoded_replay.pack_id,
+                        decoded_replay.level_id,
+                        packed_level_settings,
+                        steam_id
+                    )
+                then
+                    local channel = love.thread.getChannel("replays_to_render")
+                    channel:push(replay_save_path)
+                    log(channel:getCount() .. " replays queued for rendering.")
+                end
             end
         else
             log("time between packets of " .. time .. " does not match score of " .. score)
@@ -107,6 +123,10 @@ function api.get_levels21()
     else
         return { level_validators, levels }
     end
+end
+
+function api.set_render_top_scores(bool)
+    render_top_scores = bool
 end
 
 if as_thread then

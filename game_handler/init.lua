@@ -167,9 +167,11 @@ function game_handler.process_event(name, ...)
             msaa = 4,
         })
     end
-    -- allow game modules to have their own event handlers
-    if current_game.running and current_game[name] ~= nil then
-        current_game[name](...)
+    if current_game then
+        -- allow game modules to have their own event handlers
+        if current_game.running and current_game[name] ~= nil then
+            current_game[name](...)
+        end
     end
 end
 

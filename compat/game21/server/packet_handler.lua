@@ -5,6 +5,7 @@ local packet_types = require("compat.game21.server.packet_types")
 local version = require("server.version")
 local sodium = require("extlibs.luasodium")
 local game = require("server.game")
+local uv = require("luv")
 
 local packet_handler = {}
 local server_pk, server_sk = sodium.crypto_kx_keypair()
@@ -238,7 +239,7 @@ local handlers = {
         if client.login_data and client.login_data.login_token == login_token then
             if client.login_data.ready then
                 client.current_level = read_str(data, 9)
-                client.start_time = love.timer.getTime()
+                client.start_time = uv.hrtime()
                 log("client started game on " .. client.current_level)
             else
                 log("client sent started_game packet before ready")
@@ -257,7 +258,7 @@ local handlers = {
                 -- skip reading replay size, it's not required
                 game.verify_replay_and_save_score(
                     data:sub(9 + 8),
-                    love.timer.getTime() - client.start_time,
+                    (uv.hrtime() - client.start_time) / 10 ^ 9,
                     client.login_data.steam_id
                 )
                 client.current_level = nil
@@ -280,9 +281,9 @@ function packet_handler.process(packet_type, data, client)
     end
 end
 
-function packet_handler.init(db)
+function packet_handler.init(db, render_top_scores)
     database = db
-    game.init()
+    game.init(render_top_scores)
     for i = 1, #game.level_validators do
         level_validator_map[game.level_validators[i]] = true
         level_validator_to_id[game.level_validators[i]] = {

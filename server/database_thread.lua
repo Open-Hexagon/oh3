@@ -176,6 +176,36 @@ function api.save_score(time, steam_id, pack, level, level_options, score, hash,
     end
 end
 
+---check if a score is the top score (also returns true if tied with top score)
+---@param pack any
+---@param level any
+---@param level_options any
+---@param steam_id any
+---@return boolean
+function api.is_top_score(pack, level, level_options, steam_id)
+    level_options = love.data.encode("string", "base64", level_options)
+    local results = database:select("scores", {
+        where = {
+            pack = pack,
+            level = level,
+            level_options = level_options,
+        },
+    })
+    local max_score = -1
+    local user_score
+    for i = 1, #results do
+        max_score = math.max(max_score, results[i].score)
+        if results[i].steam_id == steam_id then
+            user_score = results[i]
+        end
+    end
+    if user_score then
+        return user_score.score == max_score
+    else
+        return false
+    end
+end
+
 ---get the top scores on a level and the score for the steam id
 ---@param pack any
 ---@param level any

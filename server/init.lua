@@ -1,4 +1,5 @@
-local log = require("log")(...)
+local log_name, is_thread = ...
+local log = require("log")(log_name)
 local packet_handler21 = require("compat.game21.server.packet_handler")
 local packet_types21 = require("compat.game21.server.packet_types")
 local database = require("server.database")
@@ -31,14 +32,10 @@ local function process_packet(data, client)
     if data:sub(1, 2) ~= "oh" then
         return "wrong preamble bytes"
     end
-    if protocol_version ~= version.COMPAT_PROTOCOL_VERSION then
-        return "wrong protocol version"
-    elseif protocol_version ~= version.PROTOCOL_VERSION then
+    if protocol_version ~= version.COMPAT_PROTOCOL_VERSION and protocol_version ~= version.PROTOCOL_VERSION then
         return "wrong protocol version"
     end
-    if game_version_major ~= version.COMPAT_GAME_VERSION[1] then
-        return "wrong game major version"
-    elseif game_version_major ~= version.GAME_VERSION[1] then
+    if game_version_major ~= version.COMPAT_GAME_VERSION[1] and game_version_major ~= version.GAME_VERSION[1] then
         return "wrong game major version"
     end
     if not game_version_minor then
@@ -144,5 +141,5 @@ signal:start("sigint", function(sig)
 end)
 
 database.init()
-packet_handler21.init(database)
+packet_handler21.init(database, is_thread)
 uv.run()

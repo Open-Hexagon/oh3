@@ -9,6 +9,56 @@ local function add_c_require_path(path)
     love.filesystem.setCRequirePath(love.filesystem.getCRequirePath() .. ";" .. path)
 end
 
+local function render_replay(game_handler, video_encoder, audio, replay, out_file, final_score)
+    local fps = 60
+    local ticks_to_frame = 0
+    video_encoder.start(out_file, 1920, 1080, fps, audio.sample_rate)
+    audio.set_encoder(video_encoder)
+    local after_death_frames = 3 * fps
+    game_handler.replay_start(replay)
+    local frames = 0
+    local last_print = love.timer.getTime()
+    return function()
+        love.event.pump()
+        for name, a in love.event.poll() do
+            if name == "quit" then
+                log("Aborting video rendering.")
+                video_encoder.stop()
+                return a or 0
+            end
+        end
+        if final_score then
+            local now = love.timer.getTime()
+            if now - last_print > 10 then
+                log("Rendering progress: " .. (100 * game_handler.get_score() / final_score) .. "%")
+                last_print = now
+            end
+        end
+        if love.graphics.isActive() then
+            frames = frames + 1
+            ticks_to_frame = ticks_to_frame + game_handler.get_tickrate() / fps
+            for _ = 1, ticks_to_frame do
+                ticks_to_frame = ticks_to_frame - 1
+                game_handler.update(false)
+            end
+            audio.update(1 / fps)
+            love.timer.step()
+            love.graphics.origin()
+            love.graphics.clear(0, 0, 0, 1)
+            game_handler.draw()
+            love.graphics.captureScreenshot(video_encoder.supply_video_data)
+            love.graphics.present()
+            if game_handler.is_dead() then
+                after_death_frames = after_death_frames - 1
+                if after_death_frames <= 0 then
+                    video_encoder.stop()
+                    return 0
+                end
+            end
+        end
+    end
+end
+
 function love.run()
     -- make sure no level accesses malicious files via symlinks
     love.filesystem.setSymlinksEnabled(false)
@@ -28,7 +78,7 @@ function love.run()
         end
     end
 
-    if args.server then
+    if args.server and not args.render then
         -- game21 compat server (made for old clients)
         require("server")
         return function()
@@ -38,6 +88,40 @@ function love.run()
 
     local config = require("config")
     local global_config = require("global_config")
+
+    if args.server and args.render then
+        -- render top scores sent to the server
+        love.window.setMode(1920, 1080)
+        local server_thread = love.thread.newThread("server/init.lua")
+        server_thread:start("server", true)
+        local game_handler = require("game_handler")
+        local audio = require("game_handler.video.audio")
+        local video_encoder = require("game_handler.video")
+        global_config.init(config, game_handler.profile)
+        game_handler.init(config, audio)
+        game_handler.process_event("resize", 1920, 1080)
+        local Replay = require("game_handler.replay")
+        local replay_path = "server/rendered_replays/"
+        if not love.filesystem.getInfo(replay_path) then
+            love.filesystem.createDirectory(replay_path)
+        end
+        return function()
+            local replay_file = love.thread.getChannel("replays_to_render"):demand()
+            -- replay may no longer exist if player got new pb
+            if love.filesystem.getInfo(replay_file) then
+                local replay = Replay:new(replay_file)
+                local pack_path = replay_path .. replay.pack_id
+                if not love.filesystem.getInfo(pack_path) then
+                    love.filesystem.createDirectory(pack_path)
+                end
+                local out_file_path = love.filesystem.getSaveDirectory() .. "/" .. pack_path .. "/" .. replay.level_id .. "#1.mp4"
+                log("Got new #1 on '" .. replay.level_id .. "' from '" .. replay.pack_id .. "', rendering...")
+                local fn = render_replay(game_handler, video_encoder, audio, replay, out_file_path, replay.score)
+                while fn() ~= 0 do end
+                log("done.")
+            end
+        end
+    end
 
     if args.headless then
         if args.no_option == nil then
@@ -58,52 +142,14 @@ function love.run()
         if args.no_option == nil then
             error("trying to render replay without replay")
         end
+        local game_handler = require("game_handler")
         local audio = require("game_handler.video.audio")
         local video_encoder = require("game_handler.video")
-        local fps = 60
-        local ticks_to_frame = 0
-        love.window.setMode(1920, 1080)
-        video_encoder.start("output.mp4", 1920, 1080, fps, audio.sample_rate)
-        audio.set_encoder(video_encoder)
-        local after_death_frames = 3 * fps
-        local game_handler = require("game_handler")
         global_config.init(config, game_handler.profile)
         game_handler.init(config, audio)
-        game_handler.replay_start(args.no_option)
+        love.window.setMode(1920, 1080)
         game_handler.process_event("resize", 1920, 1080)
-        local frames = 0
-        return function()
-            love.event.pump()
-            for name, a in love.event.poll() do
-                if name == "quit" then
-                    log("Aborting video rendering.")
-                    video_encoder.stop()
-                    return a or 0
-                end
-            end
-            if love.graphics.isActive() then
-                frames = frames + 1
-                ticks_to_frame = ticks_to_frame + game_handler.get_tickrate() / fps
-                for _ = 1, ticks_to_frame do
-                    ticks_to_frame = ticks_to_frame - 1
-                    game_handler.update(false)
-                end
-                audio.update(1 / fps)
-                love.timer.step()
-                love.graphics.origin()
-                love.graphics.clear(0, 0, 0, 1)
-                game_handler.draw()
-                love.graphics.captureScreenshot(video_encoder.supply_video_data)
-                love.graphics.present()
-                if game_handler.is_dead() then
-                    after_death_frames = after_death_frames - 1
-                    if after_death_frames <= 0 then
-                        video_encoder.stop()
-                        return 0
-                    end
-                end
-            end
-        end
+        return render_replay(game_handler, video_encoder, audio, args.no_option, "output.mp4")
     end
 
     local game_handler = require("game_handler")
