@@ -105,7 +105,7 @@ function api.get_levels21()
         love.thread.getChannel("ranked_levels"):push(level_validators)
         love.thread.getChannel("ranked_levels"):push(levels)
     else
-        return {level_validators, levels}
+        return { level_validators, levels }
     end
 end
 

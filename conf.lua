@@ -1,6 +1,7 @@
 local args = require("args")
 
 function love.conf(t)
+    t.version = "11.4"
     if not args.headless then
         t.window.title = "Open Hexagon"
         t.window.icon = "assets/image/icon.png"

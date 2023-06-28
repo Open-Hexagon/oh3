@@ -15,7 +15,12 @@ local loaded_audio = {}
 
 local function resample(data, pitch, duration)
     pitch = pitch or 1
-    local new_data = love.sound.newSoundData(math.floor((duration or data:getDuration()) * SAMPLE_RATE / pitch), SAMPLE_RATE, BITS_PER_SAMPLE, data:getChannelCount())
+    local new_data = love.sound.newSoundData(
+        math.floor((duration or data:getDuration()) * SAMPLE_RATE / pitch),
+        SAMPLE_RATE,
+        BITS_PER_SAMPLE,
+        data:getChannelCount()
+    )
     local to_old_mult = data:getSampleRate() * pitch / SAMPLE_RATE
     for channel = 1, data:getChannelCount() do
         for new_pos = 0, new_data:getSampleCount() - 1 do
@@ -33,7 +38,8 @@ local function resample(data, pitch, duration)
             local fract = old_pos - last_pos
             -- interpolate between last_sample and next_sample with fract
             -- linear (sounds bad): value = last_sample * (1 - fract) + next_sample * fract
-            local value = (2 * fract ^ 3 - 3 * fract ^ 2 + 1) * last_sample + (-2 * fract ^ 3 + 3 * fract ^ 2) * next_sample
+            local value = (2 * fract ^ 3 - 3 * fract ^ 2 + 1) * last_sample
+                + (-2 * fract ^ 3 + 3 * fract ^ 2) * next_sample
             new_data:setSample(new_pos, channel, value)
         end
     end
@@ -152,7 +158,10 @@ function audio.update(delta)
                                 obj:seek(0)
                                 break
                             end
-                            if obj.data:getSampleRate() ~= SAMPLE_RATE or obj.sample_rate ~= obj.data:getSampleRate() then
+                            if
+                                obj.data:getSampleRate() ~= SAMPLE_RATE
+                                or obj.sample_rate ~= obj.data:getSampleRate()
+                            then
                                 obj.data = resample(obj.data, obj.pitch)
                             end
                             sample_count = obj.data:getSampleCount()

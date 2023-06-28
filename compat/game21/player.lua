@@ -264,11 +264,11 @@ function player.wall_push(movement_dir, radius, wall, radius_squared, frametime)
         _pos[2] = test_pos_y + ny * 2 * collision_padding
         _angle = math.atan2(_pos[2], _pos[1])
         player.update_position(radius)
-        return extra_math.point_in_polygon(wall.vertices, unpack(_pos))
+        return extra_math.point_in_four_vertex_polygon(wall.vertices, unpack(_pos))
     end
     test_pos_x = _last_pos[1] + push_vel_x
     test_pos_y = _last_pos[2] + push_vel_y
-    local is_in = extra_math.point_in_polygon(wall.vertices, test_pos_x, test_pos_y)
+    local is_in = extra_math.point_in_four_vertex_polygon(wall.vertices, test_pos_x, test_pos_y)
     if is_in then
         return true
     end

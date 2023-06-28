@@ -135,7 +135,12 @@ function replay:_get_compressed()
             input_data = input_data .. love.data.pack("string", ">BB", key, state and 1 or 0)
         end
     end
-    return love.data.compress("data", "zlib", header .. data .. input_data .. love.data.pack("string", ">d", self.score), 9)
+    return love.data.compress(
+        "data",
+        "zlib",
+        header .. data .. input_data .. love.data.pack("string", ">d", self.score),
+        9
+    )
 end
 
 ---gets the hash of the replay and also returns the compressed data as it needs to be computed to get the hash already
