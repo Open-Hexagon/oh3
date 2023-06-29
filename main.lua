@@ -114,7 +114,7 @@ function love.run()
                 if not love.filesystem.getInfo(pack_path) then
                     love.filesystem.createDirectory(pack_path)
                 end
-                local out_file_path = love.filesystem.getSaveDirectory() .. "/" .. pack_path .. "/" .. replay.level_id .. "#1.mp4.part"
+                local out_file_path = love.filesystem.getSaveDirectory() .. "/" .. pack_path .. "/" .. replay.level_id .. "#1.part.mp4"
                 log("Got new #1 on '" .. replay.level_id .. "' from '" .. replay.pack_id .. "', rendering...")
                 local fn = render_replay(game_handler, video_encoder, audio, replay, out_file_path, replay.score)
                 while fn() ~= 0 do end
