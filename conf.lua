@@ -15,6 +15,9 @@ function love.conf(t)
         t.window.vsync = 0
 
         t.console = true -- windows only
+
+        -- don't enable the audio module when rendering
+        t.modules.audio = not args.render
     else
         t.modules.data = true
         t.modules.event = false
