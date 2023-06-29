@@ -106,7 +106,7 @@ function love.run()
             -- replay may no longer exist if player got new pb
             if love.filesystem.getInfo(replay_file) then
                 local replay = Replay:new(replay_file)
-                local out_file_path = love.filesystem.getSaveDirectory() .. replay_file .. ".part.mp4"
+                local out_file_path = love.filesystem.getSaveDirectory() .. "/" .. replay_file .. ".part.mp4"
                 log("Got new #1 on '" .. replay.level_id .. "' from '" .. replay.pack_id .. "', rendering...")
                 local fn = render_replay(game_handler, video_encoder, audio, replay, out_file_path, replay.score)
                 while fn() ~= 0 do end
