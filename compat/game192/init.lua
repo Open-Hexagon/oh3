@@ -142,6 +142,9 @@ function public.start(pack_folder, level_id, difficulty_mult)
     game.style.select(style_data)
     game.difficulty_mult = difficulty_mult
     local segment
+    if not args.headless and game.music and game.music.source then
+        game.music.source:stop()
+    end
     game.music = game.pack.music[level_data.music_id]
     if game.music == nil then
         error("Music with id '" .. level_data.music_id .. "' not found")
@@ -150,8 +153,7 @@ function public.start(pack_folder, level_id, difficulty_mult)
         segment = math.random(1, #game.music.segments)
     end
     if not args.headless then
-        love.audio.stop()
-        love.audio.play(go_sound)
+        go_sound:play()
         if game.music.source ~= nil then
             if public.first_play then
                 game.music.source:seek(math.floor(game.music.segments[1].time))

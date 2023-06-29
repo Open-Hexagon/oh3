@@ -271,7 +271,7 @@ function events.init(game)
             game.lua_runtime.run_lua_file(game.pack.path .. "Scripts/" .. event.value_name)
         end,
         play_sound = function(event)
-            love.audio.play(game.assets.get_pack_sound(game.pack, event.id))
+            game.assets.get_pack_sound(game.pack, event.id):play()
         end,
     }
 end

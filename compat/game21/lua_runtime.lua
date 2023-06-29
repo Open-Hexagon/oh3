@@ -462,7 +462,7 @@ function lua_runtime.init_env(game, public, assets)
         if public.config.get("messages") then
             game.message_timeline:append_do(function()
                 if sound_toggle then
-                    love.audio.play(game.level_status.beep_sound)
+                    game.level_status.beep_sound:play()
                 end
                 game.message_text = message:upper()
             end)
