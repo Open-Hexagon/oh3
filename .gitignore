@@ -1,6 +1,7 @@
 .vscode/
 Packs/
 .luarc.json
+testrps/
 *.ohr.z
 *.mp4
 build/
