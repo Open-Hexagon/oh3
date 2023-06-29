@@ -101,24 +101,16 @@ function love.run()
         game_handler.init(config, audio)
         game_handler.process_event("resize", 1920, 1080)
         local Replay = require("game_handler.replay")
-        local replay_path = "server/rendered_replays/"
-        if not love.filesystem.getInfo(replay_path) then
-            love.filesystem.createDirectory(replay_path)
-        end
         return function()
             local replay_file = love.thread.getChannel("replays_to_render"):demand()
             -- replay may no longer exist if player got new pb
             if love.filesystem.getInfo(replay_file) then
                 local replay = Replay:new(replay_file)
-                local pack_path = replay_path .. replay.pack_id
-                if not love.filesystem.getInfo(pack_path) then
-                    love.filesystem.createDirectory(pack_path)
-                end
-                local out_file_path = love.filesystem.getSaveDirectory() .. "/" .. pack_path .. "/" .. replay.level_id .. "#1.part.mp4"
+                local out_file_path = love.filesystem.getSaveDirectory() .. replay_file .. ".part.mp4"
                 log("Got new #1 on '" .. replay.level_id .. "' from '" .. replay.pack_id .. "', rendering...")
                 local fn = render_replay(game_handler, video_encoder, audio, replay, out_file_path, replay.score)
                 while fn() ~= 0 do end
-                os.rename(out_file_path, out_file_path:sub(-6))
+                os.rename(out_file_path, out_file_path:gsub("%.part%.mp4", "%.mp4"))
                 log("done.")
             end
         end
