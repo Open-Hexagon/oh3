@@ -56,6 +56,8 @@ make install
 ```
 The last command will put the libraries inside the repository folder where the game will find them (it will not attempt to put files in standard system directories).
 
+Instead of `cmake ..` you may also run `cmake -DVIDEO_EXPORT=0 ..` to skip building the video encoder.
+
 ## Tests
 Run tests with `luajit test/main.lua` in the source directory.
 Generate coverage statistics with `luajit test/main.lua --coverage`
