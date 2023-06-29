@@ -142,12 +142,12 @@ function love.run()
         if args.no_option == nil then
             error("trying to render replay without replay")
         end
+        love.window.setMode(1920, 1080)
         local game_handler = require("game_handler")
         local audio = require("game_handler.video.audio")
         local video_encoder = require("game_handler.video")
         global_config.init(config, game_handler.profile)
         game_handler.init(config, audio)
-        love.window.setMode(1920, 1080)
         game_handler.process_event("resize", 1920, 1080)
         return render_replay(game_handler, video_encoder, audio, args.no_option, "output.mp4")
     end
