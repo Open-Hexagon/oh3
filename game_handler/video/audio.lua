@@ -15,8 +15,13 @@ local loaded_audio = {}
 
 local function resample(data, pitch, duration)
     pitch = pitch or 1
+    local sample_count = math.floor((duration or data:getDuration()) * SAMPLE_RATE / pitch)
+    if sample_count == 0 then
+        -- empty sound data
+        return love.sound.newSoundData(1, SAMPLE_RATE, BITS_PER_SAMPLE, data:getChannelCount())
+    end
     local new_data = love.sound.newSoundData(
-        math.floor((duration or data:getDuration()) * SAMPLE_RATE / pitch),
+        sample_count,
         SAMPLE_RATE,
         BITS_PER_SAMPLE,
         data:getChannelCount()
