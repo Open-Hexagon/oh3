@@ -226,7 +226,7 @@ function api.get_score_from_hash(hash)
     if #results > 1 then
         log("Two scores with same replay hash?")
     end
-    return results
+    return results[1]
 end
 
 ---get the top scores on a level and the score for the steam id
