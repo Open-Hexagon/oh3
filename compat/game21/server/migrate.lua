@@ -1,20 +1,32 @@
 local msgpack = require("extlibs.msgpack.msgpack")
 local database = require("server.database_thread")
 local utils = require("compat.game192.utils")
-local level_validators, levels = unpack(require("server.game_thread"))
 local sqlite = require("extlibs.sqlite")
+local game_handler = require("game_handler")
+local config = require("config")
 
-if levels == nil then
-    error("Listing levels failed")
-end
-
+game_handler.init(config)
+local packs = game_handler.get_packs()
 local level_validator_to_id = {}
-for i = 1, #level_validators do
-    level_validator_to_id[level_validators[i]] = {
-        pack = levels[i * 3 - 2],
-        level = levels[i * 3 - 1],
-        difficulty_mult = levels[i * 3],
-    }
+for j = 1, #packs do
+    local pack = packs[j]
+    if pack.game_version == 21 then
+        for k = 1, pack.level_count do
+            local level = pack.levels[k]
+            for i = 1, #level.options.difficulty_mult do
+                local validator = pack.id
+                    .. "_"
+                    .. level.id
+                    .. "_m_"
+                    .. level.options.difficulty_mult[i]
+                level_validator_to_id[validator] = {
+                    pack = pack.id,
+                    level = level.id,
+                    difficulty_mult = level.options.difficulty_mult[i]
+                }
+            end
+        end
+    end
 end
 
 return function(old_db_path)

@@ -3,7 +3,15 @@ local database = require("server.database")
 local app = require("extlibs.milua.milua")
 local json = require("extlibs.json.json")
 local msgpack = require("extlibs.msgpack.msgpack")
-local packs = require("server.game_thread")[3]
+
+local packs
+-- garbage collect everything when done
+do
+    local game_handler = require("game_handler")
+    local config = require("config")
+    game_handler.init(config)
+    packs = game_handler.get_packs()
+end
 
 database.set_identity(3)
 

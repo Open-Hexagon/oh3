@@ -145,8 +145,4 @@ if as_thread then
             end)
         end
     end
-else
-    local tbl = api.get_levels21()
-    tbl[3] = game_handler.get_packs()
-    return tbl
 end
