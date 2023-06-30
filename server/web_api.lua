@@ -78,16 +78,22 @@ app.add_handler("GET", "/get_embedded_video/...", function(captures, _, headers)
     local url = "https://" .. headers[":authority"] .. "/get_video/" .. hash
     local content = [[
         <html>
-            <meta content="]] .. score.score .. "s by " .. user.username .. [[" property="og:title">
-            <meta content="Unofficial Open Hexagon Rankings" property="og:description">
-            <meta content="]] .. url .. [[" property="og:video">
-            <meta content="]] .. url .. [[" property="og:video:url">
-            <meta content="]] .. url .. [[" property="og:video:secure_url">
-            <meta content="video/mp4" property="og:video:type">
-            <meta content="video.other" property="og:type">
-            <meta content="1920" property="og:video:width">
-            <meta content="1080" property="og:video:height">
-            <meta content="#43B581" data-react-helmet="true" name="theme-color">
+            <head>
+                <meta content="]] .. score.score .. "s by " .. user.username .. [[" property="og:title">
+                <meta content="Unofficial Open Hexagon Rankings" property="og:description">
+                <meta content="]] .. url .. [[" property="og:video">
+                <meta content="]] .. url .. [[" property="og:video:url">
+                <meta content="]] .. url .. [[" property="og:video:secure_url">
+                <meta content="video/mp4" property="og:video:type">
+                <meta content="video.other" property="og:type">
+                <meta content="1920" property="og:video:width">
+                <meta content="1080" property="og:video:height">
+                <meta content="#43B581" data-react-helmet="true" name="theme-color">
+            </head>
+            <body>
+                <video controls src="]] .. url .. [[" width=960 height=540>
+                </video>
+            </body>
         </html>
     ]]
     return content, { ["content-type"] = "text/html" }
