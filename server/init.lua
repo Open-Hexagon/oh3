@@ -131,6 +131,11 @@ end)
 
 log("listening")
 
+local web_thread
+if start_web then
+    web_thread = love.thread.newThread("server/web_api.lua")
+end
+
 local signal = uv.new_signal()
 signal:start("sigint", function(sig)
     log("got " .. sig .. ", shutting down")
@@ -138,13 +143,15 @@ signal:start("sigint", function(sig)
     packet_handler21.stop_game()
     log("waiting for database to stop...")
     database.stop()
+    if start_web and not web_thread:isRunning() then
+        log("Error in web thread: " .. web_thread:getError())
+    end
     os.exit(1)
 end)
 
 database.init()
 packet_handler21.init(database, is_thread)
 if start_web then
-    local web_thread = love.thread.newThread("server/web_api.lua")
     web_thread:start()
 end
 uv.run()
