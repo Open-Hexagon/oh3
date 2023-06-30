@@ -32,6 +32,12 @@ local unescape = function(url)
   return url:gsub("%%(%x%x)", hex_to_char)
 end
 
+app.add_handler("GET", "/get_newest_scores/...", function(captures)
+    local seconds = tonumber(captures[1])
+    local scores = database.get_newest_scores(seconds)
+    return json.encode(scores), { ["content-type"] = "application/json" }
+end)
+
 app.add_handler("GET", "/get_leaderboard/.../.../...", function(captures)
     local pack, level, level_options = unpack(captures)
     if pack and level and level_options then

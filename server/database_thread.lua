@@ -206,6 +206,14 @@ function api.is_top_score(pack, level, level_options, steam_id)
     end
 end
 
+---get all scores that were done in the last however many seconds
+---@param seconds any
+---@return unknown
+function api.get_newest_scores(seconds)
+    local min_time = os.time() - seconds
+    return database:eval("SELECT scores WHERE created >= ?", min_time)
+end
+
 ---get the top scores on a level and the score for the steam id
 ---@param pack any
 ---@param level any
