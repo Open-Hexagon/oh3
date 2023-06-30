@@ -39,8 +39,7 @@ local function save_replay(replay_obj, hash, data)
         end
         hash = hash .. n
     end
-    replay_obj:save(path, data)
-    return path
+    return path, hash
 end
 
 function api.verify_replay(compressed_replay, time, steam_id)
@@ -60,6 +59,7 @@ function api.verify_replay(compressed_replay, time, steam_id)
             log("replay verified, score: " .. score)
             local hash, data = decoded_replay:get_hash()
             local packed_level_settings = msgpack.pack(decoded_replay.data.level_settings)
+            local replay_save_path, replay_hash = save_replay(decoded_replay, hash, data)
             if
                 database.save_score(
                     time,
@@ -68,10 +68,10 @@ function api.verify_replay(compressed_replay, time, steam_id)
                     decoded_replay.level_id,
                     packed_level_settings,
                     score,
-                    hash
+                    replay_hash
                 )
             then
-                local replay_save_path = save_replay(decoded_replay, hash, data)
+                decoded_replay:save(replay_save_path, data)
                 log("Saved new score")
                 if
                     render_top_scores
