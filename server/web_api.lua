@@ -35,6 +35,8 @@ end
 app.add_handler("GET", "/get_leaderboard/.../.../...", function(captures)
     local pack, level, level_options = unpack(captures)
     if pack and level and level_options then
+        pack = unescape(pack)
+        level = unescape(level)
         level_options = json.decode(unescape(level_options))
         -- only difficulty_mult needs this as it's the only legacy option
         level_options.difficulty_mult = utils.float_round(level_options.difficulty_mult)
