@@ -41,6 +41,8 @@ function app.add_handler(method, url_pattern, handler)
     logger.INFO("Handler added for: " .. method .. " " .. url_pattern)
 end
 
+local g_config
+
 local function reply(_, stream) -- luacheck: ignore 212
     -- Read in headers
     local req_headers = assert(stream:get_headers())
@@ -68,6 +70,9 @@ local function reply(_, stream) -- luacheck: ignore 212
     local res_headers = http_headers.new()
     res_headers:append(":status", "200")
     res_headers:append("content-type", "text/plain")
+    if g_config.cors_url then
+        res_headers:append("Access-Control-Allow-Origin", g_config.cors_url)
+    end
 
     -- Look for a pattern that matches the path
     local path_wo_query = path:gsub("?.*", "")
@@ -142,6 +147,7 @@ end
 
 function app.start(config)
     config = config or {}
+    g_config = config
     local ssl_ctx = openssl_ctx.new("TLS", true)
     ssl_ctx:setPrivateKey(pkey.new(assert(read_file(config.key))))
     ssl_ctx:setCertificate(x509.new(assert(read_file(config.cert))))

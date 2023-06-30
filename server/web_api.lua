@@ -62,4 +62,5 @@ app.start({
     PORT = 8001,
     key = "cert/key.pem",
     cert = "cert/cert.pem",
+    cors_url = os.getenv("CORS_URL"),
 })
