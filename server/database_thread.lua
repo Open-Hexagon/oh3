@@ -218,6 +218,17 @@ function api.get_newest_scores(seconds)
     return {}
 end
 
+---get the score for a certain replay
+---@param hash any
+---@return table
+function api.get_score_from_hash(hash)
+    local results = database:select("scores", { where = { replay_hash = hash } })
+    if #results > 1 then
+        log("Two scores with same replay hash?")
+    end
+    return results
+end
+
 ---get the top scores on a level and the score for the steam id
 ---@param pack any
 ---@param level any
