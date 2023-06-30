@@ -3,6 +3,7 @@ local database = require("server.database")
 local app = require("extlibs.milua.milua")
 local json = require("extlibs.json.json")
 local msgpack = require("extlibs.msgpack.msgpack")
+local packs = require("server.game_thread")[3]
 
 database.set_identity(3)
 
@@ -42,6 +43,10 @@ app.add_handler("GET", "/get_video/...", function(captures)
     else
         return "no video for this replay"
     end
+end)
+
+app.add_handler("GET", "/get_packs", function()
+    return json.encode(packs), { ["content-type"] = "application/json" }
 end)
 
 app.start({
