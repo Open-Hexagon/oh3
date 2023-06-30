@@ -78,10 +78,13 @@ app.add_handler("GET", "/get_embedded_video/...", function(captures, _, headers)
     local url = "https://" .. headers[":authority"] .. "/get_video/" .. hash
     local content = [[
         <html>
-            <meta content="]] .. score.score .. "s by " .. user.username .. [[" property="og:title" />
-            <meta content="Unofficial Open Hexagon Rankings" property="og:description" />
-            <meta content="]] .. url .. [[" property="og:video" />
-            <meta content="#43B581" data-react-helmet="true" name="theme-color" />
+            <meta content="]] .. score.score .. "s by " .. user.username .. [[" property="og:title">
+            <meta content="Unofficial Open Hexagon Rankings" property="og:description">
+            <meta content="]] .. url .. [[" property="og:video">
+            <meta content="]] .. url .. [[" property="og:video:url">
+            <meta content="]] .. url .. [[" property="og:video:secure_url">
+            <meta content="video/mp4" property="og:video:type">
+            <meta content="#43B581" data-react-helmet="true" name="theme-color">
         </html>
     ]]
     return content, { ["content-type"] = "text/html" }
