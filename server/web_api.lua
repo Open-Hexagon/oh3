@@ -18,8 +18,7 @@ database.set_identity(3)
 local replay_path = database.get_replay_path()
 
 local function replay_get_video_path(hash)
-    -- put .mp4 in url, hopefully discord will embed the links then
-    local path = replay_path .. hash:sub(1, 2) .. "/" .. hash --.. ".mp4"
+    local path = replay_path .. hash:sub(1, 2) .. "/" .. hash .. ".mp4"
     if love.filesystem.getInfo(path) then
         return path
     end
