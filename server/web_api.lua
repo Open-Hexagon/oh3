@@ -24,11 +24,21 @@ local function replay_get_video_path(hash)
     end
 end
 
+local hex_to_char = function(x)
+  return string.char(tonumber(x, 16))
+end
+
+local unescape = function(url)
+  return url:gsub("%%(%x%x)", hex_to_char)
+end
+
 app.add_handler("GET", "/get_leaderboard/.../.../...", function(captures)
-    local pack, level, difficulty_mult = unpack(captures)
-    if pack and level and difficulty_mult then
-        local level_options = msgpack.pack({ difficulty_mult = utils.float_round(tonumber(difficulty_mult)) })
-        local lb = database.execute({ "get_leaderboard", pack, level, level_options, nil })
+    local pack, level, level_options = unpack(captures)
+    if pack and level and level_options then
+        level_options = json.decode(unescape(level_options))
+        -- only difficulty_mult needs this as it's the only legacy option
+        level_options.difficulty_mult = utils.float_round(level_options.difficulty_mult)
+        local lb = database.get_leaderboard(pack, level, msgpack.pack(level_options))
         for i = 1, #lb do
             local score = lb[i]
             score.has_video = score.replay_hash and replay_get_video_path(score.replay_hash) and true or false
