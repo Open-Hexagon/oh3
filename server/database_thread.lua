@@ -253,6 +253,7 @@ function api.get_leaderboard(pack, level, level_options, steam_id)
             user_name = name,
             timestamp = score.created,
             value = times[i],
+            replay_hash = score.replay_hash,
         }
         if score.steam_id == steam_id then
             user_score = {}

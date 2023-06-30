@@ -12,6 +12,7 @@ ret.headless = love.filesystem.getIdentity() == "ohtest"
 ret.server = false
 ret.migrate = false
 ret.render = false
+ret.web = false
 for i = 1, #args do
     if args[i] == "--headless" then
         ret.headless = true
@@ -24,6 +25,8 @@ for i = 1, #args do
     elseif args[i] == "--render" then
         ret.render = true
         ret.headless = false
+    elseif args[i] == "--web" then
+        ret.web = true
     else
         ret.no_option = args[i]
     end

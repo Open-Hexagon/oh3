@@ -93,7 +93,7 @@ function love.run()
         -- render top scores sent to the server
         love.window.setMode(1920, 1080)
         local server_thread = love.thread.newThread("server/init.lua")
-        server_thread:start("server", true)
+        server_thread:start("server", true, args.web)
         local game_handler = require("game_handler")
         local audio = require("game_handler.video.audio")
         local video_encoder = require("game_handler.video")

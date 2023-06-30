@@ -1,4 +1,5 @@
-local log_name, is_thread = ...
+local log_name, is_thread, start_web = ...
+start_web = start_web or require("args").web
 local log = require("log")(log_name)
 local packet_handler21 = require("compat.game21.server.packet_handler")
 local packet_types21 = require("compat.game21.server.packet_types")
@@ -142,4 +143,8 @@ end)
 
 database.init()
 packet_handler21.init(database, is_thread)
+if start_web then
+    local web_thread = love.thread.newThread("server/web_api.lua")
+    web_thread:start()
+end
 uv.run()
