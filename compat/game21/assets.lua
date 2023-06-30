@@ -138,7 +138,7 @@ function assets.init(data, audio, config)
             pack_id_json_map[pack_json.pack_id] = pack_json
             folder_pack_json_map[folder] = pack_json
 
-            data.register_pack(pack_json.pack_id, pack_json.pack_name, 21)
+            data.register_pack(pack_json.pack_id, pack_json.name, 21)
 
             -- level data has to be loaded here for level selection purposes
             pack_json.levels = {}
