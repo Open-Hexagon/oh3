@@ -208,10 +208,14 @@ end
 
 ---get all scores that were done in the last however many seconds
 ---@param seconds any
----@return unknown
+---@return table
 function api.get_newest_scores(seconds)
     local min_time = os.time() - seconds
-    return database:eval("SELECT * FROM scores WHERE created >= ?", min_time)
+    local results = database:eval("SELECT * FROM scores WHERE created >= ?", min_time)
+    if type(results) == "table" then
+        return results
+    end
+    return {}
 end
 
 ---get the top scores on a level and the score for the steam id
