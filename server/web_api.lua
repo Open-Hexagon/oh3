@@ -75,7 +75,7 @@ app.add_handler("GET", "/get_embedded_video/...", function(captures, _, headers)
     local hash = captures[1]
     local score = database.get_score_from_hash(hash)
     local user = database.get_user_by_steam_id(score.steam_id) or "deleted user"
-    local url = "https://" .. headers.get("Host") .. "/get_video/" .. hash
+    local url = "https://" .. headers[":authority"] .. "/get_video/" .. hash
     local content = [[
         <meta content="]] .. score.score .. "s by " .. user .. [[" property="og:title" />
         <meta content="Unofficial Open Hexagon Rankings" property="og:description" />
