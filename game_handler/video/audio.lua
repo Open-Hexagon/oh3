@@ -20,12 +20,7 @@ local function resample(data, pitch, duration)
         -- empty sound data
         return love.sound.newSoundData(1, SAMPLE_RATE, BITS_PER_SAMPLE, data:getChannelCount())
     end
-    local new_data = love.sound.newSoundData(
-        sample_count,
-        SAMPLE_RATE,
-        BITS_PER_SAMPLE,
-        data:getChannelCount()
-    )
+    local new_data = love.sound.newSoundData(sample_count, SAMPLE_RATE, BITS_PER_SAMPLE, data:getChannelCount())
     local to_old_mult = data:getSampleRate() * pitch / SAMPLE_RATE
     for channel = 1, data:getChannelCount() do
         for new_pos = 0, new_data:getSampleCount() - 1 do

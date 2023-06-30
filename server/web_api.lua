@@ -19,7 +19,7 @@ app.add_handler("GET", "/get_leaderboard/.../.../...", function(captures)
     local pack, level, difficulty_mult = unpack(captures)
     if pack and level and difficulty_mult then
         local level_options = msgpack.pack({ difficulty_mult = utils.float_round(tonumber(difficulty_mult)) })
-        local lb = database.execute({"get_leaderboard", pack, level, level_options, nil})
+        local lb = database.execute({ "get_leaderboard", pack, level, level_options, nil })
         for i = 1, #lb do
             local score = lb[i]
             score.has_video = score.replay_hash and replay_get_video_path(score.replay_hash) and true or false
@@ -45,6 +45,8 @@ app.add_handler("GET", "/get_video/...", function(captures)
 end)
 
 app.start({
-    HOST="0.0.0.0",
-    PORT=8001,
+    HOST = "0.0.0.0",
+    PORT = 8001,
+    key = "cert/key.pem",
+    cert = "cert/cert.pem",
 })

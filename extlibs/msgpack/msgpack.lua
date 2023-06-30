@@ -54,7 +54,17 @@ end
 local function strary_append_uint64(n, h)
     table.insert(
         strary,
-        tostr(h, tonumber(bit.rshift(n, 56)), tonumber(bit.rshift(n, 48) % 256), tonumber(bit.rshift(n, 40) % 256), tonumber(bit.rshift(n, 32) % 256), tonumber(bit.rshift(n, 24) % 256), tonumber(bit.rshift(n, 16) % 256), tonumber(bit.rshift(n, 8) % 256), tonumber(n % 256))
+        tostr(
+            h,
+            tonumber(bit.rshift(n, 56)),
+            tonumber(bit.rshift(n, 48) % 256),
+            tonumber(bit.rshift(n, 40) % 256),
+            tonumber(bit.rshift(n, 32) % 256),
+            tonumber(bit.rshift(n, 24) % 256),
+            tonumber(bit.rshift(n, 16) % 256),
+            tonumber(bit.rshift(n, 8) % 256),
+            tonumber(n % 256)
+        )
     )
 end
 
@@ -399,7 +409,14 @@ local unpack_number = function(offset, ntype, nlen)
         --                            print( string.format("i32 bytes: %x %x %x %x ", b1, b2, b3, b4 ), n, nn )
         return nn
     elseif ntype == "uint64_t" then
-        local n = bit.lshift(b1 * 1ULL, 56) + bit.lshift(b2 * 1ULL, 48) + bit.lshift(b3 * 1ULL, 40) + bit.lshift(b4 * 1ULL, 32) + bit.lshift(b5 * 1ULL, 24) + bit.lshift(b6 * 1ULL, 16) + bit.lshift(b7 * 1ULL, 8) + b8
+        local n = bit.lshift(b1 * 1ULL, 56)
+            + bit.lshift(b2 * 1ULL, 48)
+            + bit.lshift(b3 * 1ULL, 40)
+            + bit.lshift(b4 * 1ULL, 32)
+            + bit.lshift(b5 * 1ULL, 24)
+            + bit.lshift(b6 * 1ULL, 16)
+            + bit.lshift(b7 * 1ULL, 8)
+            + b8
         return n
     elseif ntype == "double_t" then
         --                            print( string.format("doublebytes networked: %x %x %x %x %x %x %x %x", b1, b2, b3, b4,b5,b6,b7,b8 ) )

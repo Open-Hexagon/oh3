@@ -1,8 +1,8 @@
 local audio = {}
 -- Expose only a subset of the love audio api so we can use the same api when exporting a video as well
 local property_func_map = {
-    looping = {"setLooping", "getLooping"},
-    volume = {"setVolume", "getVolume"},
+    looping = { "setLooping", "getLooping" },
+    volume = { "setVolume", "getVolume" },
     playing = "isPlaying",
     pitch = "getPitch",
     play = "play",
