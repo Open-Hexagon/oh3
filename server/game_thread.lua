@@ -73,15 +73,23 @@ function api.verify_replay(compressed_replay, time, steam_id)
             then
                 decoded_replay:save(replay_save_path, data)
                 log("Saved new score")
-                if
-                    render_top_scores
-                    and database.is_top_score(
-                        decoded_replay.pack_id,
-                        decoded_replay.level_id,
-                        packed_level_settings,
-                        steam_id
-                    )
-                then
+                local position = database.get_score_position(
+                    decoded_replay.pack_id,
+                    decoded_replay.level_id,
+                    packed_level_settings,
+                    steam_id
+                )
+                love.thread.getChannel("new_scores"):push({
+                    position = position,
+                    value = score,
+                    replay_hash = replay_hash,
+                    user_name = database.get_user_by_steam_id(steam_id),
+                    timestamp = os.time(),
+                    level_options = decoded_replay.data.level_settings,
+                    level = decoded_replay.level_id,
+                    pack = decoded_replay.pack_id,
+                })
+                if render_top_scores and position == 1 then
                     local channel = love.thread.getChannel("replays_to_render")
                     channel:push(replay_save_path)
                     log(channel:getCount() .. " replays queued for rendering.")

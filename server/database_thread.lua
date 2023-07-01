@@ -2,6 +2,7 @@ local log_name, as_thread = ...
 local log = require("log")(log_name)
 local sqlite = require("extlibs.sqlite")
 local strfun = require("extlibs.sqlite.strfun")
+local msgpack = require("extlibs.msgpack.msgpack")
 local api = {}
 
 local server_path = "server/"
@@ -176,36 +177,6 @@ function api.save_score(time, steam_id, pack, level, level_options, score, hash,
     end
 end
 
----check if a score is the top score (also returns true if tied with top score)
----@param pack any
----@param level any
----@param level_options any
----@param steam_id any
----@return boolean
-function api.is_top_score(pack, level, level_options, steam_id)
-    level_options = love.data.encode("string", "base64", level_options)
-    local results = database:select("scores", {
-        where = {
-            pack = pack,
-            level = level,
-            level_options = level_options,
-        },
-    })
-    local max_score = -1
-    local user_score
-    for i = 1, #results do
-        max_score = math.max(max_score, results[i].score)
-        if results[i].steam_id == steam_id then
-            user_score = results[i]
-        end
-    end
-    if user_score then
-        return user_score.score == max_score
-    else
-        return false
-    end
-end
-
 ---get all scores that were done in the last however many seconds
 ---@param seconds any
 ---@return table
@@ -213,9 +184,49 @@ function api.get_newest_scores(seconds)
     local min_time = os.time() - seconds
     local results = database:eval("SELECT * FROM scores WHERE created >= ?", min_time)
     if type(results) == "table" then
+        local ret = {}
+        for i = 1, #results do
+            local score = results[i]
+            ret[#ret + 1] = {
+                position = api.get_score_position(score.pack, score.level, score.level_options, score.steam_id, true),
+                user_name = api.get_user_by_steam_id(score.steam_id),
+                timestamp = score.created,
+                value = score.score,
+                replay_hash = score.replay_hash,
+                level_options = msgpack.unpack(love.data.decode("string", "base64", score.level_options)),
+                level = score.level,
+                pack = score.pack,
+            }
+        end
         return results
     end
     return {}
+end
+
+function api.get_score_position(pack, level, level_options, steam_id, is_base64)
+    if not is_base64 then
+        level_options = love.data.encode("string", "base64", level_options)
+    end
+    local results = database:select("scores", {
+        where = {
+            pack = pack,
+            level = level,
+            level_options = level_options,
+        },
+    })
+    local user_score
+    for i = 1, #results do
+        if results[i].steam_id == steam_id then
+            user_score = results[i]
+        end
+    end
+    local position = 1
+    for i = #results, 1, -1 do
+        if results[i].score >= user_score.score and results[i] ~= user_score then
+            position = position + 1
+        end
+    end
+    return position
 end
 
 ---get the score for a certain replay

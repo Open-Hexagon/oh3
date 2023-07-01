@@ -14,15 +14,11 @@ for j = 1, #packs do
         for k = 1, pack.level_count do
             local level = pack.levels[k]
             for i = 1, #level.options.difficulty_mult do
-                local validator = pack.id
-                    .. "_"
-                    .. level.id
-                    .. "_m_"
-                    .. level.options.difficulty_mult[i]
+                local validator = pack.id .. "_" .. level.id .. "_m_" .. level.options.difficulty_mult[i]
                 level_validator_to_id[validator] = {
                     pack = pack.id,
                     level = level.id,
-                    difficulty_mult = level.options.difficulty_mult[i]
+                    difficulty_mult = level.options.difficulty_mult[i],
                 }
             end
         end

@@ -25,19 +25,29 @@ local function replay_get_video_path(hash)
 end
 
 local hex_to_char = function(x)
-  return string.char(tonumber(x, 16))
+    return string.char(tonumber(x, 16))
 end
 
 local unescape = function(url)
-  return url:gsub("%%(%x%x)", hex_to_char)
+    return url:gsub("%%(%x%x)", hex_to_char)
 end
 
---[[ Unused so far, will need to change a bit
+local newest_scores = database.get_newest_scores(3 * 10 ^ 6)
+
 app.add_handler("GET", "/get_newest_scores/...", function(captures)
-    local seconds = tonumber(captures[1])
-    local scores = database.get_newest_scores(seconds)
+    local seconds = math.min(tonumber(captures[1]), 3 * 10 ^ 6)
+    local channel = love.thread.getChannel("new_scores")
+    for _ = 1, channel:getCount() do
+        newest_scores[#newest_scores + 1] = channel:pop()
+    end
+    local scores = {}
+    for i = 1, #newest_scores do
+        if os.time() - newest_scores[i].timestamp < seconds then
+            scores[#scores + 1] = newest_scores[i]
+        end
+    end
     return json.encode(scores), { ["content-type"] = "application/json" }
-end)]]
+end)
 
 app.add_handler("GET", "/get_leaderboard/.../.../...", function(captures)
     local pack, level, level_options = unpack(captures)
