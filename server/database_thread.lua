@@ -155,6 +155,10 @@ function api.save_score(time, steam_id, pack, level, level_options, score, hash,
             local folder = replay_path .. results[1].replay_hash:sub(1, 2) .. "/"
             local path = folder .. results[1].replay_hash
             love.filesystem.remove(path)
+            local video = path .. ".mp4"
+            if love.filesystem.getInfo(video) then
+                love.filesystem.remove(video)
+            end
             if #love.filesystem.getDirectoryItems(folder) == 0 then
                 love.filesystem.remove(folder)
             end
