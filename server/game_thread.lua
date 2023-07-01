@@ -83,7 +83,7 @@ function api.verify_replay(compressed_replay, time, steam_id)
                     position = position,
                     value = score,
                     replay_hash = replay_hash,
-                    user_name = database.get_user_by_steam_id(steam_id),
+                    user_name = (database.get_user_by_steam_id(steam_id) or { username = "deleted user" }).username,
                     timestamp = os.time(),
                     level_options = decoded_replay.data.level_settings,
                     level = decoded_replay.level_id,

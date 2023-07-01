@@ -189,7 +189,7 @@ function api.get_newest_scores(seconds)
             local score = results[i]
             ret[#ret + 1] = {
                 position = api.get_score_position(score.pack, score.level, score.level_options, score.steam_id, true),
-                user_name = api.get_user_by_steam_id(score.steam_id),
+                user_name = (api.get_user_by_steam_id(score.steam_id) or { username = "deleted user" }).username,
                 timestamp = score.created,
                 value = score.score,
                 replay_hash = score.replay_hash,
