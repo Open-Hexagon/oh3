@@ -32,11 +32,12 @@ local unescape = function(url)
   return url:gsub("%%(%x%x)", hex_to_char)
 end
 
+--[[ Unused so far, will need to change a bit
 app.add_handler("GET", "/get_newest_scores/...", function(captures)
     local seconds = tonumber(captures[1])
     local scores = database.get_newest_scores(seconds)
     return json.encode(scores), { ["content-type"] = "application/json" }
-end)
+end)]]
 
 app.add_handler("GET", "/get_leaderboard/.../.../...", function(captures)
     local pack, level, level_options = unpack(captures)
@@ -69,34 +70,6 @@ app.add_handler("GET", "/get_video/...", function(captures)
     else
         return "no video for this replay"
     end
-end)
-
-app.add_handler("GET", "/get_embedded_video/...", function(captures, _, headers)
-    local hash = captures[1]
-    local score = database.get_score_from_hash(hash)
-    local user = database.get_user_by_steam_id(score.steam_id) or {username = "deleted user"}
-    local url = "https://" .. headers[":authority"] .. "/get_video/" .. hash
-    local content = [[
-        <html>
-            <head>
-                <meta content="]] .. score.score .. "s by " .. user.username .. [[" property="og:title">
-                <meta content="Unofficial Open Hexagon Rankings" property="og:description">
-                <meta content="]] .. url .. [[" property="og:video">
-                <meta content="]] .. url .. [[" property="og:video:url">
-                <meta content="]] .. url .. [[" property="og:video:secure_url">
-                <meta content="video/mp4" property="og:video:type">
-                <meta content="video.other" property="og:type">
-                <meta content="1920" property="og:video:width">
-                <meta content="1080" property="og:video:height">
-                <meta content="#43B581" data-react-helmet="true" name="theme-color">
-            </head>
-            <body>
-                <video controls src="]] .. url .. [[" width=960 height=540>
-                </video>
-            </body>
-        </html>
-    ]]
-    return content, { ["content-type"] = "text/html" }
 end)
 
 app.add_handler("GET", "/get_packs", function()
