@@ -187,13 +187,14 @@ function api.get_newest_scores(seconds)
         local ret = {}
         for i = 1, #results do
             local score = results[i]
+            local _, level_options = msgpack.unpack(love.data.decode("string", "base64", score.level_options))
             ret[#ret + 1] = {
                 position = api.get_score_position(score.pack, score.level, score.level_options, score.steam_id, true),
                 user_name = (api.get_user_by_steam_id(score.steam_id) or { username = "deleted user" }).username,
                 timestamp = score.created,
                 value = score.score,
                 replay_hash = score.replay_hash,
-                level_options = msgpack.unpack(love.data.decode("string", "base64", score.level_options)),
+                level_options = level_options,
                 level = score.level,
                 pack = score.pack,
             }

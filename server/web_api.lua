@@ -43,6 +43,7 @@ app.add_handler("GET", "/get_newest_scores/...", function(captures)
     local scores = {}
     for i = 1, #newest_scores do
         if os.time() - newest_scores[i].timestamp < seconds then
+            newest_scores[i].has_video = newest_scores[i].replay_hash and replay_get_video_path(newest_scores[i].replay_hash) and true or false
             scores[#scores + 1] = newest_scores[i]
         end
     end
