@@ -198,7 +198,7 @@ function api.get_newest_scores(seconds)
                 pack = score.pack,
             }
         end
-        return results
+        return ret
     end
     return {}
 end
