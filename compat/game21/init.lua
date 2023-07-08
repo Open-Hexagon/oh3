@@ -341,6 +341,7 @@ function public.update(frametime)
                 game.lua_runtime.run_fn_if_exists("onIncrement")
             end
 
+            -- level
             if not game.status.is_time_paused() then
                 game.lua_runtime.run_fn_if_exists("onUpdate", frametime)
                 if game.main_timeline:update(game.status.get_time_tp()) and not game.must_change_sides then
@@ -348,6 +349,7 @@ function public.update(frametime)
                     game.lua_runtime.run_fn_if_exists("onStep")
                 end
             end
+
             game.custom_timelines.update(game.status.get_current_tp())
 
             if public.config.get("beatpulse") then

@@ -32,6 +32,7 @@ function walls.wall(
     curving,
     speed_data_wall_thing
 )
+    thickness = thickness or 0
     hue_modifier = hue_modifier or 0
     side = side > 0 and math.floor(side) or math.ceil(side)
     speed_mult = speed_mult or 1
