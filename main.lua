@@ -109,10 +109,22 @@ function love.run()
                 local out_file_path = love.filesystem.getSaveDirectory() .. "/" .. replay_file .. ".part.mp4"
                 log("Got new #1 on '" .. replay.level_id .. "' from '" .. replay.pack_id .. "', rendering...")
                 local fn = render_replay(game_handler, video_encoder, audio, replay, out_file_path, replay.score)
+                local aborted = false
                 while fn() ~= 0 do
+                    local abort_hash = love.thread.getChannel("abort_replay_render"):pop()
+                    if abort_hash and abort_hash == replay_file:match(".*/(.*)") then
+                        aborted = true
+                        video_encoder.stop()
+                        break
+                    end
                 end
-                os.rename(out_file_path, out_file_path:gsub("%.part%.mp4", "%.mp4"))
-                log("done.")
+                if aborted then
+                    log("aborted rendering.")
+                    love.filesystem.remove(replay_file .. ".part.mp4")
+                else
+                    os.rename(out_file_path, out_file_path:gsub("%.part%.mp4", "%.mp4"))
+                    log("done.")
+                end
             end
         end
     end
