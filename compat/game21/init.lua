@@ -65,6 +65,18 @@ local layer_shader, message_font, go_sound, swap_blip_sound, level_up_sound, res
 local spawn_swap_particles_ready = false
 local must_spawn_swap_particles = false
 
+local function get_swap_cooldown()
+    return math.max(36 * game.level_status.swap_cooldown_mult, 8)
+end
+
+local function set_sides(sides)
+    playsound(game.level_status.beep_sound)
+    if sides < 3 then
+        sides = 3
+    end
+    game.level_status.sides = sides
+end
+
 ---starts a new game
 ---@param pack_id string
 ---@param level_id string
@@ -117,7 +129,7 @@ function public.start(pack_id, level_id, difficulty_mult)
     game.custom_walls.cw_clear()
 
     game.player.reset(
-        game.get_swap_cooldown(),
+        get_swap_cooldown(),
         public.config.get("player_size"),
         public.config.get("player_speed"),
         public.config.get("player_focus_speed")
@@ -140,7 +152,7 @@ function public.start(pack_id, level_id, difficulty_mult)
         playsound(restart_sound)
     end
     game.lua_runtime.run_fn_if_exists("onInit")
-    game.set_sides(game.level_status.sides)
+    set_sides(game.level_status.sides)
     game.status.pulse_delay = game.status.pulse_delay + game.level_status.pulse_initial_delay
     game.status.beat_pulse_delay = game.status.beat_pulse_delay + game.level_status.beat_pulse_initial_delay
     game.status.start()
@@ -160,12 +172,6 @@ function game.get_speed_mult_dm()
         return result
     end
     return result < game.level_status.speed_max and result or game.level_status.speed_max
-end
-
-function game.perform_player_kill()
-    local fatal = not public.config.get("invincible") and not game.level_status.tutorial_mode
-    game.player.kill(fatal)
-    game.death()
 end
 
 function game.death(force)
@@ -198,7 +204,7 @@ function game.perform_player_swap(play_sound)
     end
 end
 
-function game.get_music_dm_sync_factor()
+local function get_music_dm_sync_factor()
     return math.pow(game.difficulty_mult, 0.12)
 end
 
@@ -206,7 +212,7 @@ function game.refresh_music_pitch()
     if game.music.source ~= nil then
         local pitch = game.level_status.music_pitch
             * public.config.get("music_speed_mult")
-            * (game.level_status.sync_music_to_dm and game.get_music_dm_sync_factor() or 1)
+            * (game.level_status.sync_music_to_dm and get_music_dm_sync_factor() or 1)
         if pitch ~= pitch then
             -- pitch is NaN, happens with negative difficulty mults
             pitch = 1
@@ -217,18 +223,6 @@ function game.refresh_music_pitch()
         end
         game.music.source:set_pitch(pitch)
     end
-end
-
-function game.get_swap_cooldown()
-    return math.max(36 * game.level_status.swap_cooldown_mult, 8)
-end
-
-function game.set_sides(sides)
-    playsound(game.level_status.beep_sound)
-    if sides < 3 then
-        sides = 3
-    end
-    game.level_status.sides = sides
 end
 
 function game.increment_difficulty()
@@ -302,7 +296,7 @@ function public.update(frametime)
                     swap_particle_info.x, swap_particle_info.y = game.player.get_position()
                     swap_particle_info.angle = game.player.get_player_angle()
                     game.perform_player_swap(true)
-                    game.player.reset_swap(game.get_swap_cooldown())
+                    game.player.reset_swap(get_swap_cooldown())
                     game.player.set_just_swapped(true)
                     game.player_now_ready_to_swap = false
                 else
@@ -340,7 +334,7 @@ function public.update(frametime)
                 game.level_status.delay_mult =
                     utils.float_round(game.level_status.delay_mult + game.level_status.delay_inc)
                 if game.level_status.rnd_side_changes_enabled then
-                    game.set_sides(side_number)
+                    set_sides(side_number)
                 end
                 game.must_change_sides = false
                 playsound(game.level_status.level_up_sound)
@@ -363,13 +357,13 @@ function public.update(frametime)
                         game.status.beat_pulse_delay = game.level_status.beat_pulse_delay_max
                     else
                         game.status.beat_pulse_delay = game.status.beat_pulse_delay
-                            - frametime * game.get_music_dm_sync_factor()
+                            - frametime * get_music_dm_sync_factor()
                     end
                     if game.status.beat_pulse > 0 then
                         game.status.beat_pulse = game.status.beat_pulse
                             - 2
                                 * frametime
-                                * game.get_music_dm_sync_factor()
+                                * get_music_dm_sync_factor()
                                 * game.level_status.beat_pulse_speed_mult
                     end
                 end
@@ -385,7 +379,7 @@ function public.update(frametime)
                     local pulse_limit = game.status.pulse_direction > 0 and game.level_status.pulse_max
                         or game.level_status.pulse_min
                     game.status.pulse =
-                        utils.float_round(game.status.pulse + pulse_add * frametime * game.get_music_dm_sync_factor())
+                        utils.float_round(game.status.pulse + pulse_add * frametime * get_music_dm_sync_factor())
                     if
                         (game.status.pulse_direction > 0 and game.status.pulse >= pulse_limit)
                         or (game.status.pulse_direction < 0 and game.status.pulse <= pulse_limit)
@@ -397,7 +391,7 @@ function public.update(frametime)
                         end
                     end
                 end
-                game.status.pulse_delay = game.status.pulse_delay - frametime * game.get_music_dm_sync_factor()
+                game.status.pulse_delay = game.status.pulse_delay - frametime * get_music_dm_sync_factor()
             end
 
             if not public.config.get("black_and_white") then
@@ -410,7 +404,9 @@ function public.update(frametime)
                 game.walls.handle_collision(move, frametime, game.player, game.status.radius)
                 or game.custom_walls.handle_collision(move, game.status.radius, game.player, frametime)
             then
-                game.perform_player_kill()
+                local fatal = not public.config.get("invincible") and not game.level_status.tutorial_mode
+                game.player.kill(fatal)
+                game.death()
             end
             game.custom_walls.update_old_vertices()
         else
