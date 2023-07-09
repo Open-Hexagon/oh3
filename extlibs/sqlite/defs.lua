@@ -50,6 +50,8 @@ local clib = (function()
                 return os.machine == "arm64" and "/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib"
                     or "/usr/local/opt/sqlite3/lib/libsqlite3.dylib"
             end
+
+            return "lib/libsqlite3.dll"
         end)()
 
     return ffi.load(clib_path or "libsqlite3")

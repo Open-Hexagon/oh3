@@ -277,6 +277,11 @@ function public.update(frametime)
         game.style.compute_colors()
         game.player.update(focus, game.level_status.swap_enabled, frametime)
         if not game.status.has_died then
+            -- TODO: draw tracked vars
+            -- small snippet to print them:
+            --[[for var, name in pairs(game.level_status.tracked_variables) do
+                print(name, game.lua_runtime.env[var])
+            end]]
             local prevent_player_input = game.lua_runtime.run_fn_if_exists("onInput", frametime, move, focus, swap)
             if not prevent_player_input then
                 game.player.update_input_movement(move, game.level_status.player_speed_mult, focus, frametime)
