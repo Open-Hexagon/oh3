@@ -439,12 +439,6 @@ function public.draw(screen)
     flash.draw(public.config.get("flash"), zoom_factor)
 end
 
----give the game an input handler that is capable of replaying or recording inputs
----@param input_handler table
-function public.set_input_handler(input_handler)
-    game.input = input_handler
-end
-
 ---get the current score
 ---@return number
 function public.get_score()
@@ -473,9 +467,11 @@ end
 
 ---initialize the game
 ---@param data any
+---@param input_handler any
 ---@param config any
 ---@param audio any
-function public.init(data, config, _, audio)
+function public.init(data, input_handler, config, _, audio)
+    game.input = input_handler
     assets.init(data, audio, config)
     public.config = config
     game.audio = audio

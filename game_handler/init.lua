@@ -34,7 +34,7 @@ function game_handler.init(config, audio)
         persistent_data = game_handler.profile.get_all_data()
     end
     for _, game in pairs(games) do
-        game.init(pack_level_data, config, persistent_data, audio)
+        game.init(pack_level_data, input, config, persistent_data, audio)
     end
 end
 
@@ -42,7 +42,6 @@ end
 ---@param version number
 function game_handler.set_version(version)
     current_game = games[tostring(version)]
-    current_game.set_input_handler(input)
     if current_game == nil then
         error("Game with version '" .. version .. "' does not exist or is unsupported.")
     end

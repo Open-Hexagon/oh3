@@ -516,12 +516,6 @@ function public.draw(screen)
     end
 end
 
----give the game an input handler that is capable of replaying or recording inputs
----@param input table
-function public.set_input_handler(input)
-    game.input = input
-end
-
 ---get the current score (gets the custom score if one exists)
 ---@return integer
 function public.get_score()
@@ -547,10 +541,12 @@ end
 
 ---initialize the game
 ---@param data table
+---@param input_handler table
 ---@param config table
 ---@param all_persistent_data table
 ---@param audio table?
-function public.init(data, config, all_persistent_data, audio)
+function public.init(data, input_handler, config, all_persistent_data, audio)
+    game.input = input_handler
     assets.init(data, all_persistent_data, audio, config)
     public.config = config
     game.audio = audio
