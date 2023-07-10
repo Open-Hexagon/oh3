@@ -177,8 +177,6 @@ function game.death(force)
         playsound(game.level_status.death_sound)
         if force or not (game.level_status.tutorial_mode or public.config.get("invincible")) then
             game.lua_runtime.run_fn_if_exists("onDeath")
-            -- custom score may have been change in onDeath
-            game.status.update_custom_score(game.lua_runtime.env[game.level_status.score_overwrite])
             camera_shake.start()
             if not args.headless and game.music ~= nil and game.music.source ~= nil then
                 game.music.source:stop()
@@ -446,7 +444,8 @@ end
 ---@return boolean is custom score
 function public.get_score()
     if game.level_status.score_overwritten then
-        return game.status.get_custom_score(), true
+        -- custom score may change after death, get it again
+        return game.lua_runtime.env[game.level_status.score_overwrite], true
     end
     return game.status.get_played_accumulated_frametime_in_seconds(), false
 end
@@ -454,6 +453,12 @@ end
 ---gets time based score even if there is a custom score
 function public.get_timed_score()
     return game.status.get_played_accumulated_frametime_in_seconds()
+end
+
+---21 specific function that gets the custom score right before death (which is used for replay verification instead of the actual one)
+---@return number?
+function public.get_compat_custom_score()
+    return game.status.get_custom_score()
 end
 
 ---runs the game until the player dies without caring about real time

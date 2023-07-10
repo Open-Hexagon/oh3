@@ -241,6 +241,15 @@ function game_handler.get_timed_score()
     end
 end
 
+---21 specific function for getting the custom score the client saves in replays
+---@return number?
+function game_handler.get_compat_custom_score()
+    if current_game_version ~= 21 then
+        error("attempted to get compat custom score in non 21 game version")
+    end
+    return current_game.get_compat_custom_score
+end
+
 ---get the current tickrate (this is constant for all game versions except 1.92)
 ---@return number
 function game_handler.get_tickrate()
