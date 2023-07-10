@@ -30,7 +30,7 @@ local function render_replay(game_handler, video_encoder, audio, replay, out_fil
         if final_score then
             local now = love.timer.getTime()
             if now - last_print > 10 then
-                log("Rendering progress: " .. (100 * game_handler.get_score() / final_score) .. "%")
+                log("Rendering progress: " .. (100 * game_handler.get_timed_score() / final_score) .. "%")
                 last_print = now
             end
         end
