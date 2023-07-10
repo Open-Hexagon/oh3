@@ -226,8 +226,19 @@ end
 
 ---get the current score of the game
 ---@return number
+---@return boolean
 function game_handler.get_score()
     return current_game.get_score()
+end
+
+---get the timed current score of the game even if there is a custom score
+---@return number
+function game_handler.get_timed_score()
+    if current_game.get_timed_score then
+        return current_game.get_timed_score()
+    else
+        return current_game.get_score()
+    end
 end
 
 ---get the current tickrate (this is constant for all game versions except 1.92)

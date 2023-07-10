@@ -53,9 +53,15 @@ function api.verify_replay(compressed_replay, time, steam_id)
         end
         return false
     end)
-    local score = game_handler.get_score()
+    local score, is_custom_score = game_handler.get_score()
+    local timed_score = score
+    if is_custom_score and decoded_replay.game_version == 21 then
+        -- the old game divides custom scores by 60
+        decoded_replay.score = decoded_replay.score * 60
+        timed_score = game_handler.get_timed_score()
+    end
     if score + score_tolerance > decoded_replay.score and score - score_tolerance < decoded_replay.score then
-        if time + time_tolerance > score and time - time_tolerance < score then
+        if time + time_tolerance > timed_score and time - time_tolerance < timed_score then
             log("replay verified, score: " .. score)
             local hash, data = decoded_replay:get_hash()
             local packed_level_settings = msgpack.pack(decoded_replay.data.level_settings)
@@ -96,7 +102,7 @@ function api.verify_replay(compressed_replay, time, steam_id)
                 end
             end
         else
-            log("time between packets of " .. time .. " does not match score of " .. score)
+            log("time between packets of " .. time .. " does not match score of " .. timed_score)
         end
     else
         log("The replay's score of " .. decoded_replay.score .. " does not match the actual score of " .. score)

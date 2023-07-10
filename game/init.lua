@@ -22,6 +22,11 @@ end
 function public.get_score()
 end
 
+---get the timed current score even if there is a custom score
+---@return number
+function public.get_timed_score()
+end
+
 ---runs the game until the player dies without caring about real time
 function public.run_game_until_death()
 end

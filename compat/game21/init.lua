@@ -440,12 +440,17 @@ function public.draw(screen)
 end
 
 ---get the current score
----@return number
+---@return number the score
+---@return boolean is custom score
 function public.get_score()
-    -- ignore custom score for now as the current game also does that
-    --if game.level_status.score_overwritten then
-    --    return game.status.get_custom_score()
-    --end
+    if game.level_status.score_overwritten then
+        return game.status.get_custom_score(), true
+    end
+    return game.status.get_played_accumulated_frametime_in_seconds(), false
+end
+
+---gets time based score even if there is a custom score
+function public.get_timed_score()
     return game.status.get_played_accumulated_frametime_in_seconds()
 end
 
