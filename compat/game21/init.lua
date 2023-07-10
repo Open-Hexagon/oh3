@@ -177,6 +177,8 @@ function game.death(force)
         playsound(game.level_status.death_sound)
         if force or not (game.level_status.tutorial_mode or public.config.get("invincible")) then
             game.lua_runtime.run_fn_if_exists("onDeath")
+            -- custom score may have been change in onDeath
+            game.status.update_custom_score(game.lua_runtime.env[game.level_status.score_overwrite])
             camera_shake.start()
             if not args.headless and game.music ~= nil and game.music.source ~= nil then
                 game.music.source:stop()
