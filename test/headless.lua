@@ -1,6 +1,8 @@
 package.preload["extlibs.sqlite"] = loadfile("extlibs/sqlite/init.lua")
 package.preload["compat.game192"] = loadfile("compat/game192/init.lua")
 package.preload["compat.game21"] = loadfile("compat/game21/init.lua")
+package.preload["compat.game21.assets"] = loadfile("compat/game21/assets/init.lua")
+package.preload["compat.game21.lua_runtime"] = loadfile("compat/game21/lua_runtime/init.lua")
 local game_handler = require("game_handler.init")
 local global_config = require("global_config")
 local config = require("config")
