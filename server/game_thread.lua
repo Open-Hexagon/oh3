@@ -61,7 +61,10 @@ function api.verify_replay(compressed_replay, time, steam_id)
         decoded_replay.score = decoded_replay.score * 60
         compare_score = game_handler.get_compat_custom_score()
     end
-    if compare_score + score_tolerance > decoded_replay.score and compare_score - score_tolerance < decoded_replay.score then
+    if
+        compare_score + score_tolerance > decoded_replay.score
+        and compare_score - score_tolerance < decoded_replay.score
+    then
         if time + time_tolerance > timed_score and time - time_tolerance < timed_score then
             log("replay verified, score: " .. score)
             local hash, data = decoded_replay:get_hash()
