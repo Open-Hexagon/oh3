@@ -12,9 +12,7 @@ function rotation.update(game, frametime)
     local next_rotation = game.level_status.rotation_speed * 10
     if game.status.fast_spin > 0 then
         next_rotation = next_rotation
-            + math.abs(
-                    (get_smoother_step(0, game.level_status.fast_spin, game.status.fast_spin) / 3.5) * 17
-                )
+            + math.abs((get_smoother_step(0, game.level_status.fast_spin, game.status.fast_spin) / 3.5) * 17)
                 * get_sign(next_rotation)
         game.status.fast_spin = game.status.fast_spin - frametime
     end

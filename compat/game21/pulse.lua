@@ -16,8 +16,7 @@ function pulse.update(frametime, dm_factor)
                 or -game.level_status.pulse_speed_r
             local pulse_limit = game.status.pulse_direction > 0 and game.level_status.pulse_max
                 or game.level_status.pulse_min
-            game.status.pulse =
-                utils.float_round(game.status.pulse + pulse_add * frametime * dm_factor)
+            game.status.pulse = utils.float_round(game.status.pulse + pulse_add * frametime * dm_factor)
             if
                 (game.status.pulse_direction > 0 and game.status.pulse >= pulse_limit)
                 or (game.status.pulse_direction < 0 and game.status.pulse <= pulse_limit)

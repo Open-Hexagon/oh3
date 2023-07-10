@@ -14,15 +14,11 @@ function beat_pulse.update(frametime, dm_factor)
                 game.status.beat_pulse = game.level_status.beat_pulse_max
                 game.status.beat_pulse_delay = game.level_status.beat_pulse_delay_max
             else
-                game.status.beat_pulse_delay = game.status.beat_pulse_delay
-                    - frametime * dm_factor
+                game.status.beat_pulse_delay = game.status.beat_pulse_delay - frametime * dm_factor
             end
             if game.status.beat_pulse > 0 then
                 game.status.beat_pulse = game.status.beat_pulse
-                    - 2
-                        * frametime
-                        * dm_factor
-                        * game.level_status.beat_pulse_speed_mult
+                    - 2 * frametime * dm_factor * game.level_status.beat_pulse_speed_mult
             end
         end
     end

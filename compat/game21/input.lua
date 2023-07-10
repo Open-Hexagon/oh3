@@ -1,7 +1,7 @@
 local playsound = require("compat.game21.playsound")
 local args = require("args")
 local input = {
-    move = 0
+    move = 0,
 }
 local public, game, swap_particles, swap_blip_sound
 
