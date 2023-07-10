@@ -53,11 +53,6 @@ end
 ---@param level string
 ---@param level_settings table
 function game_handler.record_start(pack, level, level_settings)
-    if current_game.dm_is_only_setting then
-        if level_settings.difficulty_mult == nil or type(level_settings.difficulty_mult) ~= "number" then
-            error("Level settings must contain 'difficulty_mult' when starting a compat game.")
-        end
-    end
     dead = false
     current_game.death_callback = function()
         if current_game.update_save_data ~= nil then
@@ -86,11 +81,7 @@ function game_handler.record_start(pack, level, level_settings)
         level_settings
     )
     input.record_start()
-    if current_game.dm_is_only_setting then
-        current_game.start(pack, level, level_settings.difficulty_mult)
-    else
-        current_game.start(pack, level, level_settings)
-    end
+    current_game.start(pack, level, level_settings)
     start_time = love.timer.getTime()
     real_start_time = start_time
     target_frametime = 1 / 240
@@ -126,11 +117,7 @@ function game_handler.replay_start(file_or_replay_obj)
         current_game.config.set(name, value)
     end
     input.replay_start()
-    if current_game.dm_is_only_setting then
-        current_game.start(replay.pack_id, replay.level_id, replay.data.level_settings.difficulty_mult)
-    else
-        current_game.start(replay.pack_id, replay.level_id, replay.data.level_settings)
-    end
+    current_game.start(replay.pack_id, replay.level_id, replay.data.level_settings)
     if not args.headless then
         start_time = love.timer.getTime()
         real_start_time = start_time

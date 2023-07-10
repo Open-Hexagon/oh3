@@ -8,7 +8,6 @@ local make_fake_config = require("compat.game192.fake_config")
 local uv = require("luv")
 local public = {
     running = false,
-    dm_is_only_setting = true,
     first_play = true,
 }
 local game = {
@@ -119,7 +118,11 @@ function game.get_main_color(black_and_white)
     return r, g, b, a
 end
 
-function public.start(pack_folder, level_id, difficulty_mult)
+function public.start(pack_folder, level_id, level_options)
+    local difficulty_mult = level_options.difficulty_mult
+    if not difficulty_mult or type(difficulty_mult) ~= "number" then
+        error("Must specify a numeric difficulty mult when running a compat game")
+    end
     local seed = math.floor(uv.hrtime() * 1000)
     math.randomseed(game.input.next_seed(seed))
 

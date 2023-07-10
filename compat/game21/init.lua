@@ -20,7 +20,6 @@ local camera_shake = require("compat.game21.camera_shake")
 local rotation = require("compat.game21.rotation")
 local public = {
     running = false,
-    dm_is_only_setting = true,
     first_play = true,
 }
 local game = {
@@ -68,8 +67,12 @@ local message_font, go_sound, level_up_sound, restart_sound, select_sound
 ---starts a new game
 ---@param pack_id string
 ---@param level_id string
----@param difficulty_mult number
-function public.start(pack_id, level_id, difficulty_mult)
+---@param level_options table
+function public.start(pack_id, level_id, level_options)
+    local difficulty_mult = level_options.difficulty_mult
+    if not difficulty_mult or type(difficulty_mult) ~= "number" then
+        error("Must specify a numeric difficulty mult when running a compat game")
+    end
     local seed = uv.hrtime()
     math.randomseed(game.input.next_seed(seed))
     math.random()

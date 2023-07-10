@@ -153,7 +153,7 @@ function player.kill(fatal)
     if fatal then
         _dead = true
         if not _just_swapped and math.sqrt((_pos[1] - _last_pos[1]) ^ 2 + (_pos[2] - _last_pos[2]) ^ 2) < 24 then
-            extra_math.get_orbit(_last_pos, _angle, _size, _pos)
+            extra_math.get_orbit(_last_pos, _angle, -_size, _pos)
         end
     end
 end
