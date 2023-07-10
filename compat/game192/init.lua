@@ -533,7 +533,6 @@ end
 function public.run_game_until_death(stop_condition)
     local frametime = game.current_frametime / 60
     while not game.status.has_died do
-        -- TODO: timescale
         frametime = public.update(frametime) or frametime
         if stop_condition and stop_condition() then
             return
