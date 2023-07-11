@@ -1,3 +1,4 @@
+local log = require("log")(...)
 local args = require("args")
 local keycode_conversion = {
     [0] = "a",
