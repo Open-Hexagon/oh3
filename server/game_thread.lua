@@ -45,13 +45,17 @@ end
 function api.verify_replay(compressed_replay, time, steam_id)
     local start = uv.hrtime()
     local decoded_replay = replay:new_from_data(compressed_replay)
+    local around_time = 0
+    local last_around_time = 0
     game_handler.replay_start(decoded_replay)
     game_handler.run_until_death(function()
         local now = uv.hrtime()
-        if (now - start) / (10 ^ 9) % 10 == 0 then
+        around_time = math.floor((now - start) / (10 ^ 9) % 10)
+        if math.abs(around_time - last_around_time) > 2 then
             -- print every 10s
             print("Verifying replay of '" .. decoded_replay.level_id .. "' progress: " .. (100 * game_handler.get_score() / decoded_replay.score) .. "%")
         end
+        last_around_time = around_time
         if now - start > max_processing_time * 1000000000 then
             log("exceeded max processing time")
             return true
