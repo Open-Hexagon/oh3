@@ -52,6 +52,7 @@ local function render_replay(game_handler, video_encoder, audio, replay, out_fil
                 after_death_frames = after_death_frames - 1
                 if after_death_frames <= 0 then
                     video_encoder.stop()
+                    game_handler.stop()
                     return 0
                 end
             end
@@ -115,6 +116,7 @@ function love.run()
                     if abort_hash and abort_hash == replay_file:match(".*/(.*)") then
                         aborted = true
                         video_encoder.stop()
+                        game_handler.stop()
                         break
                     end
                 end

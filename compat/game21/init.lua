@@ -473,11 +473,15 @@ function public.run_game_until_death(stop_condition)
             return
         end
     end
+    public.stop()
 end
 
 ---stop the game
 function public.stop()
     public.running = false
+    if not args.headless and game.music ~= nil and game.music.source ~= nil then
+        game.music.source:stop()
+    end
 end
 
 ---initialize the game
