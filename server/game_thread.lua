@@ -19,7 +19,6 @@ local api = {}
 
 local time_tolerance = 3
 local score_tolerance = 0.2
-local max_processing_time = 300
 local render_top_scores = false
 
 local function save_replay(replay_obj, hash, data)
@@ -47,29 +46,54 @@ function api.verify_replay(compressed_replay, time, steam_id)
     local decoded_replay = replay:new_from_data(compressed_replay)
     local around_time = 0
     local last_around_time = 0
+    local replay_was_done = false
+    local replay_end_compare_score, replay_end_timed_score, exceeded_max_processing_time
     game_handler.replay_start(decoded_replay)
     game_handler.run_until_death(function()
         local now = uv.hrtime()
         around_time = math.floor((now - start) / (10 ^ 9) % 10)
         if math.abs(around_time - last_around_time) > 2 then
-            -- print every 10s
-            print("Verifying replay of '" .. decoded_replay.level_id .. "' progress: " .. (100 * game_handler.get_score() / decoded_replay.score) .. "%")
+            -- print progress every 10s
+            log("Verifying replay of '" .. decoded_replay.level_id .. "' progress: " .. (100 * game_handler.get_score() / decoded_replay.score) .. "%")
         end
         last_around_time = around_time
-        if now - start > max_processing_time * 1000000000 then
-            log("exceeded max processing time")
-            return true
+        if game_handler.is_replay_done() then
+            if not replay_was_done then
+                replay_was_done = true
+                local score, is_custom_score = game_handler.get_score()
+                replay_end_timed_score = game_handler.get_timed_score()
+                replay_end_compare_score = score
+                if is_custom_score and decoded_replay.game_version == 21 then
+                    replay_end_compare_score = game_handler.get_compat_custom_score()
+                end
+            end
+            -- still check 60s in game time more after input data ended
+            if game_handler.get_timed_score() - replay_end_timed_score > 60 then
+                log("exceeded max processing time")
+                exceeded_max_processing_time = true
+                return true
+            end
         end
         return false
     end)
-    local score, is_custom_score = game_handler.get_score()
-    local timed_score = is_custom_score and game_handler.get_timed_score() or score
-    local compare_score = score
-    if is_custom_score and decoded_replay.game_version == 21 then
-        -- the old game divides custom scores by 60
-        decoded_replay.score = decoded_replay.score * 60
-        compare_score = game_handler.get_compat_custom_score()
+    if exceeded_max_processing_time then
+        log("no player death 60s after end of input data. discarding replay.")
+        return
     end
+    local score, is_custom_score = game_handler.get_score()
+    local compare_score = replay_end_compare_score
+    if not compare_score then
+        compare_score = score
+        if is_custom_score and decoded_replay.game_version == 21 then
+            compare_score = game_handler.get_compat_custom_score()
+        end
+    end
+    local timed_score = replay_end_timed_score or game_handler.get_timed_score()
+    -- the old game divides custom scores by 60
+    if is_custom_score and decoded_replay.game_version == 21 then
+            decoded_replay.score = decoded_replay.score * 60
+    end
+    log("Finished running replay. compare score: " .. compare_score .. " timed score: " .. timed_score .. "s replay score: " .. decoded_replay.score .. " save score: " .. score .. " real time: " .. time .. "s")
     if
         compare_score + score_tolerance > decoded_replay.score
         and compare_score - score_tolerance < decoded_replay.score
@@ -118,7 +142,7 @@ function api.verify_replay(compressed_replay, time, steam_id)
             log("time between packets of " .. time .. " does not match score of " .. timed_score)
         end
     else
-        log("The replay's score of " .. decoded_replay.score .. " does not match the actual score of " .. score)
+        log("The replay's score of " .. decoded_replay.score .. " does not match the actual score of " .. compare_score)
     end
 end
 

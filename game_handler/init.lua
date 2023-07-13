@@ -211,6 +211,12 @@ function game_handler.draw()
     end
 end
 
+---check if a replay is fully replayed only in terms of inputs
+---@return boolean
+function game_handler.is_replay_done()
+    return input.is_done_replaying
+end
+
 ---get the current score of the game
 ---@return number
 ---@return boolean

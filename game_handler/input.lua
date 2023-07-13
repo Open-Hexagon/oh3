@@ -1,6 +1,7 @@
 -- wrapper for game inputs to automate replay recording
 local input = {
     replay = nil,
+    is_done_replaying = false
 }
 local recording = false
 local input_state = {}
@@ -28,6 +29,7 @@ function input.replay_start()
     time = 0
     seed_index = 0
     input_state = {}
+    input.is_done_replaying = false
 end
 
 ---save the next seed when recording or get the next seed when replaying
@@ -48,6 +50,7 @@ end
 ---stops replaying
 function input.replay_stop()
     replaying = false
+    input.is_done_replaying = true
 end
 
 ---increments the timer for the input timestamps when recording and updates the input state when replaying
@@ -58,6 +61,7 @@ function input.update()
     end
     if replaying then
         time = time + 1
+        input.is_done_replaying = time >= input.replay.input_tick_length
         for key, state in input.replay:get_key_state_changes(time) do
             input_state[key] = state
         end

@@ -455,7 +455,7 @@ end
 
 ---gets time based score even if there is a custom score
 function public.get_timed_score()
-    return game.status.get_played_accumulated_frametime_in_seconds()
+    return game.status.get_total_accumulated_frametime_in_seconds()
 end
 
 ---21 specific function that gets the custom score right before death (which is used for replay verification instead of the actual one)
