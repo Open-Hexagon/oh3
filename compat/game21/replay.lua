@@ -38,6 +38,7 @@ function replay.read(replay_obj, data, offset)
     local input_len
     -- may cause issues with replays longer than ~9000 years
     input_len = tonumber(read_uint64())
+    replay_obj.input_tick_length = input_len
     local state = { 0, 0, 0, 0 }
     local last_tick = 0
     for tick = 1, input_len do

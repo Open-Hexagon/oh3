@@ -11,6 +11,7 @@ local old_replay = require("compat.game21.replay")
 ---@field pack_id string
 ---@field level_id string
 ---@field key_index_map table
+---@field input_tick_length number
 local replay = {}
 replay.__index = replay
 
@@ -27,6 +28,7 @@ function replay:new(path)
         input_data = {},
         key_index_map = {},
         score = 0,
+        input_tick_length = 0,
     }, replay)
     if path ~= nil then
         if not love.filesystem.getInfo(path) then
@@ -109,10 +111,11 @@ end
 function replay:_get_compressed()
     local header = love.data.pack(
         "string",
-        ">I4BB",
-        1, -- the old game's format version was 0, so we call this 1 now
+        ">I4BBI4",
+        2,
         self.game_version,
-        self.first_play and 1 or 0
+        self.first_play and 1 or 0,
+        self.input_tick_length
     )
     local function write_str(str)
         header = header .. love.data.pack("string", ">I4c" .. #str, #str, str)
@@ -166,10 +169,12 @@ function replay:_read(compressed_data)
     local version, offset = love.data.unpack(">I4", data)
     if version == 0 then
         old_replay.read(self, data, offset)
-    elseif version > 1 or version < 1 then
-        error("Unsupported replay format version '" .. version .. "'.")
-    else
-        self.game_version, self.first_play, offset = love.data.unpack(">BB", data, offset)
+    elseif version == 1 or version == 2 then
+        if version == 1 then
+            self.game_version, self.first_play, offset = love.data.unpack(">BB", data, offset)
+        else
+            self.game_version, self.first_play, self.input_tick_length, offset = love.data.unpack(">BBI4", data, offset)
+        end
         local function read_str()
             local len, str
             len, offset = love.data.unpack(">I4", data, offset)
@@ -195,6 +200,8 @@ function replay:_read(compressed_data)
             end
         end
         self.score = love.data.unpack(">d", data, offset)
+    else
+        error("Unsupported replay format version '" .. version .. "'.")
     end
 end
 

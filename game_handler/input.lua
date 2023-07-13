@@ -54,6 +54,7 @@ end
 function input.update()
     if recording then
         time = time + 1
+        input.replay.input_tick_length = time
     end
     if replaying then
         time = time + 1
