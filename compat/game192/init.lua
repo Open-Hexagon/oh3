@@ -520,9 +520,15 @@ function public.draw(screen)
 end
 
 ---get the current score (gets the custom score if one exists)
----@return integer
+---@return number
 function public.get_score()
     return game.status.current_time
+end
+
+---get the current time
+---@return number
+function public.get_timed_score()
+    return game.real_time
 end
 
 ---runs the game until the player dies without caring about real time
