@@ -226,9 +226,13 @@ function assets.get_pack(name)
             for contents, filename in file_ext_read_iter(folder .. "/Music", ".json") do
                 local success, music_json = decode_json(contents, filename)
                 if success then
-                    music_json.file_name = music_json.file_name or filename:gsub("%.json", ".ogg")
+                    local json_based_filename = filename:gsub("%.json", ".ogg")
+                    music_json.file_name = music_json.file_name or json_based_filename
                     if music_json.file_name:sub(-4) ~= ".ogg" then
                         music_json.file_name = music_json.file_name .. ".ogg"
+                    end
+                    if not love.filesystem.getInfo(music_json.file_name) then
+                        music_json.file_name = json_based_filename
                     end
                     if
                         not pcall(function()
