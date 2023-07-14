@@ -142,6 +142,10 @@ function audio.update(delta)
         for i = 1, #loaded_audio do
             local obj = loaded_audio[i]
             if obj.playing then
+                local function done()
+                    obj.playing = obj.looping
+                    obj:seek(0)
+                end
                 for buffer_pos = 0, encoder.audio_frame_size - 1 do
                     if obj.data == nil then
                         obj.data = obj.decoder:decode()
@@ -154,8 +158,7 @@ function audio.update(delta)
                         if obj.decoder then
                             obj.data = obj.decoder:decode()
                             if obj.data == nil then
-                                obj.playing = false
-                                obj:seek(0)
+                                done()
                                 break
                             end
                             if
@@ -166,8 +169,7 @@ function audio.update(delta)
                             end
                             sample_count = obj.data:getSampleCount()
                         else
-                            obj.playing = false
-                            obj:seek(0)
+                            done()
                             break
                         end
                     end
