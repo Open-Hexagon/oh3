@@ -1,7 +1,7 @@
 -- wrapper for game inputs to automate replay recording
 local input = {
     replay = nil,
-    is_done_replaying = false
+    is_done_replaying = false,
 }
 local recording = false
 local input_state = {}

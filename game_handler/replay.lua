@@ -109,14 +109,8 @@ function replay:record_seed(seed)
 end
 
 function replay:_get_compressed()
-    local header = love.data.pack(
-        "string",
-        ">I4BBI4",
-        2,
-        self.game_version,
-        self.first_play and 1 or 0,
-        self.input_tick_length
-    )
+    local header =
+        love.data.pack("string", ">I4BBI4", 2, self.game_version, self.first_play and 1 or 0, self.input_tick_length)
     local function write_str(str)
         header = header .. love.data.pack("string", ">I4c" .. #str, #str, str)
     end

@@ -1,6 +1,7 @@
 local assets = require("compat.game20.assets")
 local public = {
-    running = false
+    running = false,
+    first_play = true,
 }
 
 ---starts a new game
@@ -25,23 +26,19 @@ end
 
 ---draw the game to the current canvas
 ---@param screen love.Canvas
-function public.draw(screen)
-end
+function public.draw(screen) end
 
 ---get the current score
 ---@return number
-function public.get_score()
-end
+function public.get_score() end
 
 ---get the timed current score
 ---@return number
-function public.get_timed_score()
-end
+function public.get_timed_score() end
 
 ---runs the game until the player dies without caring about real time
 ---@param stop_condition function
-function public.run_game_until_death(stop_condition)
-end
+function public.run_game_until_death(stop_condition) end
 
 ---stop the game
 function public.stop()

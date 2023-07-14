@@ -1,6 +1,7 @@
 -- TODO: implement functions and the game itself
 local public = {
-    running = false
+    running = false,
+    first_play = true,
 }
 
 ---starts a new game

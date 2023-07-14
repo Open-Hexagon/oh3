@@ -54,7 +54,13 @@ function api.verify_replay(compressed_replay, time, steam_id)
         around_time = math.floor((now - start) / (10 ^ 9) % 10)
         if math.abs(around_time - last_around_time) > 2 then
             -- print progress every 10s
-            log("Verifying replay of '" .. decoded_replay.level_id .. "' progress: " .. (100 * game_handler.get_score() / decoded_replay.score) .. "%")
+            log(
+                "Verifying replay of '"
+                    .. decoded_replay.level_id
+                    .. "' progress: "
+                    .. (100 * game_handler.get_score() / decoded_replay.score)
+                    .. "%"
+            )
         end
         last_around_time = around_time
         if game_handler.is_replay_done() then
@@ -91,9 +97,21 @@ function api.verify_replay(compressed_replay, time, steam_id)
     local timed_score = replay_end_timed_score or game_handler.get_timed_score()
     -- the old game divides custom scores by 60
     if is_custom_score and decoded_replay.game_version == 21 then
-            decoded_replay.score = decoded_replay.score * 60
+        decoded_replay.score = decoded_replay.score * 60
     end
-    log("Finished running replay. compare score: " .. compare_score .. " timed score: " .. timed_score .. "s replay score: " .. decoded_replay.score .. " save score: " .. score .. " real time: " .. time .. "s")
+    log(
+        "Finished running replay. compare score: "
+            .. compare_score
+            .. " timed score: "
+            .. timed_score
+            .. "s replay score: "
+            .. decoded_replay.score
+            .. " save score: "
+            .. score
+            .. " real time: "
+            .. time
+            .. "s"
+    )
     if
         compare_score + score_tolerance > decoded_replay.score
         and compare_score - score_tolerance < decoded_replay.score
