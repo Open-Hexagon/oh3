@@ -44,3 +44,5 @@ end
 ---@param audio table
 function public.init(pack_level_data, input_handler, config, persistent_data, audio)
 end
+
+return public

@@ -396,7 +396,7 @@ function public.update(frametime)
     public.reset_timings = game.lua_runtime.reset_timings
 
     -- TODO: make adjustable on a per level basis
-    local performance = 0.03
+    local performance = 0.04
     local target_frametime = (
         (0.785 * depth + 1) * (0.000461074 * performance + 0.000155698) * game.walls.size()
         + performance * (0.025 * depth + 1)

@@ -224,7 +224,7 @@ function game_handler.get_score()
     return current_game.get_score()
 end
 
----get the timed current score of the game even if there is a custom score
+---get the current time of the game even if the score time was halted or if a custom score is used
 ---@return number
 function game_handler.get_timed_score()
     if current_game.get_timed_score then
