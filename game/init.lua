@@ -1,11 +1,14 @@
 -- TODO: implement functions and the game itself
-local public = {}
+local public = {
+    running = false
+}
 
 ---starts a new game
 ---@param pack_id string
 ---@param level_id string
 ---@param level_options table
 function public.start(pack_id, level_id, level_options)
+    public.running = true
 end
 
 ---update the game
@@ -34,6 +37,7 @@ end
 
 ---stop the game
 function public.stop()
+    public.running = false
 end
 
 ---initialize the game

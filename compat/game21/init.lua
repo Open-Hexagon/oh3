@@ -91,23 +91,21 @@ function public.start(pack_id, level_id, level_options)
     game.style.compute_colors()
     game.difficulty_mult = difficulty_mult
     game.status.reset_all_data()
-    if game.pack_data.music ~= nil then
-        game.music = game.pack_data.music[game.level_data.musicId]
-        if game.music == nil then
-            error("Music with id '" .. game.level_data.musicId .. "' doesn't exist!")
-        end
-        game.refresh_music_pitch()
-        local segment
-        if public.first_play then
-            segment = game.music.segments[1]
-        else
-            segment = game.music.segments[math.random(1, #game.music.segments)]
-        end
-        game.status.beat_pulse_delay = game.status.beat_pulse_delay + (segment.beat_pulse_delay_offset or 0)
-        if game.music.source ~= nil then
-            game.music.source:seek(segment.time)
-            game.music.source:play()
-        end
+    game.music = game.pack_data.music[game.level_data.musicId]
+    if game.music == nil then
+        error("Music with id '" .. game.level_data.musicId .. "' doesn't exist!")
+    end
+    game.refresh_music_pitch()
+    local segment
+    if public.first_play then
+        segment = game.music.segments[1]
+    else
+        segment = game.music.segments[math.random(1, #game.music.segments)]
+    end
+    game.status.beat_pulse_delay = game.status.beat_pulse_delay + (segment.beat_pulse_delay_offset or 0)
+    if game.music.source ~= nil then
+        game.music.source:seek(segment.time)
+        game.music.source:play()
     end
 
     game.rng.set_seed(game.input.next_seed(game.rng.get_seed()))

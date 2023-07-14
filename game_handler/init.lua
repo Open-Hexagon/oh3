@@ -4,8 +4,9 @@ local Replay = require("game_handler.replay")
 local pack_level_data = require("game_handler.data")
 local game_handler = {}
 local games = {
-    ["192"] = require("compat.game192"),
-    ["21"] = require("compat.game21"),
+    [192] = require("compat.game192"),
+    [20] = require("compat.game20"),
+    [21] = require("compat.game21"),
 }
 local current_game
 local current_game_version
@@ -41,7 +42,7 @@ end
 ---set the game version to use
 ---@param version number
 function game_handler.set_version(version)
-    current_game = games[tostring(version)]
+    current_game = games[version]
     if current_game == nil then
         error("Game with version '" .. version .. "' does not exist or is unsupported.")
     end

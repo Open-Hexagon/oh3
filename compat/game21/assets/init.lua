@@ -220,12 +220,12 @@ function assets.get_pack(name)
 
         log("Loading '" .. pack_data.pack_id .. "' assets")
 
-        if not args.headless then
-            -- music
-            pack_data.music = {}
-            for contents, filename in file_ext_read_iter(folder .. "/Music", ".json") do
-                local success, music_json = decode_json(contents, filename)
-                if success then
+        -- music
+        pack_data.music = {}
+        for contents, filename in file_ext_read_iter(folder .. "/Music", ".json") do
+            local success, music_json = decode_json(contents, filename)
+            if success then
+                if not args.headless then
                     local json_based_filename = filename:gsub("%.json", ".ogg")
                     music_json.file_name = music_json.file_name or json_based_filename
                     if music_json.file_name:sub(-4) ~= ".ogg" then
@@ -243,10 +243,12 @@ function assets.get_pack(name)
                     then
                         log("Error: failed to load '" .. music_json.file_name .. "'")
                     end
-                    pack_data.music[music_json.id] = music_json
                 end
+                pack_data.music[music_json.id] = music_json
             end
+        end
 
+        if not args.headless then
             -- shaders
             pack_data.shaders = {}
             for code, filename in file_ext_read_iter(folder .. "/Shaders", ".frag") do

@@ -139,11 +139,15 @@ function assets.get_pack(folder)
         for contents, filename in file_ext_read_iter(folder .. "Music", ".json", pack_data.virtual_pack_folder.Music) do
             local success, music_json = decode_json(contents, filename)
             if success then
-                music_json.file_name = music_json.file_name or filename:gsub("%.json", ".ogg")
-                if music_json.file_name:sub(-4) ~= ".ogg" then
-                    music_json.file_name = music_json.file_name .. ".ogg"
-                end
                 if not args.headless then
+                    local fallback_path = filename:gsub("%.json", ".ogg")
+                    music_json.file_name = music_json.file_name or fallback_path
+                    if music_json.file_name:sub(-4) ~= ".ogg" then
+                        music_json.file_name = music_json.file_name .. ".ogg"
+                    end
+                    if not love.filesystem.getInfo(music_json.file_name) then
+                        music_json.file_name = fallback_path
+                    end
                     if
                         not pcall(function()
                             music_json.source = audio_module.new_stream(folder .. "Music/" .. music_json.file_name)
