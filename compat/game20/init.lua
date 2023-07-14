@@ -3,6 +3,7 @@ local public = {
     running = false,
     first_play = true,
 }
+local game = {}
 
 ---starts a new game
 ---@param pack_id string
@@ -53,6 +54,8 @@ end
 ---@param audio table
 function public.init(pack_level_data, input_handler, config, persistent_data, audio)
     assets.init(pack_level_data, persistent_data, audio, config)
+    game.config = config
+    game.input = input_handler
 end
 
 return public
