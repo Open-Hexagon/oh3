@@ -140,9 +140,9 @@ function style.calculate_color(color_data)
                     for i = 1, 3 do
                         color_data.result[i] = color_data.value[i] + _current_hue_color[i] / color_data.offset
                     end
-                    -- hue color alpha is always 255
-                    color_data.result[4] = color_data.value[4] + 255
                 end
+                -- hue color alpha is always 255
+                color_data.result[4] = color_data.value[4] + 255
             else
                 -- usually wouldn't divide if color_data.dynamic_darkness == 0 but we already checked for that while setting defaults
                 for i = 1, 3 do
