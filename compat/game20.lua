@@ -1,2 +1,0 @@
--- TODO: 2.0-rc2 compatibility mode
--- Keep this completely separated from all other modes (except maybe game21.lua), even if you have to duplicate code.
