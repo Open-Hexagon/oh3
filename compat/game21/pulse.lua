@@ -1,10 +1,9 @@
 local utils = require("compat.game192.utils")
 local pulse = {}
-local game, public
+local game
 
-function pulse.init(pass_game, pass_public)
+function pulse.init(pass_game)
     game = pass_game
-    public = pass_public
     game.status.pulse_delay = game.status.pulse_delay + game.level_status.pulse_initial_delay
 end
 
@@ -33,7 +32,7 @@ function pulse.update(frametime, dm_factor)
 end
 
 function pulse.get_zoom(zoom_factor)
-    local p = public.config.get("pulse") and game.status.pulse / game.level_status.pulse_min or 1
+    local p = game.config.get("pulse") and game.status.pulse / game.level_status.pulse_min or 1
     return zoom_factor / p
 end
 

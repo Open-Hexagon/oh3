@@ -1,13 +1,13 @@
 local args = require("args")
 local utils = require("compat.game192.utils")
 local pseudo3d = {}
-local game, public, layer_shader
+local game, layer_shader
 local layer_offsets = {}
 local pivot_layer_colors = {}
 local wall_layer_colors = {}
 local player_layer_colors = {}
 
-function pseudo3d.init(pass_game, pass_public)
+function pseudo3d.init(pass_game)
     if not args.headless then
         layer_shader = love.graphics.newShader(
             [[
@@ -33,7 +33,6 @@ function pseudo3d.init(pass_game, pass_public)
         )
     end
     game = pass_game
-    public = pass_public
 end
 
 function pseudo3d.update(frametime)
@@ -50,10 +49,10 @@ end
 local depth, pulse_3d, effect, rad_rot, sin_rot, cos_rot
 
 function pseudo3d.apply_skew()
-    if public.config.get("3D_enabled") then
+    if game.config.get("3D_enabled") then
         depth = game.style.pseudo_3D_depth
-        pulse_3d = public.config.get("pulse") and game.status.pulse3D or 1
-        effect = game.style.pseudo_3D_skew * pulse_3d * public.config.get("3D_multiplier")
+        pulse_3d = game.config.get("pulse") and game.status.pulse3D or 1
+        effect = game.style.pseudo_3D_skew * pulse_3d * game.config.get("3D_multiplier")
         rad_rot = math.rad(game.current_rotation + 90)
         sin_rot = math.sin(rad_rot)
         cos_rot = math.cos(rad_rot)
@@ -62,7 +61,7 @@ function pseudo3d.apply_skew()
 end
 
 function pseudo3d.draw(set_render_stage, wall_quads, pivot_quads, player_tris, black_and_white)
-    if public.config.get("3D_enabled") then
+    if game.config.get("3D_enabled") then
         local function adjust_alpha(a, i)
             if game.style.pseudo_3D_alpha_mult == 0 then
                 return a

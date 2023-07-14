@@ -1,6 +1,6 @@
 local make_make_accessors = require("compat.game21.lua_runtime.make_accessors")
 
-return function(public, game)
+return function(game)
     local lua_runtime = game.lua_runtime
     local env = lua_runtime.env
     local make_accessors = make_make_accessors(game)
@@ -83,6 +83,6 @@ return function(public, game)
         end
     end
     env.l_getOfficial = function()
-        return public.config.get("official_mode")
+        return game.config.get("official_mode")
     end
 end

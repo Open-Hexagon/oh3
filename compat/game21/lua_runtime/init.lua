@@ -54,7 +54,7 @@ function lua_runtime.init_env(game, public, assets)
     env = lua_runtime.env
     env._G = env
 
-    add_level_functions(public, game)
+    add_level_functions(game)
     add_style_functions(game)
     add_audio_functions(game, assets)
     add_timeline_functions(public, game)

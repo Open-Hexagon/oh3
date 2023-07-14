@@ -172,7 +172,7 @@ function public.start(pack_folder, level_id, level_options)
     game.vfs.pack_path = game.pack.path
     game.vfs.pack_folder_name = game.pack.folder
     local files = {
-        ["config.json"] = make_fake_config(public.config),
+        ["config.json"] = make_fake_config(game.config),
     }
     if public.persistent_data ~= nil then
         for path, contents in pairs(public.persistent_data) do
@@ -189,7 +189,7 @@ function public.start(pack_folder, level_id, level_options)
     game.set_sides(game.level_data.sides)
     game.walls.clear()
     game.walls.set_level_data(game.level_data, game.difficulty_mult)
-    game.player.reset(public.config)
+    game.player.reset(game.config)
     game.main_timeline:clear()
     game.main_timeline:reset()
     game.message_timeline:clear()
@@ -257,9 +257,9 @@ function public.update(frametime)
         end
     end
     if not game.status.has_died then
-        local focus = game.input.get(public.config.get("key_focus"))
-        local cw = game.input.get(public.config.get("key_right"))
-        local ccw = game.input.get(public.config.get("key_left"))
+        local focus = game.input.get(game.config.get("key_focus"))
+        local cw = game.input.get(game.config.get("key_right"))
+        local ccw = game.input.get(game.config.get("key_left"))
         local move
         if cw and not ccw then
             move = 1
@@ -276,7 +276,7 @@ function public.update(frametime)
         if game.player.update(frametime, game.status.radius, move, focus, game.walls) then
             playsound(death_sound)
             playsound(game_over_sound)
-            if not public.config.get("invincible") then
+            if not game.config.get("invincible") then
                 game.status.flash_effect = 255
                 -- camera shake
                 local s = 7
@@ -322,7 +322,7 @@ function public.update(frametime)
             game.lua_runtime.run_fn_if_exists("onStep")
             game.main_timeline:reset()
         end
-        if public.config.get("beatpulse") then
+        if game.config.get("beatpulse") then
             if game.status.beatpulse_delay <= 0 then
                 game.status.beatpulse = game.level_data.beatpulse_max
                 game.status.beatpulse_delay = game.level_data.beatpulse_delay_max
@@ -335,7 +335,7 @@ function public.update(frametime)
             game.status.radius = game.level_data.radius_min * (game.status.pulse / game.level_data.pulse_min)
                 + game.status.beatpulse
         end
-        if public.config.get("pulse") then
+        if game.config.get("pulse") then
             if game.status.pulse_delay <= 0 and game.status.pulse_delay_half <= 0 then
                 local pulse_add = game.status.pulse_direction > 0 and game.level_data.pulse_speed
                     or -game.level_data.pulse_speed_r
@@ -357,13 +357,13 @@ function public.update(frametime)
             game.status.pulse_delay = game.status.pulse_delay - frametime
             game.status.pulse_delay_half = game.status.pulse_delay_half - frametime
         end
-        if not public.config.get("black_and_white") then
+        if not game.config.get("black_and_white") then
             game.style.update(frametime)
         end
     else
         game.level_data.rotation_speed = game.level_data.rotation_speed * 0.99
     end
-    if public.config.get("3D_enabled") then
+    if game.config.get("3D_enabled") then
         game.status.pulse_3D = game.status.pulse_3D
             + game.style.get_value("3D_pulse_speed") * game.status.pulse_3D_direction * frametime
         if game.status.pulse_3D > game.style.get_value("3D_pulse_max") then
@@ -372,7 +372,7 @@ function public.update(frametime)
             game.status.pulse_3D_direction = 1
         end
     end
-    if public.config.get("rotation") then
+    if game.config.get("rotation") then
         local next_rotation = math.abs(game.level_data.rotation_speed) * 10 * frametime
         if game.status.fast_spin > 0 then
             next_rotation = next_rotation
@@ -419,14 +419,14 @@ function public.draw(screen)
     love.graphics.scale(zoom_factor / p, zoom_factor / p)
     love.graphics.translate(unpack(shake_move))
     local effect
-    if public.config.get("3D_enabled") then
+    if game.config.get("3D_enabled") then
         effect = game.style.get_value("3D_skew") * game.status.pulse_3D
         love.graphics.scale(1, 1 / (1 + effect))
     end
     love.graphics.rotate(math.rad(current_rotation))
     game.style.compute_colors()
-    local black_and_white = public.config.get("black_and_white")
-    if public.config.get("background") then
+    local black_and_white = game.config.get("black_and_white")
+    if game.config.get("background") then
         game.style.draw_background(game.level_data.sides, black_and_white)
     end
     main_quads:clear()
@@ -439,10 +439,10 @@ function public.draw(screen)
         black_and_white,
         game.get_main_color(black_and_white)
     )
-    if public.config.get("3D_enabled") and depth ~= 0 then
+    if game.config.get("3D_enabled") and depth ~= 0 then
         local per_layer_offset = game.style.get_value("3D_spacing")
             * game.style.get_value("3D_perspective_multiplier")
-            * public.config.get("3D_multiplier")
+            * game.config.get("3D_multiplier")
             * effect
             * 3.6
         local rad_rot = math.rad(current_rotation)
@@ -561,7 +561,7 @@ end
 function public.init(data, input_handler, config, all_persistent_data, audio)
     game.input = input_handler
     assets.init(data, all_persistent_data, audio, config)
-    public.config = config
+    game.config = config
     game.audio = audio
     if not args.headless then
         beep_sound = assets.get_sound("beep.ogg")

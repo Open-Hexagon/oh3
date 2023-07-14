@@ -3,11 +3,10 @@ local args = require("args")
 local input = {
     move = 0,
 }
-local public, game, swap_particles, swap_blip_sound
+local game, swap_particles, swap_blip_sound
 
-function input.init(pass_game, pass_public, particles, assets)
+function input.init(pass_game, particles, assets)
     game = pass_game
-    public = pass_public
     swap_particles = particles
     if not args.headless then
         swap_blip_sound = assets.get_sound("swap_blip.ogg")
@@ -15,10 +14,10 @@ function input.init(pass_game, pass_public, particles, assets)
 end
 
 function input.update(frametime)
-    local focus = game.input.get(public.config.get("key_focus"))
-    local swap = game.input.get(public.config.get("key_swap"))
-    local cw = game.input.get(public.config.get("key_right"))
-    local ccw = game.input.get(public.config.get("key_left"))
+    local focus = game.input.get(game.config.get("key_focus"))
+    local swap = game.input.get(game.config.get("key_swap"))
+    local cw = game.input.get(game.config.get("key_right"))
+    local ccw = game.input.get(game.config.get("key_left"))
     if cw and not ccw then
         input.move = 1
         game.last_move = 1
@@ -39,7 +38,7 @@ function input.update(frametime)
             if not game.player_now_ready_to_swap and game.player.is_ready_to_swap() then
                 swap_particles.ready(game)
                 game.player_now_ready_to_swap = true
-                if public.config.get("play_swap_sound") then
+                if game.config.get("play_swap_sound") then
                     playsound(swap_blip_sound)
                 end
             end

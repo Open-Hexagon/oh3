@@ -63,7 +63,7 @@ return function(public, game)
     end
     local function add_message(message, duration, sound_toggle)
         sound_toggle = sound_toggle and not args.headless
-        if public.config.get("messages") then
+        if game.config.get("messages") then
             game.message_timeline:append_do(function()
                 if sound_toggle then
                     game.level_status.beep_sound:play()

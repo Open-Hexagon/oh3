@@ -81,7 +81,7 @@ function public.start(pack_id, level_id, level_options)
     if game.level_data == nil then
         error("Error: level with id '" .. level_id .. "' not found")
     end
-    game.level_status.reset(public.config.get("sync_music_to_dm"), assets)
+    game.level_status.reset(game.config.get("sync_music_to_dm"), assets)
     local style_data = game.pack_data.styles[game.level_data.styleId]
     if style_data == nil then
         error("Error: style with id '" .. game.level_data.styleId .. "' not found")
@@ -118,9 +118,9 @@ function public.start(pack_id, level_id, level_options)
     game.custom_walls.cw_clear()
     game.player.reset(
         game.get_swap_cooldown(),
-        public.config.get("player_size"),
-        public.config.get("player_speed"),
-        public.config.get("player_focus_speed")
+        game.config.get("player_size"),
+        game.config.get("player_speed"),
+        game.config.get("player_focus_speed")
     )
     flash.init(game)
     game.current_rotation = 0
@@ -139,8 +139,8 @@ function public.start(pack_id, level_id, level_options)
     end
     game.lua_runtime.run_fn_if_exists("onInit")
     game.set_sides(game.level_status.sides)
-    pulse.init(game, public)
-    beat_pulse.init(game, public)
+    pulse.init(game)
+    beat_pulse.init(game)
     game.status.start()
     game.message_text = ""
     playsound(go_sound)
@@ -148,7 +148,7 @@ function public.start(pack_id, level_id, level_options)
 
     if not args.headless then
         swap_particles.init(assets)
-        trail_particles.init(assets, public, game)
+        trail_particles.init(assets, game)
     end
 end
 
@@ -176,7 +176,7 @@ function game.death(force)
     if not game.status.has_died then
         game.lua_runtime.run_fn_if_exists("onPreDeath")
         playsound(game.level_status.death_sound)
-        if force or not (game.level_status.tutorial_mode or public.config.get("invincible")) then
+        if force or not (game.level_status.tutorial_mode or game.config.get("invincible")) then
             game.lua_runtime.run_fn_if_exists("onDeath")
             camera_shake.start()
             if not args.headless and game.music ~= nil and game.music.source ~= nil then
@@ -206,7 +206,7 @@ end
 function game.refresh_music_pitch()
     if game.music.source ~= nil then
         local pitch = game.level_status.music_pitch
-            * public.config.get("music_speed_mult")
+            * game.config.get("music_speed_mult")
             * (game.level_status.sync_music_to_dm and get_music_dm_sync_factor() or 1)
         if pitch ~= pitch then
             -- pitch is NaN, happens with negative difficulty mults
@@ -257,7 +257,7 @@ function public.update(frametime)
             beat_pulse.update(frametime, dm_factor)
             pulse.update(frametime, dm_factor)
 
-            if not public.config.get("black_and_white") then
+            if not game.config.get("black_and_white") then
                 game.style.update(frametime, math.pow(game.difficulty_mult, 0.8))
             end
 
@@ -267,7 +267,7 @@ function public.update(frametime)
                 game.walls.handle_collision(input.move, frametime, game.player, game.status.radius)
                 or game.custom_walls.handle_collision(input.move, game.status.radius, game.player, frametime)
             then
-                local fatal = not public.config.get("invincible") and not game.level_status.tutorial_mode
+                local fatal = not game.config.get("invincible") and not game.level_status.tutorial_mode
                 game.player.kill(fatal)
                 game.death()
             end
@@ -279,7 +279,7 @@ function public.update(frametime)
         pseudo3d.update(frametime)
 
         -- update rotation
-        if public.config.get("rotation") then
+        if game.config.get("rotation") then
             rotation.update(game, frametime)
         end
         camera_shake.update(frametime)
@@ -293,30 +293,30 @@ function public.update(frametime)
 
         -- update trail color (also used for swap particles)
         current_trail_color[1], current_trail_color[2], current_trail_color[3] = game.style.get_player_color()
-        if public.config.get("black_and_white") then
+        if game.config.get("black_and_white") then
             current_trail_color[1], current_trail_color[2], current_trail_color[3] = 255, 255, 255
         else
-            if public.config.get("player_trail_has_swap_color") then
+            if game.config.get("player_trail_has_swap_color") then
                 game.player.get_color_adjusted_for_swap(current_trail_color)
             else
                 game.player.get_color(current_trail_color)
             end
         end
-        current_trail_color[4] = public.config.get("player_trail_alpha")
+        current_trail_color[4] = game.config.get("player_trail_alpha")
 
-        if public.config.get("show_player_trail") and game.status.show_player_trail and not args.headless then
+        if game.config.get("show_player_trail") and game.status.show_player_trail and not args.headless then
             trail_particles.update(frametime, current_trail_color)
         end
-        if public.config.get("show_swap_particles") and not args.headless then
+        if game.config.get("show_swap_particles") and not args.headless then
             swap_particles.update(frametime, current_trail_color)
         end
 
         -- supress empty block warning for now
         --- @diagnostic disable
-        if game.level_status.pseudo_3D_required and not public.config.get("3D_enabled") then
+        if game.level_status.pseudo_3D_required and not game.config.get("3D_enabled") then
             -- TODO: invalidate score
         end
-        if game.level_status.shaders_required and not public.config.get("shaders") then
+        if game.level_status.shaders_required and not game.config.get("shaders") then
             -- TODO: invalidate score
         end
         --- @diagnostic enable
@@ -339,7 +339,7 @@ function public.draw(screen)
     rotation.apply(game)
 
     local function set_render_stage(render_stage, no_shader, instanced)
-        if public.config.get("shaders") then
+        if game.config.get("shaders") then
             local shader = game.status.fragment_shaders[render_stage]
             if shader ~= nil then
                 game.lua_runtime.run_fn_if_exists("onRenderStage", render_stage, love.timer.getDelta() * 60)
@@ -358,8 +358,8 @@ function public.draw(screen)
         end
     end
 
-    local black_and_white = public.config.get("black_and_white")
-    if public.config.get("background") then
+    local black_and_white = game.config.get("black_and_white")
+    if game.config.get("background") then
         set_render_stage(0)
         game.style.draw_background(
             game.level_status.sides,
@@ -382,20 +382,20 @@ function public.draw(screen)
             pivot_quads,
             player_tris,
             cap_tris,
-            public.config.get("player_tilt_intensity"),
-            public.config.get("swap_blinking_effect"),
+            game.config.get("player_tilt_intensity"),
+            game.config.get("swap_blinking_effect"),
             black_and_white
         )
     end
     love.graphics.setColor(1, 1, 1, 1)
     pseudo3d.draw(set_render_stage, wall_quads, pivot_quads, player_tris, black_and_white)
 
-    if public.config.get("show_player_trail") and game.status.show_player_trail then
+    if game.config.get("show_player_trail") and game.status.show_player_trail then
         love.graphics.setShader()
         trail_particles.draw()
     end
 
-    if public.config.get("show_swap_particles") then
+    if game.config.get("show_swap_particles") then
         love.graphics.setShader()
         swap_particles.draw()
     end
@@ -437,7 +437,7 @@ function public.draw(screen)
     -- flash shouldnt be affected by rotation/pulse/camera_shake
     love.graphics.origin()
     love.graphics.scale(zoom_factor, zoom_factor)
-    flash.draw(public.config.get("flash"), zoom_factor)
+    flash.draw(game.config.get("flash"), zoom_factor)
 end
 
 ---get the current score
@@ -490,14 +490,14 @@ end
 function public.init(data, input_handler, config, _, audio)
     game.input = input_handler
     assets.init(data, audio, config)
-    public.config = config
+    game.config = config
     game.audio = audio
-    pseudo3d.init(game, public)
-    input.init(game, public, swap_particles, assets)
-    camera_shake.init(game, public)
+    pseudo3d.init(game)
+    input.init(game, swap_particles, assets)
+    camera_shake.init(game)
     if not args.headless then
         -- TODO: config may change without the game restarting (may need to reload)
-        message_font = assets.get_font("OpenSquare-Regular.ttf", 32 * public.config.get("text_scale"))
+        message_font = assets.get_font("OpenSquare-Regular.ttf", 32 * game.config.get("text_scale"))
         go_sound = assets.get_sound("go.ogg")
         level_up_sound = assets.get_sound("level_up.ogg")
         restart_sound = assets.get_sound("restart.ogg")

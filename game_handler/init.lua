@@ -23,11 +23,13 @@ if not args.headless then
     -- correct aspect ratio initially (before the user resizes the window)
     love.event.push("resize", love.graphics.getDimensions())
 end
+local game_config
 game_handler.profile = require("game_handler.profile")
 
 ---initialize all games (has to be called before doing anything)
 ---@param config any
 function game_handler.init(config, audio)
+    game_config = config
     audio = audio or require("audio")
     -- 1.92 needs persistent data for asset loading as it can overwrite any file
     local persistent_data
@@ -74,7 +76,7 @@ function game_handler.record_start(pack, level, level_settings)
     input.replay = Replay:new()
     input.replay:set_game_data(
         current_game_version,
-        current_game.config.get_all(current_game_version),
+        game_config.get_all(current_game_version),
         first_play,
         game_handler.profile.get_current_profile(),
         pack,
@@ -115,7 +117,7 @@ function game_handler.replay_start(file_or_replay_obj)
     end
     -- TODO: save and restore config later
     for name, value in pairs(replay.data.config) do
-        current_game.config.set(name, value)
+        game_config.set(name, value)
     end
     input.replay_start()
     current_game.start(replay.pack_id, replay.level_id, replay.data.level_settings)

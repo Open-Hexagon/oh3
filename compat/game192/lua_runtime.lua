@@ -124,7 +124,7 @@ local block_threshold = 1000
 
 function lua_runtime.init_env(game, public)
     local pack = game.pack
-    local config = public.config
+    local config = game.config
     lua_runtime.env = {
         os = {
             time = function(...)

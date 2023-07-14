@@ -1,14 +1,13 @@
 local shake = {}
 local death_shake_translate = { 0, 0 }
-local game, public
+local game
 
-function shake.init(pass_game, pass_public)
+function shake.init(pass_game)
     game = pass_game
-    public = pass_public
 end
 
 function shake.start()
-    game.status.camera_shake = 45 * public.config.get("camera_shake_mult")
+    game.status.camera_shake = 45 * game.config.get("camera_shake_mult")
 end
 
 function shake.update(frametime)
