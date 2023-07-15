@@ -12,6 +12,7 @@ local game = {
     level = require("compat.game20.level"),
     level_status = require("compat.game20.level_status"),
     vfs = require("compat.game192.virtual_filesystem"),
+    style = require("compat.game20.style"),
     message_text = "",
 }
 local must_change_sides = false
@@ -30,6 +31,7 @@ function public.start(pack_id, level_id, level_options)
     game.pack = assets.get_pack(pack_id)
     game.level.set(game.pack.levels[level_id])
     game.level_status.reset()
+    game.style.set(game.pack.styles[game.level.styleId])
     public.running = true
     -- TODO: init audio
 
@@ -63,7 +65,7 @@ function public.start(pack_id, level_id, level_options)
     lua_runtime.run_fn_if_exists("onLoad")
     game.set_sides(game.level_status.sides)
     game.current_rotation = 0
-    -- TODO: init 3d depth
+    game.style._3D_depth = math.min(game.style._3D_depth, game.config.get("3D_max_depth"))
 end
 
 function game.set_sides(sides)
@@ -74,18 +76,74 @@ function game.set_sides(sides)
     game.level_status.sides = sides
 end
 
+local function get_smoother_step(edge0, edge1, x)
+    x = math.max(0, math.min(1, (x - edge0) / (edge1 - edge0)))
+    return x * x * x * (x * (x * 6 - 15) + 10)
+end
+
 ---update the game
----@param delta number
+---@param frametime number
 ---@return number
-function public.update(delta)
-    game.real_time = game.real_time + delta
+function public.update(frametime)
+    game.real_time = game.real_time + frametime
+    frametime = frametime * 60
+    -- TODO: input
+    -- TODO: flash
+    if not game.status.has_died then
+        -- TODO: walls, player
+        -- TODO: events
+        -- TODO: time stop
+        -- TODO: increment
+        -- TODO: level
+        -- TODO: beatpulse
+        -- TODO: pulse
+        if not game.config.get("black_and_white") then
+            game.style.update(frametime, math.pow(game.difficulty_mult, 0.8))
+        end
+    else
+        game.level_status.rotation_speed = game.level_status.rotation_speed * 0.99
+    end
+    if game.config.get("3D_enabled") then
+        game.status.pulse_3D = game.style._3D_pulse_speed * game.status.pulse_3D_direction * frametime
+        if game.status.pulse_3D > game.style._3D_pulse_max then
+            game.status.pulse_3D_direction = -1
+        elseif game.status.pulse_3D < game.style._3D_pulse_min then
+            game.status.pulse_3D_direction = 1
+        end
+    end
+    if game.config.get("rotation") then
+        local next_rotation = game.level_status.rotation_speed * 10
+        if game.status.fast_spin > 0 then
+            next_rotation = next_rotation + math.abs(get_smoother_step(0, game.level_status.fast_spin, game.status.fast_spin) / 3.5 * 17) * (next_rotation > 0 and 1 or -1)
+            game.status.fast_spin = game.status.fast_spin - frametime
+        end
+        game.current_rotation = (game.current_rotation + next_rotation) % 360
+    end
     -- the game runs on a tickrate of 120 ticks per second
     return 1 / 120
 end
 
 ---draw the game to the current canvas
 ---@param screen love.Canvas
-function public.draw(screen) end
+function public.draw(screen)
+    local width, height = screen:getDimensions()
+    -- do the resize adjustment the old game did after already enforcing our aspect ratio
+    local zoom_factor = 1 / math.max(1024 / width, 768 / height)
+    -- apply pulse as well
+    local p = game.status.pulse / game.level_status.pulse_min
+    love.graphics.scale(zoom_factor / p, zoom_factor / p)
+    local effect
+    if game.config.get("3D_enabled") then
+        effect = game.style._3D_skew * game.status.pulse_3D * game.config.get("3D_multiplier")
+        love.graphics.scale(1, 1 / (1 + effect))
+    end
+    love.graphics.rotate(math.rad(game.current_rotation))
+    game.style.compute_colors()
+    local black_and_white = game.config.get("black_and_white")
+    if game.config.get("background") then
+        game.style.draw_background(game.level_status.sides, black_and_white)
+    end
+end
 
 ---get the current score
 ---@return number

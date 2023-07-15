@@ -109,7 +109,7 @@ function style.calculate_color(color_data)
     for i = 1, 4 do
         local value = color_data.result[i]
         if value ~= value or value == math.huge then
-            -- nan
+            -- nan or inf
             value = 0
         end
         value = value + color_data.pulse[i] * pulse_factor
