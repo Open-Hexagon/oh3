@@ -2,8 +2,11 @@ local log = require("log")(...)
 local args = require("args")
 local json = require("extlibs.json.jsonc")
 local vfs = require("compat.game192.virtual_filesystem")
+local level = require("compat.game20.level")
 local assets = {}
 local audio_module, sound_volume, music_volume
+local sound_path = "assets/audio/"
+local cached_sounds = {}
 local pack_path = "packs20/"
 local packs = {}
 
@@ -89,18 +92,9 @@ function assets.init(data, persistent_data, audio, config)
             success, level_json = decode_json(contents, filename)
             if success then
                 level_json.id = pack_data.folder .. "_" .. level_json.id
-                level_json.difficultyMults = level_json.difficultyMults or {}
-                local has1 = false
-                for j = 1, #level_json.difficultyMults do
-                    if level_json.difficultyMults[j] == 1 then
-                        has1 = true
-                    end
-                end
-                if not has1 then
-                    level_json.difficultyMults[#level_json.difficultyMults + 1] = 1
-                end
-                data.register_level(folder, level_json.id, level_json.name, {
-                    difficulty_mult = level_json.difficultyMults,
+                level.set(level_json)
+                data.register_level(folder, level.id, level.name, {
+                    difficulty_mult = level.difficultyMults,
                 })
                 pack_data.levels[level_json.id] = level_json
             end
@@ -152,6 +146,13 @@ function assets.get_pack(folder_name)
         end
     end
     return pack_data
+end
+
+function assets.get_sound(filename)
+    if not cached_sounds[filename] then
+        cached_sounds[filename] = audio_module.new_static(sound_path .. filename)
+    end
+    return cached_sounds[filename]
 end
 
 return assets
