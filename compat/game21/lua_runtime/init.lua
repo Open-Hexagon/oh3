@@ -43,7 +43,7 @@ function lua_runtime.init_env(game, public, assets)
         ipairs = ipairs,
         pairs = pairs,
         print = print,
-        math = math,
+        math = {},
         tostring = tostring,
         load = function(...)
             local f = load(...)
@@ -53,6 +53,12 @@ function lua_runtime.init_env(game, public, assets)
     }
     env = lua_runtime.env
     env._G = env
+
+    for k, v in pairs(math) do
+        if k ~= "randomseed" then
+            env.math[k] = v
+        end
+    end
 
     add_level_functions(game)
     add_style_functions(game)
