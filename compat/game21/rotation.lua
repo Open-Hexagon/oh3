@@ -16,7 +16,7 @@ function rotation.update(game, frametime)
                 * get_sign(next_rotation)
         game.status.fast_spin = game.status.fast_spin - frametime
     end
-    game.current_rotation = game.current_rotation + next_rotation * frametime
+    game.current_rotation = (game.current_rotation + next_rotation * frametime) % 360
 end
 
 function rotation.apply(game)
