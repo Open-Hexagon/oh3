@@ -159,11 +159,20 @@ end
 
 ---runs the game until the player dies without caring about real time
 ---@param stop_condition function
-function public.run_game_until_death(stop_condition) end
+function public.run_game_until_death(stop_condition)
+    while not game.status.has_died do
+        public.update(1 / 120)
+        if stop_condition and stop_condition() then
+            return
+        end
+    end
+    public.stop()
+end
 
 ---stop the game
 function public.stop()
     public.running = false
+    -- TODO: stop audio
 end
 
 ---updates the persistent data
