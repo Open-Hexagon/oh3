@@ -312,11 +312,13 @@ function api.delete(steam_id)
     local scores = database:select("scores", { where = { steam_id = steam_id } })
     for i = 1, #scores do
         local score = scores[i]
-        local folder = replay_path .. score.replay_hash:sub(1, 2) .. "/"
-        local path = folder .. score.replay_hash
-        love.filesystem.remove(path)
-        if #love.filesystem.getDirectoryItems(folder) == 0 then
-            love.filesystem.remove(folder)
+        if score.replay_hash then
+            local folder = replay_path .. score.replay_hash:sub(1, 2) .. "/"
+            local path = folder .. score.replay_hash
+            love.filesystem.remove(path)
+            if #love.filesystem.getDirectoryItems(folder) == 0 then
+                love.filesystem.remove(folder)
+            end
         end
     end
     database:delete("scores", { where = { steam_id = steam_id } })
