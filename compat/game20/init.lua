@@ -5,6 +5,7 @@ local make_fake_config = require("compat.game20.fake_config")
 local lua_runtime = require("compat.game20.lua_runtime")
 local dynamic_tris = require("compat.game21.dynamic_tris")
 local dynamic_quads = require("compat.game21.dynamic_quads")
+local set_color = require("compat.game21.color_transform")
 local public = {
     running = false,
     first_play = true,
@@ -32,7 +33,6 @@ function public.start(pack_id, level_id, level_options)
     if not game.difficulty_mult then
         error("Cannot start compat game without difficulty mult")
     end
-    -- TODO: init flash
     game.pack = assets.get_pack(pack_id)
     game.level.set(game.pack.levels[level_id])
     game.level_status.reset()
@@ -113,7 +113,14 @@ function public.update(frametime)
     end
     last_move = move
     input_both_cw_ccw = cw and ccw
-    -- TODO: flash
+    if game.status.flash_effect > 0 then
+        game.status.flash_effect = game.status.flash_effect - 3 * frametime
+    end
+    if game.status.flash_effect > 255 then
+        game.status.flash_effect = 255
+    elseif game.status.flash_effect < 0 then
+        game.status.flash_effect = 0
+    end
     if not game.status.has_died then
         -- TODO: walls
         game.player.update(frametime, move, focus, swap)
@@ -175,6 +182,14 @@ function public.draw(screen)
     game.player.draw(player_tris, wall_quads)
     wall_quads:draw()
     player_tris:draw()
+
+    -- message and flash shouldn't be affected by skew/rotation
+    love.graphics.origin()
+    love.graphics.scale(zoom_factor, zoom_factor)
+    if game.status.flash_effect ~= 0 then
+        set_color(255, 255, 255, game.status.flash_effect)
+        love.graphics.rectangle("fill", 0, 0, width / zoom_factor, height / zoom_factor)
+    end
 end
 
 ---get the current score
