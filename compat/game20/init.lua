@@ -28,7 +28,7 @@ local must_change_sides = false
 local last_move, input_both_cw_ccw = 0, false
 local death_sound, game_over_sound
 local depth = 0
-local layer_shader
+local layer_shader, message_font
 local instance_offsets = {}
 local instance_colors = {}
 
@@ -317,7 +317,32 @@ function public.draw(screen)
     -- message and flash shouldn't be affected by skew/rotation
     love.graphics.origin()
     love.graphics.scale(zoom_factor, zoom_factor)
-    -- TODO: draw text
+    if game.message_text ~= nil then
+        local function draw_text(ox, oy)
+            love.graphics.print(
+                game.message_text,
+                message_font,
+                width / zoom_factor / 2 - message_font:getWidth(game.message_text) / 2 + ox,
+                height / zoom_factor / 6 + oy
+            )
+        end
+        local r, g, b, a = game.style.get_color(2)
+        if black_and_white then
+            r, g, b, a = 0, 0, 0, 0
+        end
+        set_color(r, g, b, a)
+        -- 2.0-rc2 unlike the steam version actually does outlines like this so it's probably fine to do the same here
+        draw_text(-1, -1)
+        draw_text(-1, 1)
+        draw_text(1, -1)
+        draw_text(1, 1)
+        r, g, b, a = game.style.get_main_color()
+        if black_and_white then
+            r, g, b = 255, 255, 255
+        end
+        set_color(r, g, b, a)
+        draw_text(0, 0)
+    end
     if game.status.flash_effect ~= 0 and game.config.get("flash") then
         set_color(255, 255, 255, game.status.flash_effect)
         love.graphics.rectangle("fill", 0, 0, width / zoom_factor, height / zoom_factor)
@@ -383,6 +408,7 @@ function public.init(pack_level_data, input_handler, config, persistent_data, au
         death_sound = assets.get_sound("death.ogg")
         game_over_sound = assets.get_sound("game_over.ogg")
         main_quads = dynamic_quads:new()
+        message_font = love.graphics.newFont("assets/font/imagine.ttf", 38)
         layer_shader = love.graphics.newShader(
             [[
                 attribute vec2 instance_offset;
