@@ -1,3 +1,4 @@
+local set_color = require("compat.game21.color_transform")
 local args = require("args")
 local playsound = require("compat.game21.playsound")
 local utils = require("compat.game192.utils")
@@ -20,6 +21,7 @@ local last_pos
 local start_pos = { 0, 0 }
 local swap_sound
 local game
+local cap_vertices = {}
 
 function player.reset(pass_game, assets)
     game = pass_game
@@ -47,28 +49,29 @@ local function update_main_color()
     end
 end
 
-local function draw_pivot(player_tris, wall_quads)
+local function draw_pivot(main_quads)
     local sides = game.level_status.sides
     local div = math.pi / sides
     local radius = game.status.radius * 0.75
     update_main_color()
-    -- cap color
-    local r, g, b, a = game.style.get_color(2)
-    if black_and_white then
-        r, g, b, a = 0, 0, 0, 255
-    end
+    local cap_vertex_count = 0
     for i = 0, sides - 1 do
         local s_angle = div * 2 * i
         local p1_x, p1_y = extra_math.get_orbit(start_pos, s_angle - div, radius)
         local p2_x, p2_y = extra_math.get_orbit(start_pos, s_angle + div, radius)
         local p3_x, p3_y = extra_math.get_orbit(start_pos, s_angle + div, radius + base_thickness)
         local p4_x, p4_y = extra_math.get_orbit(start_pos, s_angle - div, radius + base_thickness)
-        wall_quads:add_quad(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y, unpack(color_main))
-        player_tris:add_tris(p1_x, p1_y, p2_x, p2_y, 0, 0, r, g, b, a)
+        main_quads:add_quad(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y, unpack(color_main))
+        cap_vertices[i * 2 + 1] = p1_x
+        cap_vertices[i * 2 + 2] = p1_y
+        cap_vertex_count = cap_vertex_count + 2
+    end
+    while #cap_vertices > cap_vertex_count do
+        cap_vertices[#cap_vertices] = nil
     end
 end
 
-local function draw_death_effect(wall_quads)
+local function draw_death_effect(main_quads)
     local sides = game.level_status.sides
     local div = math.pi / sides
     local radius = hue / 8
@@ -84,12 +87,12 @@ local function draw_death_effect(wall_quads)
         local p2_x, p2_y = extra_math.get_orbit(pos, s_angle + div, radius)
         local p3_x, p3_y = extra_math.get_orbit(pos, s_angle + div, radius + thickness)
         local p4_x, p4_y = extra_math.get_orbit(pos, s_angle - div, radius + thickness)
-        wall_quads:add_quad(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y, unpack(color_main))
+        main_quads:add_quad(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y, unpack(color_main))
     end
 end
 
-function player.draw(player_tris, wall_quads)
-    draw_pivot(player_tris, wall_quads)
+function player.draw(main_quads)
+    draw_pivot(main_quads)
     if dead_effect_timer.running then
         draw_death_effect()
     end
@@ -106,7 +109,18 @@ function player.draw(player_tris, wall_quads)
     if not swap_timer.running then
         utils.get_color_from_hue(swap_timer.current * 15 / 255, color_main)
     end
-    player_tris:add_tris(p_top_x, p_top_y, p_left_x, p_left_y, p_right_x, p_right_y, unpack(color_main))
+    main_quads:add_quad(p_top_x, p_top_y, p_top_x, p_top_y, p_left_x, p_left_y, p_right_x, p_right_y, unpack(color_main))
+end
+
+function player.draw_cap()
+    local r, g, b, a = game.style.get_color(2)
+    if black_and_white then
+        r, g, b, a = 0, 0, 0, 255
+    end
+    set_color(r, g, b, a)
+    love.graphics.polygon("fill", cap_vertices)
+    -- reset so the next drawn stuff still looks correct
+    love.graphics.setColor(1, 1, 1, 1)
 end
 
 function player.update(frametime, movement, focus, swap)

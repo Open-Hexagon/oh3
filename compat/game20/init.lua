@@ -19,7 +19,7 @@ local game = {
     player = require("compat.game20.player"),
     message_text = "",
 }
-local wall_quads, player_tris
+local main_quads
 local must_change_sides = false
 local last_move, input_both_cw_ccw = 0, false
 local beep_sound
@@ -229,11 +229,10 @@ function public.draw(screen)
         game.style.draw_background(game.level_status.sides, black_and_white)
     end
 
-    player_tris:clear()
-    wall_quads:clear()
-    game.player.draw(player_tris, wall_quads)
-    wall_quads:draw()
-    player_tris:draw()
+    main_quads:clear()
+    game.player.draw(main_quads)
+    main_quads:draw()
+    game.player.draw_cap()
 
     -- message and flash shouldn't be affected by skew/rotation
     love.graphics.origin()
@@ -300,8 +299,7 @@ function public.init(pack_level_data, input_handler, config, persistent_data, au
     game.input = input_handler
     if not args.headless then
         beep_sound = assets.get_sound("click.ogg")
-        wall_quads = dynamic_quads:new()
-        player_tris = dynamic_tris:new()
+        main_quads = dynamic_quads:new()
     end
 end
 
