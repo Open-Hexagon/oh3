@@ -1,5 +1,5 @@
 local log = require("log")(...)
-local args = require("args")
+local playsound = require("compat.game21.playsound")
 local utils = require("compat.game192.utils")
 local lua_runtime = {
     env = {},
@@ -198,10 +198,14 @@ function lua_runtime.init_env(game, public, assets)
         -- TODO
     end
     env.u_kill = function()
-        -- TODO
+        game.main_timeline:append_do(function()
+            game.death(true)
+        end)
     end
     env.u_eventKill = function()
-        -- TODO
+        game.event_timeline:append_do(function()
+            game.death(true)
+        end)
     end
     env.u_getDifficultyMult = function()
         return game.difficulty_mult
@@ -214,39 +218,71 @@ function lua_runtime.init_env(game, public, assets)
     end
 
     -- messages
+    local function add_message(msg, duration)
+        game.message_timeline:append_do(function()
+            playsound(game.beep_sound)
+            game.message_text = msg
+        end)
+        game.message_timeline:append_wait(duration)
+        game.message_timeline:append_do(function()
+            game.message_text = ""
+        end)
+    end
     env.m_messageAdd = function(msg, duration)
-        -- TODO
+        game.event_timeline:append_do(function()
+            if public.first_play and game.config.get("messages") then
+                add_message(msg, duration)
+            end
+        end)
     end
     env.m_messageAddImportant = function(msg, duration)
-        -- TODO
+        game.event_timeline:append_do(function()
+            if game.config.get("messages") then
+                add_message(msg, duration)
+            end
+        end)
     end
 
     -- main timeline control
     env.t_wait = function(duration)
-        -- TODO
+        game.main_timeline:append_wait(duration)
     end
     env.t_waitS = function(duration)
-        -- TODO
+        game.main_timeline:append_wait(duration * 60)
     end
     env.t_waitUntilS = function(time)
-        -- TODO
+        game.main_timeline:append_wait(10)
+        game.main_timeline:append_do(function()
+            if game.status.current_time < time then
+                game.main_timeline:jump_to(game.main_timeline:get_current_index() - 2)
+            end
+        end)
     end
 
     -- event timeline control
     env.e_eventStopTime = function(duration)
-        -- TODO
+        game.event_timeline:append_do(function()
+            game.status.time_stop = duration
+        end)
     end
     env.e_eventStopTimeS = function(duration)
-        -- TODO
+        game.event_timeline:append_do(function()
+            game.status.time_stop = duration * 60
+        end)
     end
     env.e_eventWait = function(duration)
-        -- TODO
+        game.event_timeline:append_wait(duration)
     end
     env.e_eventWaitS = function(duration)
-        -- TODO
+        game.event_timeline:append_wait(duration * 60)
     end
     env.e_eventWaitUntilS = function(time)
-        -- TODO
+        game.event_timeline:append_wait(10)
+        game.event_timeline:append_do(function()
+            if game.status.current_time < time then
+                game.event_timeline:jump_to(game.event_timeline:get_current_index() - 2)
+            end
+        end)
     end
 
     -- level control
@@ -352,30 +388,40 @@ function lua_runtime.init_env(game, public, assets)
 
     -- style control
     env.s_setPulseInc = function(value)
-        -- TODO
+        game.style.pulse_increment = value
     end
     env.s_setHueInc = function(value)
-        -- TODO
+        game.style.hue_increment = value
     end
     env.s_getHueInc = function()
-        -- TODO
+        return game.style.hue_increment
     end
 
     -- wall creation
     env.w_wall = function(side, thickness)
-        -- TODO
+        game.main_timeline:append_do(function()
+            -- TODO
+        end)
     end
     env.w_wallAdj = function(side, thickness, speed_adj)
-        -- TODO
+        game.main_timeline:append_do(function()
+            -- TODO
+        end)
     end
     env.w_wallAcc = function(side, thickness, speed_adj, acceleration, min_speed, max_speed)
-        -- TODO
+        game.main_timeline:append_do(function()
+            -- TODO
+        end)
     end
     env.w_wallHModSpeedData = function(hmod, side, thickness, sadj, sacc, smin, smax, sping_pong)
-        -- TODO
+        game.main_timeline:append_do(function()
+            -- TODO
+        end)
     end
     env.w_wallHModCurveData = function(hmod, side, thickness, cadj, cacc, cmin, cmax, cping_pong)
-        -- TODO
+        game.main_timeline:append_do(function()
+            -- TODO
+        end)
     end
     log("initialized environment")
 end

@@ -3,9 +3,9 @@ local playsound = require("compat.game21.playsound")
 local assets = require("compat.game20.assets")
 local make_fake_config = require("compat.game20.fake_config")
 local lua_runtime = require("compat.game20.lua_runtime")
-local dynamic_tris = require("compat.game21.dynamic_tris")
 local dynamic_quads = require("compat.game21.dynamic_quads")
 local set_color = require("compat.game21.color_transform")
+local timeline = require("compat.game20.timeline")
 local public = {
     running = false,
     first_play = true,
@@ -17,12 +17,16 @@ local game = {
     vfs = require("compat.game192.virtual_filesystem"),
     style = require("compat.game20.style"),
     player = require("compat.game20.player"),
+    main_timeline = timeline:new(),
+    event_timeline = timeline:new(),
+    message_timeline = timeline:new(),
     message_text = "",
+    beep_sound = nil,
 }
 local main_quads
 local must_change_sides = false
 local last_move, input_both_cw_ccw = 0, false
-local beep_sound
+local death_sound, game_over_sound
 local depth = 0
 local layer_shader
 local instance_offsets = {}
@@ -59,10 +63,14 @@ function public.start(pack_id, level_id, level_options)
     game.vfs.load_files(files)
 
     game.message_text = ""
-    -- TODO: clear and reset event and message timelines
+    game.event_timeline:clear()
+    game.event_timeline:reset()
+    game.message_timeline:clear()
+    game.message_timeline:reset()
     -- TODO: init walls
     game.player.reset(game, assets)
-    -- TODO: clear and reset main timeline
+    game.main_timeline:clear()
+    game.main_timeline:reset()
     must_change_sides = false
     game.status.reset()
     game.real_time = 0
@@ -79,8 +87,20 @@ function public.start(pack_id, level_id, level_options)
     depth = game.style._3D_depth
 end
 
+function game.death(force)
+    playsound(death_sound)
+    if not force and (game.config.get("invincible") or game.level_status.tutorial_mode) then
+        return
+    end
+    playsound(game_over_sound)
+    game.status.flash_effect = 255
+    -- TODO: camera shake
+    game.status.has_died = true
+    -- TODO: stop music
+end
+
 function game.set_sides(sides)
-    playsound(beep_sound)
+    playsound(game.beep_sound)
     if sides < 3 then
         sides = 3
     end
@@ -129,7 +149,16 @@ function public.update(frametime)
     if not game.status.has_died then
         -- TODO: walls
         game.player.update(frametime, move, focus, swap)
-        -- TODO: events
+        game.event_timeline:update(frametime)
+        if game.event_timeline.finished then
+            game.event_timeline:clear()
+            game.event_timeline:reset()
+        end
+        game.message_timeline:update(frametime)
+        if game.message_timeline.finished then
+            game.message_timeline:clear()
+            game.message_timeline:reset()
+        end
         if game.status.time_stop <= 0 then
             game.status.current_time = game.status.current_time + frametime / 60
             game.status.increment_time = game.status.increment_time + frametime / 60
@@ -147,7 +176,11 @@ function public.update(frametime)
         end
         if game.status.time_stop <= 0 then
             lua_runtime.run_fn_if_exists("onUpdate", frametime)
-            -- TODO: update timeline and call onStep if empty
+            if game.main_timeline.finished and not must_change_sides then
+                game.main_timeline:clear()
+                lua_runtime.run_fn_if_exists("onStep")
+                game.main_timeline:reset()
+            end
         end
         local music_dm_sync_factor = game.config.get("sync_music_to_dm") and math.pow(game.difficulty_mult, 0.12) or 1
         if game.config.get("beatpulse") then
@@ -346,7 +379,9 @@ function public.init(pack_level_data, input_handler, config, persistent_data, au
     game.config = config
     game.input = input_handler
     if not args.headless then
-        beep_sound = assets.get_sound("click.ogg")
+        game.beep_sound = assets.get_sound("click.ogg")
+        death_sound = assets.get_sound("death.ogg")
+        game_over_sound = assets.get_sound("game_over.ogg")
         main_quads = dynamic_quads:new()
         layer_shader = love.graphics.newShader(
             [[
