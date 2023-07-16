@@ -20,6 +20,7 @@ local game = {
 }
 local wall_quads, player_tris
 local must_change_sides = false
+local last_move, input_both_cw_ccw = 0, false
 local beep_sound
 
 ---starts a new game
@@ -92,11 +93,30 @@ end
 function public.update(frametime)
     game.real_time = game.real_time + frametime
     frametime = frametime * 60
-    -- TODO: input
+    local focus = game.input.get(game.config.get("key_focus"))
+    local swap = game.input.get(game.config.get("key_swap"))
+    local cw = game.input.get(game.config.get("key_right"))
+    local ccw = game.input.get(game.config.get("key_left"))
+    local move = 0
+    if cw and not ccw then
+        move = 1
+    elseif not cw and ccw then
+        move = -1
+    elseif cw and ccw then
+        if not input_both_cw_ccw then
+            if move == 1 and last_move == 1 then
+                move = -1
+            elseif move == -1 and last_move == -1 then
+                move = 1
+            end
+        end
+    end
+    last_move = move
+    input_both_cw_ccw = cw and ccw
     -- TODO: flash
     if not game.status.has_died then
         -- TODO: walls
-        game.player.update(frametime, 0, false, false)
+        game.player.update(frametime, move, focus, swap)
         -- TODO: events
         -- TODO: time stop
         -- TODO: increment
