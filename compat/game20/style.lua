@@ -10,9 +10,9 @@ local function set_color_data_defaults(color_data)
     color_data.dynamic_darkness = color_data.dynamic_darkness or 1
     color_data.hue_shift = color_data.hue_shift or 0
     color_data.offset = color_data.offset or 0
-    color_data.value = color_data.value or {255, 255, 255, 255}
-    color_data.pulse = color_data.pulse or {255, 255, 255, 255}
-    color_data.result = {unpack(color_data.value)}
+    color_data.value = color_data.value or { 255, 255, 255, 255 }
+    color_data.pulse = color_data.pulse or { 255, 255, 255, 255 }
+    color_data.result = { unpack(color_data.value) }
     return color_data
 end
 
@@ -86,7 +86,7 @@ function style.set(style_json)
     style._3D_pulse_min = style_json["3D_pulse_min"] or 0
     style._3D_pulse_speed = style_json["3D_pulse_speed"] or 0.01
     style._3D_perspective_mult = style_json["3D_perspective_multiplier"] or 1
-    style._3D_override_color = style_json["3D_override_color"] or {0, 0, 0, 0}
+    style._3D_override_color = style_json["3D_override_color"] or { 0, 0, 0, 0 }
     style.main_color_data = set_color_data_defaults(style_json.main)
     style.current_hue = style.hue_min
     style.color_datas = style_json.colors or {}

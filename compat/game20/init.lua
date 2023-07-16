@@ -125,11 +125,61 @@ function public.update(frametime)
         -- TODO: walls
         game.player.update(frametime, move, focus, swap)
         -- TODO: events
-        -- TODO: time stop
-        -- TODO: increment
-        -- TODO: level
-        -- TODO: beatpulse
-        -- TODO: pulse
+        if game.status.time_stop <= 0 then
+            game.status.current_time = game.status.current_time + frametime / 60
+            game.status.increment_time = game.status.increment_time + frametime / 60
+        else
+            game.status.time_stop = game.status.time_stop - frametime
+        end
+        if game.level_status.inc_enabled and game.status.increment_time >= game.level_status.inc_time then
+            game.status.increment_time = 0
+            -- TODO: increment difficulty
+            must_change_sides = true
+        end
+        -- TODO: check for no walls
+        if must_change_sides and false then
+            -- TODO: side change
+        end
+        if game.status.time_stop <= 0 then
+            lua_runtime.run_fn_if_exists("onUpdate", frametime)
+            -- TODO: update timeline and call onStep if empty
+        end
+        local music_dm_sync_factor = game.config.get("sync_music_to_dm") and math.pow(game.difficulty_mult, 0.12) or 1
+        if game.config.get("beatpulse") then
+            if game.status.beatpulse <= 0 then
+                game.status.beatpulse = game.level_status.beat_pulse_max
+                game.status.beatpulse_delay = game.level_status.beat_pulse_delay_max
+            else
+                game.status.beatpulse_delay = game.status.beatpulse_delay - frametime * music_dm_sync_factor
+            end
+            if game.status.beatpulse > 0 then
+                game.status.beatpulse = game.status.beatpulse - 2 * frametime * music_dm_sync_factor
+            end
+        end
+        local radius_min = game.config.get("beatpulse") and game.level_status.radius_min or 75
+        game.status.radius = radius_min * (game.status.pulse / game.level_status.pulse_min) + game.status.beatpulse
+        if game.config.get("pulse") then
+            if game.status.pulse_delay <= 0 and game.status.pulse_delay_half <= 0 then
+                local pulse_add = game.status.pulse_direction > 0 and game.level_status.pulse_speed
+                    or -game.level_status.pulse_speed_r
+                local pulse_limit = game.status.pulse_direction > 0 and game.level_status.pulse_max
+                    or game.level_status.pulse_min
+                game.status.pulse = game.status.pulse + pulse_add * frametime * music_dm_sync_factor
+                if
+                    (game.status.pulse_direction > 0 and game.status.pulse >= pulse_limit)
+                    or (game.status.pulse_direction < 0 and game.status.pulse <= pulse_limit)
+                then
+                    game.status.pulse = pulse_limit
+                    game.status.pulse_direction = -game.status.pulse_direction
+                    game.status.pulse_delay_half = game.level_status.pulse_delay_half_max
+                    if game.status.pulse_direction < 0 then
+                        game.status.pulse_delay = game.level_status.pulse_delay_max
+                    end
+                end
+            end
+            game.status.pulse_delay = game.status.pulse_delay - frametime
+            game.status.pulse_delay_half = game.status.pulse_delay_half - frametime
+        end
         if not game.config.get("black_and_white") then
             game.style.update(frametime, math.pow(game.difficulty_mult, 0.8))
         end
@@ -147,7 +197,9 @@ function public.update(frametime)
     if game.config.get("rotation") then
         local next_rotation = game.level_status.rotation_speed * 10
         if game.status.fast_spin > 0 then
-            next_rotation = next_rotation + math.abs(get_smoother_step(0, game.level_status.fast_spin, game.status.fast_spin) / 3.5 * 17) * (next_rotation > 0 and 1 or -1)
+            next_rotation = next_rotation
+                + math.abs(get_smoother_step(0, game.level_status.fast_spin, game.status.fast_spin) / 3.5 * 17)
+                    * (next_rotation > 0 and 1 or -1)
             game.status.fast_spin = game.status.fast_spin - frametime
         end
         game.current_rotation = (game.current_rotation + next_rotation) % 360

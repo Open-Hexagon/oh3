@@ -41,10 +41,10 @@ function player.reset(pass_game, assets)
 end
 
 local function update_main_color()
-        color_main[1], color_main[2], color_main[3], color_main[4] = game.style.get_main_color()
-        if black_and_white then
-            color_main[1], color_main[2], color_main[3] = 255, 255, 255
-        end
+    color_main[1], color_main[2], color_main[3], color_main[4] = game.style.get_main_color()
+    if black_and_white then
+        color_main[1], color_main[2], color_main[3] = 255, 255, 255
+    end
 end
 
 local function draw_pivot(player_tris, wall_quads)
