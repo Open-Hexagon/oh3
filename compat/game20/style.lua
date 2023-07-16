@@ -1,3 +1,4 @@
+local args = require("args")
 local dynamic_tris = require("compat.game21.dynamic_tris")
 local utils = require("compat.game192.utils")
 local style = {}
@@ -163,7 +164,10 @@ function style.get_main_color()
     return unpack(style.main_color_data.result)
 end
 
-local background_tris = dynamic_tris:new()
+local background_tris
+if not args.headless then
+    background_tris = dynamic_tris:new()
+end
 
 function style.draw_background(sides, black_and_white)
     local div = 2 * math.pi / sides
