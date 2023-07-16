@@ -186,7 +186,7 @@ function public.draw(screen)
     -- message and flash shouldn't be affected by skew/rotation
     love.graphics.origin()
     love.graphics.scale(zoom_factor, zoom_factor)
-    if game.status.flash_effect ~= 0 then
+    if game.status.flash_effect ~= 0 and game.config.get("flash") then
         set_color(255, 255, 255, game.status.flash_effect)
         love.graphics.rectangle("fill", 0, 0, width / zoom_factor, height / zoom_factor)
     end

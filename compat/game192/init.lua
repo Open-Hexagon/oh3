@@ -513,7 +513,7 @@ function public.draw(screen)
         set_color(r, g, b, a)
         draw_text(0, 0)
     end
-    if game.status.flash_effect ~= 0 then
+    if game.status.flash_effect ~= 0 and game.config.get("flash") then
         set_color(255, 255, 255, game.status.flash_effect)
         love.graphics.rectangle("fill", 0, 0, width / zoom_factor, height / zoom_factor)
     end
