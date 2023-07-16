@@ -23,6 +23,10 @@ local main_quads
 local must_change_sides = false
 local last_move, input_both_cw_ccw = 0, false
 local beep_sound
+local depth = 0
+local layer_shader
+local instance_offsets = {}
+local instance_colors = {}
 
 ---starts a new game
 ---@param pack_id string
@@ -72,6 +76,7 @@ function public.start(pack_id, level_id, level_options)
     game.set_sides(game.level_status.sides)
     game.current_rotation = 0
     game.style._3D_depth = math.min(game.style._3D_depth, game.config.get("3D_max_depth"))
+    depth = game.style._3D_depth
 end
 
 function game.set_sides(sides)
@@ -187,7 +192,7 @@ function public.update(frametime)
         game.level_status.rotation_speed = game.level_status.rotation_speed * 0.99
     end
     if game.config.get("3D_enabled") then
-        game.status.pulse_3D = game.style._3D_pulse_speed * game.status.pulse_3D_direction * frametime
+        game.status.pulse_3D = game.status.pulse_3D + game.style._3D_pulse_speed * game.status.pulse_3D_direction * frametime
         if game.status.pulse_3D > game.style._3D_pulse_max then
             game.status.pulse_3D_direction = -1
         elseif game.status.pulse_3D < game.style._3D_pulse_min then
@@ -228,15 +233,58 @@ function public.draw(screen)
     if game.config.get("background") then
         game.style.draw_background(game.level_status.sides, black_and_white)
     end
-
     main_quads:clear()
+    -- TODO: draw walls
     game.player.draw(main_quads)
+    if game.config.get("3D_enabled") then
+        local per_layer_offset = game.style._3D_spacing
+            * game.style._3D_perspective_mult
+            * effect
+            * 3.6
+        local rad_rot = math.rad(game.current_rotation)
+        local sin_rot = math.sin(rad_rot)
+        local cos_rot = math.cos(rad_rot)
+        local darken_mult = game.style._3D_darken_mult
+        local r, g, b, a = game.style.get_3D_override_color()
+        if darken_mult == 0 then
+            r, g, b = 0, 0, 0
+        else
+            r = r / darken_mult
+            g = g / darken_mult
+            b = b / darken_mult
+        end
+        local alpha_mult = game.style._3D_alpha_mult
+        if alpha_mult == 0 then
+            a = 0
+        else
+            a = a / alpha_mult
+        end
+        local alpha_falloff = game.style._3D_alpha_falloff
+        for i = 1, depth do
+            local offset = per_layer_offset * i
+            instance_offsets[i] = instance_offsets[i] or {}
+            instance_offsets[i][1] = offset * sin_rot
+            instance_offsets[i][2] = offset * cos_rot
+            instance_colors[i] = instance_colors[i] or {}
+            instance_colors[i][1] = r
+            instance_colors[i][2] = g
+            instance_colors[i][3] = b
+            instance_colors[i][4] = a
+            a = (a - alpha_falloff) % 256
+        end
+        main_quads:set_instance_attribute_array("instance_offset", "float", 2, instance_offsets)
+        main_quads:set_instance_attribute_array("instance_color", "float", 4, instance_colors)
+        love.graphics.setShader(layer_shader)
+        main_quads:draw_instanced(depth)
+        love.graphics.setShader()
+    end
     main_quads:draw()
     game.player.draw_cap()
 
     -- message and flash shouldn't be affected by skew/rotation
     love.graphics.origin()
     love.graphics.scale(zoom_factor, zoom_factor)
+    -- TODO: draw text
     if game.status.flash_effect ~= 0 and game.config.get("flash") then
         set_color(255, 255, 255, game.status.flash_effect)
         love.graphics.rectangle("fill", 0, 0, width / zoom_factor, height / zoom_factor)
@@ -300,6 +348,28 @@ function public.init(pack_level_data, input_handler, config, persistent_data, au
     if not args.headless then
         beep_sound = assets.get_sound("click.ogg")
         main_quads = dynamic_quads:new()
+        layer_shader = love.graphics.newShader(
+            [[
+                attribute vec2 instance_offset;
+                attribute vec4 instance_color;
+                varying vec4 instance_color_out;
+
+                vec4 position(mat4 transform_projection, vec4 vertex_position)
+                {
+                    instance_color_out = instance_color / 255.0;
+                    vertex_position.xy += instance_offset;
+                    return transform_projection * vertex_position;
+                }
+            ]],
+            [[
+                varying vec4 instance_color_out;
+
+                vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
+                {
+                    return instance_color_out;
+                }
+            ]]
+        )
     end
 end
 
