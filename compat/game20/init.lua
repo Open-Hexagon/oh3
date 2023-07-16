@@ -3,6 +3,8 @@ local playsound = require("compat.game21.playsound")
 local assets = require("compat.game20.assets")
 local make_fake_config = require("compat.game20.fake_config")
 local lua_runtime = require("compat.game20.lua_runtime")
+local dynamic_tris = require("compat.game21.dynamic_tris")
+local dynamic_quads = require("compat.game21.dynamic_quads")
 local public = {
     running = false,
     first_play = true,
@@ -13,8 +15,10 @@ local game = {
     level_status = require("compat.game20.level_status"),
     vfs = require("compat.game192.virtual_filesystem"),
     style = require("compat.game20.style"),
+    player = require("compat.game20.player"),
     message_text = "",
 }
+local wall_quads, player_tris
 local must_change_sides = false
 local beep_sound
 
@@ -51,7 +55,8 @@ function public.start(pack_id, level_id, level_options)
 
     game.message_text = ""
     -- TODO: clear and reset event and message timelines
-    -- TODO: init walls and player
+    -- TODO: init walls
+    game.player.reset(game, assets)
     -- TODO: clear and reset main timeline
     must_change_sides = false
     game.status.reset()
@@ -90,7 +95,8 @@ function public.update(frametime)
     -- TODO: input
     -- TODO: flash
     if not game.status.has_died then
-        -- TODO: walls, player
+        -- TODO: walls
+        game.player.update(frametime, 0, false, false)
         -- TODO: events
         -- TODO: time stop
         -- TODO: increment
@@ -143,6 +149,12 @@ function public.draw(screen)
     if game.config.get("background") then
         game.style.draw_background(game.level_status.sides, black_and_white)
     end
+
+    player_tris:clear()
+    wall_quads:clear()
+    game.player.draw(player_tris, wall_quads)
+    wall_quads:draw()
+    player_tris:draw()
 end
 
 ---get the current score
@@ -201,6 +213,8 @@ function public.init(pack_level_data, input_handler, config, persistent_data, au
     game.input = input_handler
     if not args.headless then
         beep_sound = assets.get_sound("click.ogg")
+        wall_quads = dynamic_quads:new()
+        player_tris = dynamic_tris:new()
     end
 end
 
