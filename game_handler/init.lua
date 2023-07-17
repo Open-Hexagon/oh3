@@ -194,16 +194,18 @@ function game_handler.update(ensure_tickrate)
 end
 
 ---draw the game if it's running
-function game_handler.draw()
+---@param frametime number?
+function game_handler.draw(frametime)
     -- can only start rendering once the initial resize event was processed
     if current_game.running and screen ~= nil then
+        frametime = frametime or love.timer.getDelta()
         local width, height = love.graphics.getDimensions()
         -- render onto the screen
         love.graphics.setCanvas(screen)
         love.graphics.clear(0, 0, 0, 1)
         -- make (0, 0) be the center
         love.graphics.translate(screen:getWidth() / 2, screen:getHeight() / 2)
-        current_game.draw(screen)
+        current_game.draw(screen, frametime)
         love.graphics.setCanvas()
         -- render the canvas in the middle of the window
         love.graphics.origin()

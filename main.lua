@@ -45,7 +45,7 @@ local function render_replay(game_handler, video_encoder, audio, replay, out_fil
             love.timer.step()
             love.graphics.origin()
             love.graphics.clear(0, 0, 0, 1)
-            game_handler.draw()
+            game_handler.draw(1 / fps)
             love.graphics.captureScreenshot(video_encoder.supply_video_data)
             love.graphics.present()
             if game_handler.is_dead() then

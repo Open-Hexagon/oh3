@@ -325,7 +325,8 @@ end
 
 ---draw the game to the current canvas
 ---@param screen love.Canvas
-function public.draw(screen)
+---@param frametime number
+function public.draw(screen, frametime)
     -- for lua access
     game.width, game.height = screen:getDimensions()
 
@@ -342,7 +343,7 @@ function public.draw(screen)
         if game.config.get("shaders") then
             local shader = game.status.fragment_shaders[render_stage]
             if shader ~= nil then
-                game.lua_runtime.run_fn_if_exists("onRenderStage", render_stage, love.timer.getDelta() * 60)
+                game.lua_runtime.run_fn_if_exists("onRenderStage", render_stage, frametime * 60)
                 if instanced then
                     love.graphics.setShader(shader.instance_shader)
                 else
