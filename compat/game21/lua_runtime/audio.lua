@@ -44,6 +44,7 @@ return function(game, assets)
             if sound == nil then
                 lua_runtime.error("Sound with id '" .. sound_id .. "' doesn't exist!")
             else
+                sound:seek(0)
                 sound:play()
             end
         end
@@ -61,6 +62,7 @@ return function(game, assets)
     env.a_playPackSound = function(sound_id)
         local sound = get_pack_sound(sound_id)
         if sound ~= nil then
+            sound:seek(0)
             sound:play()
         end
     end
