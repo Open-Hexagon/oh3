@@ -151,10 +151,26 @@ end
 
 function assets.get_sound(filename)
     if not cached_sounds[filename] then
-        if not love.filesystem.getInfo(sound_path .. filename) then
+        if love.filesystem.getInfo(sound_path .. filename) then
+            cached_sounds[filename] = audio_module.new_static(sound_path .. filename)
+            cached_sounds[filename].volume = sound_volume
+        else
+            if filename:match("_") then
+                -- possibly a pack sound
+                local location = filename:find("_")
+                local pack = filename:sub(1, location - 1)
+                if packs[pack] then
+                    local name = filename:sub(location + 1)
+                    local path = packs[pack].path .. "Sounds/" .. name
+                    if not love.filesystem.getInfo(path) then
+                        return
+                    end
+                    cached_sounds[filename] = audio_module.new_static(path)
+                    cached_sounds[filename].volume = sound_volume
+                end
+            end
             return
         end
-        cached_sounds[filename] = audio_module.new_static(sound_path .. filename)
     end
     return cached_sounds[filename]
 end

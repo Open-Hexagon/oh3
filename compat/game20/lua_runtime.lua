@@ -186,7 +186,6 @@ function lua_runtime.init_env(game, public, assets)
         ["beep.ogg"] = "click.ogg",
     }
     env.u_playSound = function(name)
-        -- TODO: are sound ids prefixed with the pack id for pack sounds?
         if not args.headless then
             local sound = assets.get_sound(sound_mapping[name] or name)
             if sound then
