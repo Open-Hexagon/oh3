@@ -123,7 +123,7 @@ function assets.get_pack(folder_name)
                 if music_json.file_name:sub(-4) ~= ".ogg" then
                     music_json.file_name = music_json.file_name .. ".ogg"
                 end
-                if not love.filesystem.getInfo(music_json.file_name) then
+                if not love.filesystem.getInfo(folder .. "Music/" .. music_json.file_name) then
                     music_json.file_name = fallback_path
                 end
                 if
