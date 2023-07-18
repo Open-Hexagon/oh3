@@ -2,6 +2,7 @@
 local public = {
     running = false,
     first_play = true,
+    tickrate = 240,
 }
 
 ---starts a new game

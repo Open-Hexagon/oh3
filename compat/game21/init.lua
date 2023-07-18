@@ -21,6 +21,7 @@ local rotation = require("compat.game21.rotation")
 local public = {
     running = false,
     first_play = true,
+    tickrate = 240,
 }
 local game = {
     lua_runtime = require("compat.game21.lua_runtime"),
@@ -467,7 +468,7 @@ end
 ---@param stop_condition function?
 function public.run_game_until_death(stop_condition)
     while not game.status.has_died do
-        public.update(1 / 240)
+        public.update(1 / public.tickrate)
         if stop_condition and stop_condition() then
             return
         end

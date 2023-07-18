@@ -10,6 +10,7 @@ local timeline = require("compat.game20.timeline")
 local public = {
     running = false,
     first_play = true,
+    tickrate = 120,
 }
 local game = {
     status = require("compat.game20.status"),
@@ -161,7 +162,6 @@ end
 
 ---update the game
 ---@param frametime number
----@return number
 function public.update(frametime)
     game.real_time = game.real_time + frametime
     frametime = frametime * 60
@@ -297,8 +297,6 @@ function public.update(frametime)
         end
         game.current_rotation = (game.current_rotation + next_rotation * frametime) % 360
     end
-    -- the game runs on a tickrate of 120 ticks per second
-    return 1 / 120
 end
 
 ---draw the game to the current canvas
@@ -420,7 +418,7 @@ end
 ---@param stop_condition function
 function public.run_game_until_death(stop_condition)
     while not game.status.has_died do
-        public.update(1 / 120)
+        public.update(1 / public.tickrate)
         if stop_condition and stop_condition() then
             return
         end

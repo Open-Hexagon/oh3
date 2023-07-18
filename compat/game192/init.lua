@@ -9,6 +9,7 @@ local uv = require("luv")
 local public = {
     running = false,
     first_play = true,
+    tickrate = 960,
 }
 local game = {
     style = require("compat.game192.style"),
@@ -119,6 +120,7 @@ function game.get_main_color(black_and_white)
 end
 
 function public.start(pack_folder, level_id, level_options)
+    public.tickrate = 960
     local difficulty_mult = level_options.difficulty_mult
     if not difficulty_mult or type(difficulty_mult) ~= "number" then
         error("Must specify a numeric difficulty mult when running a compat game")
@@ -407,7 +409,7 @@ function public.update(frametime)
         target_frametime = 0.25
     end
     game.current_frametime = target_frametime
-    return target_frametime / 60
+    public.tickrate = 60 / target_frametime
 end
 
 function public.draw(screen)
@@ -534,9 +536,8 @@ end
 ---runs the game until the player dies without caring about real time
 ---@param stop_condition function?
 function public.run_game_until_death(stop_condition)
-    local frametime = game.current_frametime / 60
     while not game.status.has_died do
-        frametime = public.update(frametime) or frametime
+        public.update(1 / public.tickrate)
         if stop_condition and stop_condition() then
             return
         end

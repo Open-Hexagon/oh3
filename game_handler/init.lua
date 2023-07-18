@@ -13,7 +13,6 @@ local current_game_version
 local first_play = true
 local real_start_time
 local start_time
-local target_frametime = 1 / 240
 -- enforce aspect ratio by rendering to canvas
 local aspect_ratio = 16 / 9
 local scale = { 1, 1 }
@@ -87,8 +86,7 @@ function game_handler.record_start(pack, level, level_settings)
     current_game.start(pack, level, level_settings)
     start_time = love.timer.getTime()
     real_start_time = start_time
-    target_frametime = 1 / 240
-    target_frametime = current_game.update(target_frametime) or target_frametime
+    current_game.update(1 / current_game.tickrate)
 end
 
 ---read a replay file and run the game with its inputs and seeds
@@ -125,8 +123,7 @@ function game_handler.replay_start(file_or_replay_obj)
         start_time = love.timer.getTime()
         real_start_time = start_time
     end
-    target_frametime = 1 / 240
-    target_frametime = current_game.update(target_frametime) or target_frametime
+    current_game.update(1 / current_game.tickrate)
 end
 
 ---stops the game (it will not be updated or rendered anymore)
@@ -178,17 +175,17 @@ function game_handler.update(ensure_tickrate)
         if ensure_tickrate then
             -- update as much as required depending on passed time
             local current_time = love.timer.getTime()
-            while current_time - start_time >= target_frametime do
-                start_time = start_time + target_frametime
+            while current_time - start_time >= 1 / current_game.tickrate do
+                start_time = start_time + 1 / current_game.tickrate
                 -- allow games to control tick rate dynamically
-                target_frametime = current_game.update(target_frametime) or target_frametime
+                current_game.update(1 / current_game.tickrate)
                 -- reset timings after longer blocking call
                 if current_game.reset_timings then
                     start_time = love.timer.getTime()
                 end
             end
         else
-            target_frametime = current_game.update(target_frametime) or target_frametime
+            current_game.update(1 / current_game.tickrate)
         end
     end
 end
@@ -251,7 +248,7 @@ end
 ---get the current tickrate (this is constant for all game versions except 1.92)
 ---@return number
 function game_handler.get_tickrate()
-    return 1 / target_frametime
+    return current_game.tickrate
 end
 
 ---run the game until the player dies without drawing it and without matching real time
