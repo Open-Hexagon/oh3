@@ -27,7 +27,7 @@ local game = {
 local main_quads
 local must_change_sides = false
 local last_move, input_both_cw_ccw = 0, false
-local death_sound, game_over_sound, level_up_sound
+local death_sound, game_over_sound, level_up_sound, go_sound
 local depth = 0
 local layer_shader, message_font
 local instance_offsets = {}
@@ -47,7 +47,26 @@ function public.start(pack_id, level_id, level_options)
     game.level_status.reset()
     game.style.set(game.pack.styles[game.level.styleId])
     public.running = true
-    -- TODO: init audio
+    local segment
+    if not args.headless and game.music and game.music.source then
+        game.music.source:stop()
+    end
+    game.music = game.pack.music[game.level.musicId]
+    if not public.first_play then
+        segment = math.random(1, #game.music.segments)
+    end
+    if not args.headless then
+        go_sound:play()
+        if game.music and game.music.source then
+            if public.first_play then
+                game.music.source:seek(math.floor(game.music.segments[1].time))
+            else
+                game.music.source:seek(math.floor(game.music.segments[segment].time))
+            end
+            game.music.source:set_pitch(game.config.get("sync_music_to_dm") and math.pow(game.difficulty_mult, 0.12) or 1)
+            game.music.source:play()
+        end
+    end
 
     -- virtual filesystem init
     game.vfs.clear()
@@ -116,7 +135,9 @@ function game.death(force)
     game.status.flash_effect = 255
     -- TODO: camera shake
     game.status.has_died = true
-    -- TODO: stop music
+    if not args.headless and game.music and game.music.source then
+        game.music.source:stop()
+    end
 end
 
 function game.set_sides(sides)
@@ -403,7 +424,9 @@ end
 ---stop the game
 function public.stop()
     public.running = false
-    -- TODO: stop audio
+    if not args.headless and game.music and game.music.source then
+        game.music.source:stop()
+    end
 end
 
 ---updates the persistent data
@@ -435,6 +458,7 @@ function public.init(pack_level_data, input_handler, config, persistent_data, au
         death_sound = assets.get_sound("death.ogg")
         game_over_sound = assets.get_sound("game_over.ogg")
         level_up_sound = assets.get_sound("level_up.ogg")
+        go_sound = assets.get_sound("go.ogg")
         main_quads = dynamic_quads:new()
         message_font = love.graphics.newFont("assets/font/imagine.ttf", 38)
         layer_shader = love.graphics.newShader(
