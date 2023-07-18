@@ -295,7 +295,7 @@ function public.update(frametime)
                     * (next_rotation > 0 and 1 or -1)
             game.status.fast_spin = game.status.fast_spin - frametime
         end
-        game.current_rotation = (game.current_rotation + next_rotation) % 360
+        game.current_rotation = (game.current_rotation + next_rotation * frametime) % 360
     end
     -- the game runs on a tickrate of 120 ticks per second
     return 1 / 120
