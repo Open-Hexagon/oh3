@@ -211,7 +211,7 @@ function public.update(frametime)
         end
         local music_dm_sync_factor = game.config.get("sync_music_to_dm") and math.pow(game.difficulty_mult, 0.12) or 1
         if game.config.get("beatpulse") then
-            if game.status.beatpulse <= 0 then
+            if game.status.beatpulse_delay <= 0 then
                 game.status.beatpulse = game.level_status.beat_pulse_max
                 game.status.beatpulse_delay = game.level_status.beat_pulse_delay_max
             else
@@ -220,9 +220,9 @@ function public.update(frametime)
             if game.status.beatpulse > 0 then
                 game.status.beatpulse = game.status.beatpulse - 2 * frametime * music_dm_sync_factor
             end
+            local radius_min = game.config.get("beatpulse") and game.level_status.radius_min or 75
+            game.status.radius = radius_min * (game.status.pulse / game.level_status.pulse_min) + game.status.beatpulse
         end
-        local radius_min = game.config.get("beatpulse") and game.level_status.radius_min or 75
-        game.status.radius = radius_min * (game.status.pulse / game.level_status.pulse_min) + game.status.beatpulse
         if game.config.get("pulse") then
             if game.status.pulse_delay <= 0 and game.status.pulse_delay_half <= 0 then
                 local pulse_add = game.status.pulse_direction > 0 and game.level_status.pulse_speed
