@@ -112,6 +112,7 @@ function assets.get_pack(folder_name)
         return pack_data
     end
     local folder = pack_data.path
+    log("Loading '" .. pack_data.name .. "' assets")
     pack_data.music = {}
     for contents, filename in file_ext_read_iter(folder .. "Music", ".json", pack_data.virtual_pack_folder.Music) do
         local success, music_json = decode_json(contents, filename)

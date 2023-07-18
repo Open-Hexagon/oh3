@@ -165,6 +165,7 @@ end
 function public.update(frametime)
     game.real_time = game.real_time + frametime
     frametime = frametime * 60
+    game.input.update()
     local focus = game.input.get(game.config.get("key_focus"))
     local swap = game.input.get(game.config.get("key_swap"))
     local cw = game.input.get(game.config.get("key_right"))
