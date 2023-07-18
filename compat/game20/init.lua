@@ -23,9 +23,11 @@ local game = {
     main_timeline = timeline:new(),
     event_timeline = timeline:new(),
     message_timeline = timeline:new(),
+    effect_timeline = timeline:new(),
     message_text = "",
     beep_sound = nil,
 }
+local shake_move = { 0, 0 }
 local main_quads
 local must_change_sides = false
 local last_move, input_both_cw_ccw = 0, false
@@ -95,6 +97,8 @@ function public.start(pack_id, level_id, level_options)
     game.player.reset(game, assets)
     game.main_timeline:clear()
     game.main_timeline:reset()
+    game.effect_timeline:clear()
+    game.effect_timeline:reset()
     must_change_sides = false
     game.status.reset()
     game.real_time = 0
@@ -137,7 +141,21 @@ function game.death(force)
     end
     playsound(game_over_sound)
     game.status.flash_effect = 255
-    -- TODO: camera shake
+    -- camera shake
+    local s = 7
+    for i = s, 0, -1 do
+        local j = s - i + 1
+        for _ = 1, j * 3 do
+            game.effect_timeline:append_do(function()
+                shake_move[1] = (1 - math.random() * 2) * i
+                shake_move[2] = (1 - math.random() * 2) * i
+            end)
+            game.effect_timeline:append_wait(1)
+        end
+    end
+    game.effect_timeline:append_do(function()
+        shake_move[1], shake_move[2] = 0, 0
+    end)
     game.status.has_died = true
     if not args.headless and game.music and game.music.source then
         game.music.source:stop()
@@ -277,6 +295,11 @@ function public.update(frametime)
             game.style.update(frametime, math.pow(game.difficulty_mult, 0.8))
         end
     else
+        game.effect_timeline:update(frametime)
+        if game.effect_timeline.finished then
+            game.effect_timeline:clear()
+            game.effect_timeline:reset()
+        end
         game.level_status.rotation_speed = game.level_status.rotation_speed * 0.99
     end
     if game.config.get("3D_enabled") then
@@ -308,6 +331,7 @@ function public.draw(screen)
     -- apply pulse as well
     local p = game.status.pulse / game.level_status.pulse_min
     love.graphics.scale(zoom_factor / p, zoom_factor / p)
+    love.graphics.translate(unpack(shake_move))
     local effect
     if game.config.get("3D_enabled") then
         effect = game.style._3D_skew * game.status.pulse_3D * game.config.get("3D_multiplier")
