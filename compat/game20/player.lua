@@ -105,7 +105,7 @@ function player.draw(main_quads)
     local p_right_x, p_right_y = extra_math.get_orbit(pos, angle + rad100, distance)
     local p_top_x, p_top_y = extra_math.get_orbit(pos, angle, size)
     if not swap_timer.running then
-        utils.get_color_from_hue(swap_timer.current * 15 / 255, color_main)
+        utils.get_color_from_hue(swap_blink_timer.current * 15 / 255, color_main)
     end
     main_quads:add_quad(p_top_x, p_top_y, p_top_x, p_top_y, p_left_x, p_left_y, p_right_x, p_right_y, unpack(color_main))
 end
