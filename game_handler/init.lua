@@ -254,7 +254,13 @@ end
 ---run the game until the player dies without drawing it and without matching real time
 ---@param stop_condition function?
 function game_handler.run_until_death(stop_condition)
-    current_game.run_game_until_death(stop_condition)
+    while not current_game.is_dead() do
+        current_game.update(1 / current_game.tickrate)
+        if stop_condition and stop_condition() then
+            return
+        end
+    end
+    current_game.stop()
 end
 
 ---gets the current replay (nil if there is none)

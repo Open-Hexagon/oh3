@@ -32,9 +32,9 @@ end
 function public.get_timed_score()
 end
 
----runs the game until the player dies without caring about real time
----@param stop_condition function
-function public.run_game_until_death(stop_condition)
+---returns true if the player has died
+---@return boolean
+function public.is_dead()
 end
 
 ---stop the game

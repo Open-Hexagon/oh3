@@ -414,16 +414,10 @@ function public.get_timed_score()
     return game.real_time
 end
 
----runs the game until the player dies without caring about real time
----@param stop_condition function
-function public.run_game_until_death(stop_condition)
-    while not game.status.has_died do
-        public.update(1 / public.tickrate)
-        if stop_condition and stop_condition() then
-            return
-        end
-    end
-    public.stop()
+---returns true if the player has died
+---@return boolean
+function public.is_dead()
+    return game.status.has_died
 end
 
 ---stop the game
