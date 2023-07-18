@@ -196,7 +196,7 @@ function lua_runtime.init_env(game, public, assets)
         return game.status.fast_spin > 0
     end
     env.u_forceIncrement = function()
-        -- TODO
+        game.increment_difficulty()
     end
     env.u_kill = function()
         game.main_timeline:append_do(function()

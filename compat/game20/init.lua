@@ -27,7 +27,7 @@ local game = {
 local main_quads
 local must_change_sides = false
 local last_move, input_both_cw_ccw = 0, false
-local death_sound, game_over_sound
+local death_sound, game_over_sound, level_up_sound
 local depth = 0
 local layer_shader, message_font
 local instance_offsets = {}
@@ -86,6 +86,17 @@ function public.start(pack_id, level_id, level_options)
     game.current_rotation = 0
     game.style._3D_depth = math.min(game.style._3D_depth, game.config.get("3D_max_depth"))
     depth = game.style._3D_depth
+end
+
+function game.increment_difficulty()
+    playsound(level_up_sound)
+    game.level_status.rotation_speed = game.level_status.rotation_speed + game.level_status.rotation_speed_inc * (game.level_status.rotation_speed > 0 and 1 or -1)
+    game.level_status.rotation_speed = -game.level_status.rotation_speed
+    local rotation_speed_max = game.level_status.rotation_speed_max
+    if game.status.fast_spin < 0 and math.abs(game.level_status.rotation_speed) > rotation_speed_max then
+        game.level_status.rotation_speed = rotation_speed_max * (game.level_status.rotation_speed > 0 and 1 or -1)
+    end
+    game.status.fast_spin = game.level_status.fast_spin
 end
 
 function game.get_speed_mult_dm()
@@ -176,11 +187,18 @@ function public.update(frametime)
         end
         if game.level_status.inc_enabled and game.status.increment_time >= game.level_status.inc_time then
             game.status.increment_time = 0
-            -- TODO: increment difficulty
+            game.increment_difficulty()
             must_change_sides = true
         end
         if must_change_sides and #game.walls.entities == 0 then
-            -- TODO: side change
+            local sides = math.random(game.level_status.sides_min, game.level_status.sides_max)
+            lua_runtime.run_fn_if_exists("onIncrement")
+            game.level_status.speed_mult = game.level_status.speed_mult + game.level_status.speed_inc
+            game.level_status.delay_mult = game.level_status.delay_mult + game.level_status.delay_inc
+            if game.level_status.rnd_side_changes_enabled then
+                game.set_sides(sides)
+            end
+            must_change_sides = false
         end
         if game.status.time_stop <= 0 then
             lua_runtime.run_fn_if_exists("onUpdate", frametime)
@@ -416,6 +434,7 @@ function public.init(pack_level_data, input_handler, config, persistent_data, au
         game.beep_sound = assets.get_sound("click.ogg")
         death_sound = assets.get_sound("death.ogg")
         game_over_sound = assets.get_sound("game_over.ogg")
+        level_up_sound = assets.get_sound("level_up.ogg")
         main_quads = dynamic_quads:new()
         message_font = love.graphics.newFont("assets/font/imagine.ttf", 38)
         layer_shader = love.graphics.newShader(
