@@ -1,4 +1,5 @@
 local args = require("args")
+local uv = require("luv")
 local playsound = require("compat.game21.playsound")
 local assets = require("compat.game20.assets")
 local make_fake_config = require("compat.game20.fake_config")
@@ -42,6 +43,8 @@ function public.start(pack_id, level_id, level_options)
     if not game.difficulty_mult then
         error("Cannot start compat game without difficulty mult")
     end
+    local seed = math.floor(uv.hrtime())
+    math.randomseed(game.input.next_seed(seed))
     game.pack = assets.get_pack(pack_id)
     game.level.set(game.pack.levels[level_id])
     game.level_status.reset()
@@ -137,6 +140,9 @@ function game.death(force)
     game.status.has_died = true
     if not args.headless and game.music and game.music.source then
         game.music.source:stop()
+    end
+    if public.death_callback then
+        public.death_callback()
     end
 end
 
