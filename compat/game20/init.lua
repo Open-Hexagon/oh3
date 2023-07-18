@@ -17,6 +17,7 @@ local game = {
     vfs = require("compat.game192.virtual_filesystem"),
     style = require("compat.game20.style"),
     player = require("compat.game20.player"),
+    walls = require("compat.game20.walls"),
     main_timeline = timeline:new(),
     event_timeline = timeline:new(),
     message_timeline = timeline:new(),
@@ -67,7 +68,7 @@ function public.start(pack_id, level_id, level_options)
     game.event_timeline:reset()
     game.message_timeline:clear()
     game.message_timeline:reset()
-    -- TODO: init walls
+    game.walls.init(game)
     game.player.reset(game, assets)
     game.main_timeline:clear()
     game.main_timeline:reset()
@@ -85,6 +86,14 @@ function public.start(pack_id, level_id, level_options)
     game.current_rotation = 0
     game.style._3D_depth = math.min(game.style._3D_depth, game.config.get("3D_max_depth"))
     depth = game.style._3D_depth
+end
+
+function game.get_speed_mult_dm()
+    return game.level_status.speed_mult * math.pow(game.difficulty_mult, 0.65)
+end
+
+function game.get_delay_mult_dm()
+    return game.level_status.delay_mult / math.pow(game.difficulty_mult, 0.10)
 end
 
 function game.death(force)
@@ -147,7 +156,7 @@ function public.update(frametime)
         game.status.flash_effect = 0
     end
     if not game.status.has_died then
-        -- TODO: walls
+        game.walls.update(frametime)
         game.player.update(frametime, move, focus, swap)
         game.event_timeline:update(frametime)
         if game.event_timeline.finished then
@@ -170,12 +179,12 @@ function public.update(frametime)
             -- TODO: increment difficulty
             must_change_sides = true
         end
-        -- TODO: check for no walls
-        if must_change_sides and false then
+        if must_change_sides and #game.walls.entities == 0 then
             -- TODO: side change
         end
         if game.status.time_stop <= 0 then
             lua_runtime.run_fn_if_exists("onUpdate", frametime)
+            game.main_timeline:update(frametime)
             if game.main_timeline.finished and not must_change_sides then
                 game.main_timeline:clear()
                 lua_runtime.run_fn_if_exists("onStep")
@@ -267,7 +276,7 @@ function public.draw(screen)
         game.style.draw_background(game.level_status.sides, black_and_white)
     end
     main_quads:clear()
-    -- TODO: draw walls
+    game.walls.draw(main_quads)
     game.player.draw(main_quads)
     if game.config.get("3D_enabled") then
         local per_layer_offset = game.style._3D_spacing
