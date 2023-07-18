@@ -69,6 +69,10 @@ local function draw_pivot(main_quads)
     while #cap_vertices > cap_vertex_count do
         cap_vertices[#cap_vertices] = nil
     end
+    -- can't have polygon with less than 3 vertices, so just put some extra at 0 0 so the game doesn't crash
+    while #cap_vertices < 6 do
+        cap_vertices[#cap_vertices + 1] = 0
+    end
 end
 
 local function draw_death_effect()

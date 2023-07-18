@@ -1,4 +1,5 @@
 local log = require("log")(...)
+local args = require("args")
 local playsound = require("compat.game21.playsound")
 local utils = require("compat.game192.utils")
 local speed_data = require("compat.game20.speed_data")
@@ -181,8 +182,18 @@ function lua_runtime.init_env(game, public, assets)
     env.u_execScript = function(script)
         lua_runtime.run_lua_file(game.pack.path .. "Scripts/" .. script)
     end
+    local sound_mapping = {
+        ["beep.ogg"] = "click.ogg",
+    }
     env.u_playSound = function(name)
-        -- TODO
+        -- TODO: are sound ids prefixed with the pack id for pack sounds?
+        if not args.headless then
+            local sound = assets.get_sound(sound_mapping[name] or name)
+            if sound then
+                sound:seek(0)
+                sound:play()
+            end
+        end
     end
     env.u_isKeyPressed = function(key_code)
         local key = keycode_conversion[key_code]
@@ -443,11 +454,13 @@ function lua_runtime.run_lua_file(path)
     if env == nil then
         error("attempted to load a lua file without initializing the environment")
     else
+        path = utils.get_real_path(path)
         if file_cache[path] == nil then
             local error_msg
             file_cache[path], error_msg = love.filesystem.load(path)
             if file_cache[path] == nil then
-                error("Failed to load '" .. path .. "': " .. error_msg)
+                lua_runtime.error("Failed to load '" .. path .. "': " .. error_msg)
+                return
             end
         end
         local lua_file = file_cache[path]

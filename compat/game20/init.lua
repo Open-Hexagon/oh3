@@ -317,7 +317,7 @@ function public.draw(screen)
     main_quads:clear()
     game.walls.draw(main_quads)
     game.player.draw(main_quads)
-    if game.config.get("3D_enabled") then
+    if game.config.get("3D_enabled") and depth > 0 then
         local per_layer_offset = game.style._3D_spacing
             * game.style._3D_perspective_mult
             * effect

@@ -150,6 +150,9 @@ end
 
 function assets.get_sound(filename)
     if not cached_sounds[filename] then
+        if not love.filesystem.getInfo(sound_path .. filename) then
+            return
+        end
         cached_sounds[filename] = audio_module.new_static(sound_path .. filename)
     end
     return cached_sounds[filename]
