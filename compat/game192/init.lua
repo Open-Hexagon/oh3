@@ -386,7 +386,7 @@ function public.update(frametime)
     -- only for level change, real restarts will happen externally
     if game.status.must_restart then
         public.first_play = game.restart_first_time
-        public.start(game.pack.folder, game.restart_id, game.difficulty_mult)
+        public.start(game.pack.folder, game.restart_id, { difficulty_mult = game.difficulty_mult })
     end
     -- TODO: invalidate score if not official status invalid set or fps limit maybe?
 

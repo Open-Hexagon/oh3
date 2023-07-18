@@ -137,7 +137,6 @@ function player.update(frametime, movement, focus, swap)
     if game.level_status.swap_enabled and swap_timer:update(frametime) then
         swap_timer:stop()
     end
-    last_pos[1], last_pos[2] = pos[1], pos[2]
     local current_speed = speed
     local last_angle = angle
     local radius = game.status.radius
@@ -150,11 +149,11 @@ function player.update(frametime, movement, focus, swap)
         swap_timer:restart()
         angle = angle + math.pi
     end
+    extra_math.get_orbit(start_pos, angle, radius, pos)
+    extra_math.get_orbit(start_pos, last_angle, radius, last_pos)
     for i = 1, #game.walls.entities do
         if extra_math.point_in_polygon(game.walls.entities[i].vertices, unpack(pos)) then
-            if movement ~= 0 then
-                angle = last_angle
-            else
+            if extra_math.point_in_polygon(game.walls.entities[i].vertices, unpack(last_pos)) then
                 dead_effect_timer:restart()
                 if not game.config.get("invincible") then
                     dead = true
@@ -162,10 +161,12 @@ function player.update(frametime, movement, focus, swap)
                 extra_math.get_orbit(last_pos, angle, -5 * game.get_speed_mult_dm(), pos)
                 game.death()
                 return
+            else
+                angle = last_angle
+                pos[1], pos[2] = last_pos[1], last_pos[2]
             end
         end
     end
-    extra_math.get_orbit(start_pos, angle, radius, pos)
 end
 
 return player
