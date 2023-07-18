@@ -71,12 +71,13 @@ local function draw_pivot(main_quads)
     end
 end
 
-local function draw_death_effect(main_quads)
+local function draw_death_effect()
     local sides = game.level_status.sides
     local div = math.pi / sides
     local radius = hue / 8
     local thickness = hue / 20
     utils.get_color_from_hue((360 - hue) / 255, color_main)
+    set_color(unpack(color_main))
     hue = hue + 1
     if hue > 360 then
         hue = 0
@@ -87,15 +88,12 @@ local function draw_death_effect(main_quads)
         local p2_x, p2_y = extra_math.get_orbit(pos, s_angle + div, radius)
         local p3_x, p3_y = extra_math.get_orbit(pos, s_angle + div, radius + thickness)
         local p4_x, p4_y = extra_math.get_orbit(pos, s_angle - div, radius + thickness)
-        main_quads:add_quad(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y, unpack(color_main))
+        love.graphics.polygon("fill", p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y)
     end
 end
 
 function player.draw(main_quads)
     draw_pivot(main_quads)
-    if dead_effect_timer.running then
-        draw_death_effect()
-    end
     if dead then
         utils.get_color_from_hue(hue / 255, color_main)
     else
@@ -113,6 +111,10 @@ function player.draw(main_quads)
 end
 
 function player.draw_cap()
+    -- draw death effect here to be on top of everything else apart from cap
+    if dead_effect_timer.running then
+        draw_death_effect()
+    end
     local r, g, b, a = game.style.get_color(2)
     if black_and_white then
         r, g, b, a = 0, 0, 0, 255
@@ -144,7 +146,21 @@ function player.update(frametime, movement, focus, swap)
         swap_timer:restart()
         angle = angle + math.pi
     end
-    -- TODO: collisions
+    for i = 1, #game.walls.entities do
+        if extra_math.point_in_polygon(game.walls.entities[i].vertices, unpack(pos)) then
+            if movement ~= 0 then
+                angle = last_angle
+            else
+                dead_effect_timer:restart()
+                if not game.config.get("invincible") then
+                    dead = true
+                end
+                extra_math.get_orbit(last_pos, angle, -5 * game.get_speed_mult_dm(), pos)
+                game.death()
+                return
+            end
+        end
+    end
     extra_math.get_orbit(start_pos, angle, radius, pos)
 end
 
