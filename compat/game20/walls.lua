@@ -12,6 +12,7 @@ wall.__index = wall
 
 function wall:new(hmod, side, thickness, speed, curve)
     side = utils.round_to_even(side or 0)
+    thickness = thickness or 0
     local div = math.pi / level_status.sides
     local angle = div * 2 * side
     local verts = {}
