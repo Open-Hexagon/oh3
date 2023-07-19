@@ -422,17 +422,38 @@ function lua_runtime.init_env(game, public, assets)
     env.w_wallAcc = function(side, thickness, speed_adj, acceleration, min_speed, max_speed)
         game.main_timeline:append_do(function()
             local speed_mult_dm = game.get_speed_mult_dm()
-            game.walls.create(0, side, thickness, speed_data:new(speed_adj * speed_mult_dm, acceleration, min_speed * speed_mult_dm, max_speed * speed_mult_dm))
+            game.walls.create(
+                0,
+                side,
+                thickness,
+                speed_data:new(
+                    speed_adj * speed_mult_dm,
+                    acceleration,
+                    min_speed * speed_mult_dm,
+                    max_speed * speed_mult_dm
+                )
+            )
         end)
     end
     env.w_wallHModSpeedData = function(hmod, side, thickness, sadj, sacc, smin, smax, sping_pong)
         game.main_timeline:append_do(function()
-            game.walls.create(hmod, side, thickness, speed_data:new(sadj * game.get_speed_mult_dm(), sacc, smin, smax, sping_pong))
+            game.walls.create(
+                hmod,
+                side,
+                thickness,
+                speed_data:new(sadj * game.get_speed_mult_dm(), sacc, smin, smax, sping_pong)
+            )
         end)
     end
     env.w_wallHModCurveData = function(hmod, side, thickness, cadj, cacc, cmin, cmax, cping_pong)
         game.main_timeline:append_do(function()
-            game.walls.create(hmod, side, thickness, speed_data:new(game.get_speed_mult_dm()), speed_data:new(cadj, cacc, cmin, cmax, cping_pong))
+            game.walls.create(
+                hmod,
+                side,
+                thickness,
+                speed_data:new(game.get_speed_mult_dm()),
+                speed_data:new(cadj, cacc, cmin, cmax, cping_pong)
+            )
         end)
     end
     log("initialized environment")

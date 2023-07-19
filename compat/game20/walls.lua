@@ -18,8 +18,16 @@ function wall:new(hmod, side, thickness, speed, curve)
     local verts = {}
     verts[1], verts[2] = extra_math.get_orbit(CENTER, angle - div, SPAWN_DISTANCE)
     verts[3], verts[4] = extra_math.get_orbit(CENTER, angle + div, SPAWN_DISTANCE)
-    verts[5], verts[6] = extra_math.get_orbit(CENTER, angle + div + level_status.wall_angle_left, SPAWN_DISTANCE + thickness + level_status.wall_skew_left)
-    verts[7], verts[8] = extra_math.get_orbit(CENTER, angle - div + level_status.wall_angle_right, SPAWN_DISTANCE + thickness + level_status.wall_skew_right)
+    verts[5], verts[6] = extra_math.get_orbit(
+        CENTER,
+        angle + div + level_status.wall_angle_left,
+        SPAWN_DISTANCE + thickness + level_status.wall_skew_left
+    )
+    verts[7], verts[8] = extra_math.get_orbit(
+        CENTER,
+        angle - div + level_status.wall_angle_right,
+        SPAWN_DISTANCE + thickness + level_status.wall_skew_right
+    )
     return setmetatable({
         speed = speed,
         curve = curve or speed_data:new(),
@@ -42,7 +50,10 @@ function wall:draw(quads, r, g, b, a)
         self.vertices[6],
         self.vertices[7],
         self.vertices[8],
-        r, g, b, a
+        r,
+        g,
+        b,
+        a
     )
 end
 
@@ -72,7 +83,7 @@ function wall:update(frametime)
 end
 
 local walls = {
-    entities = {}
+    entities = {},
 }
 
 function walls.init(game)

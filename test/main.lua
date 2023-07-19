@@ -13,11 +13,13 @@ for i = 1, #search_names do
     end
 end
 assert(found, "could not find liblove")
+package.preload.luv = package.loadlib("lib/luv.so", "luaopen_luv")
+    or package.loadlib("lib/luv.dll", "luaopen_luv")
+    or package.loadlib("lib/luv.dylib", "luaopen_luv")
 require("love")
 require("love.filesystem")
 love.filesystem.init("ohtest")
 love.filesystem.setIdentity("ohtest")
-love.filesystem.setCRequirePath(love.filesystem.getCRequirePath() .. ";lib/??")
 require("love.arg")
 require("love.timer")
 require("love.keyboard")

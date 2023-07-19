@@ -69,7 +69,9 @@ function public.start(pack_id, level_id, level_options)
             else
                 game.music.source:seek(math.floor(game.music.segments[segment].time))
             end
-            game.music.source:set_pitch(game.config.get("sync_music_to_dm") and math.pow(game.difficulty_mult, 0.12) or 1)
+            game.music.source:set_pitch(
+                game.config.get("sync_music_to_dm") and math.pow(game.difficulty_mult, 0.12) or 1
+            )
             game.music.source:play()
         end
     end
@@ -117,7 +119,8 @@ end
 
 function game.increment_difficulty()
     playsound(level_up_sound)
-    game.level_status.rotation_speed = game.level_status.rotation_speed + game.level_status.rotation_speed_inc * (game.level_status.rotation_speed > 0 and 1 or -1)
+    game.level_status.rotation_speed = game.level_status.rotation_speed
+        + game.level_status.rotation_speed_inc * (game.level_status.rotation_speed > 0 and 1 or -1)
     game.level_status.rotation_speed = -game.level_status.rotation_speed
     local rotation_speed_max = game.level_status.rotation_speed_max
     if game.status.fast_spin < 0 and math.abs(game.level_status.rotation_speed) > rotation_speed_max then
@@ -298,7 +301,8 @@ function public.update(frametime)
         game.level_status.rotation_speed = game.level_status.rotation_speed * 0.99
     end
     if game.config.get("3D_enabled") then
-        game.status.pulse_3D = game.status.pulse_3D + game.style._3D_pulse_speed * game.status.pulse_3D_direction * frametime
+        game.status.pulse_3D = game.status.pulse_3D
+            + game.style._3D_pulse_speed * game.status.pulse_3D_direction * frametime
         if game.status.pulse_3D > game.style._3D_pulse_max then
             game.status.pulse_3D_direction = -1
         elseif game.status.pulse_3D < game.style._3D_pulse_min then
@@ -342,10 +346,7 @@ function public.draw(screen)
     game.walls.draw(main_quads)
     game.player.draw(main_quads)
     if game.config.get("3D_enabled") and depth > 0 then
-        local per_layer_offset = game.style._3D_spacing
-            * game.style._3D_perspective_mult
-            * effect
-            * 3.6
+        local per_layer_offset = game.style._3D_spacing * game.style._3D_perspective_mult * effect * 3.6
         local rad_rot = math.rad(game.current_rotation)
         local sin_rot = math.sin(rad_rot)
         local cos_rot = math.cos(rad_rot)
