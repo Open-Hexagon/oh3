@@ -110,12 +110,17 @@ function game_handler.replay_start(file_or_replay_obj)
     first_play = replay.first_play
     current_game.first_play = first_play
     dead = false
+    local old_config_values = {}
+    local current_values = game_config.get_all()
+    for name, value in pairs(replay.data.config) do
+        old_config_values[name] = current_values[name]
+        game_config.set(name, value)
+    end
     current_game.death_callback = function()
         dead = true
-    end
-    -- TODO: save and restore config later
-    for name, value in pairs(replay.data.config) do
-        game_config.set(name, value)
+        for name, value in pairs(old_config_values) do
+            game_config.set(name, value)
+        end
     end
     input.replay_start()
     current_game.start(replay.pack_id, replay.level_id, replay.data.level_settings)
