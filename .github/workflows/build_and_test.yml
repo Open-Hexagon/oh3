@@ -22,8 +22,8 @@ jobs:
         sudo add-apt-repository ppa:bartbes/love-stable
         sudo apt update
         sudo apt install luajit love lua-busted
-   #     vcpkg install ffmpeg --triplet x64-linux-dynamic
-      #run: sudo apt install libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libavutil-dev
+#vcpkg install ffmpeg --triplet x64-linux-dynamic
+#run: sudo apt install libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libavutil-dev
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DVIDEO_EXPORT=0
@@ -33,6 +33,9 @@ jobs:
       
     - name: Install
       run: cmake --install ${{github.workspace}}/build
+
+    - name: List lib files
+      run: ls lib
 
     - name: Test
       working-directory: ${{github.workspace}}
