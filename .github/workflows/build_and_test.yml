@@ -37,6 +37,7 @@ jobs:
 
     - name: Install Pack
       run: |
+        mkdir ~/.local/share/love
         mkdir ~/.local/share/love/ohtest
         mkdir ~/.local/share/love/ohtest/packs192
         wget https://tech-cmp.lambdacraft.dev:8000/VeeDefault/download192 -O VeeDefault.zip
