@@ -16,9 +16,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
-   # - name: Install Dependencies
-   #   run: |
-   #     sudo apt install nasm
+    - name: Install Dependencies
+      run: |
+        sudo apt install luajit
    #     vcpkg install ffmpeg --triplet x64-linux-dynamic
       #run: sudo apt install libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libavutil-dev
 
@@ -27,6 +27,9 @@ jobs:
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      
+    - name: Install
+      run: cmake --install ${{github.workspace}}/build
 
     - name: Test
       working-directory: ${{github.workspace}}
