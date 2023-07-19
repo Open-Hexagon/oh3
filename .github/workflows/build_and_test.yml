@@ -19,7 +19,7 @@ jobs:
     
     - name: Install Dependencies
       run: |
-        sudo apt install luajit
+        sudo apt install luajit love
    #     vcpkg install ffmpeg --triplet x64-linux-dynamic
       #run: sudo apt install libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libavutil-dev
 
