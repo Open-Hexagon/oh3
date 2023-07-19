@@ -16,14 +16,14 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
-    - name: Install Dependencies
-      run: |
-        sudo apt install nasm
-        vcpkg install ffmpeg --triplet x64-linux-dynamic
+   # - name: Install Dependencies
+   #   run: |
+   #     sudo apt install nasm
+   #     vcpkg install ffmpeg --triplet x64-linux-dynamic
       #run: sudo apt install libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libavutil-dev
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DVIDEO_EXPORT=0
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
