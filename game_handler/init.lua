@@ -17,7 +17,6 @@ local start_time
 local aspect_ratio = 16 / 9
 local scale = { 1, 1 }
 local screen
-local dead = false
 if not args.headless then
     -- correct aspect ratio initially (before the user resizes the window)
     love.event.push("resize", love.graphics.getDimensions())
@@ -55,7 +54,6 @@ end
 ---@param level string
 ---@param level_settings table
 function game_handler.record_start(pack, level, level_settings)
-    dead = false
     current_game.death_callback = function()
         if current_game.update_save_data ~= nil then
             current_game.update_save_data()
@@ -64,7 +62,6 @@ function game_handler.record_start(pack, level, level_settings)
             input.replay.data.persistent_data = current_game.persistent_data
             game_handler.profile.store_data(pack, current_game.persistent_data)
         end
-        dead = true
         game_handler.save_score()
     end
     current_game.persistent_data = game_handler.profile.get_data(pack)
@@ -109,7 +106,6 @@ function game_handler.replay_start(file_or_replay_obj)
     input.replay = replay
     first_play = replay.first_play
     current_game.first_play = first_play
-    dead = false
     local old_config_values = {}
     local current_values = game_config.get_all()
     for name, value in pairs(replay.data.config) do
@@ -117,7 +113,6 @@ function game_handler.replay_start(file_or_replay_obj)
         game_config.set(name, value)
     end
     current_game.death_callback = function()
-        dead = true
         for name, value in pairs(old_config_values) do
             game_config.set(name, value)
         end
@@ -283,7 +278,7 @@ end
 ---gets if the player is dead
 ---@return boolean
 function game_handler.is_dead()
-    return dead
+    return current_game.is_dead()
 end
 
 return game_handler
