@@ -30,7 +30,7 @@ local game = {
 local shake_move = { 0, 0 }
 local main_quads
 local must_change_sides = false
-local last_move, input_both_cw_ccw = 0, false
+local last_move, move = 0, 0
 local death_sound, game_over_sound, level_up_sound, go_sound
 local depth = 0
 local layer_shader, message_font
@@ -188,22 +188,17 @@ function public.update(frametime)
     local swap = game.input.get(game.config.get("key_swap"))
     local cw = game.input.get(game.config.get("key_right"))
     local ccw = game.input.get(game.config.get("key_left"))
-    local move = 0
     if cw and not ccw then
         move = 1
+        last_move = 1
     elseif not cw and ccw then
         move = -1
+        last_move = -1
     elseif cw and ccw then
-        if not input_both_cw_ccw then
-            if move == 1 and last_move == 1 then
-                move = -1
-            elseif move == -1 and last_move == -1 then
-                move = 1
-            end
-        end
+        move = -last_move
+    else
+        move = 0
     end
-    last_move = move
-    input_both_cw_ccw = cw and ccw
     if game.status.flash_effect > 0 then
         game.status.flash_effect = game.status.flash_effect - 3 * frametime
     end
