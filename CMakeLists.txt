@@ -25,7 +25,7 @@ endif()
 include(${CPM_DOWNLOAD_LOCATION})
 
 # luv
-CPMAddPackage("gh:luvit/luv#1.44.2-1")
+CPMAddPackage("gh:luvit/luv#1.45.0-0")
 install(TARGETS luv LIBRARY DESTINATION lib)
 
 # -------------- video encoding library --------------
@@ -49,7 +49,7 @@ if(VIDEO_EXPORT)
 	    PkgConfig::LIBAV
 	)
 
-	install(TARGETS encode LIBRARY DESTINATION lib)
+	install(TARGETS encode RUNTIME DESTINATION lib)
 endif()
 
 
