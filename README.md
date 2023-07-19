@@ -9,7 +9,7 @@ Apart from the pure lua dependencies that are present in the repository, the gam
 - Love2D
 - SQLite
 - Luv
-- luasodium (for compat server)
+- libsodium (for server)
 - ffmpeg (for video export)
 
 These dependencies may have dependencies of their own.

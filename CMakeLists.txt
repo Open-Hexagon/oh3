@@ -24,13 +24,6 @@ endif()
 
 include(${CPM_DOWNLOAD_LOCATION})
 
-# luasodium
-set(LUA_VERSION 5.1)
-CPMAddPackage("gh:jprjr/luasodium#v2.3.0")
-install(TARGETS luasodium LIBRARY DESTINATION lib)
-install(DIRECTORY build/luasodium DESTINATION extlibs)
-install(FILES build/luasodium.lua DESTINATION extlibs)
-
 # luv
 CPMAddPackage("gh:luvit/luv#1.44.2-1")
 install(TARGETS luv LIBRARY DESTINATION lib)
@@ -62,4 +55,4 @@ endif()
 
 # make a custom target with ALL that depends on the imported targets from CPM in order to actually build them
 add_custom_target(oh3 ALL)
-add_dependencies(oh3 luasodium luv)
+add_dependencies(oh3 luv)
