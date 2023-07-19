@@ -13,6 +13,7 @@ for i = 1, #search_names do
     end
 end
 assert(found, "could not find liblove")
+package.preload.luv = package.loadlib("lib/luv.so", "luaopen_luv")
 require("love")
 require("love.filesystem")
 love.filesystem.init("ohtest")
