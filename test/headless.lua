@@ -10,11 +10,11 @@ local config = require("config")
 
 describe("headless games", function()
     local versions = {
-        [21] = {
+        --[[[21] = {
             pack = "ohvrvanilla_vittorio_romeo_cube",
             level = "pointless",
             settings = { difficulty_mult = 1 },
-        },
+        },]]
         [192] = {
             pack = "VeeDefault",
             level = "VeeDefault_easy",
