@@ -19,7 +19,9 @@ jobs:
     
     - name: Install Dependencies
       run: |
-        sudo apt install luajit love
+        sudo add-apt-repository ppa:bartbes/love-stable
+        sudo apt update
+        sudo apt install luajit liblove
    #     vcpkg install ffmpeg --triplet x64-linux-dynamic
       #run: sudo apt install libavformat-dev libavcodec-dev libswresample-dev libswscale-dev libavutil-dev
 
