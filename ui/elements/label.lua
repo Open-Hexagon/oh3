@@ -7,7 +7,7 @@ cached_fonts[default_font_size] = love.graphics.newFont(default_font_file, defau
 
 ---create a new label
 ---@param text string
----@param options table
+---@param options table?
 ---@return table
 function label:new(text, options)
     options = options or {}
@@ -24,6 +24,7 @@ function label:new(text, options)
         padding = options.padding or 8,
         scale = 1,
         pos = { 0, 0 },
+        color = options.color or { 1, 1, 1, 1 },
     }, label)
 end
 
@@ -52,9 +53,10 @@ function label:calculate_layout(available_area)
         width = width + padding
         height = height + padding
     end
+    self.text:set(self.raw_text)
     get_dimensions()
     if self.wrap and available_area.width < width then
-        self.text:setf(self.raw_text, available_area.width - padding)
+        self.text:setf(self.raw_text, available_area.width - padding, "left")
         get_dimensions()
     end
     self.pos[1] = available_area.x + self.padding * self.scale
@@ -64,6 +66,7 @@ end
 
 ---draw the label
 function label:draw()
+    love.graphics.setColor(self.color)
     love.graphics.draw(self.text, unpack(self.pos))
 end
 

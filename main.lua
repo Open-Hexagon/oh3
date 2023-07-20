@@ -160,37 +160,14 @@ function love.run()
         return render_replay(game_handler, video_encoder, audio, args.no_option, "output.mp4")
     end
 
+    local ui = require("ui")
     local game_handler = require("game_handler")
     global_config.init(config, game_handler.profile)
     game_handler.init(config)
-    if args.no_option == nil then
-        -- temporary command line menu
-        local packs = game_handler.get_packs()
-        for i = 1, #packs do
-            local pack = packs[i]
-            print(i, pack.name .. " (" .. pack.id .. ")")
-        end
-        print("Enter pack number:")
-        local pack = packs[tonumber(io.input():read())]
-        for i = 1, pack.level_count do
-            print(i, pack.levels[i].name)
-        end
-        print("Enter level number:")
-        local level = pack.levels[tonumber(io.input():read())]
-        local options = {}
-        for option, values in pairs(level.options) do
-            print(option .. ":")
-            for i = 1, #values do
-                print(i, values[i])
-            end
-            print("Enter value number:")
-            options[option] = values[tonumber(io.input():read())]
-        end
-
-        game_handler.set_version(pack.game_version)
-        game_handler.record_start(pack.id, level.id, options)
-    else
+    if args.no_option then
         game_handler.replay_start(args.no_option)
+    else
+        ui.open_screen("test")
     end
 
     -- function is called every frame by love
@@ -202,6 +179,7 @@ function love.run()
                 return a or 0
             end
             game_handler.process_event(name, a, b, c, d, e, f)
+            ui.process_event(name, a, b, c, d, e, f)
         end
 
         -- ensures tickrate on its own
@@ -212,17 +190,8 @@ function love.run()
             love.graphics.origin()
             love.graphics.clear(0, 0, 0, 1)
             game_handler.draw()
+            ui.draw()
             love.timer.step()
-            -- used for testing TODO: remove once we have a proper ui element for it
-            love.graphics.print(
-                "FPS: "
-                    .. love.timer.getFPS()
-                    .. " Tickrate: "
-                    .. game_handler.get_tickrate()
-                    .. " Score: "
-                    .. math.floor(game_handler.get_score() * 1000) / 1000
-            )
-
             love.graphics.present()
         end
     end

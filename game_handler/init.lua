@@ -171,7 +171,7 @@ end
 ---update the game if it's running
 ---@param ensure_tickrate boolean
 function game_handler.update(ensure_tickrate)
-    if current_game.running then
+    if current_game and current_game.running then
         if ensure_tickrate then
             -- update as much as required depending on passed time
             local current_time = love.timer.getTime()
@@ -194,7 +194,7 @@ end
 ---@param frametime number?
 function game_handler.draw(frametime)
     -- can only start rendering once the initial resize event was processed
-    if current_game.running and screen ~= nil then
+    if current_game and current_game.running and screen ~= nil then
         frametime = frametime or love.timer.getDelta()
         local width, height = love.graphics.getDimensions()
         -- render onto the screen

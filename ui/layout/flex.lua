@@ -1,7 +1,12 @@
 local flex = {}
 flex.__index = flex
 
-function flex:new(options, elements)
+---create a new flex container
+---@param elements table
+---@param options table?
+---@return table
+function flex:new(elements, options)
+    options = options or {}
     return setmetatable({
         direction = options.direction or "row",
         same_size = options.same_size or false,
@@ -10,6 +15,8 @@ function flex:new(options, elements)
     }, flex)
 end
 
+---set the gui scale of all elements in the flex container
+---@param scale number
 function flex:set_scale(scale)
     for i = 1, #self.elements do
         self.elements[i]:set_scale(scale)
@@ -17,6 +24,10 @@ function flex:set_scale(scale)
     self.scale = scale
 end
 
+---calculate the positions and size of the elements in the container (returns total width and height)
+---@param available_area table
+---@return number
+---@return number
 function flex:calculate_layout(available_area)
     local element_area = {
         x = available_area.x,
@@ -24,20 +35,59 @@ function flex:calculate_layout(available_area)
         width = available_area.width,
         height = available_area.height,
     }
+    local final_width, final_height
     if self.same_size then
         -- all elements are given the same area size
+        local element_size
         if self.direction == "row" then
             element_area.width = element_area.width / #self.elements
+            element_size = element_area.width
         elseif self.direction == "column" then
             element_area.height = element_area.height / #self.elements
+            element_size = element_area.height
         end
+        local new_element_size = 0
+        local thickness = 0
         for i = 1, #self.elements do
             local width, height = self.elements[i]:calculate_layout(element_area)
             if self.direction == "row" then
-                element_area.x = element_area.x + width
+                element_area.x = element_area.x + element_area.width
+                new_element_size = math.max(width, new_element_size)
+                thickness = math.max(thickness, height)
             elseif self.direction == "column" then
-                element_area.y = element_area.y + height
+                element_area.y = element_area.y + element_area.height
+                new_element_size = math.max(height, new_element_size)
+                thickness = math.max(thickness, width)
             end
+        end
+        -- check if elements fit in the area and if not provide them with a large still same size area so they barely fit
+        if new_element_size > element_size then
+            element_area.x = available_area.x
+            element_area.y = available_area.y
+            if self.direction == "row" then
+                element_area.width = new_element_size
+            elseif self.direction == "column" then
+                element_area.height = new_element_size
+            end
+            thickness = 0
+            for i = 1, #self.elements do
+                local width, height = self.elements[i]:calculate_layout(element_area)
+                if self.direction == "row" then
+                    element_area.x = element_area.x + new_element_size
+                    thickness = math.max(thickness, height)
+                elseif self.direction == "column" then
+                    element_area.y = element_area.y + new_element_size
+                    thickness = math.max(thickness, width)
+                end
+            end
+            element_size = new_element_size
+        end
+        if self.direction == "row" then
+            final_width = element_size * #self.elements
+            final_height = thickness
+        elseif self.direction == "column" then
+            final_width = thickness
+            final_height = element_size * #self.elements
         end
     else
         -- calculate the total and individual size of all elements (in flex direction)
@@ -45,16 +95,19 @@ function flex:calculate_layout(available_area)
         local total_size = 0
         local x = element_area.x
         local y = element_area.y
+        local thickness = 0
         for i = 1, #self.elements do
             local width, height = self.elements[i]:calculate_layout(element_area)
             if self.direction == "row" then
                 element_area.x = element_area.x + width
                 sizes[i] = width
                 total_size = total_size + width
+                thickness = math.max(thickness, height)
             elseif self.direction == "column" then
                 element_area.y = element_area.y + height
                 sizes[i] = height
                 total_size = total_size + height
+                thickness = math.max(thickness, width)
             end
         end
         local target_size, target_property
@@ -69,20 +122,32 @@ function flex:calculate_layout(available_area)
         if total_size > target_size then
             element_area.x = x
             element_area.y = y
+            thickness = 0
             local factor = target_size / total_size
             for i = 1, #sizes do
                 element_area[target_property] = sizes[i] * factor
                 local width, height = self.elements[i]:calculate_layout(element_area)
                 if self.direction == "row" then
                     element_area.x = element_area.x + width
+                    thickness = math.max(thickness, height)
                 elseif self.direction == "column" then
                     element_area.y = element_area.y + height
+                    thickness = math.max(thickness, width)
                 end
             end
         end
+        if self.direction == "row" then
+            final_width = element_area.x - x
+            final_height = thickness
+        elseif self.direction == "column" then
+            final_width = thickness
+            final_height = element_area.y - y
+        end
     end
+    return final_width, final_height
 end
 
+---draw all the elements in the container
 function flex:draw()
     for i = 1, #self.elements do
         self.elements[i]:draw()
