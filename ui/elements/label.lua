@@ -1,5 +1,8 @@
+local element = require("ui.elements.element")
 local label = {}
-label.__index = label
+label.__index = setmetatable(label, {
+    __index = element
+})
 local default_font_size = 32
 local default_font_file = "assets/font/OpenSquare-Regular.ttf"
 local cached_fonts = {}
@@ -15,28 +18,14 @@ function label:new(text, options)
     if not cached_fonts[font_size] then
         cached_fonts[font_size] = love.graphics.newFont(default_font_file, font_size)
     end
-    local color
-    if options.style and options.style.color then
-        color = options.style.color
-    end
-    return setmetatable({
+    return element.new(setmetatable({
         raw_text = text,
         text = love.graphics.newText(cached_fonts[font_size], text),
         wrap = options.wrap or false,
         font = cached_fonts[font_size],
         font_size = font_size,
-        padding = options.padding or 8,
-        scale = 1,
         pos = { 0, 0 },
-        style = options.style or {},
-        color = color or { 1, 1, 1, 1 },
-    }, label)
-end
-
----set the style of the label
----@param style table
-function label:set_style(style)
-    self.color = self.style.color or style.color or self.color
+    }, label), options)
 end
 
 ---set the gui scale for the label

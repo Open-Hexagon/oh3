@@ -14,8 +14,8 @@ return flex:new({
         label:new("Other"),
         label:new("Stuff"),
         label:new("With 5 and not 3 elements this time!", { wrap = true }),
-        label:new("!!!!"),
-    }, { direction = "column", style = { color = { 1, 0, 1, 1 } } }),
+        label:new("This column also has more padding"),
+    }, { direction = "column", style = { color = { 1, 0, 1, 1 }, padding = 20 } }),
     flex:new({
         label:new("Look at that:"),
         quad:new({
@@ -32,4 +32,4 @@ return flex:new({
             style = { background_color = { 0.3, 0.4, 0.3, 1 }, border_thickness = 10 },
         }),
     }, { direction = "column", style = { border_thickness = 2 } }),
-})
+}, { same_size = true })
