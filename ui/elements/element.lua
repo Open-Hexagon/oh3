@@ -1,5 +1,5 @@
 local keyboard_navigation = require("ui.keyboard_navigation")
-local point_in_polygon = require("ui.point_in_polygon")
+local point_in_polygon = require("ui.extmath").point_in_polygon
 local element = {}
 element.__index = element
 

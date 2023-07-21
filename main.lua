@@ -182,6 +182,8 @@ function love.run()
             ui.process_event(name, a, b, c, d, e, f)
         end
 
+        ui.update(love.timer.getDelta())
+
         -- ensures tickrate on its own
         game_handler.update(true)
 

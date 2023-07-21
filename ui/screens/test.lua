@@ -39,9 +39,9 @@ return flex:new({
                 end
             end,
         }),
-        quad:new(),
+        label:new("This label is taking up a ton of space by spamming random characters: wezncr45ft5vbwa305ucntrwsczn6o9w3v8ed47chntefgv5t5xgncwxa795mrgc98wapxmrzfew894tgf98wa3p4zmgt89wzxrmf89syehrfx8wsycowyhxtogfhw39xstrfmwa30hrf,8x9w0atm09axu0w4e,trfß0yüxut50u,x5rtwaxmtgahzcw4rthxn97wrm9wct5e4t9gnwyecrtwe489ctgh89waxtwstcgmw9tnwz98xws9gvnt9wxr89qayznrhfmwyhxrfsyhnevrsylhnxri9syhncrywhxn89fsyhexrftm9yl9mwa3h98rx5aw89fmhwaez89taxn8w90xrzhwa89xmzwa89xzra8x5m89ctwaztx5rdwpa9mwezncr45ft5vbwa305ucntrwsczn6o9w3v8ed47chntefgv5t5xgncwxa795mrgc98wapxmrzfew894tgf98wa3p4zmgt89wzxrmf89syehrfx8wsycowyhxtogfhw39xstrfmwa30hrf,8x9w0atm09axu0w4e,trfß0yüxut50u,x5rtwaxmtgahzcw4rthxn97wrm9wct5e4t9gnwyecrtwe489ctgh89waxtwstcgmw9tnwz98xws9gvnt9wxr89qayznrhfmwyhxrfsyhnevrsylhnxri9syhncrywhxn89fsyhexrftm9yl9mwa3h98rx5aw89fmhwaez89taxn8w90xrzhwa89xmzwa89xzra8x5m89ctwaztx5rdwpa9m", { wrap = true }),
         quad:new({
-            child_element = label:new("Hello"),
+            child_element = label:new("Hello", { selectable = true }),
         }),
     }, {
         direction = "column",

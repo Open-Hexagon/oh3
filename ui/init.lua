@@ -1,3 +1,4 @@
+local signal = require("ui.anim.signal")
 local ui = {}
 local screens = {
     test = require("ui.screens.test"),
@@ -68,6 +69,10 @@ function ui.process_event(name, ...)
         end
         current_screen:process_event(name, ...)
     end
+end
+
+function ui.update(dt)
+    signal.update(dt)
 end
 
 ---draw the ui
