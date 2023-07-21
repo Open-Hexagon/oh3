@@ -7,12 +7,26 @@ flex.__index = flex
 ---@return table
 function flex:new(elements, options)
     options = options or {}
-    return setmetatable({
+    local obj = setmetatable({
         direction = options.direction or "row",
         same_size = options.same_size or false,
         elements = elements,
         scale = 1,
+        style = options.style,
     }, flex)
+    if obj.style then
+        obj:set_style(obj.style)
+    end
+    return obj
+end
+
+---set the style of all children
+---@param style table
+function flex:set_style(style)
+    for i = 1, #self.elements do
+        self.elements[i]:set_style(style)
+    end
+    self.style = style
 end
 
 ---set the gui scale of all elements in the flex container

@@ -168,6 +168,7 @@ function love.run()
         game_handler.replay_start(args.no_option)
     else
         ui.open_screen("test")
+        ui.set_scale(2)
     end
 
     -- function is called every frame by love

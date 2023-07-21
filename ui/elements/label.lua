@@ -15,6 +15,10 @@ function label:new(text, options)
     if not cached_fonts[font_size] then
         cached_fonts[font_size] = love.graphics.newFont(default_font_file, font_size)
     end
+    local color
+    if options.style and options.style.color then
+        color = options.style.color
+    end
     return setmetatable({
         raw_text = text,
         text = love.graphics.newText(cached_fonts[font_size], text),
@@ -24,8 +28,16 @@ function label:new(text, options)
         padding = options.padding or 8,
         scale = 1,
         pos = { 0, 0 },
-        color = options.color or { 1, 1, 1, 1 },
+        style = options.style,
+        color = color or { 1, 1, 1, 1 },
     }, label)
+end
+
+---set the style of the label
+---@param style table
+function label:set_style(style)
+    self.color = style.color
+    self.style = style
 end
 
 ---set the gui scale for the label
