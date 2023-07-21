@@ -93,6 +93,41 @@ local function update_scroll(self)
     end
 end
 
+---scroll an element from this container into view
+---@param child_element table
+function flex:scroll_into_view(child_element)
+    if self.needs_scroll then
+        local points = child_element.bounds
+        local minmax = { math.huge, math.huge, -math.huge, -math.huge }
+        for i = 1, #points, 2 do
+            minmax[1] = math.min(points[i], minmax[1])
+            minmax[2] = math.min(points[i + 1], minmax[2])
+            minmax[3] = math.max(points[i], minmax[3])
+            minmax[4] = math.max(points[i + 1], minmax[4])
+        end
+        local scroll_before = self.scroll
+        if self.direction == "row" then
+            local visual_width = self.canvas:getWidth()
+            if self.scroll > minmax[1] then
+                self.scroll = minmax[1]
+            elseif self.scroll + visual_width < minmax[3] then
+                self.scroll = minmax[3] - visual_width
+            end
+        elseif self.direction == "column" then
+            local visual_height = self.canvas:getHeight()
+            if self.scroll > minmax[2] then
+                self.scroll = minmax[2]
+            elseif self.scroll + visual_height < minmax[4] then
+                self.scroll = minmax[4] - visual_height
+            end
+        end
+        if scroll_before ~= self.scroll then
+            self.scrollbar_visibility_timer = love.timer.getTime()
+            self:set_scroll_offset()
+        end
+    end
+end
+
 local function point_in_scrollbar(self, x, y)
     return x >= self.scrollbar_area.x
         and y >= self.scrollbar_area.y

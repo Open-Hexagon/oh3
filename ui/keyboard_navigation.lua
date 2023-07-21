@@ -28,6 +28,15 @@ local function get_first_element(element)
     end
 end
 
+local function scroll_into_view(element)
+    if element.parent then
+        scroll_into_view(element.parent)
+        if element.parent.elements then
+            element.parent:scroll_into_view(element)
+        end
+    end
+end
+
 function keyboard_navigation.select_element(element)
     if element ~= selected_element then
         if selected_element then
@@ -45,6 +54,7 @@ function keyboard_navigation.select_element(element)
             if element.parent.elements then
                 element.parent.last_selection = element
             end
+            scroll_into_view(element)
         end
     end
 end
