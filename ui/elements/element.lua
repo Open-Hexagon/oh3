@@ -51,7 +51,7 @@ function element:process_event(name, ...)
             x = x + self.scroll_offset[1]
             y = y + self.scroll_offset[2]
         end
-        self.is_mouse_over = point_in_polygon(self.bounds, x , y)
+        self.is_mouse_over = point_in_polygon(self.bounds, x, y)
         if name == "mousepressed" and self.selectable then
             if self.selected ~= self.is_mouse_over then
                 self.selected = self.is_mouse_over

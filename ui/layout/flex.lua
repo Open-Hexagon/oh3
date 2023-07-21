@@ -19,9 +19,13 @@ function flex:new(elements, options)
         max_scroll = 0,
         external_scroll_offset = { 0, 0 },
         own_scroll_offset = { 0, 0 },
+        scrollbar_visibility_timer = 0,
         scrollbar_vanish = true,
         scrollbar_color = { 1, 1, 1, 1 },
         scrollbar_width = 10,
+        scrollbar_area = { x = 0, y = 0, width = 0, height = 0 },
+        scrollbar_grabbed = false,
+        last_mouse_pos = { 0, 0 },
         bounds = {},
     }, flex)
     for i = 1, #elements do
@@ -54,6 +58,48 @@ function flex:set_scale(scale)
     self.scale = scale
 end
 
+local function update_scroll(self)
+    if self.scroll > self.max_scroll then
+        self.scroll = self.max_scroll
+    elseif self.scroll < 0 then
+        self.scroll = 0
+    end
+    local normalized_scroll = self.scroll / self.max_scroll
+    local bar_width = math.floor(self.scrollbar_width * self.scale)
+    local x = self.bounds[1] - self.external_scroll_offset[1]
+    local y = self.bounds[2] - self.external_scroll_offset[2]
+    if self.direction == "row" then
+        local visible_width = self.canvas:getWidth()
+        local scrollbar_size = visible_width ^ 2 / (visible_width + self.max_scroll)
+        local max_move = visible_width - scrollbar_size
+        self.scrollbar_area = {
+            x = normalized_scroll * max_move + x,
+            y = self.canvas:getHeight() - bar_width + y,
+            width = scrollbar_size,
+            height = bar_width,
+        }
+        self.own_scroll_offset[1] = self.scroll
+    elseif self.direction == "column" then
+        local visible_height = self.canvas:getHeight()
+        local scrollbar_size = visible_height ^ 2 / (visible_height + self.max_scroll)
+        local max_move = visible_height - scrollbar_size
+        self.scrollbar_area = {
+            x = self.canvas:getWidth() - bar_width + x,
+            y = normalized_scroll * max_move + y,
+            width = bar_width,
+            height = scrollbar_size,
+        }
+        self.own_scroll_offset[2] = self.scroll
+    end
+end
+
+local function point_in_scrollbar(self, x, y)
+    return x >= self.scrollbar_area.x
+        and y >= self.scrollbar_area.y
+        and x <= self.scrollbar_area.x + self.scrollbar_area.width
+        and y <= self.scrollbar_area.y + self.scrollbar_area.height
+end
+
 ---have all children process an event
 ---@param name string
 ---@param ... unknown
@@ -66,22 +112,41 @@ function flex:process_event(name, ...)
     for i = 1, #self.elements do
         self.elements[i]:process_event(name, ...)
     end
+    if name == "mousepressed" then
+        local x, y = ...
+        if point_in_scrollbar(self, x, y) then
+            self.scrollbar_grabbed = true
+        end
+        self.last_mouse_pos[1], self.last_mouse_pos[2] = x, y
+    end
+    if name == "mousereleased" then
+        self.scrollbar_grabbed = false
+    end
+    if name == "mousemoved" and self.needs_scroll then
+        local x, y = ...
+        if self.scrollbar_grabbed and not flex.scrolled_already then
+            local dx = x - self.last_mouse_pos[1]
+            local dy = y - self.last_mouse_pos[2]
+            if self.direction == "row" then
+                self.scroll = self.scroll + dx
+            elseif self.direction == "column" then
+                self.scroll = self.scroll + dy
+            end
+            flex.scrolled_already = true
+            self.scrollbar_visibility_timer = love.timer.getTime()
+            self:set_scroll_offset()
+        elseif point_in_scrollbar(self, x, y) then
+            self.scrollbar_visibility_timer = love.timer.getTime()
+        end
+        self.last_mouse_pos[1], self.last_mouse_pos[2] = ...
+    end
     if name == "wheelmoved" and self.needs_scroll and not flex.scrolled_already then
         local x, y = love.mouse.getPosition()
         if point_in_polygon(self.bounds, x + self.external_scroll_offset[1], y + self.external_scroll_offset[2]) then
-            flex.scrolled_already = true
             local _, direction = ...
-            self.scroll = self.scroll - 10 * direction
-            if self.scroll > self.max_scroll then
-                self.scroll = self.max_scroll
-            elseif self.scroll < 0 then
-                self.scroll = 0
-            end
-            if self.direction == "row" then
-                self.own_scroll_offset[1] = self.scroll
-            elseif self.direction == "column" then
-                self.own_scroll_offset[2] = self.scroll
-            end
+            self.scroll = self.scroll - 30 * direction
+            flex.scrolled_already = true
+            self.scrollbar_visibility_timer = love.timer.getTime()
             self:set_scroll_offset()
         end
     end
@@ -95,12 +160,16 @@ end
 function flex:set_scroll_offset(scroll_offset)
     scroll_offset = scroll_offset or self.external_scroll_offset
     self.external_scroll_offset = scroll_offset
-    local new_scroll_offset = {unpack(scroll_offset)}
+    local new_scroll_offset = { unpack(scroll_offset) }
     for i = 1, 2 do
         new_scroll_offset[i] = new_scroll_offset[i] + self.own_scroll_offset[i]
     end
     for i = 1, #self.elements do
         self.elements[i]:set_scroll_offset(new_scroll_offset)
+    end
+    if self.needs_scroll then
+        -- scrollbar stuff mostly
+        update_scroll(self)
     end
 end
 
@@ -246,11 +315,6 @@ function flex:calculate_layout(available_area)
             })
         end
     end
-    if not self.needs_scroll then
-        self.scroll = 0
-        self.own_scroll_offset = { 0, 0 }
-        self:set_scroll_offset()
-    end
     self.bounds = {
         available_area.x,
         available_area.y,
@@ -261,6 +325,12 @@ function flex:calculate_layout(available_area)
         available_area.x,
         available_area.y + final_height,
     }
+    if not self.needs_scroll then
+        self.scroll = 0
+        self.own_scroll_offset = { 0, 0 }
+    end
+    self:set_scroll_offset()
+    self.scrollbar_visibility_timer = -2
     return final_width, final_height
 end
 
@@ -281,24 +351,27 @@ function flex:draw()
         for i = 1, #self.elements do
             self.elements[i]:draw()
         end
-        love.graphics.origin()
-        local bar_width = math.floor(self.scrollbar_width * self.scale)
-        love.graphics.setColor(self.scrollbar_color)
-        local normalized_scroll = self.scroll / self.max_scroll
-        if self.direction == "row" then
-            local visible_width = self.canvas:getWidth()
-            local scrollbar_size = visible_width ^ 2 / (visible_width + self.max_scroll)
-            local max_move = visible_width - scrollbar_size
-            love.graphics.rectangle("fill", normalized_scroll * max_move, self.canvas:getHeight() - bar_width, scrollbar_size, bar_width)
-        elseif self.direction == "column" then
-            local visible_height = self.canvas:getHeight()
-            local scrollbar_size = visible_height ^ 2 / (visible_height + self.max_scroll)
-            local max_move = visible_height - scrollbar_size
-            love.graphics.rectangle("fill", self.canvas:getWidth() - bar_width, normalized_scroll * max_move, bar_width, scrollbar_size)
-        end
         love.graphics.setCanvas(before_canvas)
         love.graphics.pop()
+        love.graphics.setColor(1, 1, 1, 1)
         love.graphics.draw(self.canvas, self.bounds[1], self.bounds[2])
+        love.graphics.push()
+        love.graphics.origin()
+        if self.scrollbar_vanish then
+            self.scrollbar_color[4] = math.max(1.5 - love.timer.getTime() + self.scrollbar_visibility_timer, 0)
+            if self.scrollbar_color[4] > 1 then
+                self.scrollbar_color[4] = 1
+            end
+        end
+        love.graphics.setColor(self.scrollbar_color)
+        love.graphics.rectangle(
+            "fill",
+            self.scrollbar_area.x,
+            self.scrollbar_area.y,
+            self.scrollbar_area.width,
+            self.scrollbar_area.height
+        )
+        love.graphics.pop()
     else
         for i = 1, #self.elements do
             self.elements[i]:draw()

@@ -37,11 +37,15 @@ return flex:new({
                 else
                     self.border_color = { 1, 1, 1, 1 }
                 end
-            end
+            end,
         }),
         quad:new(),
         quad:new({
-            child_element = label:new("Hello")
+            child_element = label:new("Hello"),
         }),
-    }, { direction = "column", scrollable = true, style = { border_thickness = 2, background_color = { 0, 0, 0, 1 } }}),
+    }, {
+        direction = "column",
+        scrollable = true,
+        style = { border_thickness = 2, background_color = { 0, 0, 0, 1 } },
+    }),
 }, { same_size = true, scrollable = true })
