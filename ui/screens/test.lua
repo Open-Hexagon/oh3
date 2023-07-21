@@ -44,4 +44,4 @@ return flex:new({
             child_element = label:new("Hello")
         }),
     }, { direction = "column", scrollable = true, style = { border_thickness = 2, background_color = { 0, 0, 0, 1 } }}),
-}, { same_size = true })
+}, { same_size = true, scrollable = true })

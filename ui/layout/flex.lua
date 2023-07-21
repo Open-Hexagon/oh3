@@ -16,8 +16,12 @@ function flex:new(elements, options)
         scrollable = options.scrollable or false,
         needs_scroll = false,
         scroll = 0,
+        max_scroll = 0,
         external_scroll_offset = { 0, 0 },
         own_scroll_offset = { 0, 0 },
+        scrollbar_vanish = true,
+        scrollbar_color = { 1, 1, 1, 1 },
+        scrollbar_width = 10,
         bounds = {},
     }, flex)
     for i = 1, #elements do
@@ -36,6 +40,9 @@ function flex:set_style(style)
     for i = 1, #self.elements do
         self.elements[i]:set_style(style)
     end
+    self.scrollbar_vanish = style.scrollbar_vanish or self.scrollbar_vanish
+    self.scrollbar_color = style.scrollbar_color or self.scrollbar_color
+    self.scrollbar_width = style.scrollbar_width or self.scrollbar_width
 end
 
 ---set the gui scale of all elements in the flex container
@@ -65,6 +72,11 @@ function flex:process_event(name, ...)
             flex.scrolled_already = true
             local _, direction = ...
             self.scroll = self.scroll - 10 * direction
+            if self.scroll > self.max_scroll then
+                self.scroll = self.max_scroll
+            elseif self.scroll < 0 then
+                self.scroll = 0
+            end
             if self.direction == "row" then
                 self.own_scroll_offset[1] = self.scroll
             elseif self.direction == "column" then
@@ -216,11 +228,13 @@ function flex:calculate_layout(available_area)
     if self.scrollable then
         if self.direction == "row" then
             if final_width > available_area.width then
+                self.max_scroll = final_width - available_area.width
                 final_width = available_area.width
                 self.needs_scroll = true
             end
         elseif self.direction == "column" then
             if final_height > available_area.height then
+                self.max_scroll = final_height - available_area.height
                 final_height = available_area.height
                 self.needs_scroll = true
             end
@@ -266,6 +280,21 @@ function flex:draw()
         end
         for i = 1, #self.elements do
             self.elements[i]:draw()
+        end
+        love.graphics.origin()
+        local bar_width = math.floor(self.scrollbar_width * self.scale)
+        love.graphics.setColor(self.scrollbar_color)
+        local normalized_scroll = self.scroll / self.max_scroll
+        if self.direction == "row" then
+            local visible_width = self.canvas:getWidth()
+            local scrollbar_size = visible_width ^ 2 / (visible_width + self.max_scroll)
+            local max_move = visible_width - scrollbar_size
+            love.graphics.rectangle("fill", normalized_scroll * max_move, self.canvas:getHeight() - bar_width, scrollbar_size, bar_width)
+        elseif self.direction == "column" then
+            local visible_height = self.canvas:getHeight()
+            local scrollbar_size = visible_height ^ 2 / (visible_height + self.max_scroll)
+            local max_move = visible_height - scrollbar_size
+            love.graphics.rectangle("fill", self.canvas:getWidth() - bar_width, normalized_scroll * max_move, bar_width, scrollbar_size)
         end
         love.graphics.setCanvas(before_canvas)
         love.graphics.pop()
