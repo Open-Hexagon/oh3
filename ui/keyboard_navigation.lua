@@ -7,11 +7,13 @@ function keyboard_navigation.set_screen(screen)
     selected_element = nil
 end
 
--- gets the first selectable element and populates the indices table
 local function get_first_element(element)
     if element.selectable then
         return element
     elseif element.elements then
+        if element.last_selection then
+            return element.last_selection
+        end
         for i = 1, #element.elements do
             local first_elem = get_first_element(element.elements[i])
             if first_elem then
@@ -39,6 +41,9 @@ function keyboard_navigation.select_element(element)
             element.selected = true
             if element.selection_handler then
                 element.selection_handler(element)
+            end
+            if element.parent.elements then
+                element.parent.last_selection = element
             end
         end
     end
