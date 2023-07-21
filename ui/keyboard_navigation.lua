@@ -81,14 +81,14 @@ function keyboard_navigation.move(dx, dy)
                 if parent.direction and parent.direction == dir then
                     local new_index = elem.parent_index + num
                     if parent.elements[new_index] then
-                        return parent.elements[new_index]
+                        return get_first_element(parent.elements[new_index]) or parent.elements[new_index]
                     end
                 end
                 local next_elem = move(parent, dir, num)
                 if not next_elem then
                     return
                 end
-                return get_first_element(next_elem)
+                return get_first_element(next_elem) or next_elem
             else
                 return
             end
