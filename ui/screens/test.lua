@@ -1,4 +1,4 @@
--- just a test screenX
+-- just a test screen
 -- TODO: remove once we start working on new screens
 local flex = require("ui.layout.flex")
 local label = require("ui.elements.label")
@@ -30,6 +30,18 @@ return flex:new({
         quad:new({
             child_element = label:new("I have a thick border!"),
             style = { background_color = { 0.3, 0.4, 0.3, 1 }, border_thickness = 10 },
+            selectable = true,
+            selection_handler = function(self)
+                if self.selected then
+                    self.border_color = { 0, 0, 1, 1 }
+                else
+                    self.border_color = { 1, 1, 1, 1 }
+                end
+            end
         }),
-    }, { direction = "column", style = { border_thickness = 2 } }),
+        quad:new(),
+        quad:new({
+            child_element = label:new("Hello")
+        }),
+    }, { direction = "column", scrollable = true, style = { border_thickness = 2, background_color = { 0, 0, 0, 1 } }}),
 }, { same_size = true })

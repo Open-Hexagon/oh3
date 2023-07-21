@@ -55,6 +55,15 @@ function quad:process_event(...)
     end
 end
 
+---set scroll offset
+---@param scroll_offset table
+function quad:set_scroll_offset(scroll_offset)
+    self.scroll_offset = scroll_offset
+    if self.element then
+        self.element:set_scroll_offset(scroll_offset)
+    end
+end
+
 ---calculate the layout
 ---@param available_area table
 ---@return number

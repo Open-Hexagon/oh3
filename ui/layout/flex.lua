@@ -1,3 +1,4 @@
+local point_in_polygon = require("ui.point_in_polygon")
 local flex = {}
 flex.__index = flex
 
@@ -12,6 +13,12 @@ function flex:new(elements, options)
         same_size = options.same_size or false,
         elements = elements,
         scale = 1,
+        scrollable = options.scrollable or false,
+        needs_scroll = false,
+        scroll = 0,
+        external_scroll_offset = { 0, 0 },
+        own_scroll_offset = { 0, 0 },
+        bounds = {},
     }, flex)
     for i = 1, #elements do
         elements[i].parent = obj
@@ -41,10 +48,47 @@ function flex:set_scale(scale)
 end
 
 ---have all children process an event
+---@param name string
 ---@param ... unknown
-function flex:process_event(...)
+function flex:process_event(name, ...)
+    local is_outer = false
+    if flex.scrolled_already == nil then
+        is_outer = true
+        flex.scrolled_already = false
+    end
     for i = 1, #self.elements do
-        self.elements[i]:process_event(...)
+        self.elements[i]:process_event(name, ...)
+    end
+    if name == "wheelmoved" and self.needs_scroll and not flex.scrolled_already then
+        local x, y = love.mouse.getPosition()
+        if point_in_polygon(self.bounds, x + self.external_scroll_offset[1], y + self.external_scroll_offset[2]) then
+            flex.scrolled_already = true
+            local _, direction = ...
+            self.scroll = self.scroll - 10 * direction
+            if self.direction == "row" then
+                self.own_scroll_offset[1] = self.scroll
+            elseif self.direction == "column" then
+                self.own_scroll_offset[2] = self.scroll
+            end
+            self:set_scroll_offset()
+        end
+    end
+    if is_outer then
+        flex.scrolled_already = nil
+    end
+end
+
+---set scroll offset for this and child elements
+---@param scroll_offset any
+function flex:set_scroll_offset(scroll_offset)
+    scroll_offset = scroll_offset or self.external_scroll_offset
+    self.external_scroll_offset = scroll_offset
+    local new_scroll_offset = {unpack(scroll_offset)}
+    for i = 1, 2 do
+        new_scroll_offset[i] = new_scroll_offset[i] + self.own_scroll_offset[i]
+    end
+    for i = 1, #self.elements do
+        self.elements[i]:set_scroll_offset(new_scroll_offset)
     end
 end
 
@@ -168,13 +212,68 @@ function flex:calculate_layout(available_area)
             final_height = element_area.y - y
         end
     end
+    self.needs_scroll = false
+    if self.scrollable then
+        if self.direction == "row" then
+            if final_width > available_area.width then
+                final_width = available_area.width
+                self.needs_scroll = true
+            end
+        elseif self.direction == "column" then
+            if final_height > available_area.height then
+                final_height = available_area.height
+                self.needs_scroll = true
+            end
+        end
+        if not self.canvas or self.canvas:getWidth() ~= final_width or self.canvas:getHeight() ~= final_height then
+            self.canvas = love.graphics.newCanvas(final_width, final_height, {
+                -- TODO: make configurable
+                msaa = 4,
+            })
+        end
+    end
+    if not self.needs_scroll then
+        self.scroll = 0
+        self.own_scroll_offset = { 0, 0 }
+        self:set_scroll_offset()
+    end
+    self.bounds = {
+        available_area.x,
+        available_area.y,
+        available_area.x + final_width,
+        available_area.y,
+        available_area.x + final_width,
+        available_area.y + final_height,
+        available_area.x,
+        available_area.y + final_height,
+    }
     return final_width, final_height
 end
 
 ---draw all the elements in the container
 function flex:draw()
-    for i = 1, #self.elements do
-        self.elements[i]:draw()
+    if self.needs_scroll then
+        love.graphics.push()
+        local before_canvas = love.graphics.getCanvas()
+        love.graphics.setCanvas(self.canvas)
+        love.graphics.origin()
+        love.graphics.translate(-self.bounds[1], -self.bounds[2])
+        love.graphics.clear(0, 0, 0, 0)
+        if self.direction == "row" then
+            love.graphics.translate(-math.floor(self.scroll), 0)
+        elseif self.direction == "column" then
+            love.graphics.translate(0, -math.floor(self.scroll))
+        end
+        for i = 1, #self.elements do
+            self.elements[i]:draw()
+        end
+        love.graphics.setCanvas(before_canvas)
+        love.graphics.pop()
+        love.graphics.draw(self.canvas, self.bounds[1], self.bounds[2])
+    else
+        for i = 1, #self.elements do
+            self.elements[i]:draw()
+        end
     end
 end
 

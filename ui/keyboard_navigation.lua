@@ -31,7 +31,7 @@ function keyboard_navigation.select_element(element)
         if selected_element then
             selected_element.selected = false
             if selected_element.selection_handler then
-                selected_element.selection_handler()
+                selected_element.selection_handler(selected_element)
             end
         end
         selected_element = element

@@ -14,6 +14,7 @@ function element:new(options)
     self.selected = false
     self.selection_handler = options.selection_handler
     self.click_handler = options.click_handler
+    self.scroll_offset = { 0, 0 }
     self.bounds = {}
     if options.style then
         self:set_style(options.style)
@@ -30,6 +31,10 @@ function element:set_scale(scale)
     self.scale = scale
 end
 
+function element:set_scroll_offset(scroll_offset)
+    self.scroll_offset = scroll_offset
+end
+
 function element:calculate_layout(available_area)
     if self.calculate_element_layout then
         local x, y = available_area.x, available_area.y
@@ -42,7 +47,11 @@ end
 function element:process_event(name, ...)
     if name == "mousemoved" or name == "mousepressed" then
         local x, y = ...
-        self.is_mouse_over = point_in_polygon(self.bounds, x, y)
+        if self.scroll_offset then
+            x = x + self.scroll_offset[1]
+            y = y + self.scroll_offset[2]
+        end
+        self.is_mouse_over = point_in_polygon(self.bounds, x , y)
         if name == "mousepressed" and self.selectable then
             if self.selected ~= self.is_mouse_over then
                 self.selected = self.is_mouse_over
