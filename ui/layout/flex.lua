@@ -172,20 +172,6 @@ function flex:process_event(name, ...)
     end
 end
 
----set scroll offset for this and child elements
----@param scroll_offset any
-function flex:set_scroll_offset(scroll_offset)
-    scroll_offset = scroll_offset or self.external_scroll_offset
-    self.external_scroll_offset = scroll_offset
-    local new_scroll_offset = { unpack(scroll_offset) }
-    for i = 1, 2 do
-        new_scroll_offset[i] = new_scroll_offset[i] + self.own_scroll_offset[i]
-    end
-    for i = 1, #self.elements do
-        self.elements[i]:set_scroll_offset(new_scroll_offset)
-    end
-end
-
 local function update_scrollbar_area(self)
     local normalized_scroll = self.scroll() / self.max_scroll
     local bar_width = math.floor(self.scrollbar_width * self.scale)
@@ -209,6 +195,23 @@ local function update_scrollbar_area(self)
         self.scrollbar_area.width = bar_width
         self.scrollbar_area.height = scrollbar_size
         self.own_scroll_offset[2] = self.scroll()
+    end
+end
+
+---set scroll offset for this and child elements
+---@param scroll_offset any
+function flex:set_scroll_offset(scroll_offset)
+    scroll_offset = scroll_offset or self.external_scroll_offset
+    self.external_scroll_offset = scroll_offset
+    local new_scroll_offset = { unpack(scroll_offset) }
+    for i = 1, 2 do
+        new_scroll_offset[i] = new_scroll_offset[i] + self.own_scroll_offset[i]
+    end
+    for i = 1, #self.elements do
+        self.elements[i]:set_scroll_offset(new_scroll_offset)
+    end
+    if self.needs_scroll then
+        update_scrollbar_area(self)
     end
 end
 
