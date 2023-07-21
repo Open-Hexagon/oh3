@@ -13,6 +13,10 @@ function flex:new(elements, options)
         elements = elements,
         scale = 1,
     }, flex)
+    for i = 1, #elements do
+        elements[i].parent = obj
+        elements[i].parent_index = i
+    end
     if options.style then
         obj:set_style(options.style)
     end

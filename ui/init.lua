@@ -2,6 +2,7 @@ local ui = {}
 local screens = {
     test = require("ui.screens.test"),
 }
+local keyboard_navigation = require("ui.keyboard_navigation")
 local current_screen
 local gui_scale = 1
 
@@ -42,6 +43,7 @@ function ui.open_screen(name)
     current_screen = screens[name]
     if current_screen then
         calculate_layout()
+        keyboard_navigation.set_screen(current_screen)
     end
 end
 
@@ -52,6 +54,17 @@ function ui.process_event(name, ...)
     if current_screen then
         if name == "resize" then
             calculate_layout(...)
+        elseif name == "keypressed" then
+            local key = ...
+            if key == "left" then
+                keyboard_navigation.move(-1, 0)
+            elseif key == "right" then
+                keyboard_navigation.move(1, 0)
+            elseif key == "up" then
+                keyboard_navigation.move(0, -1)
+            elseif key == "down" then
+                keyboard_navigation.move(0, 1)
+            end
         end
         current_screen:process_event(name, ...)
     end

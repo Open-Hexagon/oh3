@@ -9,14 +9,21 @@ quad.__index = setmetatable(quad, {
 ---@return table
 function quad:new(options)
     options = options or {}
-    return element.new(setmetatable({
-        vertex_offsets = options.vertex_offsets or { 0, 0, 0, 0, 0, 0, 0, 0 },
-        element = options.child_element,
-        border_thickness = 1,
-        border_color = { 1, 1, 1, 1 },
-        background_color = { 0, 0, 0, 1 },
-        vertices = {},
-    }, quad), options)
+    local obj = element.new(
+        setmetatable({
+            vertex_offsets = options.vertex_offsets or { 0, 0, 0, 0, 0, 0, 0, 0 },
+            element = options.child_element,
+            border_thickness = 1,
+            border_color = { 1, 1, 1, 1 },
+            background_color = { 0, 0, 0, 1 },
+            vertices = {},
+        }, quad),
+        options
+    )
+    if obj.element then
+        obj.element.parent = obj
+    end
+    return obj
 end
 
 ---set the style

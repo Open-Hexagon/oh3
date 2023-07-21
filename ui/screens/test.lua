@@ -6,13 +6,13 @@ local quad = require("ui.elements.quad")
 return flex:new({
     flex:new({
         label:new("Hello"),
-        label:new("World"),
+        label:new("World", { selectable = true }),
         label:new("This is some incredibly, unimaginably, unfathomably long wrapping text!!!!!!!!!!", { wrap = true }),
     }, { direction = "column" }),
     flex:new({
-        label:new("Some"),
-        label:new("Other"),
-        label:new("Stuff"),
+        label:new("Some", { selectable = true }),
+        label:new("Other", { selectable = true }),
+        label:new("Stuff", { selectable = true }),
         label:new("With 5 and not 3 elements this time!", { wrap = true }),
         label:new("This column also has more padding"),
     }, { direction = "column", style = { color = { 1, 0, 1, 1 }, padding = 20 } }),

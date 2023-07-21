@@ -1,7 +1,7 @@
 local element = require("ui.elements.element")
 local label = {}
 label.__index = setmetatable(label, {
-    __index = element
+    __index = element,
 })
 local default_font_size = 32
 local default_font_file = "assets/font/OpenSquare-Regular.ttf"
@@ -18,14 +18,17 @@ function label:new(text, options)
     if not cached_fonts[font_size] then
         cached_fonts[font_size] = love.graphics.newFont(default_font_file, font_size)
     end
-    return element.new(setmetatable({
-        raw_text = text,
-        text = love.graphics.newText(cached_fonts[font_size], text),
-        wrap = options.wrap or false,
-        font = cached_fonts[font_size],
-        font_size = font_size,
-        pos = { 0, 0 },
-    }, label), options)
+    return element.new(
+        setmetatable({
+            raw_text = text,
+            text = love.graphics.newText(cached_fonts[font_size], text),
+            wrap = options.wrap or false,
+            font = cached_fonts[font_size],
+            font_size = font_size,
+            pos = { 0, 0 },
+        }, label),
+        options
+    )
 end
 
 ---set the gui scale for the label
@@ -66,7 +69,12 @@ end
 
 ---draw the label
 function label:draw()
-    love.graphics.setColor(self.color)
+    -- TODO: replace temporary visual selection state
+    if self.selected then
+        love.graphics.setColor(0, 0, 1, 1)
+    else
+        love.graphics.setColor(self.color)
+    end
     love.graphics.draw(self.text, unpack(self.pos))
 end
 

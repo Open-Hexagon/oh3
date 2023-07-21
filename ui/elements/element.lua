@@ -1,3 +1,4 @@
+local keyboard_navigation = require("ui.keyboard_navigation")
 local point_in_polygon = require("ui.point_in_polygon")
 local element = {}
 element.__index = element
@@ -45,12 +46,27 @@ function element:process_event(name, ...)
         if name == "mousepressed" and self.selectable then
             if self.selected ~= self.is_mouse_over then
                 self.selected = self.is_mouse_over
+                if self.selected then
+                    keyboard_navigation.select_element(self)
+                else
+                    keyboard_navigation.deselect_element(self)
+                end
                 if self.selection_handler then
                     self.selection_handler(self)
                 end
             end
             if self.click_handler and self.is_mouse_over then
                 self.click_handler()
+            end
+        end
+    end
+    if name == "keypressed" then
+        local key = ...
+        if key == "return" or key == "space" then
+            if self.selected then
+                if self.click_handler then
+                    self.click_handler()
+                end
             end
         end
     end
