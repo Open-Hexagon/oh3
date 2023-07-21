@@ -28,7 +28,7 @@ function label:new(text, options)
         padding = options.padding or 8,
         scale = 1,
         pos = { 0, 0 },
-        style = options.style,
+        style = options.style or {},
         color = color or { 1, 1, 1, 1 },
     }, label)
 end
@@ -36,8 +36,7 @@ end
 ---set the style of the label
 ---@param style table
 function label:set_style(style)
-    self.color = style.color
-    self.style = style
+    self.color = self.style.color or style.color or self.color
 end
 
 ---set the gui scale for the label

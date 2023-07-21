@@ -12,10 +12,9 @@ function flex:new(elements, options)
         same_size = options.same_size or false,
         elements = elements,
         scale = 1,
-        style = options.style,
     }, flex)
-    if obj.style then
-        obj:set_style(obj.style)
+    if options.style then
+        obj:set_style(options.style)
     end
     return obj
 end
@@ -26,7 +25,6 @@ function flex:set_style(style)
     for i = 1, #self.elements do
         self.elements[i]:set_style(style)
     end
-    self.style = style
 end
 
 ---set the gui scale of all elements in the flex container
