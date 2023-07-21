@@ -49,8 +49,11 @@ end
 ---@param name string
 ---@param ... unknown
 function ui.process_event(name, ...)
-    if name == "resize" and current_screen then
-        calculate_layout(...)
+    if current_screen then
+        if name == "resize" then
+            calculate_layout(...)
+        end
+        current_screen:process_event(name, ...)
     end
 end
 

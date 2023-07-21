@@ -44,7 +44,7 @@ end
 ---@param available_area table
 ---@return number
 ---@return number
-function label:calculate_layout(available_area)
+function label:calculate_element_layout(available_area)
     -- * 2 as there should be padding on both sides
     local padding = self.padding * 2 * self.scale
     local width, height

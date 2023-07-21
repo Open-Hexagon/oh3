@@ -39,6 +39,15 @@ function quad:set_scale(scale)
     self.scale = scale
 end
 
+---process an event
+---@param ... unknown
+function quad:process_event(...)
+    element.process_event(self, ...)
+    if self.element then
+        self.element:process_event(...)
+    end
+end
+
 ---calculate the layout
 ---@param available_area table
 ---@return number
@@ -74,6 +83,7 @@ function quad:calculate_layout(available_area)
     self.vertices[6] = new_area.y + height + vertex_offsets[6]
     self.vertices[7] = new_area.x - vertex_offsets[7]
     self.vertices[8] = new_area.y + height + vertex_offsets[8]
+    self.bounds = self.vertices
     return left + width + right, top + height + bot
 end
 

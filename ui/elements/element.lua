@@ -1,3 +1,4 @@
+local point_in_polygon = require("ui.point_in_polygon")
 local element = {}
 element.__index = element
 
@@ -7,6 +8,12 @@ function element:new(options)
     self.scale = 1
     self.padding = 8
     self.color = { 1, 1, 1, 1 }
+    self.selectable = options.selectable or false
+    self.is_mouse_over = false
+    self.selected = false
+    self.selection_handler = options.selection_handler
+    self.click_handler = options.click_handler
+    self.bounds = {}
     if options.style then
         self:set_style(options.style)
     end
@@ -20,6 +27,33 @@ end
 
 function element:set_scale(scale)
     self.scale = scale
+end
+
+function element:calculate_layout(available_area)
+    if self.calculate_element_layout then
+        local x, y = available_area.x, available_area.y
+        local width, height = self:calculate_element_layout(available_area)
+        self.bounds = { x, y, x + width, y, x + width, y + height, x, y + height }
+        return width, height
+    end
+end
+
+function element:process_event(name, ...)
+    if name == "mousemoved" or name == "mousepressed" then
+        local x, y = ...
+        self.is_mouse_over = point_in_polygon(self.bounds, x, y)
+        if name == "mousepressed" and self.selectable then
+            if self.selected ~= self.is_mouse_over then
+                self.selected = self.is_mouse_over
+                if self.selection_handler then
+                    self.selection_handler(self)
+                end
+            end
+            if self.click_handler and self.is_mouse_over then
+                self.click_handler()
+            end
+        end
+    end
 end
 
 return element

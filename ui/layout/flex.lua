@@ -36,6 +36,14 @@ function flex:set_scale(scale)
     self.scale = scale
 end
 
+---have all children process an event
+---@param ... unknown
+function flex:process_event(...)
+    for i = 1, #self.elements do
+        self.elements[i]:process_event(...)
+    end
+end
+
 ---calculate the positions and size of the elements in the container (returns total width and height)
 ---@param available_area table
 ---@return number
