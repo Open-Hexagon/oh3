@@ -141,9 +141,11 @@ function flex:process_event(name, ...)
             local dx = x - self.last_mouse_pos[1]
             local dy = y - self.last_mouse_pos[2]
             if self.direction == "row" then
-                self.scroll_target = self.scroll_target + dx
+                local max_move = self.canvas:getWidth() - self.scrollbar_area.width
+                self.scroll_target = self.scroll_target + dx * self.max_scroll / max_move
             elseif self.direction == "column" then
-                self.scroll_target = self.scroll_target + dy
+                local max_move = self.canvas:getHeight() - self.scrollbar_area.height
+                self.scroll_target = self.scroll_target + dy * self.max_scroll / max_move
             end
             flex.scrolled_already = true
             self.scrollbar_visibility_timer = love.timer.getTime()
