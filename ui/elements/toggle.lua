@@ -16,9 +16,9 @@ function toggle:new(options)
         elem.state = not elem.state
         elem.state_indicator_offset:stop()
         if elem.state then
-            elem.state_indicator_offset:keyframe(0.2, elem.radius * 2)
+            elem.state_indicator_offset:keyframe(0.1, elem.radius * 2)
         else
-            elem.state_indicator_offset:keyframe(0.2, 0)
+            elem.state_indicator_offset:keyframe(0.1, 0)
         end
     end
     if obj.state then
