@@ -70,11 +70,15 @@ function element:process_event(name, ...)
                     keyboard_navigation.deselect_element(self)
                 end
                 if self.selection_handler then
-                    self.selection_handler(self)
+                    if self.selection_handler(self) then
+                        return true
+                    end
                 end
             end
             if self.click_handler and self.is_mouse_over then
-                self.click_handler(self)
+                if self.click_handler(self) then
+                    return true
+                end
             end
         end
     end
@@ -83,7 +87,9 @@ function element:process_event(name, ...)
         if key == "return" or key == "space" then
             if self.selected then
                 if self.click_handler then
-                    self.click_handler(self)
+                    if self.click_handler(self) then
+                        return true
+                    end
                 end
             end
         end

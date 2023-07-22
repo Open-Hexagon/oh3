@@ -34,7 +34,9 @@ end
 function overlay_module.process_event(name, ...)
     for i = 1, #overlays do
         if overlays[i] then
-            overlays[i]:process_event(name, ...)
+            if overlays[i]:process_event(name, ...) then
+                return true
+            end
             if not overlays[i] then
                 return true
             end
@@ -44,6 +46,16 @@ function overlay_module.process_event(name, ...)
         end
     end
     return false
+end
+
+---update overlays
+---@param dt number
+function overlay_module.update(dt)
+    for i = 1, #overlays do
+        if overlays[i] then
+            overlays[i]:update(dt)
+        end
+    end
 end
 
 ---draw all overlays

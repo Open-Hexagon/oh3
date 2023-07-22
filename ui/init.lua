@@ -81,6 +81,7 @@ end
 ---@param dt number
 function ui.update(dt)
     signal.update(dt)
+    overlays.update(dt)
 end
 
 ---draw the ui

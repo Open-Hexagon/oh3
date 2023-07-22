@@ -73,7 +73,8 @@ end
 
 ---scroll some bounds from this container into view
 ---@param bounds table
-function flex:scroll_into_view(bounds)
+---@param instant boolean
+function flex:scroll_into_view(bounds, instant)
     if self.needs_scroll then
         local minmax = { math.huge, math.huge, -math.huge, -math.huge }
         for i = 1, #bounds, 2 do
@@ -98,11 +99,15 @@ function flex:scroll_into_view(bounds)
                 self.scroll_target = minmax[4] - visual_height - self.bounds[2]
             end
         end
+        clamp_scroll_target(self)
         if scroll_before ~= self.scroll_target then
             self.scroll:stop()
-            self.scroll:keyframe(0.2, self.scroll_target)
+            if instant then
+                self.scroll:set_immediate_value(self.scroll_target)
+            else
+                self.scroll:keyframe(0.2, self.scroll_target)
+            end
             self.scrollbar_visibility_timer = love.timer.getTime()
-            clamp_scroll_target(self)
         end
     end
 end
@@ -132,7 +137,9 @@ function flex:process_event(name, ...)
     end
     if propagate then
         for i = 1, #self.elements do
-            self.elements[i]:process_event(name, ...)
+            if self.elements[i]:process_event(name, ...) then
+                return true
+            end
         end
     end
     if name == "mousereleased" then
@@ -379,7 +386,7 @@ function flex:calculate_layout(available_area)
                 self.needs_scroll = true
             end
         end
-        if not self.canvas or self.canvas:getWidth() ~= final_width or self.canvas:getHeight() ~= final_height then
+        if not self.is_animating and (not self.canvas or self.canvas:getWidth() ~= final_width or self.canvas:getHeight() ~= final_height) then
             local width, height = final_width, final_height
             width = math.max(width, 1)
             height = math.max(height, 1)
@@ -399,15 +406,17 @@ function flex:calculate_layout(available_area)
         available_area.x,
         available_area.y + final_height,
     }
-    if not self.needs_scroll then
-        self.scroll_target = 0
-        self.scroll:set_value(0)
-        self.scroll:fast_forward()
-        self.own_scroll_offset = { 0, 0 }
-    end
-    self:set_scroll_offset()
-    if self.needs_scroll then
-        self.scrollbar_visibility_timer = -2
+    if not self.is_animating then
+        if not self.needs_scroll then
+            self.scroll_target = 0
+            self.scroll:set_value(0)
+            self.scroll:fast_forward()
+            self.own_scroll_offset = { 0, 0 }
+        end
+        self:set_scroll_offset()
+        if self.needs_scroll then
+            self.scrollbar_visibility_timer = -2
+        end
     end
     return final_width, final_height
 end

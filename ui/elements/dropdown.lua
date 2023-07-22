@@ -55,27 +55,34 @@ function dropdown:new(selections, options)
             end,
             click_handler = function()
                 obj.toggle(false)
+                return true
             end
         }))
     end
     obj.is_opened = false
     obj.selections = selections
     obj.selection_quad = quad:new({
-        child_element = flex:new(selections, { direction = "column", scrollable = true, same_thickness = true, style = { padding = 0, border_thickness = 0 } })
+        child_element = flex:new(selections, { direction = "column", scrollable = true, same_thickness = true, style = { border_thickness = 0 } }),
+        style = { padding = 0 },
     })
+    local dropdown_height, real_dropdown_height, dropdown_height_target, last_dropdown_height = 0, 0, 0, 0
     local function update_dropdown_layout()
-        local padding = obj.element.padding
         local area = {
-            x = obj.vertices[7] + math.abs(obj.vertex_offsets[7]) - padding - obj.scroll_offset[1],
-            y = obj.vertices[8] - math.abs(obj.vertex_offsets[8]) - padding - obj.scroll_offset[2],
+            x = obj.vertices[7] + math.abs(obj.vertex_offsets[7]) - obj.scroll_offset[1],
+            y = obj.vertices[8] - math.abs(obj.vertex_offsets[8]) - obj.scroll_offset[2],
         }
-        local other_corner_x = obj.vertices[3] - math.abs(obj.vertex_offsets[3]) + padding
+        local other_corner_x = obj.vertices[3] - math.abs(obj.vertex_offsets[3])
         area.width = other_corner_x - area.x
-        area.height = love.graphics.getHeight() - area.y
-        obj.selection_quad:calculate_layout(area)
+        area.height = dropdown_height
+        obj.selection_quad.element.is_animating = dropdown_height == dropdown_height_target
+        _, real_dropdown_height = obj.selection_quad:calculate_layout(area)
+        obj.selection_quad.element.is_animating = nil
     end
     local quad_event = obj.selection_quad.process_event
     obj.selection_quad.process_event = function(elem, name, ...)
+        if quad_event(elem, name, ...) then
+            return true
+        end
         if name == "resize" and obj.is_opened then
             update_dropdown_layout()
         end
@@ -89,7 +96,6 @@ function dropdown:new(selections, options)
                 end
             end
         end
-        quad_event(elem, name, ...)
     end
     local quad_scale = obj.set_scale
     obj.set_scale = function(elem, scale)
@@ -106,6 +112,33 @@ function dropdown:new(selections, options)
         elem.scroll_offset = scroll_offset
         update_dropdown_layout()
     end
+    obj.selection_quad.update = function(_, dt)
+        if dropdown_height < dropdown_height_target then
+            dropdown_height = dropdown_height + dt * 2000
+            if dropdown_height > dropdown_height_target then
+                dropdown_height = dropdown_height_target
+            end
+        elseif dropdown_height > dropdown_height_target then
+            dropdown_height = dropdown_height - dt * 2000
+            if dropdown_height < dropdown_height_target then
+                dropdown_height = dropdown_height_target
+            end
+        end
+        if last_dropdown_height ~= dropdown_height then
+            update_dropdown_layout()
+            if dropdown_height_target ~= 0 then
+                local elem = keyboard_navigation.get_selected_element()
+                if elem then
+                    obj.selection_quad.element:scroll_into_view(elem.bounds, true)
+                end
+            end
+        end
+        last_dropdown_height = dropdown_height
+        if dropdown_height == 0 and obj.overlay_index then
+            overlays.remove_overlay(obj.overlay_index)
+            obj.overlay_index = nil
+        end
+    end
     obj.toggle = function(bool)
         local previous_state = obj.is_opened
         if bool == nil then
@@ -115,8 +148,11 @@ function dropdown:new(selections, options)
         end
         if obj.is_opened ~= previous_state then
             if obj.is_opened then
+                dropdown_height_target = love.graphics.getHeight() - obj.vertices[8] + math.abs(obj.vertex_offsets[8]) + obj.element.padding + obj.scroll_offset[2]
                 update_dropdown_layout()
-                obj.overlay_index = overlays.add_overlay(obj.selection_quad)
+                if not obj.overlay_index then
+                    obj.overlay_index = overlays.add_overlay(obj.selection_quad)
+                end
                 obj.last_screen = keyboard_navigation.get_screen()
                 keyboard_navigation.set_screen(obj.selection_quad)
                 for i = 1, #selections do
@@ -133,11 +169,11 @@ function dropdown:new(selections, options)
                         break
                     end
                 end
-                overlays.remove_overlay(obj.overlay_index)
+                dropdown_height = real_dropdown_height
+                dropdown_height_target = 0
                 keyboard_navigation.set_screen(obj.last_screen)
                 keyboard_navigation.select_element(obj)
                 obj.last_screen = nil
-                obj.overlay_index = nil
             end
         end
     end

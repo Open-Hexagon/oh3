@@ -69,6 +69,10 @@ function keyboard_navigation.deselect_element(element)
     end
 end
 
+function keyboard_navigation.get_selected_element()
+    return selected_element
+end
+
 function keyboard_navigation.move(dx, dy)
     if dx ~= 0 and dy ~= 0 then
         error("keyboard navigation can only move in one direction at a time")

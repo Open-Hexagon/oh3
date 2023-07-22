@@ -50,9 +50,13 @@ end
 ---process an event
 ---@param ... unknown
 function quad:process_event(...)
-    element.process_event(self, ...)
     if self.element then
-        self.element:process_event(...)
+        if self.element:process_event(...) then
+            return true
+        end
+    end
+    if element.process_event(self, ...) then
+        return true
     end
 end
 
