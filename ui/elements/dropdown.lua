@@ -76,6 +76,9 @@ function dropdown:new(selections, options)
     end
     local quad_event = obj.selection_quad.process_event
     obj.selection_quad.process_event = function(elem, name, ...)
+        if name == "resize" and obj.is_opened then
+            update_dropdown_layout()
+        end
         if name == "mousemoved" and obj.is_opened then
             local x, y = ...
             for i = 1, #selections do

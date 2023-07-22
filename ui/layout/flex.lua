@@ -380,7 +380,10 @@ function flex:calculate_layout(available_area)
             end
         end
         if not self.canvas or self.canvas:getWidth() ~= final_width or self.canvas:getHeight() ~= final_height then
-            self.canvas = love.graphics.newCanvas(final_width, final_height, {
+            local width, height = final_width, final_height
+            width = math.max(width, 1)
+            height = math.max(height, 1)
+            self.canvas = love.graphics.newCanvas(width, height, {
                 -- TODO: make configurable
                 msaa = 4,
             })
