@@ -65,7 +65,8 @@ end
 --#region Queue
 
 -- Event type enum
-local KEYFRAME_EVENT, WAVEFORM_EVENT, WAIT_EVENT, SET_VALUE_EVENT, CALL_EVENT, RELATIVE_KEYFRAME_EVENT = 1, 2, 3, 4, 5, 6
+local KEYFRAME_EVENT, WAVEFORM_EVENT, WAIT_EVENT, SET_VALUE_EVENT, CALL_EVENT, RELATIVE_KEYFRAME_EVENT =
+    1, 2, 3, 4, 5, 6
 
 ---@class Event
 ---@field type `KEYFRAME_EVENT`|`WAVEFORM_EVENT`|`WAIT_EVENT`|`SET_VALUE_EVENT`|`CALL_EVENT`|`RELATIVE_KEYFRAME_EVENT`
@@ -99,7 +100,6 @@ function signal.Queue:keyframe(duration, value, easing)
     self.last_event.next = newevent
     self.last_event = newevent
 end
-
 
 --- TODO: Adds a keyframe event which works relative to the current value.
 ---@param duration number Event duration
