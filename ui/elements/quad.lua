@@ -69,6 +69,7 @@ end
 ---@return number
 ---@return number
 function quad:calculate_layout(available_area)
+    available_area = available_area or self.last_available_area
     local vertex_offsets = {}
     for i = 1, #self.vertex_offsets do
         -- offsets must be positive (outwards) and must be whole numbers
@@ -100,6 +101,7 @@ function quad:calculate_layout(available_area)
     self.vertices[7] = new_area.x - vertex_offsets[7]
     self.vertices[8] = new_area.y + height + vertex_offsets[8]
     self.bounds = self.vertices
+    self:_update_last_available_area(available_area)
     return left + width + right, top + height + bot
 end
 

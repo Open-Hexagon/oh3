@@ -117,9 +117,7 @@ end
 ---@param name string
 ---@param ... unknown
 function flex:process_event(name, ...)
-    local is_outer = false
     if flex.scrolled_already == nil then
-        is_outer = true
         flex.scrolled_already = false
     end
     for i = 1, #self.elements do
@@ -168,9 +166,6 @@ function flex:process_event(name, ...)
             self.scroll:stop()
             self.scroll:keyframe(0.1, self.scroll_target)
         end
-    end
-    if is_outer then
-        flex.scrolled_already = nil
     end
 end
 
@@ -377,7 +372,6 @@ function flex:calculate_layout(available_area)
     end
     self:set_scroll_offset()
     if self.needs_scroll then
-        update_scrollbar_area(self)
         self.scrollbar_visibility_timer = -2
     end
     return final_width, final_height

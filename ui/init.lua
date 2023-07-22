@@ -1,4 +1,6 @@
 local signal = require("ui.anim.signal")
+local overlays = require("ui.overlays")
+local flex = require("ui.layout.flex")
 local ui = {}
 local screens = {
     test = require("ui.screens.test"),
@@ -52,6 +54,7 @@ end
 ---@param name string
 ---@param ... unknown
 function ui.process_event(name, ...)
+    overlays.process_event(name, ...)
     if current_screen then
         if name == "resize" then
             calculate_layout(...)
@@ -69,8 +72,11 @@ function ui.process_event(name, ...)
         end
         current_screen:process_event(name, ...)
     end
+    flex.scrolled_already = nil
 end
 
+---update animations
+---@param dt number
 function ui.update(dt)
     signal.update(dt)
 end
@@ -80,6 +86,7 @@ function ui.draw()
     if current_screen then
         current_screen:draw()
     end
+    overlays:draw()
 end
 
 return ui

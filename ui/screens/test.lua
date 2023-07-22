@@ -3,8 +3,10 @@
 local flex = require("ui.layout.flex")
 local label = require("ui.elements.label")
 local quad = require("ui.elements.quad")
+local dropdown = require("ui.elements.dropdown")
 return flex:new({
     flex:new({
+        dropdown:new({ "first", "second", "third", "and last selection!" }),
         label:new("Hello"),
         label:new("World", { selectable = true }),
         label:new("This is some incredibly, unimaginably, unfathomably long wrapping text!!!!!!!!!!", { wrap = true }),
@@ -13,7 +15,7 @@ return flex:new({
         label:new("Some", { selectable = true }),
         label:new("Other", { selectable = true }),
         label:new("Stuff", { selectable = true }),
-        label:new("With 5 and not 3 elements this time!", { wrap = true }),
+        label:new("With 5 and not 4 elements this time!", { wrap = true }),
         label:new("This column also has more padding"),
     }, { direction = "column", style = { color = { 1, 0, 1, 1 }, padding = 20 } }),
     flex:new({

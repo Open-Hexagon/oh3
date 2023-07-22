@@ -16,6 +16,7 @@ function element:new(options)
     self.click_handler = options.click_handler
     self.scroll_offset = { 0, 0 }
     self.bounds = {}
+    self.last_available_area = { x = 0, y = 0, width = 0, height = 0 }
     if options.style then
         self:set_style(options.style)
     end
@@ -35,11 +36,19 @@ function element:set_scroll_offset(scroll_offset)
     self.scroll_offset = scroll_offset
 end
 
+function element:_update_last_available_area(available_area)
+    for k, v in pairs(available_area) do
+        self.last_available_area[k] = v
+    end
+end
+
 function element:calculate_layout(available_area)
+    available_area = available_area or self.last_available_area
     if self.calculate_element_layout then
         local x, y = available_area.x, available_area.y
         local width, height = self:calculate_element_layout(available_area)
         self.bounds = { x, y, x + width, y, x + width, y + height, x, y + height }
+        self:_update_last_available_area(available_area)
         return width, height
     end
 end
@@ -65,7 +74,7 @@ function element:process_event(name, ...)
                 end
             end
             if self.click_handler and self.is_mouse_over then
-                self.click_handler()
+                self.click_handler(self)
             end
         end
     end
@@ -74,7 +83,7 @@ function element:process_event(name, ...)
         if key == "return" or key == "space" then
             if self.selected then
                 if self.click_handler then
-                    self.click_handler()
+                    self.click_handler(self)
                 end
             end
         end

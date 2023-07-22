@@ -7,6 +7,10 @@ function keyboard_navigation.set_screen(screen)
     selected_element = nil
 end
 
+function keyboard_navigation.get_screen()
+    return current_screen
+end
+
 local function get_first_element(element)
     if element.selectable then
         return element
