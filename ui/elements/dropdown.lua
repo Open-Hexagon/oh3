@@ -3,6 +3,7 @@ local overlays = require("ui.overlays")
 local label = require("ui.elements.label")
 local quad = require("ui.elements.quad")
 local flex = require("ui.layout.flex")
+local point_in_polygon = require("ui.extmath").point_in_polygon
 local dropdown = {}
 
 local function table_plus(t1, t2)
@@ -19,9 +20,6 @@ end
 function dropdown:new(selections, options)
     options = options or {}
     local selected_label = label:new(selections[1], table_plus(options, { selectable = false }))
-    for i = 1, #selections do
-        selections[i] = label:new(selections[i], table_plus(options, { selectable = true }))
-    end
     local obj = quad:new(table_plus(options, {
         selectable = true,
         child_element = selected_label,
@@ -38,10 +36,32 @@ function dropdown:new(selections, options)
             elem.toggle()
         end,
     }))
+    for i = 1, #selections do
+        for j = 1, #selections do
+            if j ~= i and selections[i] == selections[j] then
+                error("Can't have the same selection twice in dropdown '" .. selections[i] .. "'")
+            end
+        end
+        selections[i] = quad:new(table_plus(options, {
+            child_element = label:new(selections[i], table_plus(options, { style = { padding = 8 } })),
+            selectable = true,
+            selection_handler = function(elem)
+                -- TODO: replace temporary hardcoded selection color
+                if elem.selected then
+                    elem.background_color = { 0.5, 0.5, 1, 1 }
+                else
+                    elem.background_color = { 0, 0, 0, 1 }
+                end
+            end,
+            click_handler = function()
+                obj.toggle(false)
+            end
+        }))
+    end
     obj.is_opened = false
     obj.selections = selections
     obj.selection_quad = quad:new({
-        child_element = flex:new(selections, { direction = "column", scrollable = true }),
+        child_element = flex:new(selections, { direction = "column", scrollable = true, same_thickness = true, style = { padding = 0, border_thickness = 0 } })
     })
     local function update_dropdown_layout()
         local padding = obj.element.padding
@@ -53,6 +73,20 @@ function dropdown:new(selections, options)
         area.width = other_corner_x - area.x
         area.height = love.graphics.getHeight() - area.y
         obj.selection_quad:calculate_layout(area)
+    end
+    local quad_event = obj.selection_quad.process_event
+    obj.selection_quad.process_event = function(elem, name, ...)
+        if name == "mousemoved" and obj.is_opened then
+            local x, y = ...
+            for i = 1, #selections do
+                local scroll_offset = selections[i].scroll_offset
+                if point_in_polygon(selections[i].bounds, x + scroll_offset[1], y + scroll_offset[2]) then
+                    keyboard_navigation.select_element(selections[i])
+                    break
+                end
+            end
+        end
+        quad_event(elem, name, ...)
     end
     local quad_scale = obj.set_scale
     obj.set_scale = function(elem, scale)
@@ -82,18 +116,16 @@ function dropdown:new(selections, options)
                 obj.overlay_index = overlays.add_overlay(obj.selection_quad)
                 obj.last_screen = keyboard_navigation.get_screen()
                 keyboard_navigation.set_screen(obj.selection_quad)
-                local elements = obj.selection_quad.element.elements
-                for i = 1, #elements do
-                    if elements[i].raw_text == obj.element.raw_text then
-                        keyboard_navigation.select_element(elements[i])
+                for i = 1, #selections do
+                    if selections[i].element.raw_text == obj.element.raw_text then
+                        keyboard_navigation.select_element(selections[i])
                         break
                     end
                 end
             else
-                local elements = obj.selection_quad.element.elements
-                for i = 1, #elements do
-                    if elements[i].selected then
-                        obj.element.raw_text = elements[i].raw_text
+                for i = 1, #selections do
+                    if selections[i].selected then
+                        obj.element.raw_text = selections[i].element.raw_text
                         obj:calculate_layout()
                         break
                     end
@@ -102,7 +134,6 @@ function dropdown:new(selections, options)
                 keyboard_navigation.set_screen(obj.last_screen)
                 keyboard_navigation.select_element(obj)
                 obj.last_screen = nil
-                obj.elements = nil
                 obj.overlay_index = nil
             end
         end

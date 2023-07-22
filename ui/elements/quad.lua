@@ -32,9 +32,10 @@ function quad:set_style(style)
     if self.element then
         self.element:set_style(style)
     end
-    self.background_color = self.style.background_color or style.background_color or self.color
+    self.background_color = self.style.background_color or style.background_color or self.background_color
     self.border_thickness = self.style.border_thickness or style.border_thickness or self.border_thickness
     self.border_color = self.style.border_color or style.border_color or self.border_color
+    element.set_style(self, style)
 end
 
 ---set the gui scale
@@ -86,9 +87,12 @@ function quad:calculate_layout(available_area)
         height = available_area.height - bot,
     }
     local width, height
-    if self.element then
+    if self.element and not self.flex_expand then
         width, height = self.element:calculate_layout(new_area)
     else
+        if self.element then
+            self.element:calculate_layout(new_area)
+        end
         width = available_area.width - left - right
         height = available_area.height - top - bot
     end
@@ -109,9 +113,11 @@ end
 function quad:draw()
     love.graphics.setColor(self.background_color)
     love.graphics.polygon("fill", self.vertices)
-    love.graphics.setColor(self.border_color)
-    love.graphics.setLineWidth(self.border_thickness * self.scale)
-    love.graphics.polygon("line", self.vertices)
+    if self.border_thickness ~= 0 then
+        love.graphics.setColor(self.border_color)
+        love.graphics.setLineWidth(self.border_thickness * self.scale)
+        love.graphics.polygon("line", self.vertices)
+    end
     if self.element then
         self.element:draw()
     end

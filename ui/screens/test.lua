@@ -10,6 +10,7 @@ return flex:new({
         label:new("Hello"),
         label:new("World", { selectable = true }),
         label:new("This is some incredibly, unimaginably, unfathomably long wrapping text!!!!!!!!!!", { wrap = true }),
+        dropdown:new({ "this", "dropdown", "has", "many", "selections", "in", "order", "to", "test", "the", "scroll", "try some longer text as well", "maybe something weird will happen if it gets too long", "otherwise", "i really hope", "i have", "enough", "entries", "to try", "scrolling", "now" }),
     }, { direction = "column" }),
     flex:new({
         label:new("Some", { selectable = true }),

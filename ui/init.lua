@@ -54,7 +54,7 @@ end
 ---@param name string
 ---@param ... unknown
 function ui.process_event(name, ...)
-    overlays.process_event(name, ...)
+    local stop_propagation = overlays.process_event(name, ...)
     if current_screen then
         if name == "resize" then
             calculate_layout(...)
@@ -70,7 +70,9 @@ function ui.process_event(name, ...)
                 keyboard_navigation.move(0, 1)
             end
         end
-        current_screen:process_event(name, ...)
+        if not stop_propagation then
+            current_screen:process_event(name, ...)
+        end
     end
     flex.scrolled_already = nil
 end

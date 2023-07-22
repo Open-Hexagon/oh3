@@ -36,7 +36,7 @@ local function scroll_into_view(element)
     if element.parent then
         scroll_into_view(element.parent)
         if element.parent.elements then
-            element.parent:scroll_into_view(element)
+            element.parent:scroll_into_view(element.bounds)
         end
     end
 end

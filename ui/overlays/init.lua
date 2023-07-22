@@ -1,3 +1,4 @@
+local point_in_polygon = require("ui.extmath").point_in_polygon
 local overlay_module = {}
 local overlays = {}
 local free_overlay_indices = {}
@@ -29,12 +30,20 @@ end
 ---process an event
 ---@param name any
 ---@param ... unknown
+---@return boolean
 function overlay_module.process_event(name, ...)
     for i = 1, #overlays do
         if overlays[i] then
             overlays[i]:process_event(name, ...)
+            if not overlays[i] then
+                return true
+            end
+            if point_in_polygon(overlays[i].bounds, love.mouse.getPosition()) then
+                return true
+            end
         end
     end
+    return false
 end
 
 ---draw all overlays

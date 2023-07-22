@@ -12,6 +12,7 @@ function flex:new(elements, options)
     local obj = setmetatable({
         direction = options.direction or "row",
         same_size = options.same_size or false,
+        same_thickness = options.same_thickness or false,
         elements = elements,
         scale = 1,
         scrollable = options.scrollable or false,
@@ -30,6 +31,7 @@ function flex:new(elements, options)
         scrollbar_grabbed = false,
         last_mouse_pos = { 0, 0 },
         bounds = {},
+        last_available_area = { x = 0, y = 0, width = 0, height = 0 },
     }, flex)
     for i = 1, #elements do
         elements[i].parent = obj
@@ -69,32 +71,31 @@ local function clamp_scroll_target(self)
     end
 end
 
----scroll an element from this container into view
----@param child_element table
-function flex:scroll_into_view(child_element)
+---scroll some bounds from this container into view
+---@param bounds table
+function flex:scroll_into_view(bounds)
     if self.needs_scroll then
-        local points = child_element.bounds
         local minmax = { math.huge, math.huge, -math.huge, -math.huge }
-        for i = 1, #points, 2 do
-            minmax[1] = math.min(points[i], minmax[1])
-            minmax[2] = math.min(points[i + 1], minmax[2])
-            minmax[3] = math.max(points[i], minmax[3])
-            minmax[4] = math.max(points[i + 1], minmax[4])
+        for i = 1, #bounds, 2 do
+            minmax[1] = math.min(bounds[i], minmax[1])
+            minmax[2] = math.min(bounds[i + 1], minmax[2])
+            minmax[3] = math.max(bounds[i], minmax[3])
+            minmax[4] = math.max(bounds[i + 1], minmax[4])
         end
         local scroll_before = self.scroll_target
         if self.direction == "row" then
             local visual_width = self.canvas:getWidth()
-            if self.scroll_target > minmax[1] then
-                self.scroll_target = minmax[1]
-            elseif self.scroll_target + visual_width < minmax[3] then
-                self.scroll_target = minmax[3] - visual_width
+            if self.scroll_target + self.bounds[1] > minmax[1] then
+                self.scroll_target = minmax[1] - self.bounds[1]
+            elseif self.scroll_target + visual_width + self.bounds[1] < minmax[3] then
+                self.scroll_target = minmax[3] - visual_width - self.bounds[1]
             end
         elseif self.direction == "column" then
             local visual_height = self.canvas:getHeight()
-            if self.scroll_target > minmax[2] then
-                self.scroll_target = minmax[2]
-            elseif self.scroll_target + visual_height < minmax[4] then
-                self.scroll_target = minmax[4] - visual_height
+            if self.scroll_target + self.bounds[2] > minmax[2] then
+                self.scroll_target = minmax[2] - self.bounds[2]
+            elseif self.scroll_target + visual_height + self.bounds[2] < minmax[4] then
+                self.scroll_target = minmax[4] - visual_height - self.bounds[2]
             end
         end
         if scroll_before ~= self.scroll_target then
@@ -120,15 +121,19 @@ function flex:process_event(name, ...)
     if flex.scrolled_already == nil then
         flex.scrolled_already = false
     end
-    for i = 1, #self.elements do
-        self.elements[i]:process_event(name, ...)
-    end
+    local propagate = true
     if name == "mousepressed" then
         local x, y = ...
         if point_in_scrollbar(self, x, y) then
+            propagate = false
             self.scrollbar_grabbed = true
         end
         self.last_mouse_pos[1], self.last_mouse_pos[2] = x, y
+    end
+    if propagate then
+        for i = 1, #self.elements do
+            self.elements[i]:process_event(name, ...)
+        end
     end
     if name == "mousereleased" then
         self.scrollbar_grabbed = false
@@ -217,6 +222,10 @@ end
 ---@return number
 ---@return number
 function flex:calculate_layout(available_area)
+    available_area = available_area or self.last_available_area
+    for k, v in pairs(available_area) do
+        self.last_available_area[k] = v
+    end
     local element_area = {
         x = available_area.x,
         y = available_area.y,
@@ -330,6 +339,29 @@ function flex:calculate_layout(available_area)
         elseif self.direction == "column" then
             final_width = thickness
             final_height = element_area.y - y
+        end
+    end
+    if self.same_thickness then
+        for i = 1, #self.elements do
+            local elem = self.elements[i]
+            if self.direction == "row" then
+                elem.last_available_area.height = final_height
+                if self.elements[i + 1] then
+                    elem.last_available_area.width = self.elements[i + 1].last_available_area.x - elem.last_available_area.x
+                else
+                    elem.last_available_area.width = available_area.x + final_width - elem.last_available_area.x
+                end
+            elseif self.direction == "column" then
+                elem.last_available_area.width = final_width
+                if self.elements[i + 1] then
+                    elem.last_available_area.height = self.elements[i + 1].last_available_area.y - elem.last_available_area.y
+                else
+                    elem.last_available_area.height = available_area.y + final_height - elem.last_available_area.y
+                end
+            end
+            elem.flex_expand = true
+            elem:calculate_layout()
+            elem.flex_expand = nil
         end
     end
     self.needs_scroll = false
