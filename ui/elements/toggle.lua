@@ -55,6 +55,7 @@ function toggle:draw()
     love.graphics.setColor(self.color)
     love.graphics.circle("fill", self.bounds[1] + padding + radius + self.state_indicator_offset() * self.scale, self.bounds[2] + padding + radius, radius, segments)
     if self.selected then
+        -- TODO: add select border width option
         love.graphics.setLineWidth(self.scale)
         -- TODO: replace temporary selection color
         love.graphics.setColor(0, 0, 1, 1)

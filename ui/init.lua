@@ -58,7 +58,11 @@ function ui.process_event(name, ...)
     if current_screen then
         if name == "resize" then
             calculate_layout(...)
-        elseif name == "keypressed" then
+        end
+        if not stop_propagation then
+            stop_propagation = current_screen:process_event(name, ...)
+        end
+        if name == "keypressed" and not stop_propagation then
             local key = ...
             if key == "left" then
                 keyboard_navigation.move(-1, 0)
@@ -69,9 +73,6 @@ function ui.process_event(name, ...)
             elseif key == "down" then
                 keyboard_navigation.move(0, 1)
             end
-        end
-        if not stop_propagation then
-            current_screen:process_event(name, ...)
         end
     end
     flex.scrolled_already = nil

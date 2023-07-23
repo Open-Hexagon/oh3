@@ -5,6 +5,7 @@ local label = require("ui.elements.label")
 local quad = require("ui.elements.quad")
 local dropdown = require("ui.elements.dropdown")
 local toggle = require("ui.elements.toggle")
+local slider = require("ui.elements.slider")
 return flex:new({
     flex:new({
         dropdown:new({ "first", "second", "third", "and last selection!" }),
@@ -15,7 +16,8 @@ return flex:new({
         flex:new({
             label:new("You can toggle this one:"),
             toggle:new(),
-        })
+        }),
+        slider:new(),
     }, { direction = "column" }),
     flex:new({
         label:new("Some", { selectable = true }),
