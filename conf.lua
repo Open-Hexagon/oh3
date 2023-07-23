@@ -13,6 +13,7 @@ function love.conf(t)
 
         -- TODO: make configurable
         t.window.vsync = 0
+        t.window.msaa = 4
 
         t.console = true -- windows only
 
