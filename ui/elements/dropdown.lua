@@ -62,7 +62,7 @@ function dropdown:new(selections, options)
     obj.is_opened = false
     obj.selections = selections
     obj.selection_quad = quad:new({
-        child_element = flex:new(selections, { direction = "column", scrollable = true, same_thickness = true, style = { border_thickness = 0 } }),
+        child_element = flex:new(selections, { direction = "column", scrollable = true, align_items = "stretch", style = { border_thickness = 0 } }),
         style = { padding = 0 },
     })
     local dropdown_height, real_dropdown_height, dropdown_height_target, last_dropdown_height = 0, 0, 0, 0

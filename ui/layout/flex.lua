@@ -12,7 +12,7 @@ function flex:new(elements, options)
     local obj = setmetatable({
         direction = options.direction or "row",
         same_size = options.same_size or false,
-        same_thickness = options.same_thickness or false,
+        align_items = options.align_items or "start",
         elements = elements,
         scale = 1,
         scrollable = options.scrollable or false,
@@ -71,18 +71,23 @@ local function clamp_scroll_target(self)
     end
 end
 
+local function get_rect_bounds(bounds)
+    local minmax = { math.huge, math.huge, -math.huge, -math.huge }
+    for i = 1, #bounds, 2 do
+        minmax[1] = math.min(bounds[i], minmax[1])
+        minmax[2] = math.min(bounds[i + 1], minmax[2])
+        minmax[3] = math.max(bounds[i], minmax[3])
+        minmax[4] = math.max(bounds[i + 1], minmax[4])
+    end
+    return minmax
+end
+
 ---scroll some bounds from this container into view
 ---@param bounds table
 ---@param instant boolean
 function flex:scroll_into_view(bounds, instant)
+    local minmax = get_rect_bounds(bounds)
     if self.needs_scroll then
-        local minmax = { math.huge, math.huge, -math.huge, -math.huge }
-        for i = 1, #bounds, 2 do
-            minmax[1] = math.min(bounds[i], minmax[1])
-            minmax[2] = math.min(bounds[i + 1], minmax[2])
-            minmax[3] = math.max(bounds[i], minmax[3])
-            minmax[4] = math.max(bounds[i + 1], minmax[4])
-        end
         local scroll_before = self.scroll_target
         if self.direction == "row" then
             local visual_width = self.canvas:getWidth()
@@ -348,7 +353,7 @@ function flex:calculate_layout(available_area)
             final_height = element_area.y - y
         end
     end
-    if self.same_thickness then
+    if self.align_items == "stretch" then
         for i = 1, #self.elements do
             local elem = self.elements[i]
             if self.direction == "row" then
@@ -370,6 +375,34 @@ function flex:calculate_layout(available_area)
             elem:calculate_layout()
             elem.flex_expand = nil
         end
+    elseif self.align_items == "center" then
+        for i = 1, #self.elements do
+            local elem = self.elements[i]
+            local minmax = get_rect_bounds(elem.bounds)
+            if self.direction == "row" then
+                local empty_space = elem.last_available_area.y + elem.last_available_area.height - minmax[4]
+                elem.last_available_area.y = elem.last_available_area.y + empty_space / 2
+            elseif self.direction == "column" then
+                local empty_space = elem.last_available_area.x + elem.last_available_area.width - minmax[3]
+                elem.last_available_area.x = elem.last_available_area.x + empty_space / 2
+            end
+            elem:calculate_layout()
+        end
+    elseif self.align_items == "end" then
+        for i = 1, #self.elements do
+            local elem = self.elements[i]
+            local minmax = get_rect_bounds(elem.bounds)
+            if self.direction == "row" then
+                local empty_space = elem.last_available_area.y + elem.last_available_area.height - minmax[4]
+                elem.last_available_area.y = elem.last_available_area.y + empty_space
+            elseif self.direction == "column" then
+                local empty_space = elem.last_available_area.x + elem.last_available_area.width - minmax[3]
+                elem.last_available_area.x = elem.last_available_area.x + empty_space
+            end
+            elem:calculate_layout()
+        end
+    elseif self.align_items ~= "start" then
+        error("Invalid value for align_items option '" .. self.align_items .. "' possible values are: 'start', 'center', 'end' and 'stretch'")
     end
     self.needs_scroll = false
     if self.scrollable then

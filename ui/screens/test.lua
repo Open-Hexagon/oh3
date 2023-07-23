@@ -25,7 +25,7 @@ return flex:new({
         label:new("Stuff", { selectable = true }),
         label:new("With 5 and not 4 elements this time!", { wrap = true }),
         label:new("This column also has more padding"),
-    }, { direction = "column", style = { color = { 1, 0, 1, 1 }, padding = 20 } }),
+    }, { direction = "column", style = { color = { 1, 0, 1, 1 }, padding = 20 }, align_items = "center" }),
     flex:new({
         label:new("Look at that:"),
         quad:new({
