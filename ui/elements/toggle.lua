@@ -40,7 +40,12 @@ end
 
 function toggle:draw()
     local radius = self.radius * self.scale
-    love.graphics.setColor(self.background_color)
+    if self.state then
+        -- TODO: replace temporary indicator color
+        love.graphics.setColor(0.5, 0.5, 1, 1)
+    else
+        love.graphics.setColor(self.background_color)
+    end
     love.graphics.circle("fill", self.bounds[1] + radius, self.bounds[2] + radius, radius)
     love.graphics.circle("fill", self.bounds[1] + 3 * radius, self.bounds[2] + radius, radius)
     love.graphics.rectangle("fill", self.bounds[1] + radius, self.bounds[2], 2 * radius, 2 * radius)
