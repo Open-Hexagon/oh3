@@ -53,15 +53,18 @@ function element:calculate_layout(available_area)
     end
 end
 
-function element:check_screen()
+function element:get_root()
     local function get_parent(elem)
         if elem.parent then
             return get_parent(elem.parent)
         end
         return elem
     end
-    local screen = get_parent(self)
-    return screen == keyboard_navigation.get_screen()
+    return get_parent(self)
+end
+
+function element:check_screen()
+    return self:get_root() == keyboard_navigation.get_screen()
 end
 
 function element:process_event(name, ...)

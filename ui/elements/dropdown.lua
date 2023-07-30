@@ -153,7 +153,6 @@ function dropdown:new(selections, options)
                 if not obj.overlay_index then
                     obj.overlay_index = overlays.add_overlay(obj.selection_quad)
                 end
-                obj.last_screen = keyboard_navigation.get_screen()
                 keyboard_navigation.set_screen(obj.selection_quad)
                 for i = 1, #selections do
                     if selections[i].element.raw_text == obj.element.raw_text then
@@ -173,7 +172,7 @@ function dropdown:new(selections, options)
                 dropdown_height_target = 0
                 if keyboard_navigation.get_screen() == obj.selection_quad then
                     -- dropdown closed by opening another dropdown
-                    keyboard_navigation.set_screen(obj.last_screen)
+                    keyboard_navigation.set_screen(obj:get_root())
                     keyboard_navigation.select_element(obj)
                 end
                 obj.last_screen = nil
