@@ -68,7 +68,7 @@ function ui.process_event(name, ...)
         if not stop_propagation then
             stop_propagation = current_screen:process_event(name, ...)
         end
-        if not stop_propagation then
+        if not stop_propagation and keyboard_navigation.get_screen() == current_screen then
             keyboard_navigation.process_event(name, ...)
         end
     end

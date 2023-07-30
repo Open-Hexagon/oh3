@@ -140,6 +140,15 @@ function flex:process_event(name, ...)
         end
         self.last_mouse_pos[1], self.last_mouse_pos[2] = x, y
     end
+    if name == "mousereleased" then
+        if self.last_finger then
+            propagate = false
+        end
+        self.last_finger = nil
+        self.last_finger_x = nil
+        self.last_finger_y = nil
+        self.scrollbar_grabbed = false
+    end
     if propagate then
         for i = 1, #self.elements do
             if self.elements[i]:process_event(name, ...) then
@@ -147,35 +156,28 @@ function flex:process_event(name, ...)
             end
         end
     end
-    if name == "mousereleased" then
-        self.scrollbar_grabbed = false
-    end
-    if name == "touchmoved" and self.needs_scroll and not self.scrollbar_grabbed then
+    if name == "touchmoved" and self.needs_scroll and not self.scrollbar_grabbed and not flex.scrolled_already then
         local mx, my = love.mouse.getPosition()
-        local mouse_over_container = point_in_polygon(self.bounds, mx + self.external_scroll_offset[1], my + self.external_scroll_offset[2])
-        local finger, x, y = ...
-        if finger == self.last_finger and mouse_over_container then
-            local dx = x - self.last_finger_x
-            local dy = y - self.last_finger_y
-            if self.direction == "row" then
-                self.scroll_target = self.scroll_target - dx
-            elseif self.direction == "column" then
-                self.scroll_target = self.scroll_target - dy
+        if point_in_polygon(self.bounds, mx + self.external_scroll_offset[1], my + self.external_scroll_offset[2]) then
+            local finger, x, y = ...
+            if finger == self.last_finger then
+                local dx = x - self.last_finger_x
+                local dy = y - self.last_finger_y
+                if self.direction == "row" then
+                    self.scroll_target = self.scroll_target - dx
+                elseif self.direction == "column" then
+                    self.scroll_target = self.scroll_target - dy
+                end
+                flex.scrolled_already = true
+                self.scrollbar_visibility_timer = love.timer.getTime()
+                clamp_scroll_target(self)
+                self.scroll:stop()
+                self.scroll:set_immediate_value(self.scroll_target)
             end
-            flex.scrolled_already = true
-            self.scrollbar_visibility_timer = love.timer.getTime()
-            clamp_scroll_target(self)
-            self.scroll:stop()
-            self.scroll:set_immediate_value(self.scroll_target)
+            self.last_finger = finger
+            self.last_finger_x = x
+            self.last_finger_y = y
         end
-        self.last_finger_x = x
-        self.last_finger_y = y
-        self.last_finger = finger
-    end
-    if name == "touchreleased" then
-        self.last_finger = nil
-        self.last_finger_x = nil
-        self.last_finger_y = nil
     end
     if name == "mousemoved" and self.needs_scroll then
         local x, y = ...
