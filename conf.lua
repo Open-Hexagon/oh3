@@ -39,4 +39,6 @@ function love.conf(t)
         t.modules.video = false
         t.modules.window = false
     end
+    -- allows people to access game directories on android
+    t.externalstorage = true
 end
