@@ -25,10 +25,16 @@ local function calculate_layout(width, height)
         width = width or love.graphics.getWidth(),
         height = height or love.graphics.getHeight(),
     }
-    if current_screen.scale ~= gui_scale then
-        current_screen:set_scale(gui_scale)
-    end
     local res_width, res_height = current_screen:calculate_layout(screen_area)
+    -- as long as the resulting layout is smaller than the window, up gui scale (until user setting is reached)
+    while res_width <= screen_area.width and res_height <= screen_area.height do
+        local new_scale = current_screen.scale + 0.1
+        if new_scale > gui_scale then
+            break
+        end
+        current_screen:set_scale(new_scale)
+        res_width, res_height = current_screen:calculate_layout(screen_area)
+    end
     -- as long as the resulting layout is too big for the window, lower gui scale
     while res_width > screen_area.width or res_height > screen_area.height do
         local new_scale = current_screen.scale - 0.1

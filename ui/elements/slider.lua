@@ -81,7 +81,7 @@ function slider:draw()
     love.graphics.circle("fill", x + inner_width, y, inner_radius, segments)
     love.graphics.rectangle("fill", x, y - inner_radius, inner_width, inner_radius * 2)
     love.graphics.setColor(self.color)
-    local indicator_x = x + self.position() * self.step_size
+    local indicator_x = x + self.position() * self.step_size * self.scale
     love.graphics.circle("fill", indicator_x, y, radius, segments)
     if self.selected then
         -- TODO: add select border width option
