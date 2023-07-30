@@ -178,6 +178,8 @@ function flex:process_event(name, ...)
             self.last_finger_x = x
             self.last_finger_y = y
         end
+    elseif name == "touchmoved" then
+        self.last_finger = nil
     end
     if name == "mousemoved" and self.needs_scroll then
         local x, y = ...
