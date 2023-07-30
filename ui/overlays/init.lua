@@ -1,4 +1,5 @@
 local point_in_polygon = require("ui.extmath").point_in_polygon
+local keyboard_navigation = require("ui.keyboard_navigation")
 local overlay_module = {}
 local overlays = {}
 local free_overlay_indices = {}
@@ -39,6 +40,9 @@ function overlay_module.process_event(name, ...)
             end
             if not overlays[i] then
                 return true
+            end
+            if keyboard_navigation.get_screen() == overlays[i] then
+                keyboard_navigation.process_event(name, ...)
             end
             if point_in_polygon(overlays[i].bounds, love.mouse.getPosition()) then
                 return true

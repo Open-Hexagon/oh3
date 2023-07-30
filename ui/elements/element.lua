@@ -65,14 +65,14 @@ function element:check_screen()
 end
 
 function element:process_event(name, ...)
-    if name == "mousemoved" or name == "mousepressed" then
+    if name == "mousemoved" or name == "mousepressed" or name == "mousereleased" then
         local x, y = ...
         if self.scroll_offset then
             x = x + self.scroll_offset[1]
             y = y + self.scroll_offset[2]
         end
         self.is_mouse_over = point_in_polygon(self.bounds, x, y)
-        if name == "mousepressed" and self.selectable then
+        if name == "mousereleased" and self.selectable then
             if self.selected ~= self.is_mouse_over then
                 self.selected = self.is_mouse_over
                 if self.selected then

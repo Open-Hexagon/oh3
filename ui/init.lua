@@ -68,17 +68,8 @@ function ui.process_event(name, ...)
         if not stop_propagation then
             stop_propagation = current_screen:process_event(name, ...)
         end
-        if name == "keypressed" and not stop_propagation then
-            local key = ...
-            if key == "left" then
-                keyboard_navigation.move(-1, 0)
-            elseif key == "right" then
-                keyboard_navigation.move(1, 0)
-            elseif key == "up" then
-                keyboard_navigation.move(0, -1)
-            elseif key == "down" then
-                keyboard_navigation.move(0, 1)
-            end
+        if not stop_propagation then
+            keyboard_navigation.process_event(name, ...)
         end
     end
     flex.scrolled_already = nil
