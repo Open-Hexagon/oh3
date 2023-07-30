@@ -171,8 +171,11 @@ function dropdown:new(selections, options)
                 end
                 dropdown_height = real_dropdown_height
                 dropdown_height_target = 0
-                keyboard_navigation.set_screen(obj.last_screen)
-                keyboard_navigation.select_element(obj)
+                if keyboard_navigation.get_screen() == obj.selection_quad then
+                    -- dropdown closed by opening another dropdown
+                    keyboard_navigation.set_screen(obj.last_screen)
+                    keyboard_navigation.select_element(obj)
+                end
                 obj.last_screen = nil
             end
         end
