@@ -64,4 +64,4 @@ return flex:new({
         scrollable = true,
         style = { border_thickness = 2, background_color = { 0, 0, 0, 1 } },
     }),
-}, { same_size = true, scrollable = true })
+}, { scrollable = true, size_ratios = { 1, 1, 1 } })

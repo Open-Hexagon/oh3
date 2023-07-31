@@ -171,7 +171,7 @@ function love.run()
     if args.no_option then
         game_handler.replay_start(args.no_option)
     else
-        ui.open_screen("test")
+        ui.open_screen("test2")
     end
 
     -- function is called every frame by love

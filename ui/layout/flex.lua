@@ -11,7 +11,7 @@ function flex:new(elements, options)
     options = options or {}
     local obj = setmetatable({
         direction = options.direction or "row",
-        same_size = options.same_size or false,
+        size_ratios = options.size_ratios,
         align_items = options.align_items or "start",
         elements = elements,
         scale = 1,
@@ -276,58 +276,67 @@ function flex:calculate_layout(available_area)
         height = available_area.height,
     }
     local final_width, final_height
-    if self.same_size then
-        -- all elements are given the same area size
-        local element_size
-        if self.direction == "row" then
-            element_area.width = element_area.width / #self.elements
-            element_size = element_area.width
-        elseif self.direction == "column" then
-            element_area.height = element_area.height / #self.elements
-            element_size = element_area.height
+    if self.size_ratios then
+        -- available area is divided according to the given ratios
+        local ratio_sum = 0
+        for i = 1, #self.size_ratios do
+            ratio_sum = ratio_sum + self.size_ratios[i]
         end
-        local new_element_size = 0
+        local ratio_size_unit
+        if self.direction == "row" then
+            ratio_size_unit = element_area.width / ratio_sum
+        elseif self.direction == "column" then
+            ratio_size_unit = element_area.height / ratio_sum
+        end
         local thickness = 0
+        local scale_factor = 1
         for i = 1, #self.elements do
-            local width, height = self.elements[i]:calculate_layout(element_area)
+            local size = self.size_ratios[i] * ratio_size_unit
             if self.direction == "row" then
-                element_area.x = element_area.x + element_area.width
-                new_element_size = math.max(width, new_element_size)
+                element_area.width = size
+            elseif self.direction == "column" then
+                element_area.height = size
+            end
+            local width, height = self.elements[i]:calculate_layout(element_area)
+            if width > element_area.width or height > element_area.height then
+                scale_factor = math.max(scale_factor, math.max(width / element_area.width, height / element_area.height))
+            end
+            if self.direction == "row" then
+                element_area.x = element_area.x + size
                 thickness = math.max(thickness, height)
             elseif self.direction == "column" then
-                element_area.y = element_area.y + element_area.height
-                new_element_size = math.max(height, new_element_size)
+                element_area.y = element_area.y + size
                 thickness = math.max(thickness, width)
             end
         end
         -- check if elements fit in the area and if not provide them with a large still same size area so they barely fit
-        if new_element_size > element_size then
+        if scale_factor ~= 1 then
             element_area.x = available_area.x
             element_area.y = available_area.y
-            if self.direction == "row" then
-                element_area.width = new_element_size
-            elseif self.direction == "column" then
-                element_area.height = new_element_size
-            end
             thickness = 0
             for i = 1, #self.elements do
+                local size = self.size_ratios[i] * ratio_size_unit * scale_factor
+                if self.direction == "row" then
+                    element_area.width = size
+                elseif self.direction == "column" then
+                    element_area.height = size
+                end
                 local width, height = self.elements[i]:calculate_layout(element_area)
                 if self.direction == "row" then
-                    element_area.x = element_area.x + new_element_size
+                    element_area.x = element_area.x + size
                     thickness = math.max(thickness, height)
                 elseif self.direction == "column" then
-                    element_area.y = element_area.y + new_element_size
+                    element_area.y = element_area.y + size
                     thickness = math.max(thickness, width)
                 end
             end
-            element_size = new_element_size
         end
         if self.direction == "row" then
-            final_width = element_size * #self.elements
+            final_width = element_area.x - available_area.x
             final_height = thickness
         elseif self.direction == "column" then
             final_width = thickness
-            final_height = element_size * #self.elements
+            final_height = element_area.y - available_area.y
         end
     else
         -- calculate the total and individual size of all elements (in flex direction)
@@ -359,7 +368,7 @@ function flex:calculate_layout(available_area)
             target_property = "height"
         end
         -- if the total size of all elements is too big then scale down each individual area calculated in the last step and give it to the element as available area (this way the ratio between element sizes is preserved)
-        if total_size > target_size then
+        if total_size > target_size and not self.scrollable then
             element_area.x = x
             element_area.y = y
             thickness = 0
