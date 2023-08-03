@@ -85,10 +85,10 @@ function public.start(pack_id, level_id, level_options)
     game.level_status.reset(game.config.get("sync_music_to_dm"), assets)
     local style_data = game.pack_data.styles[game.level_data.styleId]
     if style_data == nil then
-        error("Error: style with id '" .. game.level_data.styleId .. "' not found")
+        print("Warn: style with id '" .. game.level_data.styleId .. "' not found")
         -- still continue with default style values
     end
-    game.style.select(style_data)
+    game.style.select(style_data or {})
     game.style.compute_colors()
     game.difficulty_mult = difficulty_mult
     game.status.reset_all_data()
