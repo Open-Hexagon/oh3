@@ -9,6 +9,7 @@ on:
 
 env:
   BUILD_TYPE: Release
+  PATH: ${{ env.PATH }}:${{ env.ANDROID_NDK }}
 
 jobs:
   build:
