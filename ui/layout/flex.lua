@@ -408,14 +408,30 @@ function flex:calculate_layout(available_area)
     if self.align_relative_to ~= "area" and self.align_relative_to ~= "thickness" then
         error("Invalid value for align_relative_to: '" .. self.align_relative_to .. "'.")
     end
+    if self.align_items ~= "start" then
+        if self.align_relative_to == "area" then
+            for i = 1, #self.elements do
+                local elem = self.elements[i]
+                if self.direction == "row" then
+                    final_height = math.max(elem.last_available_area.height, final_height)
+                elseif self.direction == "column" then
+                    final_width = math.max(elem.last_available_area.width, final_width)
+                end
+            end
+        end
+        for i = 1, #self.elements do
+            local elem = self.elements[i]
+            if self.direction == "row" then
+                elem.last_available_area.height = final_height
+            elseif self.direction == "column" then
+                elem.last_available_area.width = final_width
+            end
+        end
+    end
     if self.align_items == "stretch" then
         for i = 1, #self.elements do
             local elem = self.elements[i]
             if self.direction == "row" then
-                if self.align_relative_to == "area" then
-                    final_height = math.max(elem.last_available_area.height, final_height)
-                end
-                elem.last_available_area.height = final_height
                 if self.elements[i + 1] then
                     elem.last_available_area.width = self.elements[i + 1].last_available_area.x
                         - elem.last_available_area.x
@@ -423,10 +439,6 @@ function flex:calculate_layout(available_area)
                     elem.last_available_area.width = available_area.x + final_width - elem.last_available_area.x
                 end
             elseif self.direction == "column" then
-                if self.align_relative_to == "area" then
-                    final_width = math.max(elem.last_available_area.width, final_width)
-                end
-                elem.last_available_area.width = final_width
                 if self.elements[i + 1] then
                     elem.last_available_area.height = self.elements[i + 1].last_available_area.y
                         - elem.last_available_area.y
