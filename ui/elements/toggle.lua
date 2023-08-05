@@ -5,12 +5,15 @@ toggle.__index = setmetatable(toggle, { __index = element })
 
 function toggle:new(options)
     options = options or {}
-    local obj = element.new(setmetatable({
-        state = options.initial_state or false,
-        state_indicator_offset = signal.new_queue(0),
-        radius = options.radius or 16,
-        background_color = { 0.5, 0.5, 0.5, 1 },
-    }, toggle), options)
+    local obj = element.new(
+        setmetatable({
+            state = options.initial_state or false,
+            state_indicator_offset = signal.new_queue(0),
+            radius = options.radius or 16,
+            background_color = { 0.5, 0.5, 0.5, 1 },
+        }, toggle),
+        options
+    )
     obj.selectable = true
     obj.click_handler = function(elem)
         elem.state = not elem.state
@@ -50,16 +53,34 @@ function toggle:draw()
     end
     local segments = 100
     love.graphics.circle("fill", self.bounds[1] + padding + radius, self.bounds[2] + padding + radius, radius, segments)
-    love.graphics.circle("fill", self.bounds[1] + padding + 3 * radius, self.bounds[2] + padding + radius, radius, segments)
+    love.graphics.circle(
+        "fill",
+        self.bounds[1] + padding + 3 * radius,
+        self.bounds[2] + padding + radius,
+        radius,
+        segments
+    )
     love.graphics.rectangle("fill", self.bounds[1] + padding + radius, self.bounds[2] + padding, 2 * radius, 2 * radius)
     love.graphics.setColor(self.color)
-    love.graphics.circle("fill", self.bounds[1] + padding + radius + self.state_indicator_offset() * self.scale, self.bounds[2] + padding + radius, radius, segments)
+    love.graphics.circle(
+        "fill",
+        self.bounds[1] + padding + radius + self.state_indicator_offset() * self.scale,
+        self.bounds[2] + padding + radius,
+        radius,
+        segments
+    )
     if self.selected then
         -- TODO: add select border width option
         love.graphics.setLineWidth(self.scale)
         -- TODO: replace temporary selection color
         love.graphics.setColor(0, 0, 1, 1)
-        love.graphics.circle("line", self.bounds[1] + padding + radius + self.state_indicator_offset() * self.scale, self.bounds[2] + padding + radius, radius, segments)
+        love.graphics.circle(
+            "line",
+            self.bounds[1] + padding + radius + self.state_indicator_offset() * self.scale,
+            self.bounds[2] + padding + radius,
+            radius,
+            segments
+        )
     end
 end
 

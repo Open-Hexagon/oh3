@@ -53,26 +53,29 @@ function element:calculate_layout(available_area)
     end
 end
 
-function element:check_screen()
+function element:get_root()
     local function get_parent(elem)
         if elem.parent then
             return get_parent(elem.parent)
         end
         return elem
     end
-    local screen = get_parent(self)
-    return screen == keyboard_navigation.get_screen()
+    return get_parent(self)
+end
+
+function element:check_screen()
+    return self:get_root() == keyboard_navigation.get_screen()
 end
 
 function element:process_event(name, ...)
-    if name == "mousemoved" or name == "mousepressed" then
+    if name == "mousemoved" or name == "mousepressed" or name == "mousereleased" then
         local x, y = ...
         if self.scroll_offset then
             x = x + self.scroll_offset[1]
             y = y + self.scroll_offset[2]
         end
         self.is_mouse_over = point_in_polygon(self.bounds, x, y)
-        if name == "mousepressed" and self.selectable then
+        if name == "mousereleased" and self.selectable then
             if self.selected ~= self.is_mouse_over then
                 self.selected = self.is_mouse_over
                 if self.selected then

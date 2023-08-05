@@ -157,9 +157,16 @@ function assets.init(data, audio, config)
                     if not has1 then
                         level_json.difficultyMults[#level_json.difficultyMults + 1] = 1
                     end
-                    data.register_level(pack_json.pack_id, level_json.id, level_json.name, {
-                        difficulty_mult = level_json.difficultyMults,
-                    })
+                    data.register_level(
+                        pack_json.pack_id,
+                        level_json.id,
+                        level_json.name,
+                        level_json.author,
+                        level_json.description,
+                        {
+                            difficulty_mult = level_json.difficultyMults,
+                        }
+                    )
                     pack_json.levels[level_json.id] = level_json
                 end
             end

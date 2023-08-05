@@ -44,6 +44,8 @@ local clib = (function()
                         return v
                     end
                 end
+                -- assuming android (file does not exist but dlopen succeeds anyway)
+                return "libsqlite3.so"
             end
 
             if os.sysname == "Darwin" then
@@ -51,6 +53,7 @@ local clib = (function()
                     or "/usr/local/opt/sqlite3/lib/libsqlite3.dylib"
             end
 
+            -- assuming windows
             return "lib/libsqlite3.dll"
         end)()
 

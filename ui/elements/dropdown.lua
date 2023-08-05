@@ -56,13 +56,16 @@ function dropdown:new(selections, options)
             click_handler = function()
                 obj.toggle(false)
                 return true
-            end
+            end,
         }))
     end
     obj.is_opened = false
     obj.selections = selections
     obj.selection_quad = quad:new({
-        child_element = flex:new(selections, { direction = "column", scrollable = true, align_items = "stretch", style = { border_thickness = 0 } }),
+        child_element = flex:new(
+            selections,
+            { direction = "column", scrollable = true, align_items = "stretch", style = { border_thickness = 0 } }
+        ),
         style = { padding = 0 },
     })
     local dropdown_height, real_dropdown_height, dropdown_height_target, last_dropdown_height = 0, 0, 0, 0
@@ -148,12 +151,15 @@ function dropdown:new(selections, options)
         end
         if obj.is_opened ~= previous_state then
             if obj.is_opened then
-                dropdown_height_target = love.graphics.getHeight() - obj.vertices[8] + math.abs(obj.vertex_offsets[8]) + obj.element.padding + obj.scroll_offset[2]
+                dropdown_height_target = love.graphics.getHeight()
+                    - obj.vertices[8]
+                    + math.abs(obj.vertex_offsets[8])
+                    + obj.element.padding
+                    + obj.scroll_offset[2]
                 update_dropdown_layout()
                 if not obj.overlay_index then
                     obj.overlay_index = overlays.add_overlay(obj.selection_quad)
                 end
-                obj.last_screen = keyboard_navigation.get_screen()
                 keyboard_navigation.set_screen(obj.selection_quad)
                 for i = 1, #selections do
                     if selections[i].element.raw_text == obj.element.raw_text then
@@ -171,8 +177,11 @@ function dropdown:new(selections, options)
                 end
                 dropdown_height = real_dropdown_height
                 dropdown_height_target = 0
-                keyboard_navigation.set_screen(obj.last_screen)
-                keyboard_navigation.select_element(obj)
+                if keyboard_navigation.get_screen() == obj.selection_quad then
+                    -- dropdown closed by opening another dropdown
+                    keyboard_navigation.set_screen(obj:get_root())
+                    keyboard_navigation.select_element(obj)
+                end
                 obj.last_screen = nil
             end
         end

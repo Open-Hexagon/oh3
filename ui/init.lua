@@ -3,7 +3,8 @@ local overlays = require("ui.overlays")
 local flex = require("ui.layout.flex")
 local ui = {}
 local screens = {
-    test = require("ui.screens.levelselect"),
+    test = require("ui.screens.test"),
+    test2 = require("ui.screens.test2"),
 }
 local keyboard_navigation = require("ui.keyboard_navigation")
 local current_screen
@@ -25,10 +26,16 @@ local function calculate_layout(width, height)
         width = width or love.graphics.getWidth(),
         height = height or love.graphics.getHeight(),
     }
-    if current_screen.scale ~= gui_scale then
-        current_screen:set_scale(gui_scale)
-    end
     local res_width, res_height = current_screen:calculate_layout(screen_area)
+    -- as long as the resulting layout is smaller than the window, up gui scale (until user setting is reached)
+    while res_width <= screen_area.width and res_height <= screen_area.height do
+        local new_scale = current_screen.scale + 0.1
+        if new_scale > gui_scale then
+            break
+        end
+        current_screen:set_scale(new_scale)
+        res_width, res_height = current_screen:calculate_layout(screen_area)
+    end
     -- as long as the resulting layout is too big for the window, lower gui scale
     while res_width > screen_area.width or res_height > screen_area.height do
         local new_scale = current_screen.scale - 0.1
@@ -62,17 +69,8 @@ function ui.process_event(name, ...)
         if not stop_propagation then
             stop_propagation = current_screen:process_event(name, ...)
         end
-        if name == "keypressed" and not stop_propagation then
-            local key = ...
-            if key == "left" then
-                keyboard_navigation.move(-1, 0)
-            elseif key == "right" then
-                keyboard_navigation.move(1, 0)
-            elseif key == "up" then
-                keyboard_navigation.move(0, -1)
-            elseif key == "down" then
-                keyboard_navigation.move(0, 1)
-            end
+        if not stop_propagation and keyboard_navigation.get_screen() == current_screen then
+            keyboard_navigation.process_event(name, ...)
         end
     end
     flex.scrolled_already = nil

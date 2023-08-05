@@ -73,6 +73,21 @@ function keyboard_navigation.get_selected_element()
     return selected_element
 end
 
+function keyboard_navigation.process_event(name, ...)
+    if name == "keypressed" then
+        local key = ...
+        if key == "left" then
+            keyboard_navigation.move(-1, 0)
+        elseif key == "right" then
+            keyboard_navigation.move(1, 0)
+        elseif key == "up" then
+            keyboard_navigation.move(0, -1)
+        elseif key == "down" then
+            keyboard_navigation.move(0, 1)
+        end
+    end
+end
+
 function keyboard_navigation.move(dx, dy)
     if dx ~= 0 and dy ~= 0 then
         error("keyboard navigation can only move in one direction at a time")
