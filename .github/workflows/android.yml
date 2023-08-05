@@ -14,8 +14,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Setup NDK path
+    - name: Setup NDK
       run: |
+        wget https://dl.google.com/android/repository/android-ndk-r21e-linux-x86_64.zip
+        7z x android-ndk-r21e-linux-x86_64.zip
+        export ANDROID_NDK="$(realpath android-ndk-r21e)"
         echo "NDK at: '$ANDROID_NDK'"
         echo $ANDROID_NDK >> $GITHUB_PATH
 
