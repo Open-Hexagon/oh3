@@ -10,7 +10,7 @@ function build_luv() {
 	echo "Building luajit..."
 	cd deps/luajit
 	make clean
-	NDKDIR=/opt/android-ndk
+	NDKDIR=$ANDROID_NDK
 	NDKBIN=$NDKDIR/toolchains/llvm/prebuilt/linux-x86_64/bin
 	NDKCROSS=$NDKBIN/$NDK_PREFIX
 	NDKCC=$NDKBIN/${NDK_PREFIX}clang
@@ -25,7 +25,7 @@ function build_luv() {
 	echo "Running cmake configure..."
 	mkdir -p build-$ABI
 	cd build-$ABI
-	cmake -DANDROID_ABI=$ABI -DANDROID_PLATFORM=android-$API_LEVEL -DCMAKE_TOOLCHAIN_FILE=/opt/android-ndk/build/cmake/android.toolchain.cmake -DCMAKE_ANDROID_NDK_TOOLCHAIN_VERSION=clang -DCMAKE_SYSTEM_NAME=Android -DCMAKE_ANDROID_NDK=/opt/android-ndk -DCMAKE_ANDROID_STL_TYPE=c++_static -DLUA_BUILD_TYPE=System -DLUAJIT_INCLUDE_DIR=../deps/luajit/src -DLUAJIT_LIBRARIES=../deps/luajit/src/libluajit.a ..
+	cmake -DANDROID_ABI=$ABI -DANDROID_PLATFORM=android-$API_LEVEL -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake -DCMAKE_ANDROID_NDK_TOOLCHAIN_VERSION=clang -DCMAKE_SYSTEM_NAME=Android -DCMAKE_ANDROID_NDK=$ANDROID_NDK -DCMAKE_ANDROID_STL_TYPE=c++_static -DLUA_BUILD_TYPE=System -DLUAJIT_INCLUDE_DIR=../deps/luajit/src -DLUAJIT_LIBRARIES=../deps/luajit/src/libluajit.a ..
 	echo "Done."
 
 	# make
@@ -39,6 +39,10 @@ function build_luv() {
 	mv build-$ABI/luv.so ../love-anroid/app/src/main/jniLibs/$ABI/libluv.so
 }
 
+if [ -z "$ANDROID_NDK" ]; then
+    echo "Need to set ANDROID_NDK"
+    exit 1
+fi
 API=29
 if [ -d "luv" ]; then
   echo "'luv' dir exists, redoing aborted build."
