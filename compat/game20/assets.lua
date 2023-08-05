@@ -93,7 +93,7 @@ function assets.init(data, persistent_data, audio, config)
             if success then
                 level_json.id = pack_data.folder .. "_" .. level_json.id
                 level.set(level_json)
-                data.register_level(folder, level.id, level.name, {
+                data.register_level(folder, level.id, level.name, level.author, level.description, {
                     difficulty_mult = level.difficultyMults,
                 })
                 pack_data.levels[level_json.id] = level_json

@@ -15,7 +15,7 @@ function data.register_pack(id, name, game_version)
     pack_id_map[id] = packs[pack_count]
 end
 
-function data.register_level(pack_id, id, name, options)
+function data.register_level(pack_id, id, name, author, description, options)
     local pack = pack_id_map[pack_id]
     if pack == nil then
         error("Attempted to register level for non-existing pack")
@@ -23,7 +23,9 @@ function data.register_level(pack_id, id, name, options)
     pack.level_count = pack.level_count + 1
     pack.levels[pack.level_count] = {
         id = id,
-        name = name,
+        name = name or "[No name]",
+        author = author or "[No author]",
+        description = description or "[No Description]",
         options = options or {},
     }
 end
