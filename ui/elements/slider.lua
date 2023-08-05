@@ -7,14 +7,17 @@ slider.__index = setmetatable(slider, { __index = element })
 
 function slider:new(options)
     options = options or {}
-    local obj = element.new(setmetatable({
-        steps = (options.steps or 3) - 1,
-        step_size = options.step_size or 40,
-        state = options.initial_state or 0,
-        radius = options.radius or 16,
-        background_color = { 0.5, 0.5, 0.5, 1 },
-        position = signal.new_queue(0),
-    }, slider), options)
+    local obj = element.new(
+        setmetatable({
+            steps = (options.steps or 3) - 1,
+            step_size = options.step_size or 40,
+            state = options.initial_state or 0,
+            radius = options.radius or 16,
+            background_color = { 0.5, 0.5, 0.5, 1 },
+            position = signal.new_queue(0),
+        }, slider),
+        options
+    )
     obj.selectable = true
     obj.position:set_immediate_value(obj.state)
     return obj
@@ -36,7 +39,9 @@ function slider:process_event(name, ...)
     end
     if (name == "mousemoved" or name == "mousepressed") and self.is_mouse_over and love.mouse.isDown(1) then
         local x = ...
-        self.state = math.floor((x - self.bounds[1] - (self.padding + self.radius) * self.scale) / (self.step_size * self.scale) + 0.5)
+        self.state = math.floor(
+            (x - self.bounds[1] - (self.padding + self.radius) * self.scale) / (self.step_size * self.scale) + 0.5
+        )
         self.state = extmath.clamp(self.state, 0, self.steps)
     end
     if name == "keypressed" and self.selected then

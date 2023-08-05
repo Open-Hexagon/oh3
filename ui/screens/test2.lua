@@ -3,7 +3,7 @@
 local flex = require("ui.layout.flex")
 local quad = require("ui.elements.quad")
 local function center_horizontally(elem)
-    return flex:new({elem}, { direction = "column", align_items = "center" })
+    return flex:new({ elem }, { direction = "column", align_items = "center" })
 end
 return flex:new({
     center_horizontally(quad:new()),

@@ -1,5 +1,6 @@
 local signal = require("ui.anim.signal")
 local point_in_polygon = require("ui.extmath").point_in_polygon
+local SCROLL_THRESHOLD = 10
 local flex = {}
 flex.__index = flex
 
@@ -147,6 +148,7 @@ function flex:process_event(name, ...)
         self.last_finger = nil
         self.last_finger_x = nil
         self.last_finger_y = nil
+        self.first_touch_pos = nil
         self.scrollbar_grabbed = false
     end
     if propagate then
@@ -157,9 +159,17 @@ function flex:process_event(name, ...)
         end
     end
     if name == "touchmoved" and self.needs_scroll and not self.scrollbar_grabbed and not flex.scrolled_already then
-        local mx, my = love.mouse.getPosition()
-        if point_in_polygon(self.bounds, mx + self.external_scroll_offset[1], my + self.external_scroll_offset[2]) then
-            local finger, x, y = ...
+        local finger, x, y = ...
+        if not self.first_touch_pos then
+            self.first_touch_pos = { x, y }
+        end
+        if
+            point_in_polygon(self.bounds, x + self.external_scroll_offset[1], y + self.external_scroll_offset[2])
+            and (
+                math.abs(x - self.first_touch_pos[1]) > SCROLL_THRESHOLD
+                or math.abs(y - self.first_touch_pos[2]) > SCROLL_THRESHOLD
+            )
+        then
             if finger == self.last_finger then
                 local dx = x - self.last_finger_x
                 local dy = y - self.last_finger_y
@@ -299,7 +309,8 @@ function flex:calculate_layout(available_area)
             end
             local width, height = self.elements[i]:calculate_layout(element_area)
             if width > element_area.width or height > element_area.height then
-                scale_factor = math.max(scale_factor, math.max(width / element_area.width, height / element_area.height))
+                scale_factor =
+                    math.max(scale_factor, math.max(width / element_area.width, height / element_area.height))
             end
             if self.direction == "row" then
                 element_area.x = element_area.x + size
@@ -399,14 +410,16 @@ function flex:calculate_layout(available_area)
             if self.direction == "row" then
                 elem.last_available_area.height = final_height
                 if self.elements[i + 1] then
-                    elem.last_available_area.width = self.elements[i + 1].last_available_area.x - elem.last_available_area.x
+                    elem.last_available_area.width = self.elements[i + 1].last_available_area.x
+                        - elem.last_available_area.x
                 else
                     elem.last_available_area.width = available_area.x + final_width - elem.last_available_area.x
                 end
             elseif self.direction == "column" then
                 elem.last_available_area.width = final_width
                 if self.elements[i + 1] then
-                    elem.last_available_area.height = self.elements[i + 1].last_available_area.y - elem.last_available_area.y
+                    elem.last_available_area.height = self.elements[i + 1].last_available_area.y
+                        - elem.last_available_area.y
                 else
                     elem.last_available_area.height = available_area.y + final_height - elem.last_available_area.y
                 end
@@ -442,7 +455,11 @@ function flex:calculate_layout(available_area)
             elem:calculate_layout()
         end
     elseif self.align_items ~= "start" then
-        error("Invalid value for align_items option '" .. self.align_items .. "' possible values are: 'start', 'center', 'end' and 'stretch'")
+        error(
+            "Invalid value for align_items option '"
+                .. self.align_items
+                .. "' possible values are: 'start', 'center', 'end' and 'stretch'"
+        )
     end
     self.needs_scroll = false
     if self.scrollable then
@@ -459,7 +476,10 @@ function flex:calculate_layout(available_area)
                 self.needs_scroll = true
             end
         end
-        if not self.is_animating and (not self.canvas or self.canvas:getWidth() ~= final_width or self.canvas:getHeight() ~= final_height) then
+        if
+            not self.is_animating
+            and (not self.canvas or self.canvas:getWidth() ~= final_width or self.canvas:getHeight() ~= final_height)
+        then
             local width, height = final_width, final_height
             width = math.max(width, 1)
             height = math.max(height, 1)
