@@ -174,8 +174,17 @@ function love.run()
         ui.open_screen("test")
     end
 
+    local fps_limit = config.get("fps_limit")
+    local delta_target = 1 / fps_limit
+    local last_time = love.timer.getTime()
+
     -- function is called every frame by love
     return function()
+        if fps_limit ~= 0 then
+            love.timer.sleep(delta_target - (love.timer.getTime() - last_time))
+            last_time = last_time + delta_target
+        end
+
         -- process events
         love.event.pump()
         for name, a, b, c, d, e, f in love.event.poll() do
@@ -197,8 +206,8 @@ function love.run()
             love.graphics.clear(0, 0, 0, 1)
             game_handler.draw()
             ui.draw()
-            love.timer.step()
             love.graphics.present()
         end
+        love.timer.step()
     end
 end
