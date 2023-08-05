@@ -14,6 +14,7 @@ function flex:new(elements, options)
         direction = options.direction or "row",
         size_ratios = options.size_ratios,
         align_items = options.align_items or "start",
+        align_relative_to = options.align_relative_to or "area",
         elements = elements,
         scale = 1,
         scrollable = options.scrollable or false,
@@ -404,11 +405,18 @@ function flex:calculate_layout(available_area)
             final_height = element_area.y - y
         end
     end
+    if self.align_relative_to ~= "area" and self.align_relative_to ~= "thickness" then
+        error("Invalid value for align_relative_to: '" .. self.align_relative_to .. "'.")
+    end
     if self.align_items == "stretch" then
         for i = 1, #self.elements do
             local elem = self.elements[i]
             if self.direction == "row" then
-                elem.last_available_area.height = final_height
+                if self.align_relative_to == "thickness" then
+                    elem.last_available_area.height = final_height
+                else
+                    final_height = elem.last_available_area.height
+                end
                 if self.elements[i + 1] then
                     elem.last_available_area.width = self.elements[i + 1].last_available_area.x
                         - elem.last_available_area.x
@@ -416,7 +424,11 @@ function flex:calculate_layout(available_area)
                     elem.last_available_area.width = available_area.x + final_width - elem.last_available_area.x
                 end
             elseif self.direction == "column" then
-                elem.last_available_area.width = final_width
+                if self.align_relative_to == "thickness" then
+                    elem.last_available_area.width = final_width
+                else
+                    final_width = elem.last_available_area.width
+                end
                 if self.elements[i + 1] then
                     elem.last_available_area.height = self.elements[i + 1].last_available_area.y
                         - elem.last_available_area.y

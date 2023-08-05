@@ -43,7 +43,10 @@ function dropdown:new(selections, options)
             end
         end
         selections[i] = quad:new(table_plus(options, {
-            child_element = label:new(selections[i], table_plus(options, { style = { padding = 8 } })),
+            child_element = label:new(
+                selections[i],
+                table_plus(options, { style = { padding = 8 }, wrap = options.limit_to_inital_width })
+            ),
             selectable = true,
             selection_handler = function(elem)
                 -- TODO: replace temporary hardcoded selection color
@@ -62,10 +65,13 @@ function dropdown:new(selections, options)
     obj.is_opened = false
     obj.selections = selections
     obj.selection_quad = quad:new({
-        child_element = flex:new(
-            selections,
-            { direction = "column", scrollable = true, align_items = "stretch", style = { border_thickness = 0 } }
-        ),
+        child_element = flex:new(selections, {
+            direction = "column",
+            scrollable = true,
+            align_items = "stretch",
+            align_relative_to = options.limit_to_inital_width and "area" or "thickness",
+            style = { border_thickness = 0 },
+        }),
         style = { padding = 0 },
     })
     local dropdown_height, real_dropdown_height, dropdown_height_target, last_dropdown_height = 0, 0, 0, 0
@@ -171,7 +177,7 @@ function dropdown:new(selections, options)
                 for i = 1, #selections do
                     if selections[i].selected then
                         obj.element.raw_text = selections[i].element.raw_text
-                        obj:calculate_layout()
+                        obj.parent:calculate_layout()
                         break
                     end
                 end
