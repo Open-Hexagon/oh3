@@ -19,6 +19,13 @@ jobs:
         echo "NDK at: '$ANDROID_NDK'"
         echo $ANDROID_NDK >> $GITHUB_PATH
 
+    - name: set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
     - name: Install gcc-multilib
       run: |
         sudo apt update
@@ -55,7 +62,7 @@ jobs:
     - name: Assemble Debug APK
       run: |
         cd love-android
-        ./gradlew assembleDebug
+        ./gradlew assembleDebug --no-daemon
         mv app/build/outputs/apk/embedNoRecord/debug/app-embed-noRecord-debug.apk ../oh3-debug.apk
 
     - name: Upload artifact
