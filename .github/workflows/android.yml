@@ -19,6 +19,11 @@ jobs:
         echo "NDK at: '$ANDROID_NDK'"
         echo $ANDROID_NDK >> $GITHUB_PATH
 
+    - name: Install gcc-multilib
+      run: |
+        sudo apt update
+        sudo apt install gcc-multilib
+
     - name: Setup love-android
       run: |
         git clone https://github.com/love2d/love-android --recursive
@@ -53,7 +58,7 @@ jobs:
         ./gradlew assembleDebug
         mv app/build/outputs/apk/embedNoRecord/debug/app-embed-noRecord-debug.apk ../oh3-debug.apk
 
-    - name: Artifact
+    - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
         name: oh3-debug.apk
