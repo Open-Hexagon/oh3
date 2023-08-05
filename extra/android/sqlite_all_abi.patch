@@ -1,0 +1,6 @@
+--- a/jni/Application.mk
++++ b/jni/Application.mk
+@@ -1,3 +1,2 @@
+-APP_ABI := armeabi-v7a
+ APP_CPPFLAGS += -fexceptions -frtti
+ APP_STL := c++_shared

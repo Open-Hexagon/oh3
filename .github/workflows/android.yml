@@ -1,0 +1,58 @@
+name: Build and package for android
+
+on:
+  push:
+    branches: [ "newui" ]
+  pull_request:
+    branches: [ "newui" ]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup love-android
+      run: |
+        git clone https://github.com/love2d/love-android --recursive
+        cd love-android
+        patch gradle.properties ../extra/android/app-data.patch
+        mkdir -p app/src/main/jniLibs
+        mkdir -p app/src/main/jniLibs/arm64-v8a
+        mkdir -p app/src/main/jniLibs/armeabi-v7a
+        mkdir -p app/src/main/jniLibs/x86
+        mkdir -p app/src/main/jniLibs/x86_64
+        cd ..
+        cp -r *.lua assets compat extlibs game game_handler server ui love-android/app/src/embed/assets
+
+    - name: Build sqlite3
+      run: |
+        git clone https://github.com/stockrt/sqlite3-android
+        cd sqlite3-android
+        patch jni/Application.mk ../extra/android/sqlite_all_abi.patch
+        make
+        cd ..
+        mv sqlite3-android/libs/arm64-v8a/libsqlite3.so love-android/app/src/main/jniLibs/arm64-v8a
+        mv sqlite3-android/libs/armeabi-v7a/libsqlite3.so love-android/app/src/main/jniLibs/armeabi-v7a
+        mv sqlite3-android/libs/x86/libsqlite3.so love-android/app/src/main/jniLibs/x86
+        mv sqlite3-android/libs/x86_64/libsqlite3.so love-android/app/src/main/jniLibs/x86_64
+
+    - name: Build luv
+      run: ./extra/android/build_luv.sh
+
+    - name: Assemble Debug APK
+      run: |
+        cd love-android
+        ./gradlew assembleDebug
+        mv app/build/outputs/apk/embedNoRecord/debug/app-embed-noRecord-debug.apk ../oh3-debug.apk
+
+    - name: Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: oh3-debug.apk
+        path: oh3-debug.apk
