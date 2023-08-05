@@ -420,10 +420,10 @@ function flex:calculate_layout(available_area)
             local elem = self.elements[i]
             local minmax = get_rect_bounds(elem.bounds)
             if self.direction == "row" then
-                local empty_space = elem.last_available_area.y + elem.last_available_area.height - minmax[4]
+                local empty_space = elem.last_available_area.y + final_height - minmax[4]
                 elem.last_available_area.y = elem.last_available_area.y + empty_space / 2
             elseif self.direction == "column" then
-                local empty_space = elem.last_available_area.x + elem.last_available_area.width - minmax[3]
+                local empty_space = elem.last_available_area.x + final_width - minmax[3]
                 elem.last_available_area.x = elem.last_available_area.x + empty_space / 2
             end
             elem:calculate_layout()
@@ -433,10 +433,10 @@ function flex:calculate_layout(available_area)
             local elem = self.elements[i]
             local minmax = get_rect_bounds(elem.bounds)
             if self.direction == "row" then
-                local empty_space = elem.last_available_area.y + elem.last_available_area.height - minmax[4]
+                local empty_space = elem.last_available_area.y + final_height - minmax[4]
                 elem.last_available_area.y = elem.last_available_area.y + empty_space
             elseif self.direction == "column" then
-                local empty_space = elem.last_available_area.x + elem.last_available_area.width - minmax[3]
+                local empty_space = elem.last_available_area.x + final_width - minmax[3]
                 elem.last_available_area.x = elem.last_available_area.x + empty_space
             end
             elem:calculate_layout()

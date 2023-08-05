@@ -2,7 +2,6 @@
 -- TODO: remove once we start working on new screens
 local flex = require("ui.layout.flex")
 local quad = require("ui.elements.quad")
-local label = require("ui.elements.label")
 local function center_horizontally(elem)
     return flex:new({elem}, { direction = "column", align_items = "center" })
 end
