@@ -6,7 +6,8 @@ label.__index = setmetatable(label, {
 local default_font_size = 32
 local default_font_file = "assets/font/OpenSquare-Regular.ttf"
 local cached_fonts = {}
-cached_fonts[default_font_size] = love.graphics.newFont(default_font_file, default_font_size)
+cached_fonts[default_font_file] = {}
+cached_fonts[default_font_file][default_font_size] = love.graphics.newFont(default_font_file, default_font_size)
 
 ---create a new label
 ---@param text string
@@ -14,16 +15,24 @@ cached_fonts[default_font_size] = love.graphics.newFont(default_font_file, defau
 ---@return table
 function label:new(text, options)
     options = options or {}
+    local font = cached_fonts[default_font_file]
+    if options.font_file then
+        if not cached_fonts[options.font_file] then
+            cached_fonts[options.font_file] = {}
+        end
+        font = cached_fonts[options.font_file]
+    end
     local font_size = options.font_size or default_font_size
-    if not cached_fonts[font_size] then
-        cached_fonts[font_size] = love.graphics.newFont(default_font_file, font_size)
+    if not font[font_size] then
+        font[font_size] = love.graphics.newFont(options.font_file or default_font_file, font_size)
     end
     return element.new(
         setmetatable({
             raw_text = text,
-            text = love.graphics.newText(cached_fonts[font_size], text),
+            text = love.graphics.newText(font[font_size], text),
             wrap = options.wrap or false,
-            font = cached_fonts[font_size],
+            font = font,
+            font_file = options.font_file or default_font_file,
             font_size = font_size,
             pos = { 0, 0 },
         }, label),
@@ -35,11 +44,10 @@ end
 ---@param scale number
 function label:set_scale(scale)
     local font_size = math.floor(self.font_size * scale)
-    if not cached_fonts[font_size] then
-        cached_fonts[font_size] = love.graphics.newFont(default_font_file, font_size)
+    if not self.font[font_size] then
+        self.font[font_size] = love.graphics.newFont(self.font_file, font_size)
     end
-    self.font = cached_fonts[font_size]
-    self.text:setFont(self.font)
+    self.text:setFont(self.font[font_size])
     self.scale = scale
 end
 
