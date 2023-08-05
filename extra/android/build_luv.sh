@@ -36,7 +36,7 @@ function build_luv() {
 	# move lib
 	cd ..
 	mkdir -p libs/$ABI
-	mv build-$ABI/luv.so ../love-anroid/app/src/main/jniLibs/$ABI/libluv.so
+	mv build-$ABI/luv.so ../love-android/app/src/main/jniLibs/$ABI/libluv.so
 }
 
 if [ -z "$ANDROID_NDK" ]; then
