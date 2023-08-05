@@ -48,6 +48,7 @@ jobs:
 
     - name: Build sqlite3
       run: |
+        export ANDROID_NDK="$(realpath android-ndk-r21e)"
         git clone https://github.com/stockrt/sqlite3-android
         cd sqlite3-android
         patch jni/Application.mk ../extra/android/sqlite_all_abi.patch
@@ -59,10 +60,13 @@ jobs:
         mv sqlite3-android/libs/x86_64/libsqlite3.so love-android/app/src/main/jniLibs/x86_64
 
     - name: Build luv
-      run: ./extra/android/build_luv.sh
+      run: |
+        export ANDROID_NDK="$(realpath android-ndk-r21e)"
+        ./extra/android/build_luv.sh
 
     - name: Assemble Debug APK
       run: |
+        export ANDROID_NDK="$(realpath android-ndk-r21e)"
         cd love-android
         ./gradlew assembleDebug --no-daemon
         mv app/build/outputs/apk/embedNoRecord/debug/app-embed-noRecord-debug.apk ../oh3-debug.apk
