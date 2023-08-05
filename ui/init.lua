@@ -3,7 +3,7 @@ local overlays = require("ui.overlays")
 local flex = require("ui.layout.flex")
 local ui = {}
 local screens = {
-    test = require("ui.screens.test"),
+    test = require("ui.screens.levelselect"),
 }
 local keyboard_navigation = require("ui.keyboard_navigation")
 local current_screen
