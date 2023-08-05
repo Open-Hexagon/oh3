@@ -14,6 +14,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Setup NDK path
+      run: |
+        echo "NDK at: '$ANDROID_NDK'"
+        echo $ANDROID_NDK >> $GITHUB_PATH
+
     - name: Setup love-android
       run: |
         git clone https://github.com/love2d/love-android --recursive
@@ -32,7 +37,6 @@ jobs:
         git clone https://github.com/stockrt/sqlite3-android
         cd sqlite3-android
         patch jni/Application.mk ../extra/android/sqlite_all_abi.patch
-        echo $ANDROID_NDK >> $GITHUB_PATH
         make
         cd ..
         mv sqlite3-android/libs/arm64-v8a/libsqlite3.so love-android/app/src/main/jniLibs/arm64-v8a
