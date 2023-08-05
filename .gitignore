@@ -6,3 +6,5 @@ testrps/
 *.mp4
 build/
 lib/
+*.dll
+*.ps1
