@@ -14,10 +14,23 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Setup NDK
+    - name: Cache dependencies
+      id: cache-deps
+      uses: actions/cache@v3
+      with:
+        path: |
+          love-android
+          android-ndk-r21e
+        key: cache-deps
+
+    - name: Download NDK
+      if: steps.cache-deps.outputs.cache-hit != 'true'
       run: |
         wget https://dl.google.com/android/repository/android-ndk-r21e-linux-x86_64.zip
         7z x android-ndk-r21e-linux-x86_64.zip
+
+    - name: Add NDK to PATH
+      run: |
         export ANDROID_NDK="$(realpath android-ndk-r21e)"
         echo "NDK at: '$ANDROID_NDK'"
         echo $ANDROID_NDK >> $GITHUB_PATH
@@ -34,6 +47,7 @@ jobs:
         sudo apt install gcc-multilib
 
     - name: Setup love-android
+      if: steps.cache-deps.outputs.cache-hit != 'true'
       run: |
         git clone https://github.com/love2d/love-android --recursive
         cd love-android
@@ -44,9 +58,12 @@ jobs:
         mkdir -p app/src/main/jniLibs/x86
         mkdir -p app/src/main/jniLibs/x86_64
         cd ..
-        cp -r *.lua assets compat extlibs game game_handler server ui love-android/app/src/embed/assets
+
+    - name: Copy embedded App
+      run: cp -r *.lua assets compat extlibs game game_handler server ui love-android/app/src/embed/assets
 
     - name: Build sqlite3
+      if: steps.cache-deps.outputs.cache-hit != 'true'
       run: |
         export ANDROID_NDK="$(realpath android-ndk-r21e)"
         git clone https://github.com/stockrt/sqlite3-android
@@ -60,6 +77,7 @@ jobs:
         mv sqlite3-android/libs/x86_64/libsqlite3.so love-android/app/src/main/jniLibs/x86_64
 
     - name: Build luv
+      if: steps.cache-deps.outputs.cache-hit != 'true'
       run: |
         export ANDROID_NDK="$(realpath android-ndk-r21e)"
         ./extra/android/build_luv.sh
