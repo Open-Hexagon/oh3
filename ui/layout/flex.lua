@@ -1,4 +1,5 @@
 local signal = require("ui.anim.signal")
+local ease = require("ui.anim.ease")
 local point_in_polygon = require("ui.extmath").point_in_polygon
 local SCROLL_THRESHOLD = 10
 local flex = {}
@@ -31,6 +32,7 @@ function flex:new(elements, options)
         scrollbar_width = 10,
         scrollbar_area = { x = 0, y = 0, width = 0, height = 0 },
         scrollbar_grabbed = false,
+        scroll_velocity = 0,
         last_mouse_pos = { 0, 0 },
         bounds = {},
         last_available_area = { x = 0, y = 0, width = 0, height = 0 },
@@ -145,6 +147,10 @@ function flex:process_event(name, ...)
     if name == "mousereleased" then
         if self.last_finger then
             propagate = false
+            self.scroll:stop()
+            self.scroll_target = self.scroll() + self.scroll_velocity * 10
+            clamp_scroll_target(self)
+            self.scroll:keyframe(0.3, self.scroll_target, ease.out_sine)
         end
         self.last_finger = nil
         self.last_finger_x = nil
@@ -176,8 +182,10 @@ function flex:process_event(name, ...)
                 local dy = y - self.last_finger_y
                 if self.direction == "row" then
                     self.scroll_target = self.scroll_target - dx
+                    self.scroll_velocity = -dx
                 elseif self.direction == "column" then
                     self.scroll_target = self.scroll_target - dy
+                    self.scroll_velocity = -dy
                 end
                 flex.scrolled_already = true
                 self.scrollbar_visibility_timer = love.timer.getTime()
