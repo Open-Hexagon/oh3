@@ -164,10 +164,10 @@ function love.run()
         return render_replay(game_handler, video_encoder, audio, args.no_option, "output.mp4")
     end
 
-    local ui = require("ui")
     local game_handler = require("game_handler")
     global_config.init(config, game_handler.profile)
     game_handler.init(config)
+	local ui = require("ui")
     if args.no_option then
         game_handler.replay_start(args.no_option)
     else
