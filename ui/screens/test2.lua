@@ -1,12 +1,16 @@
 -- just another test screen
 -- TODO: remove once we start working on new screens
 local flex = require("ui.layout.flex")
-local quad = require("ui.elements.quad")
-local function center_horizontally(elem)
-    return flex:new({ elem }, { direction = "column", align_items = "center" })
-end
+local slider = require("ui.elements.slider")
+local label = require("ui.elements.label")
+
+-- reproduce flex wrap label sizing issue (fixed now)
 return flex:new({
-    center_horizontally(quad:new()),
-    center_horizontally(quad:new()),
-    center_horizontally(quad:new()),
-}, { size_ratios = { 1, 2, 1 }, align_items = "center" })
+    flex:new({
+        slider:new(),
+        flex:new({
+            label:new("HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!! HELLO WORLD!!!", { wrap = true }),
+        }, { direction = "column" }),
+        slider:new(),
+    })
+}, { direction = "column", scrollable = true })

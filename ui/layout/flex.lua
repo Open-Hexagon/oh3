@@ -381,29 +381,63 @@ function flex:calculate_layout(available_area)
         end
         local target_size, target_property
         if self.direction == "row" then
-            target_size = element_area.width
+            target_size = available_area.width
             target_property = "width"
         elseif self.direction == "column" then
-            target_size = element_area.height
+            target_size = available_area.height
             target_property = "height"
         end
         -- if the total size of all elements is too big then scale down each individual area calculated in the last step and give it to the element as available area (this way the ratio between element sizes is preserved)
+        -- however if some elements do not fit in the downscaled area, adjust the factor accordingly and try again until it either fits or all elements can't become smaller anymore
         if total_size > target_size and not self.scrollable then
-            element_area.x = x
-            element_area.y = y
-            thickness = 0
-            local factor = target_size / total_size
-            for i = 1, #sizes do
-                element_area[target_property] = sizes[i] * factor
-                local width, height = self.elements[i]:calculate_layout(element_area)
-                if self.direction == "row" then
-                    element_area.x = element_area.x + width
-                    thickness = math.max(thickness, height)
-                elseif self.direction == "column" then
-                    element_area.y = element_area.y + height
-                    thickness = math.max(thickness, width)
+            local too_large_elems = {}
+            local last_too_large_elems = {}
+            local must_stop = false
+            local original_total_size = total_size
+            repeat
+                local taken = 0
+                for i = 1, #too_large_elems do
+                    taken = taken + too_large_elems[i]
                 end
-            end
+                if taken > target_size then
+                    break
+                end
+                element_area.x = x
+                element_area.y = y
+                thickness = 0
+                local factor = (target_size - taken) / (original_total_size - taken)
+                too_large_elems = {}
+                total_size = 0
+                for i = 1, #sizes do
+                    local target_elem_size = sizes[i] * factor
+                    element_area[target_property] = target_elem_size
+                    local width, height = self.elements[i]:calculate_layout(element_area)
+                    local size
+                    if self.direction == "row" then
+                        element_area.x = element_area.x + width
+                        size = width
+                        thickness = math.max(thickness, height)
+                    elseif self.direction == "column" then
+                        element_area.y = element_area.y + height
+                        size = height
+                        thickness = math.max(thickness, width)
+                    end
+                    total_size = total_size + size
+                    if size > target_elem_size then
+                        too_large_elems[#too_large_elems+1] = size
+                    else
+                        too_large_elems[#too_large_elems+1] = 0
+                    end
+                end
+                -- stop if no progress is being made
+                must_stop = true
+                for i = 1, #too_large_elems do
+                    if too_large_elems[i] ~= last_too_large_elems[i] then
+                        must_stop = false
+                    end
+                    last_too_large_elems[i] = too_large_elems[i]
+                end
+            until total_size <= target_size or must_stop
         end
         if self.direction == "row" then
             final_width = element_area.x - x
