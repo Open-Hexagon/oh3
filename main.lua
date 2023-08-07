@@ -167,7 +167,7 @@ function love.run()
     local game_handler = require("game_handler")
     global_config.init(config, game_handler.profile)
     game_handler.init(config)
-	local ui = require("ui")
+    local ui = require("ui")
     if args.no_option then
         game_handler.replay_start(args.no_option)
     else
