@@ -18,7 +18,7 @@ end
 
 local function redraw(self)
     love.graphics.setCanvas(canvas)
-    love.graphics.clear(0, 1, 0, 1)
+    love.graphics.clear(0, 0, 0, 1)
     love.graphics.translate(canvas:getWidth() / 2, canvas:getHeight() / 2)
     love.graphics.scale(GAME_SCALE, GAME_SCALE)
     game_handler.draw_preview(canvas, self.game_version, self.pack, self.level)
