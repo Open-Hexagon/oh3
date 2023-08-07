@@ -128,8 +128,23 @@ function assets.init(data, persistent_data, audio, config)
                 pack_data.levels[level_json.id] = level_json
             end
         end
+
+        -- styles have to be loaded here to draw the preview icons in the level selection
+        pack_data.styles = {}
+        for contents, filename in file_ext_read_iter(pack_data.path .. "Styles", ".json", pack_data.virtual_pack_folder.Styles) do
+            local style_json
+            success, style_json = decode_json(contents, filename)
+            if success then
+                pack_data.styles[style_json.id] = style_json
+            end
+        end
+
         packs[folder] = pack_data
     end
+end
+
+function assets.get_pack_no_load(folder)
+    return packs[folder]
 end
 
 function assets.get_pack(folder)
@@ -166,15 +181,6 @@ function assets.get_pack(folder)
                     end
                 end
                 pack_data.music[music_json.id] = music_json
-            end
-        end
-
-        -- styles
-        pack_data.styles = {}
-        for contents, filename in file_ext_read_iter(folder .. "Styles", ".json", pack_data.virtual_pack_folder.Styles) do
-            local success, style_json = decode_json(contents, filename)
-            if success then
-                pack_data.styles[style_json.id] = style_json
             end
         end
 

@@ -581,4 +581,31 @@ function public.update_save_data()
     end
 end
 
+function public.draw_preview(canvas, pack, level)
+    local pack_data = assets.get_pack_no_load(pack)
+    if not pack_data then
+        error("pack with id '" .. pack .. "' not found")
+    end
+    local level_data = pack_data.levels[level]
+    if level_data == nil then
+        error("Level with id '" .. level .. "' not found")
+    end
+    game.level_data = game.level.set(level_data)
+    game.status.reset()
+    if game.level_data.sides < 3 then
+        game.level_data.sides = 3
+    end
+    game.player.reset(game.config)
+    if level_data.style_id == nil then
+        error("Style id cannot be 'nil'!")
+    end
+    local style_data = pack_data.styles[level_data.style_id]
+    if style_data == nil then
+        error("Style with id '" .. level_data.style_id .. "' does not exist.")
+    end
+    game.style.select(style_data)
+    game.style.update(100)
+    public.draw(canvas)
+end
+
 return public
