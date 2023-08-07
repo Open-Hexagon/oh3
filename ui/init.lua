@@ -6,6 +6,7 @@ local screens = {
     test = require("ui.screens.test"),
     test2 = require("ui.screens.test2"),
     levelselect = require("ui.screens.levelselect"),
+    game = require("ui.screens.game"),
 }
 local keyboard_navigation = require("ui.keyboard_navigation")
 local current_screen
