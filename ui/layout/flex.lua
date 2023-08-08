@@ -37,6 +37,7 @@ function flex:new(elements, options)
         bounds = {},
         last_available_area = { x = 0, y = 0, width = 0, height = 0 },
     }, flex)
+    obj.scroll:persist()
     for i = 1, #elements do
         elements[i].parent = obj
         elements[i].parent_index = i
@@ -151,6 +152,9 @@ function flex:process_event(name, ...)
             self.scroll_target = self.scroll() + self.scroll_velocity * 10
             clamp_scroll_target(self)
             self.scroll:keyframe(0.3, self.scroll_target, ease.out_sine)
+        end
+        if self.scrollbar_grabbed then
+            propagate = false
         end
         self.last_finger = nil
         self.last_finger_x = nil
@@ -424,9 +428,9 @@ function flex:calculate_layout(available_area)
                     end
                     total_size = total_size + size
                     if size > target_elem_size then
-                        too_large_elems[#too_large_elems+1] = size
+                        too_large_elems[#too_large_elems + 1] = size
                     else
-                        too_large_elems[#too_large_elems+1] = 0
+                        too_large_elems[#too_large_elems + 1] = 0
                     end
                 end
                 -- stop if no progress is being made
@@ -566,14 +570,19 @@ function flex:calculate_layout(available_area)
     if not self.is_animating then
         if not self.needs_scroll then
             self.scroll_target = 0
-            self.scroll:set_value(0)
-            self.scroll:fast_forward()
+            self.scroll:stop()
+            self.scroll:set_immediate_value(0)
             self.own_scroll_offset = { 0, 0 }
         end
         self:set_scroll_offset()
         if self.needs_scroll then
             self.scrollbar_visibility_timer = -2
         end
+    end
+    if self.needs_scroll then
+        clamp_scroll_target(self)
+        self.scroll:stop()
+        self.scroll:keyframe(0.1, self.scroll_target)
     end
     return final_width, final_height
 end

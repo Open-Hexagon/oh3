@@ -35,13 +35,15 @@ local function make_level_element(pack, level, extra_info)
         selection_handler = function(self)
             if self.selected then
                 self.background_color = { 0.2, 0.2, 0, 0.7 }
-				local ui = require("ui")
-				game_handler.set_version(192)
-				game_handler.record_start(selected_pack.id, level.id, {difficulty_mult = 1})
-				ui.open_screen("game")
             else
                 self.background_color = { 0, 0, 0, 0.7 }
             end
+        end,
+        click_handler = function()
+            local ui = require("ui")
+            game_handler.set_version(192)
+            game_handler.record_start(selected_pack.id, level.id, { difficulty_mult = 1 })
+            ui.open_screen("game")
         end,
     })
 end

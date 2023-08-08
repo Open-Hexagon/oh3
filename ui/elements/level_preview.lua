@@ -27,12 +27,15 @@ local function redraw(self)
 end
 
 function level_preview:new(game_version, pack, level, options)
-    local obj = element.new(setmetatable({
-        game_version = game_version,
-        pack = pack,
-        level = level,
-        last_scale = 1,
-    }, level_preview), options)
+    local obj = element.new(
+        setmetatable({
+            game_version = game_version,
+            pack = pack,
+            level = level,
+            last_scale = 1,
+        }, level_preview),
+        options
+    )
     redraw(obj)
     return obj
 end
@@ -49,7 +52,11 @@ function level_preview:draw()
         redraw(self)
     end
     self.last_scale = self.scale
-    love.graphics.draw(self.image, self.bounds[1] + self.padding * self.scale, self.bounds[2] + self.padding * self.scale)
+    love.graphics.draw(
+        self.image,
+        self.bounds[1] + self.padding * self.scale,
+        self.bounds[2] + self.padding * self.scale
+    )
 end
 
 return level_preview
