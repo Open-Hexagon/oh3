@@ -41,7 +41,7 @@ local function make_level_element(pack, level, extra_info)
         end,
         click_handler = function()
             local ui = require("ui")
-            game_handler.set_version(192)
+            game_handler.set_version(pack.game_version)
             game_handler.record_start(selected_pack.id, level.id, { difficulty_mult = 1 })
             ui.open_screen("game")
         end,
@@ -64,13 +64,14 @@ local function make_pack_elements()
             selection_handler = function(self)
                 if self.selected then
                     self.background_color = { 1, 1, 0, 1 }
-                    if cache_folder_flex[pack.id] then
+                    local levels = cache_folder_flex[pack.id]
+                    local last_levels = root.elements[2]
+                    if levels then
                         -- element exists in cache, use it
-                        local levels = cache_folder_flex[pack.id]
-                        root.elements[2] = cache_folder_flex[pack.id]
                         -- recalculate layout if window size changed
-                        if not area_equals(levels.last_available_area, root.elements[2].last_available_area) then
-                            root:calculate_layout(root.last_available_area)
+                        if not area_equals(levels.last_available_area, last_levels.last_available_area) or root.scale ~= levels.scale then
+                            levels:set_scale(root.scale)
+                            levels:calculate_layout(last_levels.last_available_area)
                         end
                     else
                         -- element does not exist in cache, create it
@@ -79,14 +80,16 @@ local function make_pack_elements()
                             local level = pack.levels[j]
                             level_elements[j] = make_level_element(pack, level)
                         end
-                        root.elements[2] = flex:new(
+                        levels = flex:new(
                             level_elements,
                             { direction = "column", align_items = "stretch", scrollable = true }
                         )
-                        root.elements[2].parent_index = 2
-                        root:calculate_layout(root.last_available_area)
-                        cache_folder_flex[pack.id] = root.elements[2]
+                        levels.parent_index = 2
+                        levels:set_scale(root.scale)
+                        levels:calculate_layout(last_levels.last_available_area)
+                        cache_folder_flex[pack.id] = levels
                     end
+                    root.elements[2] = levels
                     selected_pack = pack
                 else
                     self.background_color = { 1, 1, 1, 1 }
