@@ -64,7 +64,7 @@ function player.update(frametime, radius, movement, focus, walls)
     return false
 end
 
-local function draw_pivot(sides, radius, main_quads, r, g, b, a)
+function player.draw_pivot(sides, radius, main_quads, r, g, b, a)
     local div = 360 / sides
     local p_radius = radius * 0.75
     local distance2 = 5 + p_radius
@@ -108,7 +108,7 @@ local function draw_death_effect(sides, main_quads)
 end
 
 function player.draw(style, sides, radius, main_quads, black_and_white, r, g, b, a)
-    draw_pivot(sides, radius, main_quads, r, g, b, a)
+    player.draw_pivot(sides, radius, main_quads, r, g, b, a)
     if dead then
         draw_death_effect(sides, main_quads)
     end

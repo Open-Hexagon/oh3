@@ -412,7 +412,7 @@ function public.update(frametime)
     public.tickrate = 60 / target_frametime
 end
 
-function public.draw(screen)
+function public.draw(screen, _, preview)
     local width, height = screen:getDimensions()
     -- do the resize adjustment the old game did after already enforcing our aspect ratio
     local zoom_factor = 1 / math.max(1024 / width, 768 / height)
@@ -433,14 +433,23 @@ function public.draw(screen)
     end
     main_quads:clear()
     game.walls.draw(main_quads, game.get_main_color(black_and_white))
-    game.player.draw(
-        game.style,
-        game.level_data.sides,
-        game.status.radius,
-        main_quads,
-        black_and_white,
-        game.get_main_color(black_and_white)
-    )
+    if preview then
+        game.player.draw_pivot(
+            game.level_data.sides,
+            game.status.radius,
+            main_quads,
+            game.get_main_color(black_and_white)
+        )
+    else
+        game.player.draw(
+            game.style,
+            game.level_data.sides,
+            game.status.radius,
+            main_quads,
+            black_and_white,
+            game.get_main_color(black_and_white)
+        )
+    end
     if game.config.get("3D_enabled") and depth ~= 0 then
         local per_layer_offset = game.style.get_value("3D_spacing")
             * game.style.get_value("3D_perspective_multiplier")
@@ -605,7 +614,7 @@ function public.draw_preview(canvas, pack, level)
     end
     game.style.select(style_data)
     game.style.update(100)
-    public.draw(canvas)
+    public.draw(canvas, 0, true)
 end
 
 return public
