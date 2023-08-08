@@ -99,8 +99,8 @@ root = flex:new({
     --packs
     flex:new({
         dropdown:new({ "All Packs", "Favorites" }, { limit_to_inital_width = true }),
-        flex:new(make_pack_elements(), { direction = "column", align_items = "stretch" }),
-    }, { direction = "column", align_items = "stretch", scrollable = true }),
+        flex:new(make_pack_elements(), { direction = "column", align_items = "stretch", scrollable = true }),
+    }, { direction = "column", align_items = "stretch" }),
 
     --levels
     flex:new({}, { direction = "column", align_items = "stretch", scrollable = true }),
