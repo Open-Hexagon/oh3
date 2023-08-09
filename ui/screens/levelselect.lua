@@ -58,7 +58,7 @@ local function make_pack_elements()
     for i = 1, #packs do
         local pack = packs[i]
         elements[i] = quad:new({
-            child_element = label:new(pack.name, { font_size = 30, style = { color = { 0, 0, 0, 1 } } }),
+            child_element = label:new(pack.name, { font_size = 30, style = { color = { 0, 0, 0, 1 } }, wrap = true }),
             style = { background_color = { 1, 1, 1, 1 }, border_color = { 1, 1, 1, 1 } },
             selectable = true,
             selection_handler = function(self)

@@ -613,7 +613,6 @@ function public.draw_preview(canvas, pack, level)
         error("Style with id '" .. level_data.style_id .. "' does not exist.")
     end
     game.style.select(style_data)
-    game.style.update(100)
     depth = math.floor(game.style.get_value("3D_depth"))
     if depth > 100 then
         depth = 100
