@@ -614,6 +614,11 @@ function public.draw_preview(canvas, pack, level)
     end
     game.style.select(style_data)
     game.style.update(100)
+    depth = math.floor(game.style.get_value("3D_depth"))
+    if depth > 100 then
+        depth = 100
+    end
+    shake_move[1], shake_move[2] = 0, 0
     public.draw(canvas, 0, true)
 end
 
