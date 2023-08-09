@@ -28,7 +28,7 @@ local function make_level_element(pack, level, extra_info)
                 }, { direction = "column", style = { padding = 5 } }),
                 label:new(level.description, { font_size = 16, wrap = true }), -- future: use elements[2] to change this to only appear when selected
             }, { direction = "column" }),
-            label:new(music, { font_size = 30, wrap = true }),
+            --flex:new({label:new(music, { font_size = 30, wrap = true })}, { align_items = "end", direction = "column" }),
         }, { direction = "row" }),
         style = { background_color = { 0, 0, 0, 0.7 }, border_color = { 0, 0, 0, 0.7 } },
         selectable = true,

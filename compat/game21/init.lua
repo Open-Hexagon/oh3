@@ -70,6 +70,11 @@ local message_font, go_sound, level_up_sound, restart_sound, select_sound
 ---@param level_id string
 ---@param level_options table
 function public.start(pack_id, level_id, level_options)
+    -- update inital window dimensions when starting as well (for onInit/onLoad)
+    if not args.headless then
+        game.width = love.graphics.getWidth()
+        game.height = love.graphics.getHeight()
+    end
     local difficulty_mult = level_options.difficulty_mult
     if not difficulty_mult or type(difficulty_mult) ~= "number" then
         error("Must specify a numeric difficulty mult when running a compat game")
