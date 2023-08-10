@@ -55,8 +55,13 @@ function keyboard_navigation.select_element(element)
             if element.selection_handler then
                 element.selection_handler(element)
             end
-            if element.parent.elements then
-                element.parent.last_selection = element
+            local elem = element
+            while elem.parent do
+                local parent = elem.parent
+                if parent.elements then
+                    parent.last_selection = elem
+                end
+                elem = parent
             end
             scroll_into_view(element)
         end
