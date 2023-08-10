@@ -85,6 +85,7 @@ local function make_pack_elements()
                             { direction = "column", align_items = "stretch", scrollable = true }
                         )
                         levels.parent_index = 2
+                        levels.parent = root
                         levels:set_scale(root.scale)
                         levels:calculate_layout(last_levels.last_available_area)
                         cache_folder_flex[pack.id] = levels
