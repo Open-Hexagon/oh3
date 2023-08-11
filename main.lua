@@ -165,6 +165,7 @@ function love.run()
     end
 
     local game_handler = require("game_handler")
+    local threadify = require("threadify")
     global_config.init(config, game_handler.profile)
     game_handler.init(config)
     local ui = require("ui")
@@ -189,12 +190,16 @@ function love.run()
         love.event.pump()
         for name, a, b, c, d, e, f in love.event.poll() do
             if name == "quit" then
+                threadify.stop()
                 return a or 0
+            elseif name == "threaderror" then
+                error("Error in thread: " .. b)
             end
             game_handler.process_event(name, a, b, c, d, e, f)
             ui.process_event(name, a, b, c, d, e, f)
         end
 
+        threadify.update()
         ui.update(love.timer.getDelta())
 
         -- ensures tickrate on its own

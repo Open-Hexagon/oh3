@@ -288,7 +288,7 @@ end
 ---@param level string
 function game_handler.draw_preview(canvas, game_version, pack, level)
     if games[game_version].draw_preview then
-        games[game_version].draw_preview(canvas, pack, level)
+        return games[game_version].draw_preview(canvas, pack, level)
     end
 end
 

@@ -2,6 +2,11 @@ local log = require("log")(...)
 local args = require("args")
 local json = require("extlibs.json.jsonc")
 local vfs = require("compat.game192.virtual_filesystem")
+local threaded_assets, threadify
+if not args.headless then
+    threadify = require("threadify")
+    threaded_assets = threadify.require("compat.game192.assets")
+end
 
 local assets = {}
 local packs = {}
@@ -128,21 +133,33 @@ function assets.init(data, persistent_data, audio, config)
                 pack_data.levels[level_json.id] = level_json
             end
         end
-
-        -- styles have to be loaded here to draw the preview icons in the level selection
-        pack_data.styles = {}
-        for contents, filename in
-            file_ext_read_iter(pack_data.path .. "Styles", ".json", pack_data.virtual_pack_folder.Styles)
-        do
-            local style_json
-            success, style_json = decode_json(contents, filename)
-            if success then
-                pack_data.styles[style_json.id] = style_json
-            end
-        end
-
         packs[folder] = pack_data
     end
+end
+
+function assets.preload_styles(pack_data)
+    if pack_data.style_load_promise then
+        -- already pending
+        return pack_data.style_load_promise
+    end
+    -- load styles in thread for level preview
+    pack_data.style_load_promise = threaded_assets.load_styles(pack_data):done(function(styles)
+        pack_data.styles = styles
+    end)
+end
+
+function assets.load_styles(pack_data)
+    -- styles have to be loaded here to draw the preview icons in the level selection
+    pack_data.styles = {}
+    for contents, filename in
+        file_ext_read_iter(pack_data.path .. "Styles", ".json", pack_data.virtual_pack_folder.Styles)
+    do
+        local success, style_json = decode_json(contents, filename)
+        if success then
+            pack_data.styles[style_json.id] = style_json
+        end
+    end
+    return pack_data.styles
 end
 
 function assets.get_pack_no_load(folder)
@@ -184,6 +201,18 @@ function assets.get_pack(folder)
                 end
                 pack_data.music[music_json.id] = music_json
             end
+        end
+
+        -- styles
+        if pack_data.style_load_promise and not pack_data.style_load_promise.executed then
+            -- wait for styles if pending threaded loading not done yet
+            while not pack_data.style_load_promise.executed do
+                threadify.update()
+                love.timer.sleep(0.01)
+            end
+        elseif not pack_data.styles then
+            -- load them synchronously if no threaded loading is pending and styles aren't loaded
+            assets.load_styles(pack_data)
         end
 
         -- events

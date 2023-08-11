@@ -595,6 +595,10 @@ function public.draw_preview(canvas, pack, level)
     if not pack_data then
         error("pack with id '" .. pack .. "' not found")
     end
+    assets.preload_styles(pack_data)
+    if pack_data.style_load_promise and not pack_data.style_load_promise.executed then
+        return pack_data.style_load_promise
+    end
     local level_data = pack_data.levels[level]
     if level_data == nil then
         error("Level with id '" .. level .. "' not found")
