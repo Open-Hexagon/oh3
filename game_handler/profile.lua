@@ -116,6 +116,22 @@ function profile.save_score(time, replay)
     replay:save(path, data)
 end
 
+---get all scores on a level with certain level options
+---@param pack string
+---@param level string
+---@param level_options table
+---@return table
+function profile.get_scores(pack, level, level_options)
+    database:open()
+    local results = database:select("scores", {
+        pack = pack,
+        level = level,
+        level_options = level_options,
+    })
+    database:close()
+    return results
+end
+
 ---delete the currently selected profile with all its replays
 function profile.delete()
     database:open()
