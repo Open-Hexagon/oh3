@@ -76,6 +76,11 @@ function element:process_event(name, ...)
         end
         self.is_mouse_over = point_in_polygon(self.bounds, x, y)
         if name == "mousereleased" and self.selectable then
+            if self.click_handler and self.is_mouse_over then
+                if self.click_handler(self) then
+                    return true
+                end
+            end
             if self.selected ~= self.is_mouse_over then
                 self.selected = self.is_mouse_over
                 if self.selected then
@@ -87,11 +92,6 @@ function element:process_event(name, ...)
                     if self.selection_handler(self) then
                         return true
                     end
-                end
-            end
-            if self.click_handler and self.is_mouse_over then
-                if self.click_handler(self) then
-                    return true
                 end
             end
         end

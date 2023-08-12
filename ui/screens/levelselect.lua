@@ -4,12 +4,27 @@ local quad = require("ui.elements.quad")
 local dropdown = require("ui.elements.dropdown")
 local level_preview = require("ui.elements.level_preview")
 local game_handler = require("game_handler")
+local profile = require("game_handler.profile")
 
 local cache_folder_flex = {}
-local selected_pack
 local root
 
---level element! if this is used in more than just the level select, this should be seperate ;o
+local function make_localscore_elements(pack, level, level_options)
+    local data = profile.get_scores(pack, level, level_options)
+    local score = 0
+    for i = 1, #data do
+        if level == data[i].level then --now this is a little sus, maybe get_scores is incorrect?
+            if data[i].score > score then
+                score = data[i].score
+            end
+        end
+    end
+    return flex:new({
+        label:new("Your Score:", { font_size = 16, wrap = true }),
+        label:new(math.floor(score * 1000) / 1000, { font_size = 60, wrap = true, align_items = "end" }),
+    }, { direction = "column", align_items = "stretch" })
+end
+
 local function make_level_element(pack, level, extra_info)
     extra_info = extra_info or {}
     extra_info.song = extra_info.song or "no song"
@@ -35,15 +50,24 @@ local function make_level_element(pack, level, extra_info)
         selection_handler = function(self)
             if self.selected then
                 self.background_color = { 0.2, 0.2, 0, 0.7 }
+                local score = make_localscore_elements(pack.id, level.id, { difficulty_mult = 1 })
+                --local last
+                score.parent_index = 3
+                score.parent = root
+                score:set_scale(root.scale)
+                score:calculate_layout(root.elements[3].last_available_area)
+                root.elements[3] = score
             else
                 self.background_color = { 0, 0, 0, 0.7 }
             end
         end,
-        click_handler = function()
-            local ui = require("ui")
-            game_handler.set_version(pack.game_version)
-            game_handler.record_start(selected_pack.id, level.id, { difficulty_mult = 1 })
-            ui.open_screen("game")
+        click_handler = function(self)
+            if self.selected then
+                local ui = require("ui")
+                game_handler.set_version(pack.game_version)
+                game_handler.record_start(pack.id, level.id, { difficulty_mult = 1 })
+                ui.open_screen("game")
+            end
         end,
     })
 end
@@ -69,7 +93,10 @@ local function make_pack_elements()
                     if levels then
                         -- element exists in cache, use it
                         -- recalculate layout if window size changed
-                        if not area_equals(levels.last_available_area, last_levels.last_available_area) or root.scale ~= levels.scale then
+                        if
+                            not area_equals(levels.last_available_area, last_levels.last_available_area)
+                            or root.scale ~= levels.scale
+                        then
                             levels:set_scale(root.scale)
                             levels:calculate_layout(last_levels.last_available_area)
                         end
@@ -91,7 +118,6 @@ local function make_pack_elements()
                         cache_folder_flex[pack.id] = levels
                     end
                     root.elements[2] = levels
-                    selected_pack = pack
                 else
                     self.background_color = { 1, 1, 1, 1 }
                 end
@@ -112,9 +138,8 @@ root = flex:new({
     flex:new({}, { direction = "column", align_items = "stretch", scrollable = true }),
 
     --leaderboards
-    flex:new({
-        label:new("lbs"), --todo: "score" element similar to those other two, holds the score data like time, player, place, etc.
-    }, { direction = "column", align_items = "stretch" }),
+    flex:new({ label:new("", { font_size = 40, wrap = true }) }, { direction = "column", align_items = "stretch" }),
+    --todo: "score" element similar to those other two, holds the score data like time, player, place, etc.
 }, { size_ratios = { 1, 2, 1 }, scrollable = false })
 
 return root
