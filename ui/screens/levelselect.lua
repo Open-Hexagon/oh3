@@ -8,6 +8,19 @@ local profile = require("game_handler.profile")
 
 local cache_folder_flex = {}
 local root
+local level_element_selected
+
+local function make_options_elements(pack, level)
+    local selections = {}
+    for i = 1, #level.options.difficulty_mult do
+        selections[i] = level.options.difficulty_mult[#level.options.difficulty_mult - i + 1]
+    end
+    --this is for the level selection presets! the proper level settings need their own button and menu (see prototype)
+    local selection_element = dropdown:new(selections, { limit_to_inital_width = true })
+    return flex:new({
+        selection_element,
+    }, { direction = "column", align_items = "stretch" })
+end
 
 local function make_localscore_elements(pack, level, level_options)
     local data = profile.get_scores(pack, level, level_options)
@@ -21,7 +34,9 @@ local function make_localscore_elements(pack, level, level_options)
     end
     return flex:new({
         label:new("Your Score:", { font_size = 16, wrap = true }),
-        label:new(math.floor(score * 1000) / 1000, { font_size = 60, wrap = true, align_items = "end" }),
+        label:new(math.floor(score * 1000) / 1000, { font_size = 60, wrap = false }),
+        --this is for the level selection presets! the proper level settings need their own button and menu (see prototype)
+        --dropdown:new({level.options.difficulty_mult}, { limit_to_inital_width = true }),
     }, { direction = "column", align_items = "stretch" })
 end
 
@@ -48,21 +63,26 @@ local function make_level_element(pack, level, extra_info)
         style = { background_color = { 0, 0, 0, 0.7 }, border_color = { 0, 0, 0, 0.7 } },
         selectable = true,
         selection_handler = function(self)
-            if self.selected then
+            if level_element_selected ~= self then
                 self.background_color = { 0.2, 0.2, 0, 0.7 }
-                local score = make_localscore_elements(pack.id, level.id, { difficulty_mult = 1 })
+                local score = flex:new({
+                    make_localscore_elements(pack.id, level.id, { difficulty_mult = 1 }),
+                    make_options_elements(pack, level),
+                }, { direction = "column", align_items = "stretch" })
                 --local last
                 score.parent_index = 3
                 score.parent = root
                 score:set_scale(root.scale)
                 score:calculate_layout(root.elements[3].last_available_area)
+                if level_element_selected then
+                    level_element_selected.background_color = { 0, 0, 0, 0.7 }
+                end
                 root.elements[3] = score
-            else
-                self.background_color = { 0, 0, 0, 0.7 }
+                level_element_selected = self
             end
         end,
         click_handler = function(self)
-            if self.selected then
+            if level_element_selected == self then
                 local ui = require("ui")
                 game_handler.set_version(pack.game_version)
                 game_handler.record_start(pack.id, level.id, { difficulty_mult = 1 })

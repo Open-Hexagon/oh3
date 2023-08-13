@@ -187,6 +187,13 @@ function game_handler.update(ensure_tickrate)
         else
             current_game.update(1 / current_game.tickrate)
         end
+        --for "testing" purposes only (i just wante to play the game
+        if current_game.is_dead() then
+            current_game.stop()
+            local ui = require("ui")
+            ui.open_screen("levelselect")
+            --note: when reloading this room after the game, the score isnt in the menu until you reselect. this isnt a bug because there will be a proper death screen with retrying stuff in the future.
+        end
     end
 end
 
