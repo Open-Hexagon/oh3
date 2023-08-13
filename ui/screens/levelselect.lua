@@ -9,24 +9,22 @@ local profile = require("game_handler.profile")
 local cache_folder_flex = {}
 local root
 local level_element_selected
+local level_options_selected
 
-local function make_options_elements(pack, level)
-    local selections = {}
-    for i = 1, #level.options.difficulty_mult do
-        selections[i] = level.options.difficulty_mult[#level.options.difficulty_mult - i + 1]
-    end
-    --this is for the level selection presets! the proper level settings need their own button and menu (see prototype)
-    local selection_element = dropdown:new(selections, { limit_to_inital_width = true })
-    return flex:new({
-        selection_element,
-    }, { direction = "column", align_items = "stretch" })
+local function update_element(self, parent, parent_index, layout)
+    self.parent_index = parent_index
+    self.parent = parent
+    self:set_scale(parent.scale)
+    self:calculate_layout(layout.last_available_area)
+    return self
 end
 
 local function make_localscore_elements(pack, level, level_options)
     local data = profile.get_scores(pack, level, level_options)
     local score = 0
+    print(require("extlibs.json.json-beautify").beautify(data))
     for i = 1, #data do
-        if level == data[i].level then --now this is a little sus, maybe get_scores is incorrect?
+        if level == data[i].level and level_options.difficulty_mult == data[i].level_options.difficulty_mult then --now this is a little sus, maybe get_scores is incorrect?
             if data[i].score > score then
                 score = data[i].score
             end
@@ -35,8 +33,41 @@ local function make_localscore_elements(pack, level, level_options)
     return flex:new({
         label:new("Your Score:", { font_size = 16, wrap = true }),
         label:new(math.floor(score * 1000) / 1000, { font_size = 60, wrap = false }),
-        --this is for the level selection presets! the proper level settings need their own button and menu (see prototype)
-        --dropdown:new({level.options.difficulty_mult}, { limit_to_inital_width = true }),
+    }, { direction = "column", align_items = "stretch" })
+end
+
+local function make_options_elements(pack, level)
+    local selections = {}
+    local selections_index = 1
+    --this has a weird forumla because: the last diff is always 1, but it should be the first diff.
+    selections[1] = level.options.difficulty_mult[#level.options.difficulty_mult]
+    for i = 1, #level.options.difficulty_mult - 1 do
+        selections[i + 1] = level.options.difficulty_mult[i]
+    end
+    --this is for the level selection presets! the proper level settings need their own button and menu (see prototype)
+    local selection_element = quad:new({
+        child_element = label:new(
+            selections[selections_index],
+            { font_size = 30, style = { color = { 0, 0, 0, 1 } }, wrap = true }
+        ),
+        style = { background_color = { 1, 1, 1, 1 }, border_color = { 1, 1, 1, 1 } },
+        selectable = true,
+        click_handler = function(self)
+            selections_index = (selections_index % #selections) + 1
+            selections_element = label:new(
+                selections[selections_index],
+                { font_size = 30, style = { color = { 0, 0, 0, 1 }, padding = 8 }, wrap = true }
+            )
+            self.element = update_element(selections_element, self, 1, self.element)
+            level_options_selected = { difficulty_mult = selections[selections_index] }
+            local score = flex:new({
+                make_localscore_elements(pack.id, level.id, level_options_selected),
+            }, { direction = "column", align_items = "stretch" })
+            root.elements[3].elements[1] = update_element(score, root, 3, root.elements[3].elements[1])
+        end,
+    })
+    return flex:new({
+        selection_element,
     }, { direction = "column", align_items = "stretch" })
 end
 
@@ -70,14 +101,10 @@ local function make_level_element(pack, level, extra_info)
                     make_options_elements(pack, level),
                 }, { direction = "column", align_items = "stretch" })
                 --local last
-                score.parent_index = 3
-                score.parent = root
-                score:set_scale(root.scale)
-                score:calculate_layout(root.elements[3].last_available_area)
                 if level_element_selected then
                     level_element_selected.background_color = { 0, 0, 0, 0.7 }
                 end
-                root.elements[3] = score
+                root.elements[3] = update_element(score, root, 3, root.elements[3])
                 level_element_selected = self
             end
         end,
@@ -85,7 +112,7 @@ local function make_level_element(pack, level, extra_info)
             if level_element_selected == self then
                 local ui = require("ui")
                 game_handler.set_version(pack.game_version)
-                game_handler.record_start(pack.id, level.id, { difficulty_mult = 1 })
+                game_handler.record_start(pack.id, level.id, level_options_selected)
                 ui.open_screen("game")
             end
         end,
@@ -96,6 +123,7 @@ local function area_equals(a1, a2)
     return a1.x == a2.x and a1.y == a2.y and a1.width == a2.width and a1.height == a2.height
 end
 
+--https://tech-cmp.lambdacraft.dev:8001/get_packs
 local function make_pack_elements()
     local packs = game_handler.get_packs()
     local elements = {}
@@ -131,11 +159,7 @@ local function make_pack_elements()
                             level_elements,
                             { direction = "column", align_items = "stretch", scrollable = true }
                         )
-                        levels.parent_index = 2
-                        levels.parent = root
-                        levels:set_scale(root.scale)
-                        levels:calculate_layout(last_levels.last_available_area)
-                        cache_folder_flex[pack.id] = levels
+                        cache_folder_flex[pack.id] = update_element(levels, root, 2, last_levels)
                     end
                     root.elements[2] = levels
                 else
@@ -158,7 +182,10 @@ root = flex:new({
     flex:new({}, { direction = "column", align_items = "stretch", scrollable = true }),
 
     --leaderboards
-    flex:new({ label:new("", { font_size = 40, wrap = true }) }, { direction = "column", align_items = "stretch" }),
+    flex:new({
+        label:new("", { font_size = 40, wrap = true }),
+        label:new("", { font_size = 40, wrap = true }),
+    }, { direction = "column", align_items = "stretch" }),
     --todo: "score" element similar to those other two, holds the score data like time, player, place, etc.
 }, { size_ratios = { 1, 2, 1 }, scrollable = false })
 
