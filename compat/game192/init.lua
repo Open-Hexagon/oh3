@@ -621,6 +621,7 @@ function public.draw_preview(canvas, pack, level)
     if depth > 100 then
         depth = 100
     end
+    game.walls.clear()
     shake_move[1], shake_move[2] = 0, 0
     public.draw(canvas, 0, true)
 end
