@@ -22,12 +22,9 @@ end
 local function make_localscore_elements(pack, level, level_options)
     local data = profile.get_scores(pack, level, level_options)
     local score = 0
-    print(require("extlibs.json.json-beautify").beautify(data))
     for i = 1, #data do
-        if level == data[i].level and level_options.difficulty_mult == data[i].level_options.difficulty_mult then --now this is a little sus, maybe get_scores is incorrect?
-            if data[i].score > score then
-                score = data[i].score
-            end
+        if data[i].score > score then
+            score = data[i].score
         end
     end
     return flex:new({
@@ -54,7 +51,7 @@ local function make_options_elements(pack, level)
         selectable = true,
         click_handler = function(self)
             selections_index = (selections_index % #selections) + 1
-            selections_element = label:new(
+            local selections_element = label:new(
                 selections[selections_index],
                 { font_size = 30, style = { color = { 0, 0, 0, 1 }, padding = 8 }, wrap = true }
             )

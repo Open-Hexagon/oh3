@@ -123,12 +123,24 @@ end
 ---@return table
 function profile.get_scores(pack, level, level_options)
     database:open()
-    local results = database:select("scores", {
-        pack = pack,
-        level = level,
-        level_options = level_options,
-    })
+    local results = database:select(
+        "scores",
+        {
+            where = {
+                pack = pack,
+                level = level,
+            },
+        }
+    )
     database:close()
+    for i = #results, 1, -1 do
+        for k, v in pairs(results[i].level_options) do
+            if level_options[k] ~= v then
+                table.remove(results, i)
+                break
+            end
+        end
+    end
     return results
 end
 
