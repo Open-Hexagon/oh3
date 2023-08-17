@@ -9,7 +9,7 @@ local profile = require("game_handler.profile")
 local cache_folder_flex = {}
 local root
 local level_element_selected
-local level_options_selected
+local level_options_selected = { difficulty_mult = 1 }
 
 local function update_element(self, parent, parent_index, layout)
     self.parent_index = parent_index
