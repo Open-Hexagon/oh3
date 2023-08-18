@@ -1,7 +1,14 @@
 -- small async implementation using coroutines to suspend a function awaiting a callback
+
+---@class promise
+---@field executed boolean
+---@private done_callbacks table
 local promise = {}
 promise.__index = promise
 
+---creates a new promise that gets a resolve and a reject function passed
+---@param fn function
+---@return promise
 function promise:new(fn)
     local obj = setmetatable({
         done_callbacks = {},
@@ -38,6 +45,9 @@ function promise:new(fn)
     return obj
 end
 
+---adds a done (resolve) callback to the promise
+---@param callback function
+---@return promise
 function promise:done(callback)
     if self.executed then
         if self.resolved then
@@ -52,6 +62,9 @@ function promise:done(callback)
     return self
 end
 
+---adds an error (reject) callback to the promise
+---@param callback any
+---@return table
 function promise:err(callback)
     if self.executed then
         if not self.resolved then

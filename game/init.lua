@@ -1,4 +1,5 @@
 -- TODO: implement functions and the game itself
+local async = require("async")
 local public = {
     running = false,
     first_play = true,
@@ -9,9 +10,9 @@ local public = {
 ---@param pack_id string
 ---@param level_id string
 ---@param level_options table
-function public.start(pack_id, level_id, level_options)
+public.start = async(function(pack_id, level_id, level_options)
     public.running = true
-end
+end)
 
 ---update the game
 function public.update()
@@ -43,12 +44,14 @@ function public.stop()
 end
 
 ---initialize the game
----@param pack_level_data table
----@param input_handler table
----@param config table
----@param persistent_data table
+---@param conf table
 ---@param audio table
-function public.init(pack_level_data, input_handler, config, persistent_data, audio)
+public.init = async(function(conf, audio)
+end)
+
+---set the game's volume
+---@param volume number
+function public.set_volume(volume)
 end
 
 return public
