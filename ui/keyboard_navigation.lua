@@ -2,11 +2,6 @@ local keyboard_navigation = {}
 local current_screen
 local selected_element
 
-function keyboard_navigation.set_screen(screen)
-    current_screen = screen
-    selected_element = nil
-end
-
 function keyboard_navigation.get_screen()
     return current_screen
 end
@@ -29,6 +24,17 @@ local function get_first_element(element)
         if first_elem then
             return first_elem
         end
+    end
+end
+
+function keyboard_navigation.set_screen(screen)
+    if current_screen then
+        current_screen.last_selected_element = selected_element
+    end
+    current_screen = screen
+    keyboard_navigation.select_element()
+    if current_screen.last_selected_element then
+        keyboard_navigation.select_element(current_screen.last_selected_element)
     end
 end
 
