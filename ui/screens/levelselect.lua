@@ -91,22 +91,29 @@ local function make_level_element(pack, level, extra_info)
         style = { background_color = { 0, 0, 0, 0.7 }, border_color = { 0, 0, 0, 0.7 } },
         selectable = true,
         selection_handler = function(self)
+            if self.selected then
+                self.border_color = { 0, 0, 1, 0.7 }
+            else
+                self.border_color = { 0, 0, 0, 0.7 }
+            end
+        end,
+        click_handler = function(self)
             if level_element_selected ~= self then
-                self.background_color = { 0.2, 0.2, 0, 0.7 }
+                local elems = self.parent.elements
+                for i = 1, #elems do
+                    elems[i].background_color = { 0, 0, 0, 0.7 }
+                end
+                self.background_color = { 0.5, 0.5, 0, 0.7 }
                 local score = flex:new({
                     make_localscore_elements(pack.id, level.id, { difficulty_mult = 1 }),
                     make_options_elements(pack, level),
                 }, { direction = "column", align_items = "stretch" })
-                --local last
                 if level_element_selected then
                     level_element_selected.background_color = { 0, 0, 0, 0.7 }
                 end
                 root.elements[3] = update_element(score, root, 3, root.elements[3])
                 level_element_selected = self
-            end
-        end,
-        click_handler = function(self)
-            if level_element_selected == self then
+            else
                 local ui = require("ui")
                 game_handler.set_version(pack.game_version)
                 game_handler.record_start(pack.id, level.id, level_options_selected)
@@ -120,49 +127,55 @@ local function area_equals(a1, a2)
     return a1.x == a2.x and a1.y == a2.y and a1.width == a2.width and a1.height == a2.height
 end
 
---https://tech-cmp.lambdacraft.dev:8001/get_packs
 local function make_pack_elements()
+    -- table structure is the same as https://tech-cmp.lambdacraft.dev:8001/get_packs
     local packs = game_handler.get_packs()
     local elements = {}
     for i = 1, #packs do
         local pack = packs[i]
         elements[i] = quad:new({
             child_element = label:new(pack.name, { font_size = 30, style = { color = { 0, 0, 0, 1 } }, wrap = true }),
-            style = { background_color = { 1, 1, 1, 1 }, border_color = { 1, 1, 1, 1 } },
+            style = { background_color = { 1, 1, 1, 1 }, border_color = { 1, 1, 1, 1 }, border_thickness = 4 },
             selectable = true,
             selection_handler = function(self)
                 if self.selected then
-                    self.background_color = { 1, 1, 0, 1 }
-                    local levels = cache_folder_flex[pack.id]
-                    local last_levels = root.elements[2]
-                    if levels then
-                        -- element exists in cache, use it
-                        -- recalculate layout if window size changed
-                        if
-                            not area_equals(levels.last_available_area, last_levels.last_available_area)
-                            or root.scale ~= levels.scale
-                        then
-                            levels:set_scale(root.scale)
-                            levels:calculate_layout(last_levels.last_available_area)
-                        end
-                    else
-                        -- element does not exist in cache, create it
-                        local level_elements = {}
-                        for j = 1, #pack.levels do
-                            local level = pack.levels[j]
-                            level_elements[j] = make_level_element(pack, level)
-                        end
-                        levels = flex:new(
-                            level_elements,
-                            { direction = "column", align_items = "stretch", scrollable = true }
-                        )
-                        cache_folder_flex[pack.id] = update_element(levels, root, 2, last_levels)
-                    end
-                    root.elements[2] = levels
+                    self.border_color = { 0, 0, 1, 1 }
                 else
-                    self.background_color = { 1, 1, 1, 1 }
+                    self.border_color = { 1, 1, 1, 1 }
                 end
             end,
+            click_handler = function(self)
+                for j = 1, #elements do
+                    elements[j].background_color = { 1, 1, 1, 1 }
+                end
+                self.background_color = { 1, 1, 0, 1 }
+                local levels = cache_folder_flex[pack.id]
+                local last_levels = root.elements[2]
+                if levels then
+                    -- element exists in cache, use it
+                    -- recalculate layout if window size changed
+                    if
+                        not area_equals(levels.last_available_area, last_levels.last_available_area)
+                        or root.scale ~= levels.scale
+                    then
+                        levels:set_scale(root.scale)
+                        levels:calculate_layout(last_levels.last_available_area)
+                    end
+                else
+                    -- element does not exist in cache, create it
+                    local level_elements = {}
+                    for j = 1, #pack.levels do
+                        local level = pack.levels[j]
+                        level_elements[j] = make_level_element(pack, level)
+                    end
+                    levels = flex:new(
+                        level_elements,
+                        { direction = "column", align_items = "stretch", scrollable = true }
+                    )
+                    cache_folder_flex[pack.id] = update_element(levels, root, 2, last_levels)
+                end
+                root.elements[2] = levels
+            end
         })
     end
     return elements
@@ -176,7 +189,11 @@ root = flex:new({
     }, { direction = "column", align_items = "stretch" }),
 
     --levels
-    flex:new({}, { direction = "column", align_items = "stretch", scrollable = true }),
+    flex:new({
+        flex:new({
+            label:new("No level folder or pack selected.", { wrap = true })
+        }, { align_items = "center" }),
+    }, { direction = "column", align_items = "center" }),
 
     --leaderboards
     flex:new({
