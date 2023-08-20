@@ -8,6 +8,7 @@ local pack_path = "packs21/"
 local metadata_pack_json_map = {}
 local pack_id_json_map = {}
 local folder_pack_json_map = {}
+local pack_id_list = {}
 local sound_mapping = {
     ["beep.ogg"] = "click.ogg",
     ["difficultyMultDown.ogg"] = "difficulty_mult_down.ogg",
@@ -132,9 +133,11 @@ function assets.init(data, audio, config)
         if decode_success then
             pack_json.pack_id =
                 assets._build_pack_id(pack_json.disambiguator, pack_json.author, pack_json.name, pack_json.version)
+            pack_id_list[#pack_id_list + 1] = pack_json.pack_id
             local index_pack_id = assets._build_pack_id(pack_json.disambiguator, pack_json.author, pack_json.name)
             assets.pack_ids[#assets.pack_ids + 1] = index_pack_id
             pack_json.pack_name = pack_folders[i]
+            pack_json.path = folder
             metadata_pack_json_map[index_pack_id] = pack_json
             pack_id_json_map[pack_json.pack_id] = pack_json
             folder_pack_json_map[folder] = pack_json
@@ -272,10 +275,6 @@ function assets.get_pack(name)
             end
         end
 
-        -- sounds
-        pack_data.sounds = love.filesystem.getDirectoryItems(folder .. "/Sounds")
-        pack_data.cached_sounds = {}
-
         loaded_packs[name] = pack_data
     end
     return loaded_packs[name]
@@ -284,18 +283,39 @@ end
 function assets.get_sound(id)
     id = sound_mapping[id] or id
     if cached_sounds[id] == nil then
-        cached_sounds[id] = audio_module.new_static(audio_path .. id)
-        cached_sounds[id].volume = sound_volume
+        if love.filesystem.getInfo(audio_path .. id) then
+            cached_sounds[id] = audio_module.new_static(audio_path .. id)
+            cached_sounds[id].volume = sound_volume
+        else
+            return assets.get_pack_sound(nil, id)
+        end
     end
     return cached_sounds[id]
 end
 
 function assets.get_pack_sound(pack, id)
-    if pack.cached_sounds[id] == nil then
-        pack.cached_sounds[id] = audio_module.new_static(pack.path .. "/Sounds/" .. id)
-        pack.cached_sounds[id].volume = sound_volume
+    local glob_id
+    if pack then
+        glob_id = pack.pack_id .. "_" .. id
+    else
+        glob_id = id
+        for i = 1, #pack_id_list do
+            local pack_id = pack_id_list[i]
+            if id:sub(1, #pack_id) == pack_id then
+                id = id:sub(#pack_id + 2)
+                pack = pack_id_json_map[pack_id]
+                break
+            end
+        end
+        if not pack then
+            return
+        end
     end
-    return pack.cached_sounds[id]
+    if cached_sounds[glob_id] == nil then
+        cached_sounds[glob_id] = audio_module.new_static(pack.path .. "/Sounds/" .. id)
+        cached_sounds[glob_id].volume = sound_volume
+    end
+    return cached_sounds[glob_id]
 end
 
 function assets.get_font(name, size)
