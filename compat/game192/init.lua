@@ -622,6 +622,8 @@ function public.draw_preview(canvas, pack, level)
         depth = 100
     end
     game.walls.clear()
+    game.message_text = ""
+    current_rotation = 0
     shake_move[1], shake_move[2] = 0, 0
     public.draw(canvas, 0, true)
 end
