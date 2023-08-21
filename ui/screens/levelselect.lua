@@ -113,6 +113,8 @@ local function make_level_element(pack, level, extra_info)
                 end
                 root.elements[3] = update_element(score, root, 3, root.elements[3])
                 level_element_selected = self
+                -- reset options (TODO: make options not be dm specific)
+                level_options_selected = { difficulty_mult = 1 }
             else
                 local ui = require("ui")
                 game_handler.set_version(pack.game_version)
