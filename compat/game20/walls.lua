@@ -91,6 +91,7 @@ function walls.init(game)
     status = game.status
     style = game.style
     black_and_white = game.config.get("black_and_white")
+    walls.entities = {}
 end
 
 function walls.create(hmod, side, thickness, speed, curve)
