@@ -81,9 +81,9 @@ function level_preview:draw()
         love.graphics.setColor(1, 1, 1, 1)
         love.graphics.setLineWidth(self.scale * 5)
         love.graphics.circle("line", center_x, center_y, half_size / 2, 100)
-        love.graphics.setColor(0, 0, 0, 1)
         local half_sector_size = math.pi / 4
         local radius = half_size
+        love.graphics.setColor(0, 0, 0, 1)
         love.graphics.polygon(
             "fill",
             center_x, center_y,

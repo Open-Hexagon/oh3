@@ -47,8 +47,15 @@ local function make_options_elements(pack, level)
             selections[selections_index],
             { font_size = 30, style = { color = { 0, 0, 0, 1 } }, wrap = true }
         ),
-        style = { background_color = { 1, 1, 1, 1 }, border_color = { 1, 1, 1, 1 } },
+        style = { background_color = { 1, 1, 1, 1 }, border_color = { 1, 1, 1, 1 }, border_thickness = 5 },
         selectable = true,
+        selection_handler = function(self)
+            if self.selected then
+                self.border_color = { 0, 0, 1, 1 }
+            else
+                self.border_color = { 1, 1, 1, 1 }
+            end
+        end,
         click_handler = function(self)
             selections_index = (selections_index % #selections) + 1
             local selections_element = label:new(
@@ -88,7 +95,7 @@ local function make_level_element(pack, level, extra_info)
             }, { direction = "column" }),
             --flex:new({label:new(music, { font_size = 30, wrap = true })}, { align_items = "end", direction = "column" }),
         }, { direction = "row" }),
-        style = { background_color = { 0, 0, 0, 0.7 }, border_color = { 0, 0, 0, 0.7 } },
+        style = { background_color = { 0, 0, 0, 0.7 }, border_color = { 0, 0, 0, 0.7 }, border_thickness = 5 },
         selectable = true,
         selection_handler = function(self)
             if self.selected then
@@ -186,7 +193,7 @@ end
 root = flex:new({
     --packs
     flex:new({
-        dropdown:new({ "All Packs", "Favorites" }, { limit_to_inital_width = true }),
+        dropdown:new({ "All Packs", "Favorites" }, { limit_to_inital_width = true, style = { border_thickness = 5 } }),
         flex:new(make_pack_elements(), { direction = "column", align_items = "stretch", scrollable = true }),
     }, { direction = "column", align_items = "stretch" }),
 
