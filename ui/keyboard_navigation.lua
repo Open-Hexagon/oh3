@@ -32,9 +32,9 @@ function keyboard_navigation.set_screen(screen)
         current_screen.last_selected_element = selected_element
     end
     current_screen = screen
-    keyboard_navigation.select_element()
+    keyboard_navigation.select_element(nil, false)
     if current_screen.last_selected_element then
-        keyboard_navigation.select_element(current_screen.last_selected_element)
+        keyboard_navigation.select_element(current_screen.last_selected_element, false)
     end
 end
 
@@ -47,18 +47,21 @@ local function scroll_into_view(element)
     end
 end
 
-function keyboard_navigation.select_element(element)
+function keyboard_navigation.select_element(element, call_handlers)
+    if call_handlers == nil then
+        call_handlers = true
+    end
     if element ~= selected_element then
         if selected_element then
             selected_element.selected = false
-            if selected_element.selection_handler then
+            if selected_element.selection_handler and call_handlers then
                 selected_element.selection_handler(selected_element)
             end
         end
         selected_element = element
         if element then
             element.selected = true
-            if element.selection_handler then
+            if element.selection_handler and call_handlers then
                 element.selection_handler(element)
             end
             local elem = element
