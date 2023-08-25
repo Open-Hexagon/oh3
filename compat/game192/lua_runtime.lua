@@ -161,6 +161,11 @@ function lua_runtime.init_env(game, public)
         pairs = pairs,
         print = print,
         tostring = tostring,
+        loadstring = function(...)
+            local f = loadstring(...)
+            setfenv(f, lua_runtime.env)
+            return f
+        end,
         io = game.vfs.io,
         -- allowing manual random seed setting, the randomseed calls will be recorded in the replay in order (with their seed)
         math = {
