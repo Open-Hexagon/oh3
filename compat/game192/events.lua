@@ -204,13 +204,13 @@ function events.init(game)
             if music == nil then
                 error("Music with id '" .. event.id .. "' not found")
             end
+            if game.music and game.music.source then
+                game.music.source:stop()
+            end
             local segment = math.random(1, #music.segments)
             if music.source ~= nil then
                 music.source:seek(math.floor(music.segments[segment].time))
                 music.source:play()
-            end
-            if game.music and game.music.source then
-                game.music.source:stop()
             end
             game.music = music
         end,
@@ -219,12 +219,12 @@ function events.init(game)
             if music == nil then
                 error("Music with id '" .. event.id .. "' not found")
             end
+            if game.music and game.music.source then
+                game.music.source:stop()
+            end
             if music.source ~= nil then
                 music.source:seek(math.floor(music.segments[math.floor((event.segment_index or 0) + 1)].time))
                 music.source:play()
-            end
-            if game.music and game.music.source then
-                game.music.source:stop()
             end
             game.music = music
         end,
@@ -233,12 +233,12 @@ function events.init(game)
             if music == nil then
                 error("Music with id '" .. event.id .. "' not found")
             end
+            if game.music and game.music.source then
+                game.music.source:stop()
+            end
             if music.source ~= nil then
                 music.source:seek(math.floor(event.seconds or 0))
                 music.source:play()
-            end
-            if game.music and game.music.source then
-                game.music.source:stop()
             end
             game.music = music
         end,
