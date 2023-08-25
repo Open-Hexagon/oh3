@@ -49,7 +49,7 @@ local function update_main_color()
     end
 end
 
-local function draw_pivot(main_quads)
+function player.draw_pivot(main_quads)
     local sides = game.level_status.sides
     local div = math.pi / sides
     local radius = game.status.radius * 0.75
@@ -97,7 +97,7 @@ local function draw_death_effect()
 end
 
 function player.draw(main_quads)
-    draw_pivot(main_quads)
+    player.draw_pivot(main_quads)
     if dead then
         utils.get_color_from_hue(hue / 255, color_main)
     else

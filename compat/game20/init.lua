@@ -323,7 +323,7 @@ end
 
 ---draw the game to the current canvas
 ---@param screen love.Canvas
-function public.draw(screen)
+function public.draw(screen, _, preview)
     local width, height = screen:getDimensions()
     -- do the resize adjustment the old game did after already enforcing our aspect ratio
     local zoom_factor = 1 / math.max(1024 / width, 768 / height)
@@ -344,7 +344,11 @@ function public.draw(screen)
     end
     main_quads:clear()
     game.walls.draw(main_quads)
-    game.player.draw(main_quads)
+    if preview then
+        game.player.draw_pivot(main_quads)
+    else
+        game.player.draw(main_quads)
+    end
     if game.config.get("3D_enabled") and depth > 0 then
         local per_layer_offset = game.style._3D_spacing * game.style._3D_perspective_mult * effect * 3.6
         local rad_rot = math.rad(game.current_rotation)
@@ -503,6 +507,33 @@ function public.init(pack_level_data, input_handler, config, persistent_data, au
             ]]
         )
     end
+end
+
+function public.draw_preview(canvas, pack, level)
+    local pack_data = assets.get_pack_no_load(pack)
+    if not pack_data then
+        error("pack with id '" .. pack .. "' not found")
+    end
+    assets.preload(pack_data)
+    if pack_data.preload_promise and not pack_data.preload_promise.executed then
+        return pack_data.preload_promise
+    end
+    game.level.set(pack_data.levels[level])
+    game.level_status.reset()
+    game.level_status.sides = pack_data.preview_side_counts[level]
+    if game.level_status.sides < 3 then
+        game.level_status.sides = 3
+    end
+    game.status.reset()
+    game.player.reset(game, assets)
+    game.style.set(pack_data.styles[game.level.styleId])
+    game.current_rotation = 0
+    game.style._3D_depth = math.min(game.style._3D_depth, game.config.get("3D_max_depth"))
+    depth = game.style._3D_depth
+    game.message_text = ""
+    game.walls.init(game)
+    shake_move[1], shake_move[2] = 0, 0
+    public.draw(canvas, 0, true)
 end
 
 return public
