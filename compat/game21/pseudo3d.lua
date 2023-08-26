@@ -60,20 +60,21 @@ function pseudo3d.apply_skew()
     end
 end
 
+local function adjust_alpha(a, i)
+    if game.style.pseudo_3D_alpha_mult == 0 then
+        return a
+    end
+    local new_alpha = (a / game.style.pseudo_3D_alpha_mult) - i * game.style.pseudo_3D_alpha_falloff
+    if new_alpha > 255 then
+        return 255
+    elseif new_alpha < 0 then
+        return 0
+    end
+    return new_alpha
+end
+
 function pseudo3d.draw(set_render_stage, wall_quads, pivot_quads, player_tris, black_and_white)
     if game.config.get("3D_enabled") then
-        local function adjust_alpha(a, i)
-            if game.style.pseudo_3D_alpha_mult == 0 then
-                return a
-            end
-            local new_alpha = (a / game.style.pseudo_3D_alpha_mult) - i * game.style.pseudo_3D_alpha_falloff
-            if new_alpha > 255 then
-                return 255
-            elseif new_alpha < 0 then
-                return 0
-            end
-            return new_alpha
-        end
         for j = 1, depth do
             local i = depth - j
             local offset = game.style.pseudo_3D_spacing

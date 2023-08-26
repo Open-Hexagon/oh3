@@ -113,7 +113,7 @@ function public.start(pack_id, level_id, level_options)
         game.music.source:play()
     end
 
-    game.rng.set_seed(game.input.next_seed(game.rng.get_seed()))
+    game.rng.set_seed(game.input.next_seed(seed))
 
     game.main_timeline:clear()
     game.event_timeline:clear()
