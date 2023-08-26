@@ -520,7 +520,7 @@ function public.draw_preview(canvas, pack, level)
     end
     game.level.set(pack_data.levels[level])
     game.level_status.reset()
-    game.level_status.sides = pack_data.preview_side_counts[level]
+    game.level_status.sides = pack_data.preview_side_counts[level] or 6
     if game.level_status.sides < 3 then
         game.level_status.sides = 3
     end

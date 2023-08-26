@@ -77,7 +77,7 @@ function player.get_color_adjusted_for_swap(color)
     end
 end
 
-local function draw_pivot(sides, style, pivotquads, cap_tris, black_and_white)
+function player.draw_pivot(sides, style, pivotquads, cap_tris, black_and_white)
     local pr, pg, pb, pa = style.get_main_color()
     local cr, cg, cb, ca = style.get_cap_color_result()
     if black_and_white then
@@ -126,7 +126,7 @@ function player.draw(
     if black_and_white then
         _color[1], _color[2], _color[3] = 255, 255, 255
     end
-    draw_pivot(sides, style, pivotquads, cap_tris, black_and_white)
+    player.draw_pivot(sides, style, pivotquads, cap_tris, black_and_white)
     if _dead_effect_timer.running then
         draw_death_effect(pivotquads)
     end

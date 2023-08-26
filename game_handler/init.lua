@@ -293,6 +293,7 @@ end
 ---@param game_version number
 ---@param pack string
 ---@param level string
+---@return table?
 function game_handler.draw_preview(canvas, game_version, pack, level)
     if games[game_version].draw_preview then
         return games[game_version].draw_preview(canvas, pack, level)

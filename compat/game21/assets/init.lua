@@ -2,6 +2,11 @@ local log = require("log")(...)
 local args = require("args")
 local json = require("extlibs.json.jsonc")
 local translate_and_compile_shader = require("compat.game21.assets.shader_compat")
+local threaded_assets, threadify
+if not args.headless then
+    threadify = require("threadify")
+    threaded_assets = threadify.require("compat.game21.assets")
+end
 
 local loaded_packs = {}
 local pack_path = "packs21/"
@@ -177,6 +182,55 @@ function assets.init(data, audio, config)
     end
 end
 
+function assets.preload(pack_data)
+    if pack_data.preload_promise then
+        -- already pending
+        return pack_data.preload_promise
+    end
+    -- load preview data in thread for level preview
+    pack_data.preload_promise = threaded_assets.load_style_and_lua_data(pack_data):done(function(styles, side_counts)
+        pack_data.styles = styles
+        pack_data.preview_side_counts = side_counts
+    end)
+end
+
+function assets.load_style_and_lua_data(pack_data)
+    local side_counts = {}
+    for level_id, level_json in pairs(pack_data.levels) do
+        local lua_path = pack_data.path .. "/" .. level_json.luaFile
+        if love.filesystem.getInfo(lua_path) then
+            local file = love.filesystem.newFile(lua_path)
+            local code = file:read()
+            file:close()
+            -- match set sides calls in the lua file to get the number of sides
+            for match in code:gmatch("function.-onInit.-l_setSides%((.-)%).-end") do
+                side_counts[level_id] = tonumber(match) or side_counts[level_id]
+            end
+        end
+    end
+    return assets.load_styles(pack_data), side_counts
+end
+
+function assets.load_styles(pack_data)
+    -- styles have to be loaded here to draw the preview icons in the level selection
+    pack_data.styles = {}
+    for contents, filename in file_ext_read_iter(pack_data.path .. "/Styles", ".json") do
+        local success, style_json = decode_json(contents, filename)
+        if success then
+            pack_data.styles[style_json.id] = style_json
+        end
+    end
+    return pack_data.styles
+end
+
+function assets.get_pack_no_load(id)
+    if loaded_packs[id] then
+        return loaded_packs[id]
+    else
+        return pack_id_json_map[id]
+    end
+end
+
 function assets.get_pack_from_metadata(disambiguator, author, name)
     return assets.get_pack_from_id(assets._build_pack_id(disambiguator, author, name))
 end
@@ -267,12 +321,20 @@ function assets.get_pack(name)
         end
 
         -- styles
-        pack_data.styles = {}
-        for contents, filename in file_ext_read_iter(folder .. "/Styles", ".json") do
-            local success, style_json = decode_json(contents, filename)
-            if success then
-                pack_data.styles[style_json.id] = style_json
+        if pack_data.pack_json.preload_promise and not pack_data.pack_json.preload_promise.executed then
+            -- wait for styles if pending threaded loading not done yet
+            while not pack_data.preload_promise.executed do
+                threadify.update()
+                love.timer.sleep(0.01)
             end
+        elseif not pack_data.pack_json.styles then
+            -- load them synchronously if not threaded loading is pending and styles aren't loaded yet
+            assets.load_styles(pack_data)
+        end
+        if pack_data.pack_json.styles then
+            -- move table to proper location
+            pack_data.styles = pack_data.pack_json.styles
+            pack_data.pack_json.styles = nil
         end
 
         loaded_packs[name] = pack_data

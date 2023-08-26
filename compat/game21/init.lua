@@ -91,7 +91,6 @@ function public.start(pack_id, level_id, level_options)
     local style_data = game.pack_data.styles[game.level_data.styleId]
     if style_data == nil then
         error("Error: style with id '" .. game.level_data.styleId .. "' not found")
-        -- still continue with default style values
     end
     game.style.select(style_data)
     game.style.compute_colors()
@@ -332,7 +331,8 @@ end
 ---draw the game to the current canvas
 ---@param screen love.Canvas
 ---@param frametime number
-function public.draw(screen, frametime)
+---@param preview boolean
+function public.draw(screen, frametime, preview)
     -- for lua access
     game.width, game.height = screen:getDimensions()
 
@@ -341,7 +341,9 @@ function public.draw(screen, frametime)
     -- apply pulse as well
     local zoom = pulse.get_zoom(zoom_factor)
     love.graphics.scale(zoom, zoom)
-    camera_shake.apply()
+    if not preview then
+        camera_shake.apply()
+    end
     pseudo3d.apply_skew()
     rotation.apply(game)
 
@@ -382,7 +384,9 @@ function public.draw(screen, frametime)
     player_tris:clear()
     pivot_quads:clear()
     cap_tris:clear()
-    if game.status.started then
+    if preview then
+        game.player.draw_pivot(game.level_status.sides, game.style, pivot_quads, cap_tris, black_and_white)
+    elseif game.status.started then
         game.player.draw(
             game.level_status.sides,
             game.style,
@@ -397,14 +401,16 @@ function public.draw(screen, frametime)
     love.graphics.setColor(1, 1, 1, 1)
     pseudo3d.draw(set_render_stage, wall_quads, pivot_quads, player_tris, black_and_white)
 
-    if game.config.get("show_player_trail") and game.status.show_player_trail then
-        love.graphics.setShader()
-        trail_particles.draw()
-    end
+    if not preview then
+        if game.config.get("show_player_trail") and game.status.show_player_trail then
+            love.graphics.setShader()
+            trail_particles.draw()
+        end
 
-    if game.config.get("show_swap_particles") then
-        love.graphics.setShader()
-        swap_particles.draw()
+        if game.config.get("show_swap_particles") then
+            love.graphics.setShader()
+            swap_particles.draw()
+        end
     end
 
     set_render_stage(4)
@@ -419,7 +425,9 @@ function public.draw(screen, frametime)
     -- text shouldn't be affected by rotation/pulse
     love.graphics.origin()
     love.graphics.scale(zoom_factor, zoom_factor)
-    camera_shake.apply()
+    if not preview then
+        camera_shake.apply()
+    end
     set_render_stage(8)
     if game.message_text ~= "" then
         -- text
@@ -504,6 +512,54 @@ function public.init(data, input_handler, config, _, audio)
         restart_sound = assets.get_sound("restart.ogg")
         select_sound = assets.get_sound("select.ogg")
     end
+end
+
+---draws a minimal level preview to a canvas
+---@param canvas love.Canvas
+---@param pack string
+---@param level string
+---@return table?
+function public.draw_preview(canvas, pack, level)
+    local pack_data = assets.get_pack_no_load(pack)
+    if not pack_data then
+        error("pack with id '" .. pack .. "not found")
+    end
+    assets.preload(pack_data)
+    if pack_data.preload_promise and not pack_data.preload_promise.executed then
+        return pack_data.preload_promise
+    end
+    game.pack_data = pack_data
+    game.level_data = game.pack_data.levels[level]
+    if game.level_data == nil then
+        error("Error: level with id '" .. level .. "' not found")
+    end
+    game.level_status.reset(game.config.get("sync_music_to_dm"), assets)
+    local style_data = game.pack_data.styles[game.level_data.styleId]
+    if style_data == nil then
+        error("Error: style with id '" .. game.level_data.styleId .. "' not found")
+    end
+    game.style.select(style_data)
+    game.style.compute_colors()
+    game.status.reset_all_data()
+    game.player.reset(
+        game.get_swap_cooldown(),
+        game.config.get("player_size"),
+        game.config.get("player_speed"),
+        game.config.get("player_focus_speed")
+    )
+    game.player.update_position(game.status.radius)
+    game.walls.reset(game.level_status)
+    game.custom_walls.cw_clear()
+    flash.init(game)
+    game.current_rotation = 0
+    local sides = pack_data.preview_side_counts[level] or 6
+    if sides < 3 then
+        sides = 3
+    end
+    game.level_status.sides = sides
+    pulse.init(game)
+    beat_pulse.init(game)
+    public.draw(canvas, 0, true)
 end
 
 return public

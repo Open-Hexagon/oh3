@@ -134,8 +134,6 @@ function assets.load_style_and_lua_data(pack_data)
                 side_counts[level_id] = tonumber(match) or side_counts[level_id]
             end
         end
-        -- default to 6 sides
-        side_counts[level_id] = side_counts[level_id] or 6
     end
     return assets.load_styles(pack_data), side_counts
 end
