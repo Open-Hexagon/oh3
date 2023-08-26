@@ -38,7 +38,7 @@ else
         return setmetatable(interface, {
             __index = function(_, key)
                 return function(...)
-                    local msg = {-1, key, ...}
+                    local msg = { -1, key, ... }
                     return async.promise:new(function(resolve, reject)
                         local index = 0
                         if #thread.free_indices == 0 then
@@ -54,7 +54,7 @@ else
                         thread.rejecters[index] = reject
                     end)
                 end
-            end
+            end,
         })
     end
 

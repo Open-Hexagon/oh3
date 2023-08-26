@@ -6,7 +6,7 @@ function promise:new(fn)
     local obj = setmetatable({
         done_callbacks = {},
         error_callbacks = {},
-        executed = false
+        executed = false,
     }, promise)
     fn(function(...)
         obj.executed = true
@@ -39,10 +39,10 @@ end
 local async = setmetatable({}, {
     __call = function(_, fn)
         return function(...)
-            local args = {...}
+            local args = { ... }
             return promise:new(function(resolve, reject)
                 local co = coroutine.create(function()
-                    local ret = {xpcall(fn, reject, unpack(args))}
+                    local ret = { xpcall(fn, reject, unpack(args)) }
                     if ret[1] then
                         resolve(unpack(ret, 2))
                     end
@@ -50,7 +50,7 @@ local async = setmetatable({}, {
                 coroutine.resume(co)
             end)
         end
-    end
+    end,
 })
 
 async.await = function(prom)
