@@ -146,57 +146,59 @@ local function make_pack_elements()
     local elements = {}
     for i = 1, #packs do
         local pack = packs[i]
-        elements[i] = quad:new({
-            child_element = label:new(pack.name, { font_size = 30, style = { color = { 0, 0, 0, 1 } }, wrap = true }),
-            style = { background_color = { 1, 1, 1, 1 }, border_color = { 1, 1, 1, 1 }, border_thickness = 4 },
-            selectable = true,
-            selection_handler = function(self)
-                if self.selected then
-                    self.border_color = { 0, 0, 1, 1 }
-                else
-                    self.border_color = { 1, 1, 1, 1 }
-                end
-            end,
-            click_handler = function(self)
-                for j = 1, #elements do
-                    elements[j].background_color = { 1, 1, 1, 1 }
-                end
-                self.background_color = { 1, 1, 0, 1 }
-                local levels = cache_folder_flex[pack.id]
-                local last_levels = root.elements[2]
-                if levels then
-                    -- element exists in cache, use it
-                    -- recalculate layout if window size changed
-                    if
-                        not area_equals(levels.last_available_area, last_levels.last_available_area)
-                        or root.scale ~= levels.scale
-                    then
-                        levels:set_scale(root.scale)
-                        levels:calculate_layout(last_levels.last_available_area)
+        if #pack.levels > 0 then
+            elements[#elements + 1] = quad:new({
+                child_element = label:new(pack.name, { font_size = 30, style = { color = { 0, 0, 0, 1 } }, wrap = true }),
+                style = { background_color = { 1, 1, 1, 1 }, border_color = { 1, 1, 1, 1 }, border_thickness = 4 },
+                selectable = true,
+                selection_handler = function(self)
+                    if self.selected then
+                        self.border_color = { 0, 0, 1, 1 }
+                    else
+                        self.border_color = { 1, 1, 1, 1 }
                     end
-                    -- check if previews need redraw (happens when game is started during load)
-                    for j = 1, #levels.elements do
-                        local preview = levels.elements[j].preview
-                        if not preview.image then
-                            preview:redraw()
+                end,
+                click_handler = function(self)
+                    for j = 1, #elements do
+                        elements[j].background_color = { 1, 1, 1, 1 }
+                    end
+                    self.background_color = { 1, 1, 0, 1 }
+                    local levels = cache_folder_flex[pack.id]
+                    local last_levels = root.elements[2]
+                    if levels then
+                        -- element exists in cache, use it
+                        -- recalculate layout if window size changed
+                        if
+                            not area_equals(levels.last_available_area, last_levels.last_available_area)
+                            or root.scale ~= levels.scale
+                        then
+                            levels:set_scale(root.scale)
+                            levels:calculate_layout(last_levels.last_available_area)
                         end
+                        -- check if previews need redraw (happens when game is started during load)
+                        for j = 1, #levels.elements do
+                            local preview = levels.elements[j].preview
+                            if not preview.image then
+                                preview:redraw()
+                            end
+                        end
+                    else
+                        -- element does not exist in cache, create it
+                        local level_elements = {}
+                        for j = 1, #pack.levels do
+                            local level = pack.levels[j]
+                            level_elements[j] = make_level_element(pack, level)
+                        end
+                        levels = flex:new(
+                            level_elements,
+                            { direction = "column", align_items = "stretch", scrollable = true }
+                        )
+                        cache_folder_flex[pack.id] = update_element(levels, root, 2, last_levels)
                     end
-                else
-                    -- element does not exist in cache, create it
-                    local level_elements = {}
-                    for j = 1, #pack.levels do
-                        local level = pack.levels[j]
-                        level_elements[j] = make_level_element(pack, level)
-                    end
-                    levels = flex:new(
-                        level_elements,
-                        { direction = "column", align_items = "stretch", scrollable = true }
-                    )
-                    cache_folder_flex[pack.id] = update_element(levels, root, 2, last_levels)
+                    root.elements[2] = levels
                 end
-                root.elements[2] = levels
-            end
-        })
+            })
+        end
     end
     return elements
 end
