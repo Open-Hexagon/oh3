@@ -17,7 +17,7 @@ local function set_canvas_scale(scale)
     end
 end
 
-local function redraw(self)
+function level_preview:redraw()
     love.graphics.setCanvas(canvas)
     love.graphics.origin()
     love.graphics.clear(0, 0, 0, 1)
@@ -30,8 +30,10 @@ local function redraw(self)
     if promise then
         -- styles not loaded yet
         promise:done(function()
-            -- redraw once styles are loaded
-            redraw(self)
+            if not game_handler.is_running() then
+                -- redraw once styles are loaded
+                self:redraw()
+            end
         end)
         return
     end
@@ -51,20 +53,23 @@ function level_preview:new(game_version, pack, level, options)
         }, level_preview),
         options
     )
-    redraw(obj)
+    level_preview.redraw(obj)
     return obj
 end
 
 function level_preview:calculate_element_layout()
     -- * 2 as there should be padding on both sides
     local padding = self.padding * 2 * self.scale
+    if not self.image then
+        self:redraw()
+    end
     return SIZE * self.scale + padding, SIZE * self.scale + padding
 end
 
 function level_preview:draw()
     if self.last_scale ~= self.scale then
         set_canvas_scale(self.scale)
-        redraw(self)
+        self:redraw()
     end
     self.last_scale = self.scale
     local pos_x, pos_y = self.bounds[1] + self.padding * self.scale, self.bounds[2] + self.padding * self.scale

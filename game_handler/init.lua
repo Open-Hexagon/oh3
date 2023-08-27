@@ -288,6 +288,12 @@ function game_handler.is_dead()
     return current_game.is_dead()
 end
 
+---returns true if a game is running
+---@return boolean
+function game_handler.is_running()
+    return current_game and current_game.running or false
+end
+
 ---draws a minimal level preview to a canvas
 ---@param canvas love.Canvas
 ---@param game_version number
