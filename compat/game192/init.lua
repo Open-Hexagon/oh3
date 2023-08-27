@@ -625,6 +625,7 @@ function public.draw_preview(canvas, pack, level)
     game.message_text = ""
     current_rotation = 0
     shake_move[1], shake_move[2] = 0, 0
+    game.level_data.pulse_min = 75
     public.draw(canvas, 0, true)
 end
 
