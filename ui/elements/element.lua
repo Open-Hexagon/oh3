@@ -83,11 +83,6 @@ function element:process_event(name, ...)
                 else
                     keyboard_navigation.deselect_element(self)
                 end
-                if self.selection_handler then
-                    if self.selection_handler(self) then
-                        return true
-                    end
-                end
             end
             if self.click_handler and self.is_mouse_over then
                 if self.click_handler(self) then
