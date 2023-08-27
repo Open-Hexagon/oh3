@@ -195,6 +195,9 @@ local function make_pack_elements()
                         )
                         cache_folder_flex[pack.id] = update_element(levels, root, 2, last_levels)
                     end
+                    if root.elements[2] ~= levels then
+                        levels.elements[1]:click(false)
+                    end
                     root.elements[2] = levels
                 end
             })
@@ -203,19 +206,16 @@ local function make_pack_elements()
     return elements
 end
 
+local pack_elems = make_pack_elements()
 root = flex:new({
     --packs
     flex:new({
         dropdown:new({ "All Packs", "Favorites" }, { limit_to_inital_width = true, style = { border_thickness = 5 } }),
-        flex:new(make_pack_elements(), { direction = "column", align_items = "stretch", scrollable = true }),
+        flex:new(pack_elems, { direction = "column", align_items = "stretch", scrollable = true }),
     }, { direction = "column", align_items = "stretch" }),
 
     --levels
-    flex:new({
-        flex:new({
-            label:new("No level folder or pack selected.", { wrap = true })
-        }, { align_items = "center" }),
-    }, { direction = "column", align_items = "center" }),
+    flex:new({}, { direction = "column", align_items = "center" }),
 
     --leaderboards
     flex:new({
@@ -224,5 +224,9 @@ root = flex:new({
     }, { direction = "column", align_items = "stretch" }),
     --todo: "score" element similar to those other two, holds the score data like time, player, place, etc.
 }, { size_ratios = { 1, 2, 1 }, scrollable = false })
+
+if #pack_elems > 0 then
+    pack_elems[1]:click(false)
+end
 
 return root

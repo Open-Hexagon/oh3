@@ -559,6 +559,7 @@ function public.draw_preview(canvas, pack, level)
     game.level_status.sides = sides
     pulse.init(game)
     beat_pulse.init(game)
+    game.message_text = ""
     public.draw(canvas, 0, true)
 end
 

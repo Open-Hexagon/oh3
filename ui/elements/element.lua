@@ -67,6 +67,18 @@ function element:check_screen()
     return self:get_root() == keyboard_navigation.get_screen()
 end
 
+function element:click(select)
+    if select == nil then
+        select = true
+    end
+    if not self.selected and select then
+        keyboard_navigation.select_element(self)
+    end
+    if self.click_handler then
+        self.click_handler(self)
+    end
+end
+
 function element:process_event(name, ...)
     if name == "mousemoved" or name == "mousepressed" or name == "mousereleased" then
         local x, y = ...

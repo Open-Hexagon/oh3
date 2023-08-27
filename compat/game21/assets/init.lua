@@ -323,7 +323,7 @@ function assets.get_pack(name)
         -- styles
         if pack_data.pack_json.preload_promise and not pack_data.pack_json.preload_promise.executed then
             -- wait for styles if pending threaded loading not done yet
-            while not pack_data.preload_promise.executed do
+            while not pack_data.pack_json.preload_promise.executed do
                 threadify.update()
                 love.timer.sleep(0.01)
             end
