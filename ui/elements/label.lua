@@ -35,6 +35,7 @@ function label:new(text, options)
             font_file = options.font_file or default_font_file,
             font_size = font_size,
             pos = { 0, 0 },
+            cutoff_suffix = options.cutoff_suffix,
         }, label),
         options
     )
@@ -64,7 +65,18 @@ function label:calculate_element_layout(available_area)
         width = width + padding
         height = height + padding
     end
-    self.text:set(self.raw_text)
+    local text = self.raw_text
+    if self.cutoff_suffix then
+        local amount = #self.raw_text
+        while self.text:getFont():getWidth(text) + padding > available_area.width do
+            amount = amount - 1
+            if amount < 1 then
+                break
+            end
+            text = self.raw_text:sub(1, amount) .. self.cutoff_suffix
+        end
+    end
+    self.text:set(text)
     get_dimensions()
     if self.wrap and available_area.width < width then
         self.text:setf(self.raw_text, available_area.width - padding, "left")

@@ -29,7 +29,7 @@ local function make_localscore_elements(pack, level, level_options)
     end
     return flex:new({
         label:new("Your Score:", { font_size = 16, wrap = true }),
-        label:new(math.floor(score * 1000) / 1000, { font_size = 60, wrap = false }),
+        label:new(tostring(math.floor(score * 1000) / 1000), { font_size = 60, cutoff_suffix = "..." }),
     }, { direction = "column", align_items = "stretch" })
 end
 
