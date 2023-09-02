@@ -263,7 +263,6 @@ function assets.get_pack(name)
 
         -- move the table to its proper place
         pack_data.levels = pack_data.pack_json.levels
-        pack_data.pack_json.levels = nil
 
         pack_data.pack_id = pack_data.pack_json.pack_id
         if pack_data.pack_json.dependencies ~= nil then
