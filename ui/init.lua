@@ -1,6 +1,7 @@
 local signal = require("ui.anim.signal")
 local overlays = require("ui.overlays")
 local flex = require("ui.layout.flex")
+local game_handler = require("game_handler")
 local ui = {}
 local screens = {
     test = require("ui.screens.test"),
@@ -22,11 +23,16 @@ function ui.set_scale(scale)
 end
 
 local function calculate_layout(width, height)
+    local game_width, game_height, x, y
+    if game_handler.is_running() then
+        game_width, game_height = game_handler.get_game_dimensions()
+        x, y = game_handler.get_game_position()
+    end
     local screen_area = {
-        x = 0,
-        y = 0,
-        width = width or love.graphics.getWidth(),
-        height = height or love.graphics.getHeight(),
+        x = x or 0,
+        y = y or 0,
+        width = width or game_width or love.graphics.getWidth(),
+        height = height or game_height or love.graphics.getHeight(),
     }
     local res_width, res_height = current_screen:calculate_layout(screen_area)
     -- as long as the resulting layout is smaller than the window, up gui scale (until user setting is reached)
@@ -59,15 +65,21 @@ function ui.open_screen(name)
     end
 end
 
+function ui.get_screen()
+    return current_screen
+end
+
 ---process a window event
 ---@param name string
 ---@param ... unknown
 function ui.process_event(name, ...)
-    local stop_propagation = overlays.process_event(name, ...)
     if current_screen then
         if name == "resize" then
             calculate_layout(...)
         end
+    end
+    local stop_propagation = overlays.process_event(name, ...)
+    if current_screen then
         if not stop_propagation then
             stop_propagation = current_screen:process_event(name, ...)
         end

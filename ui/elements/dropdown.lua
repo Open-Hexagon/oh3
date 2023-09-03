@@ -106,11 +106,6 @@ function dropdown:new(selections, options)
             end
         end
     end
-    local quad_scale = obj.set_scale
-    obj.set_scale = function(elem, scale)
-        quad_scale(elem, scale)
-        elem.selection_quad:set_scale(scale)
-    end
     local quad_layout = obj.calculate_layout
     obj.calculate_layout = function(elem, available_area)
         local w, h = quad_layout(elem, available_area)

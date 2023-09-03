@@ -32,6 +32,10 @@ function input.replay_start()
     input.is_done_replaying = false
 end
 
+function input.is_replaying()
+    return replaying
+end
+
 ---save the next seed when recording or get the next seed when replaying
 ---@param seed number
 ---@return number?

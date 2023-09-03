@@ -11,7 +11,10 @@ local function get_first_element(element)
         return element
     elseif element.elements then
         if element.last_selection then
-            return element.last_selection
+            local last_selected_elem = get_first_element(element.last_selection)
+            if last_selected_elem then
+                return last_selected_elem
+            end
         end
         for i = 1, #element.elements do
             local first_elem = get_first_element(element.elements[i])
@@ -32,9 +35,11 @@ function keyboard_navigation.set_screen(screen)
         current_screen.last_selected_element = selected_element
     end
     current_screen = screen
-    keyboard_navigation.select_element(nil, false)
-    if current_screen.last_selected_element then
-        keyboard_navigation.select_element(current_screen.last_selected_element, false)
+    if current_screen then
+        keyboard_navigation.select_element(nil, false)
+        if current_screen.last_selected_element then
+            keyboard_navigation.select_element(current_screen.last_selected_element, false)
+        end
     end
 end
 

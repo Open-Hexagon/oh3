@@ -8,6 +8,7 @@ local games = {
     [20] = require("compat.game20"),
     [21] = require("compat.game21"),
 }
+local last_pack, last_level, last_level_settings, last_version
 local current_game
 local current_game_version
 local first_play = true
@@ -47,13 +48,15 @@ function game_handler.set_version(version)
         error("Game with version '" .. version .. "' does not exist or is unsupported.")
     end
     current_game_version = version
+    last_version = version
 end
 
 ---start a level and start recording a replay
 ---@param pack string
 ---@param level string
 ---@param level_settings table
-function game_handler.record_start(pack, level, level_settings)
+---@param is_retry boolean = false
+function game_handler.record_start(pack, level, level_settings, is_retry)
     current_game.death_callback = function()
         if current_game.update_save_data ~= nil then
             current_game.update_save_data()
@@ -66,8 +69,7 @@ function game_handler.record_start(pack, level, level_settings)
     end
     current_game.persistent_data = game_handler.profile.get_data(pack)
 
-    -- TODO: false when retrying
-    first_play = true
+    first_play = not is_retry
 
     input.replay = Replay:new()
     input.replay:set_game_data(
@@ -79,11 +81,21 @@ function game_handler.record_start(pack, level, level_settings)
         level,
         level_settings
     )
+    current_game.first_play = first_play
     input.record_start()
     current_game.start(pack, level, level_settings)
     start_time = love.timer.getTime()
     real_start_time = start_time
     current_game.update(1 / current_game.tickrate)
+    last_pack = pack
+    last_level = level
+    last_level_settings = level_settings
+end
+
+---retry the level that was last started with record_start
+function game_handler.retry()
+    game_handler.set_version(last_version)
+    game_handler.record_start(last_pack, last_level, last_level_settings, true)
 end
 
 ---read a replay file and run the game with its inputs and seeds
@@ -131,6 +143,12 @@ function game_handler.stop()
     current_game.stop()
 end
 
+---check if the game is replaying a replay
+---@return boolean
+function game_handler.is_replaying()
+    return input.is_replaying()
+end
+
 ---process an event (mainly used for aspect ratio resizing)
 ---@param name string
 ---@param ... unknown
@@ -159,6 +177,25 @@ function game_handler.process_event(name, ...)
             current_game[name](...)
         end
     end
+end
+
+---get the dimensions of the game canvas (returns 0, 0 if it was not created yet)
+---@return integer
+---@return integer
+function game_handler.get_game_dimensions()
+    if screen then
+        return screen:getDimensions()
+    else
+        return 0, 0
+    end
+end
+
+---get the position of the game canvas on the screen
+---@return number
+---@return number
+function game_handler.get_game_position()
+    local width, height = love.graphics.getDimensions()
+    return (width - width * scale[1]) / 2, (height - height * scale[2]) / 2
 end
 
 ---save the score and replay of the current attempt (gets called automatically on death)
@@ -193,13 +230,6 @@ function game_handler.update(ensure_tickrate)
                 game_handler.onupdate()
             end
         end
-        --for "testing" purposes only (i just wante to play the game
-        if current_game.is_dead() then
-            current_game.stop()
-            local ui = require("ui")
-            ui.open_screen("levelselect")
-            --note: when reloading this room after the game, the score isnt in the menu until you reselect. this isnt a bug because there will be a proper death screen with retrying stuff in the future.
-        end
     end
 end
 
@@ -223,6 +253,7 @@ function game_handler.draw(frametime)
         -- the color of the canvas' contents will look wrong if color isn't white
         love.graphics.setColor(1, 1, 1, 1)
         love.graphics.draw(screen)
+        love.graphics.origin()
     end
 end
 
