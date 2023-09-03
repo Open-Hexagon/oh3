@@ -171,6 +171,7 @@ function love.run()
     local ui = require("ui")
     if args.no_option then
         game_handler.replay_start(args.no_option)
+        ui.open_screen("game")
     else
         ui.open_screen("levelselect")
     end

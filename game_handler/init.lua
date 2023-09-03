@@ -183,9 +183,15 @@ function game_handler.update(ensure_tickrate)
                 if current_game.reset_timings then
                     start_time = love.timer.getTime()
                 end
+                if game_handler.onupdate then
+                    game_handler.onupdate()
+                end
             end
         else
             current_game.update(1 / current_game.tickrate)
+            if game_handler.onupdate then
+                game_handler.onupdate()
+            end
         end
         --for "testing" purposes only (i just wante to play the game
         if current_game.is_dead() then
