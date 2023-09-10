@@ -2,6 +2,10 @@ local args = require("args")
 local input = require("game_handler.input")
 local Replay = require("game_handler.replay")
 local pack_level_data = require("game_handler.data")
+local async = require("async")
+local music = require("compat.music")
+local threadify = require("threadify")
+local threaded_assets = threadify.require("game_handler.assets")
 local game_handler = {}
 local games = {
     [192] = require("compat.game192"),
@@ -27,7 +31,7 @@ game_handler.profile = require("game_handler.profile")
 
 ---initialize all games (has to be called before doing anything)
 ---@param config any
-function game_handler.init(config, audio)
+game_handler.init = async(function(config, audio)
     game_config = config
     audio = audio or require("audio")
     -- 1.92 needs persistent data for asset loading as it can overwrite any file
@@ -35,10 +39,16 @@ function game_handler.init(config, audio)
     if not args.server and not args.migrate then
         persistent_data = game_handler.profile.get_all_data()
     end
+    local packs = async.await(threaded_assets.init(persistent_data, args.headless))
+    pack_level_data.import_packs(packs)
     for _, game in pairs(games) do
-        game.init(pack_level_data, input, config, persistent_data, audio)
+        local promise = game.init(input, config, audio)
+        if promise then
+            async.await(promise)
+        end
     end
-end
+    music.init(audio)
+end)
 
 ---set the game version to use
 ---@param version number
@@ -56,7 +66,7 @@ end
 ---@param level string
 ---@param level_settings table
 ---@param is_retry boolean = false
-function game_handler.record_start(pack, level, level_settings, is_retry)
+game_handler.record_start = async(function(pack, level, level_settings, is_retry)
     current_game.death_callback = function()
         if current_game.update_save_data ~= nil then
             current_game.update_save_data()
@@ -83,24 +93,25 @@ function game_handler.record_start(pack, level, level_settings, is_retry)
     )
     current_game.first_play = first_play
     input.record_start()
-    current_game.start(pack, level, level_settings)
+    async.await(current_game.start(pack, level, level_settings))
     start_time = love.timer.getTime()
     real_start_time = start_time
     current_game.update(1 / current_game.tickrate)
     last_pack = pack
     last_level = level
     last_level_settings = level_settings
-end
+end)
 
 ---retry the level that was last started with record_start
-function game_handler.retry()
+game_handler.retry = async(function()
+    game_handler.stop()
     game_handler.set_version(last_version)
     game_handler.record_start(last_pack, last_level, last_level_settings, true)
-end
+end)
 
 ---read a replay file and run the game with its inputs and seeds
 ---@param file_or_replay_obj string|Replay
-function game_handler.replay_start(file_or_replay_obj)
+game_handler.replay_start = async(function(file_or_replay_obj)
     local replay
     if type(file_or_replay_obj) == "table" then
         replay = file_or_replay_obj
@@ -130,13 +141,13 @@ function game_handler.replay_start(file_or_replay_obj)
         end
     end
     input.replay_start()
-    current_game.start(replay.pack_id, replay.level_id, replay.data.level_settings)
+    async.await(current_game.start(replay.pack_id, replay.level_id, replay.data.level_settings))
     if not args.headless then
         start_time = love.timer.getTime()
         real_start_time = start_time
     end
     current_game.update(1 / current_game.tickrate)
-end
+end)
 
 ---stops the game (it will not be updated or rendered anymore)
 function game_handler.stop()

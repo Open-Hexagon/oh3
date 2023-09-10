@@ -165,9 +165,9 @@ return function(game, assets)
         local dependency_pack = assets.get_pack_from_metadata(disambiguator, author, name)
         local old = env.u_execScript
         env.u_execScript = function(path)
-            lua_runtime.run_lua_file(dependency_pack.path .. "/Scripts/" .. path)
+            lua_runtime.run_lua_file(dependency_pack.path .. "Scripts/" .. path)
         end
-        lua_runtime.run_lua_file(dependency_pack.path .. "/Scripts/" .. script)
+        lua_runtime.run_lua_file(dependency_pack.path .. "Scripts/" .. script)
         env.u_execScript = old
     end
     env.u_getWidth = function()

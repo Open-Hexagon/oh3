@@ -34,4 +34,15 @@ function data.get_packs()
     return packs
 end
 
+function data.import_packs(new_packs)
+    for i = 1, #new_packs do
+        local pack = new_packs[i]
+        data.register_pack(pack.id, pack.name, pack.game_version)
+        for j = 1, pack.level_count do
+            local level = pack.levels[j]
+            data.register_level(pack.id, level.id, level.name, level.author, level.description, level.options)
+        end
+    end
+end
+
 return data

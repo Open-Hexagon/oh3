@@ -1,5 +1,6 @@
 local log = require("log")(...)
 local args = require("args")
+local music = require("compat.music")
 local executing_events = {}
 local queued_events = {}
 local events = {}
@@ -200,47 +201,28 @@ function events.init(game)
             )
         end,
         music_set = function(event)
-            local music = game.pack.music[event.id]
-            if music == nil then
+            local new_music = game.pack.music[event.id]
+            if new_music == nil then
                 error("Music with id '" .. event.id .. "' not found")
             end
-            if game.music and game.music.source then
-                game.music.source:stop()
-            end
-            local segment = math.random(1, #music.segments)
-            if music.source ~= nil then
-                music.source:seek(math.floor(music.segments[segment].time))
-                music.source:play()
-            end
-            game.music = music
+            music.stop()
+            music.play(new_music, true)
         end,
         music_set_segment = function(event)
-            local music = game.pack.music[event.id]
-            if music == nil then
+            local new_music = game.pack.music[event.id]
+            if new_music == nil then
                 error("Music with id '" .. event.id .. "' not found")
             end
-            if game.music and game.music.source then
-                game.music.source:stop()
-            end
-            if music.source ~= nil then
-                music.source:seek(math.floor(music.segments[math.floor((event.segment_index or 0) + 1)].time))
-                music.source:play()
-            end
-            game.music = music
+            music.stop()
+            music.play(new_music, (event.segment_index or 0) + 1)
         end,
         music_set_seconds = function(event)
-            local music = game.pack.music[event.id]
-            if music == nil then
+            local new_music = game.pack.music[event.id]
+            if new_music == nil then
                 error("Music with id '" .. event.id .. "' not found")
             end
-            if game.music and game.music.source then
-                game.music.source:stop()
-            end
-            if music.source ~= nil then
-                music.source:seek(math.floor(event.seconds or 0))
-                music.source:play()
-            end
-            game.music = music
+            music.stop()
+            music.play(new_music, false, event.seconds or 0)
         end,
         style_set = function(event)
             local style_data = game.pack.styles[event.id]

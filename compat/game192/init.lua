@@ -5,7 +5,9 @@ local DynamicQuads = require("compat.game21.dynamic_quads")
 local Timeline = require("compat.game192.timeline")
 local set_color = require("compat.game21.color_transform")
 local make_fake_config = require("compat.game192.fake_config")
+local music = require("compat.music")
 local uv = require("luv")
+local async = require("async")
 local public = {
     running = false,
     first_play = true,
@@ -119,7 +121,7 @@ function game.get_main_color(black_and_white)
     return r, g, b, a
 end
 
-function public.start(pack_folder, level_id, level_options)
+public.start = async(function(pack_folder, level_id, level_options)
     public.tickrate = 960
     local difficulty_mult = level_options.difficulty_mult
     if not difficulty_mult or type(difficulty_mult) ~= "number" then
@@ -130,8 +132,7 @@ function public.start(pack_folder, level_id, level_options)
 
     game.real_time = 0
     last_real_time = 0
-    public.running = true
-    game.pack = assets.get_pack(pack_folder)
+    game.pack = async.await(assets.get_pack(pack_folder))
     local level_data = game.pack.levels[level_id]
     if level_data == nil then
         error("Level with id '" .. level_id .. "' not found")
@@ -146,28 +147,15 @@ function public.start(pack_folder, level_id, level_options)
     end
     game.style.select(style_data)
     game.difficulty_mult = difficulty_mult
-    local segment
-    if not args.headless and game.music and game.music.source then
-        game.music.source:stop()
-    end
-    game.music = game.pack.music[level_data.music_id]
-    if game.music == nil then
+    music.stop()
+    local new_music = game.pack.music[level_data.music_id]
+    if new_music == nil then
         error("Music with id '" .. level_data.music_id .. "' not found")
-    end
-    if not public.first_play then
-        segment = math.random(1, #game.music.segments)
     end
     if not args.headless then
         go_sound:play()
-        if game.music.source ~= nil then
-            if public.first_play then
-                game.music.source:seek(math.floor(game.music.segments[1].time))
-            else
-                game.music.source:seek(math.floor(game.music.segments[segment].time))
-            end
-            game.music.source:play()
-        end
     end
+    music.play(new_music, not public.first_play)
 
     -- virtual filesystem init
     game.vfs.clear()
@@ -213,7 +201,8 @@ function public.start(pack_folder, level_id, level_options)
         depth = 100
     end
     shake_move[1], shake_move[2] = 0, 0
-end
+    public.running = true
+end)
 
 local function get_sign(num)
     return (num > 0 and 1 or (num == 0 and 0 or -1))
@@ -296,9 +285,7 @@ function public.update(frametime)
                     shake_move[1], shake_move[2] = 0, 0
                 end)
                 game.status.has_died = true
-                if not args.headless and game.music.source ~= nil then
-                    game.music.source:stop()
-                end
+                music.stop()
                 if public.death_callback ~= nil then
                     public.death_callback()
                 end
@@ -551,20 +538,16 @@ end
 ---stop the game (works during gameplay and gets out of blocking calls)
 function public.stop()
     public.running = false
-    if not args.headless and game.music.source ~= nil then
-        game.music.source:stop()
-    end
+    music.stop()
 end
 
 ---initialize the game
----@param data table
 ---@param input_handler table
 ---@param config table
----@param all_persistent_data table
 ---@param audio table?
-function public.init(data, input_handler, config, all_persistent_data, audio)
+function public.init(input_handler, config, audio)
     game.input = input_handler
-    assets.init(data, all_persistent_data, audio, config)
+    assets.init(audio, config)
     game.config = config
     game.audio = audio
     if not args.headless then
@@ -588,45 +571,6 @@ function public.update_save_data()
     if has_files then
         public.persistent_data = files
     end
-end
-
-function public.draw_preview(canvas, pack, level)
-    local pack_data = assets.get_pack_no_load(pack)
-    if not pack_data then
-        error("pack with id '" .. pack .. "' not found")
-    end
-    assets.preload_styles(pack_data)
-    if pack_data.style_load_promise and not pack_data.style_load_promise.executed then
-        return pack_data.style_load_promise
-    end
-    local level_data = pack_data.levels[level]
-    if level_data == nil then
-        error("Level with id '" .. level .. "' not found")
-    end
-    game.level_data = game.level.set(level_data)
-    game.status.reset()
-    if game.level_data.sides < 3 then
-        game.level_data.sides = 3
-    end
-    game.player.reset(game.config)
-    if level_data.style_id == nil then
-        error("Style id cannot be 'nil'!")
-    end
-    local style_data = pack_data.styles[level_data.style_id]
-    if style_data == nil then
-        error("Style with id '" .. level_data.style_id .. "' does not exist.")
-    end
-    game.style.select(style_data)
-    depth = math.floor(game.style.get_value("3D_depth"))
-    if depth > 100 then
-        depth = 100
-    end
-    game.walls.clear()
-    game.message_text = ""
-    current_rotation = 0
-    shake_move[1], shake_move[2] = 0, 0
-    game.level_data.pulse_min = 75
-    public.draw(canvas, 0, true)
 end
 
 return public

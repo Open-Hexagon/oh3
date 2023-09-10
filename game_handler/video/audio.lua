@@ -93,6 +93,17 @@ function audio.new_stream(file)
     return obj
 end
 
+function audio:release()
+    if self.decoder then
+        self.decoder:release()
+    else
+        self.original_data:release()
+        if self.data ~= self.original_data then
+            self.data:release()
+        end
+    end
+end
+
 function audio:seek(offset)
     self.position = math.floor(offset * self.sample_rate / self.pitch)
     self.last_position = self.position

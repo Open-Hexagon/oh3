@@ -9,6 +9,7 @@ local property_func_map = {
     stop = "stop",
     set_pitch = "setPitch",
     seek = "seek",
+    release = "release",
 }
 audio.__index = function(t, k)
     if rawget(t, k) then

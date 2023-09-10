@@ -1,6 +1,47 @@
 local ffi = require("ffi")
 local utils = {}
 
+function utils.file_ext_read_iter(dir, ending, virt_folder)
+    virt_folder = virt_folder or {}
+    local files = love.filesystem.getDirectoryItems(dir)
+    local virt_start_index = #files + 1
+    for file in pairs(virt_folder) do
+        files[#files + 1] = file
+    end
+    for i = virt_start_index - 1, 1, -1 do
+        for j = virt_start_index, #files do
+            if files[j] == files[i] then
+                table.remove(files, i)
+                virt_start_index = virt_start_index - 1
+            end
+        end
+    end
+    local index = 0
+    return function()
+        index = index + 1
+        if index > #files then
+            return
+        end
+        while files[index]:sub(-#ending) ~= ending do
+            index = index + 1
+            if index > #files then
+                return
+            end
+        end
+        if index >= virt_start_index then
+            local contents = virt_folder[files[index]]
+            return contents, files[index]
+        else
+            local contents = love.filesystem.read(dir .. "/" .. files[index])
+            if contents == nil then
+                error("Failed to read '" .. dir .. "/" .. files[index] .. "'")
+            else
+                return contents, files[index]
+            end
+        end
+    end
+end
+
 -- fixes case insensitive paths
 function utils.get_real_path(path)
     -- remove trailing spaces

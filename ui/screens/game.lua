@@ -25,6 +25,7 @@ local function back_to_menu()
 end
 
 local function retry()
+    game_handler.stop()
     if death_overlay_index then
         keyboard_navigation.set_screen()
         overlays.remove_overlay(death_overlay_index)
