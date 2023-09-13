@@ -106,7 +106,7 @@ local function make_level_element(pack, level, extra_info)
                 self.border_color = { 0, 0, 0, 0.7 }
             end
         end,
-        click_handler = async(function(self)
+        click_handler = function(self)
             if level_element_selected ~= self then
                 local elems = self.parent.elements
                 for i = 1, #elems do
@@ -127,10 +127,12 @@ local function make_level_element(pack, level, extra_info)
             else
                 local ui = require("ui")
                 game_handler.set_version(pack.game_version)
-                async.await(game_handler.record_start(pack.id, level.id, level_options_selected))
-                ui.open_screen("game")
+                ui.open_screen("loading")
+                game_handler.record_start(pack.id, level.id, level_options_selected):done(function()
+                    ui.open_screen("game")
+                end)
             end
-        end),
+        end,
     })
     -- store in here for better access
     elem.preview = preview

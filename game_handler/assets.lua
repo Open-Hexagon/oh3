@@ -78,6 +78,22 @@ local function file_ext_read_iter(dir, ending)
     end
 end
 
+local function get_file_amount(dir, ending, pack_data)
+    local files = love.filesystem.getDirectoryItems(pack_data.path .. dir)
+    if pack_data.game_version ~= 21 then
+        for file in pairs(pack_data.virtual_pack_folder[dir] or {}) do
+            files[#files + 1] = file
+        end
+    end
+    local count = 0
+    for i = 1, #files do
+        if files[i]:sub(-#ending) == ending then
+            count = count + 1
+        end
+    end
+    return count
+end
+
 local function file_iter(dir, ending, pack_data)
     if pack_data.game_version ~= 21 then
         return utils.file_ext_read_iter(pack_data.path .. dir, ending, pack_data.virtual_pack_folder[dir])
@@ -245,11 +261,13 @@ function assets.get_pack(version, id)
     local is_compat = version ~= 3
     local pack_data = packs[id] or dependency_pack_mapping21[id]
     if not pack_data then
-        print(version, id)
         error("pack with id '" .. id .. "' does not exist.")
     end
     id = pack_data.id
+    love.thread.getChannel("asset_loading_text"):push("Loading pack '" .. id .. "' assets")
+    love.thread.getChannel("asset_loading_progress"):push(0)
     if pack_data.loaded then
+        love.thread.getChannel("asset_loading_progress"):push(1)
         return pack_data
     end
     if is_compat then
@@ -270,8 +288,20 @@ function assets.get_pack(version, id)
                     end
                 end
             end
+            -- reset text and progress to this pack
+            love.thread.getChannel("asset_loading_text"):push("Loading pack '" .. id .. "' assets")
+            love.thread.getChannel("asset_loading_progress"):push(0)
         end
         log("Loading '" .. pack_data.id .. "' assets")
+
+        local loaded_files = 0
+        local total_files = get_file_amount("Music", ".json", pack_data)
+            + get_file_amount("Styles", ".json", pack_data)
+        if pack_data.game_version == 21 then
+            total_files = total_files + get_file_amount("Shaders", ".frag", pack_data)
+        elseif pack_data.game_version == 192 then
+            total_files = total_files + get_file_amount("Events", ".json", pack_data)
+        end
 
         -- music
         pack_data.music = {}
@@ -304,6 +334,8 @@ function assets.get_pack(version, id)
                 end
                 pack_data.music[music_json.id] = music_json
             end
+            loaded_files = loaded_files + 1
+            love.thread.getChannel("asset_loading_progress"):push(loaded_files / total_files)
         end
 
         -- shaders in compat mode are only required for 21
@@ -311,6 +343,8 @@ function assets.get_pack(version, id)
             pack_data.shaders = {}
             for code, filename in file_iter("Shaders", ".frag", pack_data) do
                 pack_data[filename] = shader_compat(code, filename)
+                loaded_files = loaded_files + 1
+                love.thread.getChannel("asset_loading_progress"):push(loaded_files / total_files)
             end
         end
 
@@ -321,6 +355,8 @@ function assets.get_pack(version, id)
             if success then
                 pack_data.styles[style_json.id] = style_json
             end
+            loaded_files = loaded_files + 1
+            love.thread.getChannel("asset_loading_progress"):push(loaded_files / total_files)
         end
 
         -- only 1.92 has event files
@@ -331,6 +367,8 @@ function assets.get_pack(version, id)
                 if success then
                     pack_data.events[event_json.id] = event_json.events
                 end
+                loaded_files = loaded_files + 1
+                love.thread.getChannel("asset_loading_progress"):push(loaded_files / total_files)
             end
         end
     end
