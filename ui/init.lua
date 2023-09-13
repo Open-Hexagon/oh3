@@ -3,12 +3,6 @@ local overlays = require("ui.overlays")
 local flex = require("ui.layout.flex")
 local game_handler = require("game_handler")
 local ui = {}
-local screens = {
-    test = require("ui.screens.test"),
-    test2 = require("ui.screens.test2"),
-    levelselect = require("ui.screens.levelselect"),
-    game = require("ui.screens.game"),
-}
 local keyboard_navigation = require("ui.keyboard_navigation")
 local current_screen
 local gui_scale = 1
@@ -58,7 +52,7 @@ end
 ---open a menu screen
 ---@param name string
 function ui.open_screen(name)
-    current_screen = screens[name]
+    current_screen = require("ui.screens." .. name)
     if current_screen then
         calculate_layout()
         keyboard_navigation.set_screen(current_screen)

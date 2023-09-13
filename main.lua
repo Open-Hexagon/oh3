@@ -6,6 +6,7 @@ local log = require("log")(...)
 local async = require("async")
 local args = require("args")
 local threadify = require("threadify")
+local channel_callbacks = require("channel_callbacks")
 
 local function add_require_path(path)
     love.filesystem.setRequirePath(love.filesystem.getRequirePath() .. ";" .. path)
@@ -167,20 +168,23 @@ local main = async(function()
         return async.await(render_replay(game_handler, video_encoder, audio, args.no_option, "output.mp4"))
     end
 
+    local ui = require("ui")
+    ui.open_screen("loading")
     local game_handler = require("game_handler")
     global_config.init(config, game_handler.profile)
-    async.await(game_handler.init(config))
-    local ui = require("ui")
-    if args.no_option then
-        async.await(game_handler.replay_start(args.no_option))
-        ui.open_screen("game")
-    else
-        ui.open_screen("levelselect")
-    end
 
     local fps_limit = config.get("fps_limit")
     local delta_target = 1 / fps_limit
     local last_time = love.timer.getTime()
+
+    game_handler.init(config):done(function()
+        if args.no_option then
+            async.await(game_handler.replay_start(args.no_option))
+            ui.open_screen("game")
+        else
+            ui.open_screen("levelselect")
+        end
+    end)
 
     -- function is called every frame by love
     return function()
@@ -203,6 +207,7 @@ local main = async(function()
         end
 
         threadify.update()
+        channel_callbacks.update()
         ui.update(love.timer.getDelta())
 
         -- ensures tickrate on its own

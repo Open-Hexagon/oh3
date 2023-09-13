@@ -103,6 +103,7 @@ function assets.init(persistent_data, headless)
         local version = folders[i]:match("packs(.*)")
         if version then
             log("Loading pack information for game" .. version)
+            love.thread.getChannel("asset_loading_text"):push("Loading pack information for game" .. version)
             version = tonumber(version)
             local is_compat = version ~= 3
             local pack_folder = "packs" .. version .. "/"
@@ -229,6 +230,7 @@ function assets.init(persistent_data, headless)
                         log("Failed to decode", folder .. "pack.json")
                     end
                 end
+                love.thread.getChannel("asset_loading_progress"):push(j / #pack_folders)
             end
         end
     end

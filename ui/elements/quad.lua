@@ -97,8 +97,8 @@ function quad:calculate_layout(available_area)
         if self.element then
             self.element:calculate_layout(new_area)
         end
-        width = available_area.width - left - right
-        height = available_area.height - top - bot
+        width = new_area.width
+        height = new_area.height
     end
     self.vertices[1] = new_area.x - vertex_offsets[1]
     self.vertices[2] = new_area.y - vertex_offsets[2]
