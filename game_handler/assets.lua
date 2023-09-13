@@ -8,6 +8,8 @@ local assets = {}
 local packs = {}
 local is_headless = false
 local dependency_pack_mapping21 = {}
+local asset_loading_text_channel = love.thread.getChannel("asset_loading_text")
+local asset_loading_progress_channel = love.thread.getChannel("asset_loading_progress")
 
 ---decode a string of json with a filename to be used in a potential non erroring error message
 ---@param str string
@@ -119,7 +121,7 @@ function assets.init(persistent_data, headless)
         local version = folders[i]:match("packs(.*)")
         if version then
             log("Loading pack information for game" .. version)
-            love.thread.getChannel("asset_loading_text"):push("Loading pack information for game" .. version)
+            asset_loading_text_channel:push("Loading pack information for game" .. version)
             version = tonumber(version)
             local is_compat = version ~= 3
             local pack_folder = "packs" .. version .. "/"
@@ -246,7 +248,7 @@ function assets.init(persistent_data, headless)
                         log("Failed to decode", folder .. "pack.json")
                     end
                 end
-                love.thread.getChannel("asset_loading_progress"):push(j / #pack_folders)
+                asset_loading_progress_channel:push(j / #pack_folders)
             end
         end
     end
@@ -264,10 +266,10 @@ function assets.get_pack(version, id)
         error("pack with id '" .. id .. "' does not exist.")
     end
     id = pack_data.id
-    love.thread.getChannel("asset_loading_text"):push("Loading pack '" .. id .. "' assets")
-    love.thread.getChannel("asset_loading_progress"):push(0)
+    asset_loading_text_channel:push("Loading pack '" .. id .. "' assets")
+    asset_loading_progress_channel:push(0)
     if pack_data.loaded then
-        love.thread.getChannel("asset_loading_progress"):push(1)
+        asset_loading_progress_channel:push(1)
         return pack_data
     end
     if is_compat then
@@ -289,14 +291,13 @@ function assets.get_pack(version, id)
                 end
             end
             -- reset text and progress to this pack
-            love.thread.getChannel("asset_loading_text"):push("Loading pack '" .. id .. "' assets")
-            love.thread.getChannel("asset_loading_progress"):push(0)
+            asset_loading_text_channel:push("Loading pack '" .. id .. "' assets")
+            asset_loading_progress_channel:push(0)
         end
         log("Loading '" .. pack_data.id .. "' assets")
 
         local loaded_files = 0
-        local total_files = get_file_amount("Music", ".json", pack_data)
-            + get_file_amount("Styles", ".json", pack_data)
+        local total_files = get_file_amount("Music", ".json", pack_data) + get_file_amount("Styles", ".json", pack_data)
         if pack_data.game_version == 21 then
             total_files = total_files + get_file_amount("Shaders", ".frag", pack_data)
         elseif pack_data.game_version == 192 then
@@ -335,7 +336,7 @@ function assets.get_pack(version, id)
                 pack_data.music[music_json.id] = music_json
             end
             loaded_files = loaded_files + 1
-            love.thread.getChannel("asset_loading_progress"):push(loaded_files / total_files)
+            asset_loading_progress_channel:push(loaded_files / total_files)
         end
 
         -- shaders in compat mode are only required for 21
@@ -344,7 +345,7 @@ function assets.get_pack(version, id)
             for code, filename in file_iter("Shaders", ".frag", pack_data) do
                 pack_data[filename] = shader_compat(code, filename)
                 loaded_files = loaded_files + 1
-                love.thread.getChannel("asset_loading_progress"):push(loaded_files / total_files)
+                asset_loading_progress_channel:push(loaded_files / total_files)
             end
         end
 
@@ -356,7 +357,7 @@ function assets.get_pack(version, id)
                 pack_data.styles[style_json.id] = style_json
             end
             loaded_files = loaded_files + 1
-            love.thread.getChannel("asset_loading_progress"):push(loaded_files / total_files)
+            asset_loading_progress_channel:push(loaded_files / total_files)
         end
 
         -- only 1.92 has event files
@@ -368,7 +369,7 @@ function assets.get_pack(version, id)
                     pack_data.events[event_json.id] = event_json.events
                 end
                 loaded_files = loaded_files + 1
-                love.thread.getChannel("asset_loading_progress"):push(loaded_files / total_files)
+                asset_loading_progress_channel:push(loaded_files / total_files)
             end
         end
     end
