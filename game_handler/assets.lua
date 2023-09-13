@@ -158,31 +158,37 @@ function assets.init(persistent_data, headless)
                         for contents, filename in file_iter("Levels", ".json", pack_data) do
                             local success, level_json = decode_json(contents, filename)
                             if success then
-                                -- make keys have the same name for all versions
-                                for key, value in pairs(level_json) do
-                                    local snake_case_key = key:gsub("([a-z])([A-Z])", "%1_%2"):lower()
-                                    snake_case_key = snake_case_key:gsub("multipliers", "mults")
-                                    level_json[snake_case_key] = value
+                                local proceed = true
+                                if pack_data.game_version == 192 then
+                                    proceed = level_json.selectable
                                 end
-
-                                -- default
-                                level_json.difficulty_mults = level_json.difficulty_mults or {}
-                                -- add 1x difficulty mult if it doesn't exist
-                                local has1 = false
-                                for k = 1, #level_json.difficulty_mults do
-                                    if level_json.difficulty_mults[k] == 1 then
-                                        has1 = true
-                                        break
+                                if proceed then
+                                    -- make keys have the same name for all versions
+                                    for key, value in pairs(level_json) do
+                                        local snake_case_key = key:gsub("([a-z])([A-Z])", "%1_%2"):lower()
+                                        snake_case_key = snake_case_key:gsub("multipliers", "mults")
+                                        level_json[snake_case_key] = value
                                     end
-                                end
-                                if not has1 then
-                                    level_json.difficulty_mults[#level_json.difficulty_mults + 1] = 1
-                                end
-                                -- sort difficulties
-                                table.sort(level_json)
 
-                                data.register_level(pack_data.id, level_json.id, level_json.name, level_json.author, level_json.description, { difficulty_mult = level_json.difficulty_mults })
-                                pack_data.levels[level_json.id] = level_json
+                                    -- default
+                                    level_json.difficulty_mults = level_json.difficulty_mults or {}
+                                    -- add 1x difficulty mult if it doesn't exist
+                                    local has1 = false
+                                    for k = 1, #level_json.difficulty_mults do
+                                        if level_json.difficulty_mults[k] == 1 then
+                                            has1 = true
+                                            break
+                                        end
+                                    end
+                                    if not has1 then
+                                        level_json.difficulty_mults[#level_json.difficulty_mults + 1] = 1
+                                    end
+                                    -- sort difficulties
+                                    table.sort(level_json)
+
+                                    data.register_level(pack_data.id, level_json.id, level_json.name, level_json.author, level_json.description, { difficulty_mult = level_json.difficulty_mults })
+                                    pack_data.levels[level_json.id] = level_json
+                                end
                             else
                                 log("Failed to parse level json:", filename)
                             end
@@ -208,6 +214,10 @@ end
 function assets.get_pack(version, id)
     local is_compat = version ~= 3
     local pack_data = packs[id] or dependency_pack_mapping21[id]
+    if not pack_data then
+        print(version, id)
+        error("pack with id '" .. id .. "' does not exist.")
+    end
     id = pack_data.id
     if pack_data.loaded then
         return pack_data
@@ -254,7 +264,12 @@ function assets.get_pack(version, id)
                 end
                 if pack_data.game_version ~= 21 then
                     for i = 1, #music_json.segments do
-                        music_json.segments[i].time = math.floor(music_json.segments[i].time)
+                        if type(music_json.segments[i]) == "table" then
+                            music_json.segments[i].time = math.floor(music_json.segments[i].time)
+                        else
+                            -- happens with the last element of not properly closed segment list
+                            music_json.segments[i] = nil
+                        end
                     end
                 end
                 pack_data.music[music_json.id] = music_json
