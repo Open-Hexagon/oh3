@@ -155,6 +155,7 @@ function assets.init(persistent_data, headless)
 
                         -- level data has to be loaded immediately for level selection purposes
                         pack_data.levels = {}
+                        local level_list = {}
                         for contents, filename in file_iter("Levels", ".json", pack_data) do
                             local success, level_json = decode_json(contents, filename)
                             if success then
@@ -186,13 +187,23 @@ function assets.init(persistent_data, headless)
                                     -- sort difficulties
                                     table.sort(level_json)
 
-                                    data.register_level(pack_data.id, level_json.id, level_json.name, level_json.author, level_json.description, { difficulty_mult = level_json.difficulty_mults })
                                     pack_data.levels[level_json.id] = level_json
+                                    level_list[#level_list + 1] = level_json
                                 end
                             else
                                 log("Failed to parse level json:", filename)
                             end
                         end
+
+                        -- register levels in menu priority order
+                        table.sort(level_list, function(a, b)
+                            return a.menu_priority < b.menu_priority
+                        end)
+                        for k = 1, #level_list do
+                            local level = level_list[k]
+                            data.register_level(pack_data.id, level.id, level.name, level.author, level.description, { difficulty_mult = level.difficulty_mults })
+                        end
+
                         if packs[pack_data.id] then
                             log("Id conflict: ", pack_data.id)
                         end
