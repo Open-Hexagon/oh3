@@ -135,8 +135,18 @@ function assets.init(persistent_data, headless)
                         pack_data.path = folder
                         pack_data.loaded = false
                         if version == 21 then
-                            pack_data.id = build_pack_id21(pack_data.disambiguator, pack_data.author, pack_data.name, pack_data.version)
-                            dependency_pack_mapping21[build_pack_id21(pack_data.disambiguator, pack_data.author, pack_data.name)] = pack_data
+                            pack_data.id = build_pack_id21(
+                                pack_data.disambiguator,
+                                pack_data.author,
+                                pack_data.name,
+                                pack_data.version
+                            )
+                            dependency_pack_mapping21[build_pack_id21(
+                                pack_data.disambiguator,
+                                pack_data.author,
+                                pack_data.name
+                            )] =
+                                pack_data
                         else
                             pack_data.id = pack_folders[j]
                         end
@@ -201,7 +211,14 @@ function assets.init(persistent_data, headless)
                         end)
                         for k = 1, #level_list do
                             local level = level_list[k]
-                            data.register_level(pack_data.id, level.id, level.name, level.author, level.description, { difficulty_mult = level.difficulty_mults })
+                            data.register_level(
+                                pack_data.id,
+                                level.id,
+                                level.name,
+                                level.author,
+                                level.description,
+                                { difficulty_mult = level.difficulty_mults }
+                            )
                         end
 
                         if packs[pack_data.id] then

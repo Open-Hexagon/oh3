@@ -115,7 +115,8 @@ local main = async(function()
                 local replay = Replay:new(replay_file)
                 local out_file_path = love.filesystem.getSaveDirectory() .. "/" .. replay_file .. ".part.mp4"
                 log("Got new #1 on '" .. replay.level_id .. "' from '" .. replay.pack_id .. "', rendering...")
-                local fn = async.await(render_replay(game_handler, video_encoder, audio, replay, out_file_path, replay.score))
+                local fn =
+                    async.await(render_replay(game_handler, video_encoder, audio, replay, out_file_path, replay.score))
                 local aborted = false
                 while fn() ~= 0 do
                     local abort_hash = love.thread.getChannel("abort_replay_render"):pop()

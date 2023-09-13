@@ -12,13 +12,13 @@ function promise:new(fn)
     }, promise)
     fn(function(...)
         obj.resolved = true
-        obj.result = {...}
+        obj.result = { ... }
         obj.executed = true
         for i = 1, #obj.done_callbacks do
             obj.done_callbacks[i](...)
         end
     end, function(...)
-        obj.result = {...}
+        obj.result = { ... }
         obj.executed = true
         for i = 1, #obj.error_callbacks do
             obj.error_callbacks[i](...)
