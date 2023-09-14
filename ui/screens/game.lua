@@ -4,6 +4,7 @@ local game_handler = require("game_handler")
 local get_death_overlay = require("ui.overlays.death")
 local keyboard_navigation = require("ui.keyboard_navigation")
 local overlays = require("ui.overlays")
+local args = require("args")
 
 local timer = quad:new({
     child_element = label:new("", { font_size = 64 }),
@@ -69,8 +70,10 @@ game_handler.onupdate = function()
     -- show death screen when dead
     if game_handler.is_dead() then
         if game_handler.is_replaying() then
-            -- TODO: show appropriate ui when replay ends (retry/back buttons would be wrong here)
-            back_to_menu()
+            if not args.render then
+                -- TODO: show appropriate ui when replay ends (retry/back buttons would be wrong here)
+                back_to_menu()
+            end
         elseif keyboard_navigation.get_screen() ~= death_overlay then
             death_overlay_index = overlays.add_overlay(death_overlay)
             keyboard_navigation.set_screen(death_overlay)

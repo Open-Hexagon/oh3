@@ -17,6 +17,8 @@ local function add_c_require_path(path)
 end
 
 local render_replay = async(function(game_handler, video_encoder, audio, replay, out_file, final_score)
+    local ui = require("ui")
+    ui.open_screen("game")
     local fps = 60
     local ticks_to_frame = 0
     video_encoder.start(out_file, 1920, 1080, fps, audio.sample_rate)
@@ -53,6 +55,7 @@ local render_replay = async(function(game_handler, video_encoder, audio, replay,
             love.graphics.origin()
             love.graphics.clear(0, 0, 0, 1)
             game_handler.draw(1 / fps)
+            ui.draw()
             love.graphics.captureScreenshot(video_encoder.supply_video_data)
             love.graphics.present()
             if game_handler.is_dead() then
