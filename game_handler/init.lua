@@ -16,7 +16,6 @@ local last_pack, last_level, last_level_settings, last_version
 local current_game
 local current_game_version
 local first_play = true
-local real_start_time
 local start_time
 -- enforce aspect ratio by rendering to canvas
 local aspect_ratio = 16 / 9
@@ -95,7 +94,6 @@ game_handler.record_start = async(function(pack, level, level_settings, is_retry
     input.record_start()
     async.await(current_game.start(pack, level, level_settings))
     start_time = love.timer.getTime()
-    real_start_time = start_time
     current_game.update(1 / current_game.tickrate)
     last_pack = pack
     last_level = level
@@ -144,7 +142,6 @@ game_handler.replay_start = async(function(file_or_replay_obj)
     async.await(current_game.start(replay.pack_id, replay.level_id, replay.data.level_settings))
     if not args.headless then
         start_time = love.timer.getTime()
-        real_start_time = start_time
     end
     current_game.update(1 / current_game.tickrate)
 end)
@@ -211,9 +208,8 @@ end
 
 ---save the score and replay of the current attempt (gets called automatically on death)
 function game_handler.save_score()
-    local elapsed_time = love.timer.getTime() - real_start_time
     input.replay.score = current_game.get_score()
-    game_handler.profile.save_score(elapsed_time, input.replay)
+    game_handler.profile.save_score(game_handler.get_timed_score(), input.replay)
 end
 
 ---update the game if it's running

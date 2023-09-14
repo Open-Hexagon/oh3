@@ -1,4 +1,5 @@
 local log = require("log")(...)
+local args = require("args")
 local async = require("async")
 local threadify = require("threadify")
 local threaded_assets = threadify.require("game_handler.assets")
@@ -43,9 +44,11 @@ end
 ---compile shaders if not done already
 ---@param pack table
 local function compile_shaders(pack)
-    for filename, data in pairs(pack.shaders) do
-        if data.new_code then
-            pack.shaders[filename] = shader_compat.compile(data.new_code, data.code, data.filename)
+    if not args.headless then
+        for filename, data in pairs(pack.shaders) do
+            if data.new_code then
+                pack.shaders[filename] = shader_compat.compile(data.new_code, data.code, data.filename)
+            end
         end
     end
 end
