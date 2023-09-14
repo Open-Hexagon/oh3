@@ -1,10 +1,11 @@
 local log = require("log")(...)
+local shader_compat = {}
 
----this function translates a shader from the old game to work with love and compiles it to work with the new rendering techniques used in this compat mode
+---this function translates a shader from the old game to work with love
 ---@param code string
 ---@param filename string
----@return table?
-return function(code, filename)
+---@return table
+function shader_compat.translate(code, filename)
     -- replace gl_ variables with love stuff
     code = [[
         vec4 _new_wrap_pixel_color;
@@ -141,6 +142,19 @@ return function(code, filename)
     if other_frag_color_name ~= nil then
         new_code = new_code:gsub("_new_wrap_pixel_color", other_frag_color_name)
     end
+    return {
+        code = code,
+        new_code = new_code,
+        filename = filename,
+    }
+end
+
+---this function compiles a shader to work with the new rendering techniques used in this compat mode
+---@param new_code any
+---@param code any
+---@param filename any
+---@return table?
+function shader_compat.compile(new_code, code, filename)
     local result
     xpcall(function()
         local shader = love.graphics.newShader(new_code)
@@ -194,3 +208,5 @@ return function(code, filename)
     end)
     return result
 end
+
+return shader_compat

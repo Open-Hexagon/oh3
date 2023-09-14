@@ -39,7 +39,12 @@ local death_overlay = get_death_overlay(back_to_menu, retry)
 -- monkey patch layout calculation to add overlay (TODO: make this cleaner)
 local old_calculate_layout = timer.calculate_layout
 timer.calculate_layout = function(self, available_area)
-    death_overlay:calculate_layout(available_area)
+    death_overlay:calculate_layout({
+        x = 0,
+        y = 0,
+        width = love.graphics.getWidth(),
+        height = love.graphics.getHeight(),
+    })
     return old_calculate_layout(self, available_area)
 end
 

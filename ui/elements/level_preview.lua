@@ -91,9 +91,12 @@ function level_preview:draw()
         love.graphics.setColor(0, 0, 0, 1)
         love.graphics.polygon(
             "fill",
-            center_x, center_y,
-            center_x + math.cos(self.angle() - half_sector_size) * radius, center_y + math.sin(self.angle() - half_sector_size) * radius,
-            center_x + math.cos(self.angle() + half_sector_size) * radius, center_y + math.sin(self.angle() + half_sector_size) * radius
+            center_x,
+            center_y,
+            center_x + math.cos(self.angle() - half_sector_size) * radius,
+            center_y + math.sin(self.angle() - half_sector_size) * radius,
+            center_x + math.cos(self.angle() + half_sector_size) * radius,
+            center_y + math.sin(self.angle() + half_sector_size) * radius
         )
     end
 end

@@ -82,7 +82,7 @@ local function make_level_element(pack, level, extra_info)
     extra_info.composer = extra_info.composer or "no composer"
     local music = extra_info.song .. "\n" .. extra_info.composer
     local preview = level_preview:new(pack.game_version, pack.id, level.id, { style = { padding = 0 } })
-    local elem =  quad:new({
+    local elem = quad:new({
         child_element = flex:new({
             quad:new({
                 child_element = preview,
@@ -151,7 +151,10 @@ local function make_pack_elements()
         local pack = packs[i]
         if #pack.levels > 0 then
             elements[#elements + 1] = quad:new({
-                child_element = label:new(pack.name, { font_size = 30, style = { color = { 0, 0, 0, 1 } }, wrap = true }),
+                child_element = label:new(
+                    pack.name,
+                    { font_size = 30, style = { color = { 0, 0, 0, 1 } }, wrap = true }
+                ),
                 style = { background_color = { 1, 1, 1, 1 }, border_color = { 1, 1, 1, 1 }, border_thickness = 4 },
                 selectable = true,
                 selection_handler = function(self)
@@ -202,7 +205,7 @@ local function make_pack_elements()
                         levels.elements[1]:click(false)
                     end
                     root.elements[2] = levels
-                end
+                end,
             })
         end
     end

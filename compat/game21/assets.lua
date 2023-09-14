@@ -1,6 +1,8 @@
+local log = require("log")(...)
 local async = require("async")
 local threadify = require("threadify")
 local threaded_assets = threadify.require("game_handler.assets")
+local shader_compat = require("compat.game21.shader_compat")
 local pack_id_json_map = {}
 local pack_id_list = {}
 local sound_mapping = {
@@ -19,6 +21,7 @@ local loaded_fonts = {}
 local loaded_images = {}
 local audio_module, sound_volume
 local dependency_mapping = {}
+local cached_packs = {}
 
 local assets = {}
 
@@ -28,9 +31,47 @@ assets.init = async(function(audio, config)
     dependency_mapping = async.await(threaded_assets.get_dependency_pack_mapping21())
 end)
 
-function assets.get_pack(id)
-    return threaded_assets.get_pack(21, id)
+local function build_pack_id(disambiguator, author, name, version)
+    local pack_id = disambiguator .. "_" .. author .. "_" .. name
+    if version ~= nil then
+        pack_id = pack_id .. "_" .. math.floor(version)
+    end
+    pack_id = pack_id:gsub(" ", "_")
+    return pack_id
 end
+
+---compile shaders if not done already
+---@param pack table
+local function compile_shaders(pack)
+    for filename, data in pairs(pack.shaders) do
+        if data.new_code then
+            pack.shaders[filename] = shader_compat.compile(data.new_code, data.code, data.filename)
+        end
+    end
+end
+
+assets.get_pack = async(function(id)
+    if not cached_packs[id] then
+        local pack = async.await(threaded_assets.get_pack(21, id))
+        compile_shaders(pack)
+        -- load the dependencies as well (has to be done here again in order to update depdendency mapping in main thread and to compile shaders (although rarely used dependency shaders are a thing))
+        if pack.dependencies ~= nil then
+            for i = 1, #pack.dependencies do
+                local dependency = pack.dependencies[i]
+                local index_pack_id = build_pack_id(dependency.disambiguator, dependency.author, dependency.name)
+                local dependency_pack = dependency_mapping[index_pack_id]
+                if dependency_pack == nil then
+                    log("can't find dependency '" .. index_pack_id .. "' of '" .. pack.id .. "'.")
+                elseif dependency_pack.id ~= pack.id then
+                    dependency_mapping[index_pack_id] = async.await(threaded_assets.get_pack(21, dependency_pack.id))
+                    compile_shaders(dependency_mapping[index_pack_id])
+                end
+            end
+        end
+        cached_packs[id] = pack
+    end
+    return cached_packs[id]
+end)
 
 function assets.get_pack_from_metadata(disambiguator, author, name)
     local pack_id = disambiguator .. "_" .. author .. "_" .. name
@@ -54,7 +95,7 @@ end
 function assets.get_pack_sound(pack, id)
     local glob_id
     if pack then
-        glob_id = pack.pack_id .. "_" .. id
+        glob_id = pack.id .. "_" .. id
     else
         glob_id = id
         for i = 1, #pack_id_list do

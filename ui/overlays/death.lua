@@ -29,6 +29,6 @@ return function(back_func, retry_func)
                 end,
                 click_handler = back_func,
             }),
-        }, { align_items = "center" })
+        }, { align_items = "center" }),
     }, { direction = "column", align_items = "center" })
 end

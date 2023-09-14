@@ -1,9 +1,11 @@
 local threadify = require("threadify")
 local threaded_assets = threadify.require("game_handler.assets")
+local async = require("async")
 local assets = {}
 local audio_module, sound_volume
 local sound_path = "assets/audio/"
 local cached_sounds = {}
+local cached_packs = {}
 local packs = {}
 
 function assets.init(audio, config)
@@ -11,9 +13,12 @@ function assets.init(audio, config)
     audio_module = audio
 end
 
-function assets.get_pack(folder_name)
-    return threaded_assets.get_pack(20, folder_name)
-end
+assets.get_pack = async(function(folder)
+    if not cached_packs[folder] then
+        cached_packs[folder] = async.await(threaded_assets.get_pack(20, folder))
+    end
+    return cached_packs[folder]
+end)
 
 function assets.get_sound(filename)
     if not cached_sounds[filename] then

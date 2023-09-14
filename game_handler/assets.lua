@@ -214,7 +214,7 @@ function assets.init(persistent_data, headless)
                                         level_json.difficulty_mults[#level_json.difficulty_mults + 1] = 1
                                     end
                                     -- sort difficulties
-                                    table.sort(level_json)
+                                    table.sort(level_json.difficulty_mults)
 
                                     pack_data.levels[level_json.id] = level_json
                                     level_list[#level_list + 1] = level_json
@@ -281,7 +281,7 @@ function assets.get_pack(version, id)
                     local index_pack_id = build_pack_id21(dependency.disambiguator, dependency.author, dependency.name)
                     local dependency_pack_data = dependency_pack_mapping21[index_pack_id]
                     if dependency_pack_data == nil then
-                        error("can't find dependency '" .. index_pack_id .. "' of '" .. pack_data.pack_id .. "'.")
+                        error("can't find dependency '" .. index_pack_id .. "' of '" .. pack_data.id .. "'.")
                     end
                     -- fix recursive dependencies
                     if dependency_pack_data.id ~= id then
@@ -343,7 +343,8 @@ function assets.get_pack(version, id)
         if not is_headless and version == 21 then
             pack_data.shaders = {}
             for code, filename in file_iter("Shaders", ".frag", pack_data) do
-                pack_data[filename] = shader_compat(code, filename)
+                -- only translating, can only compile in main thread
+                pack_data.shaders[filename] = shader_compat.translate(code, filename)
                 loaded_files = loaded_files + 1
                 asset_loading_progress_channel:push(loaded_files / total_files)
             end
