@@ -119,7 +119,10 @@ local function make_level_element(pack, level, extra_info)
 						description = label:new(level.description, { font_size = 16, wrap = true })
 						self.background_color = { 0.5, 0.5, 0, 0.7 }
 					else
-						description = label:new("", { font_size = 16, wrap = true })
+						--description = label:new("", { })
+						text = elems[i].element.elements[2].elements[2].raw_text
+						if(string.find(text,"\n") == nil) then description = label:new(text, { font_size = 16, wrap = true })
+						else description = label:new(string.sub(text,1,string.find(text,"\n")-1) .. "\nRead more...", { font_size = 16, wrap = true }) end
 						elems[i].background_color = { 0, 0, 0, 0.7 }
 					end
 					elems[i].element.elements[2].elements[2] = update_element(description, elems[i].element.elements[2], 2, elems[i].element.elements[2].elements[2])
