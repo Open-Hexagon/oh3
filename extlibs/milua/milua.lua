@@ -148,13 +148,16 @@ end
 function app.start(config)
     config = config or {}
     g_config = config
-    local ssl_ctx = openssl_ctx.new("TLS", true)
-    ssl_ctx:setPrivateKey(pkey.new(assert(read_file(config.key))))
-    ssl_ctx:setCertificate(x509.new(assert(read_file(config.cert))))
+    local ssl_ctx
+    if config.key and config.cert then
+        ssl_ctx = openssl_ctx.new("TLS", true)
+        ssl_ctx:setPrivateKey(pkey.new(assert(read_file(config.key))))
+        ssl_ctx:setCertificate(x509.new(assert(read_file(config.cert))))
+    end
     local myserver = assert(http_server.listen({
         host = config.HOST,
         port = config.PORT,
-        tls = true,
+        tls = ssl_ctx ~= nil,
         ctx = ssl_ctx,
         onstream = reply,
         onerror = onerror,

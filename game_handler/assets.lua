@@ -114,143 +114,148 @@ local function build_pack_id21(disambiguator, author, name, version)
     return pack_id
 end
 
+local initialized = false
+
 function assets.init(persistent_data, headless)
-    is_headless = headless
-    local folders = love.filesystem.getDirectoryItems("")
-    for i = 1, #folders do
-        local version = folders[i]:match("packs(.*)")
-        if version then
-            log("Loading pack information for game" .. version)
-            asset_loading_text_channel:push("Loading pack information for game" .. version)
-            version = tonumber(version)
-            local is_compat = version ~= 3
-            local pack_folder = "packs" .. version .. "/"
-            local pack_folders = love.filesystem.getDirectoryItems(pack_folder)
-            for j = 1, #pack_folders do
-                local folder = pack_folder .. pack_folders[j] .. "/"
-                -- check if valid pack
-                local files = love.filesystem.getDirectoryItems(folder)
-                local function check_file(file)
-                    local is_in = false
-                    for k = 1, #files do
-                        if files[k] == file then
-                            is_in = true
-                        end
-                    end
-                    if not is_in then
-                        error("Invalid pack " .. folder .. ", " .. file .. " does not exist!")
-                    end
-                end
-                if is_compat then
-                    check_file("pack.json")
-                    check_file("Scripts")
-                    local pack_json_contents = love.filesystem.read(folder .. "pack.json")
-                    if pack_json_contents == nil then
-                        error("Failed to load pack.json")
-                    end
-                    local decode_success, pack_data = decode_json(pack_json_contents)
-                    if decode_success then
-                        pack_data.game_version = version
-                        pack_data.path = folder
-                        pack_data.loaded = false
-                        if version == 21 then
-                            pack_data.id = build_pack_id21(
-                                pack_data.disambiguator,
-                                pack_data.author,
-                                pack_data.name,
-                                pack_data.version
-                            )
-                            dependency_pack_mapping21[build_pack_id21(
-                                pack_data.disambiguator,
-                                pack_data.author,
-                                pack_data.name
-                            )] =
-                                pack_data
-                        else
-                            pack_data.id = pack_folders[j]
-                        end
-                        data.register_pack(pack_data.id, pack_data.name, version)
-                        if version ~= 21 then
-                            -- initialize virtual filesystem for reading
-                            vfs.clear()
-                            local virtual_pack_folder
-                            local folder_name = pack_folders[j]
-                            if persistent_data and persistent_data[folder_name] then
-                                vfs.load_files(persistent_data[folder_name])
-                                virtual_pack_folder = vfs.dump_real_files_recurse()[folder_name]
+    if not initialized then
+        is_headless = headless
+        local folders = love.filesystem.getDirectoryItems("")
+        for i = 1, #folders do
+            local version = folders[i]:match("packs(.*)")
+            if version then
+                log("Loading pack information for game" .. version)
+                asset_loading_text_channel:push("Loading pack information for game" .. version)
+                version = tonumber(version)
+                local is_compat = version ~= 3
+                local pack_folder = "packs" .. version .. "/"
+                local pack_folders = love.filesystem.getDirectoryItems(pack_folder)
+                for j = 1, #pack_folders do
+                    local folder = pack_folder .. pack_folders[j] .. "/"
+                    -- check if valid pack
+                    local files = love.filesystem.getDirectoryItems(folder)
+                    local function check_file(file)
+                        local is_in = false
+                        for k = 1, #files do
+                            if files[k] == file then
+                                is_in = true
                             end
-                            pack_data.virtual_pack_folder = virtual_pack_folder or {}
                         end
-
-                        -- level data has to be loaded immediately for level selection purposes
-                        pack_data.levels = {}
-                        local level_list = {}
-                        for contents, filename in file_iter("Levels", ".json", pack_data) do
-                            local success, level_json = decode_json(contents, filename)
-                            if success then
-                                local proceed = true
-                                if pack_data.game_version == 192 then
-                                    proceed = level_json.selectable
-                                end
-                                if proceed then
-                                    -- make keys have the same name for all versions
-                                    for key, value in pairs(level_json) do
-                                        local snake_case_key = key:gsub("([a-z])([A-Z])", "%1_%2"):lower()
-                                        snake_case_key = snake_case_key:gsub("multipliers", "mults")
-                                        level_json[snake_case_key] = value
-                                    end
-
-                                    -- default
-                                    level_json.difficulty_mults = level_json.difficulty_mults or {}
-                                    -- add 1x difficulty mult if it doesn't exist
-                                    local has1 = false
-                                    for k = 1, #level_json.difficulty_mults do
-                                        if level_json.difficulty_mults[k] == 1 then
-                                            has1 = true
-                                            break
-                                        end
-                                    end
-                                    if not has1 then
-                                        level_json.difficulty_mults[#level_json.difficulty_mults + 1] = 1
-                                    end
-                                    -- sort difficulties
-                                    table.sort(level_json.difficulty_mults)
-
-                                    pack_data.levels[level_json.id] = level_json
-                                    level_list[#level_list + 1] = level_json
-                                end
+                        if not is_in then
+                            error("Invalid pack " .. folder .. ", " .. file .. " does not exist!")
+                        end
+                    end
+                    if is_compat then
+                        check_file("pack.json")
+                        check_file("Scripts")
+                        local pack_json_contents = love.filesystem.read(folder .. "pack.json")
+                        if pack_json_contents == nil then
+                            error("Failed to load pack.json")
+                        end
+                        local decode_success, pack_data = decode_json(pack_json_contents)
+                        if decode_success then
+                            pack_data.game_version = version
+                            pack_data.path = folder
+                            pack_data.loaded = false
+                            if version == 21 then
+                                pack_data.id = build_pack_id21(
+                                    pack_data.disambiguator,
+                                    pack_data.author,
+                                    pack_data.name,
+                                    pack_data.version
+                                )
+                                dependency_pack_mapping21[build_pack_id21(
+                                    pack_data.disambiguator,
+                                    pack_data.author,
+                                    pack_data.name
+                                )] =
+                                    pack_data
                             else
-                                log("Failed to parse level json:", filename)
+                                pack_data.id = pack_folders[j]
                             end
-                        end
+                            data.register_pack(pack_data.id, pack_data.name, version)
+                            if version ~= 21 then
+                                -- initialize virtual filesystem for reading
+                                vfs.clear()
+                                local virtual_pack_folder
+                                local folder_name = pack_folders[j]
+                                if persistent_data and persistent_data[folder_name] then
+                                    vfs.load_files(persistent_data[folder_name])
+                                    virtual_pack_folder = vfs.dump_real_files_recurse()[folder_name]
+                                end
+                                pack_data.virtual_pack_folder = virtual_pack_folder or {}
+                            end
 
-                        -- register levels in menu priority order
-                        table.sort(level_list, function(a, b)
-                            return a.menu_priority < b.menu_priority
-                        end)
-                        for k = 1, #level_list do
-                            local level = level_list[k]
-                            data.register_level(
-                                pack_data.id,
-                                level.id,
-                                level.name,
-                                level.author,
-                                level.description,
-                                { difficulty_mult = level.difficulty_mults }
-                            )
-                        end
+                            -- level data has to be loaded immediately for level selection purposes
+                            pack_data.levels = {}
+                            local level_list = {}
+                            for contents, filename in file_iter("Levels", ".json", pack_data) do
+                                local success, level_json = decode_json(contents, filename)
+                                if success then
+                                    local proceed = true
+                                    if pack_data.game_version == 192 then
+                                        proceed = level_json.selectable
+                                    end
+                                    if proceed then
+                                        -- make keys have the same name for all versions
+                                        for key, value in pairs(level_json) do
+                                            local snake_case_key = key:gsub("([a-z])([A-Z])", "%1_%2"):lower()
+                                            snake_case_key = snake_case_key:gsub("multipliers", "mults")
+                                            level_json[snake_case_key] = value
+                                        end
 
-                        if packs[pack_data.id] then
-                            log("Id conflict: ", pack_data.id)
+                                        -- default
+                                        level_json.difficulty_mults = level_json.difficulty_mults or {}
+                                        -- add 1x difficulty mult if it doesn't exist
+                                        local has1 = false
+                                        for k = 1, #level_json.difficulty_mults do
+                                            if level_json.difficulty_mults[k] == 1 then
+                                                has1 = true
+                                                break
+                                            end
+                                        end
+                                        if not has1 then
+                                            level_json.difficulty_mults[#level_json.difficulty_mults + 1] = 1
+                                        end
+                                        -- sort difficulties
+                                        table.sort(level_json.difficulty_mults)
+
+                                        pack_data.levels[level_json.id] = level_json
+                                        level_list[#level_list + 1] = level_json
+                                    end
+                                else
+                                    log("Failed to parse level json:", filename)
+                                end
+                            end
+
+                            -- register levels in menu priority order
+                            table.sort(level_list, function(a, b)
+                                return (a.menu_priority or 0) < (b.menu_priority or 0)
+                            end)
+                            for k = 1, #level_list do
+                                local level = level_list[k]
+                                data.register_level(
+                                    pack_data.id,
+                                    level.id,
+                                    level.name,
+                                    level.author,
+                                    level.description,
+                                    { difficulty_mult = level.difficulty_mults }
+                                )
+                            end
+
+                            if packs[pack_data.id] then
+                                log("Id conflict: ", pack_data.id)
+                            end
+                            packs[pack_data.id] = pack_data
+                        else
+                            log("Failed to decode", folder .. "pack.json")
                         end
-                        packs[pack_data.id] = pack_data
-                    else
-                        log("Failed to decode", folder .. "pack.json")
                     end
+                    asset_loading_progress_channel:push(j / #pack_folders)
                 end
-                asset_loading_progress_channel:push(j / #pack_folders)
             end
         end
+        initialized = true
     end
     return data.get_packs()
 end

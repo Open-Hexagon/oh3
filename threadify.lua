@@ -20,18 +20,29 @@ else
     local threads = {}
     local thread_names = {}
     local threadify = {}
+    local threads_channel = love.thread.getChannel("threads")
 
     function threadify.require(require_string)
         if not threads[require_string] then
             local thread_table = {
-                thread = love.thread.newThread("threadify.lua"),
                 resolvers = {},
                 rejecters = {},
                 free_indices = {},
             }
+            local global_threads = threads_channel:peek()
+            if global_threads and global_threads[require_string] then
+                thread_table.thread = global_threads[require_string]
+            else
+                thread_table.thread = love.thread.newThread("threadify.lua")
+            end
             thread_table.thread:start(require_string, true)
             threads[require_string] = thread_table
             thread_names[#thread_names + 1] = require_string
+            threads_channel:performAtomic(function(channel, thread_object, module_name)
+                local all_threads = channel:pop() or {}
+                all_threads[module_name] = thread_object
+                channel:push(all_threads)
+            end, thread_table.thread, require_string)
         end
         local thread = threads[require_string]
         local interface = {}

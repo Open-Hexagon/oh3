@@ -1,19 +1,24 @@
-local log_name, as_thread = ...
-local log = require("log")(log_name)
+local log = require("log")(...)
 local msgpack = require("extlibs.msgpack.msgpack")
 local replay = require("game_handler.replay")
 local game_handler = require("game_handler")
 local config = require("config")
 local uv = require("luv")
+local threadify = require("threadify")
 
-game_handler.init(config)
+-- avoid local redefinition
+do
+    local promise = game_handler.init(config)
+    while not promise.executed do
+        threadify.update()
+        uv.sleep(10)
+    end
+end
 
 local database, replay_path
-if as_thread then
-    database = require("server.database")
-    database.set_identity(1)
-    replay_path = database.get_replay_path()
-end
+database = require("server.database")
+database.set_identity(1)
+replay_path = database.get_replay_path()
 
 local api = {}
 
@@ -21,7 +26,7 @@ local time_tolerance = 3
 local score_tolerance = 0.2
 local render_top_scores = false
 
-local function save_replay(replay_obj, hash, data)
+local function get_replay_save_path(hash)
     local dir = replay_path .. hash:sub(1, 2) .. "/"
     if not love.filesystem.getInfo(dir) then
         love.filesystem.createDirectory(dir)
@@ -48,7 +53,11 @@ function api.verify_replay(compressed_replay, time, steam_id)
     local last_around_time = 0
     local replay_was_done = false
     local replay_end_compare_score, replay_end_timed_score, exceeded_max_processing_time
-    game_handler.replay_start(decoded_replay)
+    local promise = game_handler.replay_start(decoded_replay)
+    while not promise.executed do
+        threadify.update()
+        uv.sleep(10)
+    end
     game_handler.run_until_death(function()
         local now = uv.hrtime()
         around_time = math.floor((now - start) / (10 ^ 9) % 10)
@@ -120,7 +129,7 @@ function api.verify_replay(compressed_replay, time, steam_id)
             log("replay verified, score: " .. score)
             local hash, data = decoded_replay:get_hash()
             local packed_level_settings = msgpack.pack(decoded_replay.data.level_settings)
-            local replay_save_path, replay_hash = save_replay(decoded_replay, hash, data)
+            local replay_save_path, replay_hash = get_replay_save_path(hash)
             if
                 database.save_score(
                     time,
@@ -186,32 +195,26 @@ function api.get_levels21()
             end
         end
     end
-    if as_thread then
-        love.thread.getChannel("ranked_levels"):push(level_validators)
-        love.thread.getChannel("ranked_levels"):push(levels)
-    else
-        return { level_validators, levels }
-    end
+    love.thread.getChannel("ranked_levels"):push(level_validators)
+    love.thread.getChannel("ranked_levels"):push(levels)
 end
 
 function api.set_render_top_scores(bool)
     render_top_scores = bool
 end
 
-if as_thread then
-    local run = true
-    while run do
-        local cmd = love.thread.getChannel("game_commands"):demand()
-        if cmd[1] == "stop" then
-            run = false
-        else
-            xpcall(function()
-                local fn = api[cmd[1]]
-                table.remove(cmd, 1)
-                fn(unpack(cmd))
-            end, function(err)
-                log("Error while verifying replay:\n", err)
-            end)
-        end
+local run = true
+while run do
+    local cmd = love.thread.getChannel("game_commands"):demand()
+    if cmd[1] == "stop" then
+        run = false
+    else
+        xpcall(function()
+            local fn = api[cmd[1]]
+            table.remove(cmd, 1)
+            fn(unpack(cmd))
+        end, function(err)
+            log("Error while verifying replay:\n", err)
+        end)
     end
 end
