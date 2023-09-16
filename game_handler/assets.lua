@@ -399,6 +399,7 @@ function assets.get_pack(version, id)
                         end
                     end
                 end
+                sides = math.max(sides, 3)
 
                 -- get colors
                 set_function(pack_data.styles[level.style_id])
