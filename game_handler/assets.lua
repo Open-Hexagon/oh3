@@ -122,10 +122,10 @@ function assets.init(persistent_data, headless)
         local folders = love.filesystem.getDirectoryItems("")
         for i = 1, #folders do
             local version = folders[i]:match("packs(.*)")
+            version = tonumber(version)
             if version then
                 log("Loading pack information for game" .. version)
                 asset_loading_text_channel:push("Loading pack information for game" .. version)
-                version = tonumber(version)
                 local is_compat = version ~= 3
                 local pack_folder = "packs" .. version .. "/"
                 local pack_folders = love.filesystem.getDirectoryItems(pack_folder)
