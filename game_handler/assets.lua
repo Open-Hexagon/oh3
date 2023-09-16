@@ -382,9 +382,10 @@ function assets.get_pack(version, id)
         -- small preview data
         if not is_headless then
             pack_data.preview_data = {}
+            local style_module = require("compat.game" .. pack_data.game_version .. ".style")
+            local set_function = style_module.select or style_module.set
             for level_id, level in pairs(pack_data.levels) do
-                local polygons = {}
-                local colors = {}
+                -- get side count
                 local sides = 6
                 if version == 192 then
                     sides = level.sides or 6
@@ -398,43 +399,82 @@ function assets.get_pack(version, id)
                         end
                     end
                 end
-                local distance = 50
+
+                -- get colors
+                set_function(pack_data.styles[level.style_id])
+                style_module.compute_colors()
+                local main_color = {style_module.get_main_color()}
+                for i = 1, 4 do
+                    main_color[i] = main_color[i] / 255
+                end
+
+                -- generate vertex and color data
+                local polygons = {}
+                local colors = {}
+                local distance = 48
                 local radius = distance / 3
                 local cap_poly = {}
-                local pivot_thickness = 5
+                local outline = {}
+                local pivot_thickness = 2
                 for i = 1, sides do
+                    local r, g, b, a = style_module.get_color(i - (pack_data.game_version == 20 and 0 or 1))
+                    local must_darken = i % 2 == 0 and i == sides - 1
+                    if must_darken then
+                        r = r / 1.4
+                        g = g / 1.4
+                        b = b / 1.4
+                    end
+                    r = r / 255
+                    g = g / 255
+                    b = b / 255
+                    a = a / 255
                     local angle1 = i * 2 * math.pi / sides
+                    local cos1 = math.cos(angle1)
+                    local sin1 = math.sin(angle1)
                     local angle2 = angle1 + 2 * math.pi / sides
+                    local cos2 = math.cos(angle2)
+                    local sin2 = math.sin(angle2)
                     local polygon = {
                         0,
                         0,
-                        math.cos(angle1) * distance,
-                        math.sin(angle1) * distance,
-                        math.cos(angle2) * distance,
-                        math.sin(angle2) * distance,
+                        cos1 * distance,
+                        sin1 * distance,
+                        cos2 * distance,
+                        sin2 * distance,
                     }
                     polygons[#polygons + 1] = polygon
-                    colors[#colors + 1] = {0, 0, 0, 1}
+                    colors[#colors + 1] = { r, g, b, a }
                     local pivot_poly = {
-                        math.cos(angle2) * radius,
-                        math.sin(angle2) * radius,
-                        math.cos(angle1) * radius,
-                        math.sin(angle1) * radius,
-                        math.cos(angle1) * (radius + pivot_thickness),
-                        math.sin(angle1) * (radius + pivot_thickness),
-                        math.cos(angle2) * (radius + pivot_thickness),
-                        math.sin(angle2) * (radius + pivot_thickness),
+                        cos2 * radius,
+                        sin2 * radius,
+                        cos1 * radius,
+                        sin1 * radius,
+                        cos1 * (radius + pivot_thickness),
+                        sin1 * (radius + pivot_thickness),
+                        cos2 * (radius + pivot_thickness),
+                        sin2 * (radius + pivot_thickness),
                     }
                     polygons[#polygons + 1] = pivot_poly
-                    colors[#colors + 1] = {1, 1, 1, 1}
-                    cap_poly[#cap_poly + 1] = math.cos(angle1) * radius
-                    cap_poly[#cap_poly + 1] = math.sin(angle1) * radius
+                    colors[#colors + 1] = main_color
+                    cap_poly[#cap_poly + 1] = cos1 * radius
+                    cap_poly[#cap_poly + 1] = sin1 * radius
+                    outline[#outline + 1] = cos1 * distance
+                    outline[#outline + 1] = sin1 * distance
                 end
                 polygons[#polygons + 1] = cap_poly
-                colors[#colors + 1] = {1, 1, 1, 0.5}
+                local r, g, b, a
+                if pack_data.game_version == 21 then
+                    r, g, b, a = style_module.get_cap_color_result()
+                elseif pack_data.game_version == 20 then
+                    r, g, b, a = style_module.get_color(2)
+                elseif pack_data.game_version == 192 then
+                    r, g, b, a = style_module.get_second_color()
+                end
+                colors[#colors + 1] = { r / 255, g / 255, b / 255, a / 255 }
                 pack_data.preview_data[level_id] = {
                     polygons = polygons,
                     colors = colors,
+                    outline = outline,
                 }
             end
         end

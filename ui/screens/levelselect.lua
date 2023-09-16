@@ -81,13 +81,11 @@ local function make_level_element(pack, level, extra_info)
     extra_info.song = extra_info.song or "no song"
     extra_info.composer = extra_info.composer or "no composer"
     local music = extra_info.song .. "\n" .. extra_info.composer
-    local preview = level_preview:new(pack.game_version, pack.id, level.id, { style = { padding = 0 } })
+    local preview = level_preview:new(pack.game_version, pack.id, level.id, { style = { padding = 0, border_color = { 1, 1, 1, 1 }, border_thickness = 2 } })
+                --style = { background_color = { 0, 0, 0, 0 }, border_color = { 1, 1, 1, 1 } },
     local elem = quad:new({
         child_element = flex:new({
-            quad:new({
-                child_element = preview,
-                style = { background_color = { 0, 0, 0, 0 }, border_color = { 1, 1, 1, 1 } },
-            }),
+            preview,
             flex:new({
                 flex:new({
                     label:new(level.name, { font_size = 40, wrap = true }),
@@ -134,8 +132,6 @@ local function make_level_element(pack, level, extra_info)
             end
         end,
     })
-    -- store in here for better access
-    elem.preview = preview
     return elem
 end
 
@@ -180,13 +176,6 @@ local function make_pack_elements()
                         then
                             levels:set_scale(root.scale)
                             levels:calculate_layout(last_levels.last_available_area)
-                        end
-                        -- check if previews need redraw (happens when game is started during load)
-                        for j = 1, #levels.elements do
-                            local preview = levels.elements[j].preview
-                            if not preview.image then
-                                preview:redraw()
-                            end
                         end
                     else
                         -- element does not exist in cache, create it

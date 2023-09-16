@@ -28,6 +28,12 @@ function level_preview:new(game_version, pack, level, options)
     return obj
 end
 
+function level_preview:set_style(style)
+    self.border_thickness = self.style.border_thickness or style.border_thickness or self.border_thickness
+    self.border_color = self.style.border_color or style.border_color or self.border_color
+    element.set_style(self, style)
+end
+
 function level_preview:calculate_element_layout()
     -- * 2 as there should be padding on both sides
     local padding = self.padding * 2 * self.scale
@@ -39,13 +45,16 @@ function level_preview:draw()
     local half_size = SIZE * self.scale / 2
     local center_x, center_y = pos_x + half_size, pos_y + half_size
     if self.data then
+        love.graphics.push()
+        love.graphics.translate(center_x, center_y)
         for i = 1, #self.data.polygons do
-            love.graphics.push()
-            love.graphics.translate(center_x, center_y)
             love.graphics.setColor(self.data.colors[i])
             love.graphics.polygon("fill", self.data.polygons[i])
-            love.graphics.pop()
         end
+        love.graphics.setColor(self.border_color)
+        love.graphics.setLineWidth(self.scale * self.border_thickness)
+        love.graphics.polygon("line", self.data.outline)
+        love.graphics.pop()
     else
         -- loading circle (TODO: replace hardcoded colors and line width maybe)
         love.graphics.setColor(1, 1, 1, 1)
