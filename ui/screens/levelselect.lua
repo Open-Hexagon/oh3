@@ -82,13 +82,22 @@ local set_preview_level = async(function(pack, level)
     if config.get("background_preview") then
         if pending_promise then
             async.await(pending_promise)
-        end
-        if game_handler.is_running() then
-            game_handler.stop()
+            pending_promise = nil
         end
         game_handler.set_version(pack.game_version)
         pending_promise = game_handler.preview_start(pack.id, level.id, {})
     end
+end)
+
+local start_game = async(function(pack, level)
+    local ui = require("ui")
+    ui.open_screen("loading")
+    if pending_promise then
+        async.await(pending_promise)
+    end
+    game_handler.set_version(pack.game_version)
+    async.await(game_handler.record_start(pack.id, level.id, level_options_selected))
+    ui.open_screen("game")
 end)
 
 local function make_level_element(pack, level, extra_info)
@@ -138,12 +147,7 @@ local function make_level_element(pack, level, extra_info)
                 level_options_selected = { difficulty_mult = 1 }
                 set_preview_level(pack, level)
             else
-                local ui = require("ui")
-                game_handler.set_version(pack.game_version)
-                ui.open_screen("loading")
-                game_handler.record_start(pack.id, level.id, level_options_selected):done(function()
-                    ui.open_screen("game")
-                end)
+                start_game(pack, level)
             end
         end,
     })

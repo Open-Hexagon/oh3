@@ -1,6 +1,15 @@
 local args = require("args")
-local music = {}
+local music = {
+    volume = 1,
+}
 local audio
+
+function music.update_volume(volume)
+    if music.playing and music.playing.source then
+        music.playing.source.volume = volume
+    end
+    music.volume = volume
+end
 
 function music.init(audio_module)
     audio = audio_module
@@ -12,6 +21,7 @@ function music.play(music_data, random_segment, time, pitch)
     end
     if not music_data.source and not args.headless and music_data.file_path then
         music_data.source = audio.new_stream(music_data.file_path)
+        music_data.source.volume = music.volume
     end
     if time then
         if music_data.source then
@@ -37,7 +47,7 @@ function music.play(music_data, random_segment, time, pitch)
 end
 
 function music.set_pitch(pitch)
-    if music.playing then
+    if music.playing and music.playing.source then
         music.playing.source:set_pitch(pitch)
     end
 end

@@ -60,4 +60,11 @@ function assets.get_sound(filename)
     return cached_sounds[filename]
 end
 
+function assets.set_volume(volume)
+    sound_volume = volume
+    for _, sound in pairs(cached_sounds) do
+        sound.volume = sound_volume
+    end
+end
+
 return assets

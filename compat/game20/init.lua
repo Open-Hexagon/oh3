@@ -490,6 +490,10 @@ public.init = async(function(input_handler, config, audio)
     end
 end)
 
+function public.set_volume(volume)
+    assets.set_volume(volume)
+end
+
 public.get_preview_data = async(function(pack, level)
     local pack_data = async.await(assets.get_pack(pack))
     return pack_data.preview_data[level]

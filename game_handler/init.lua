@@ -49,6 +49,16 @@ game_handler.init = async(function(config, audio)
     music.init(audio)
 end)
 
+---set music and sound volume (0..1)
+---@param music_volume number
+---@param sound_volume number
+function game_handler.set_volume(music_volume, sound_volume)
+    music.update_volume(music_volume)
+    for _, game in pairs(games) do
+        game.set_volume(sound_volume)
+    end
+end
+
 ---set the game version to use
 ---@param version number
 function game_handler.set_version(version)
@@ -66,6 +76,7 @@ end
 ---@param level_settings table
 ---@param is_retry boolean
 game_handler.preview_start = async(function(pack, level, level_settings, is_retry)
+    game_handler.set_volume(game_config.get("background_preview_music_volume"), game_config.get("background_preview_sound_volume"))
     current_game.preview_mode = true
     current_game.death_callback = nil
     current_game.persistent_data = nil
@@ -82,6 +93,7 @@ end)
 ---@param level_settings table
 ---@param is_retry boolean = false
 game_handler.record_start = async(function(pack, level, level_settings, is_retry)
+    game_handler.set_volume(game_config.get("music_volume"), game_config.get("sound_volume"))
     current_game.preview_mode = false
     current_game.death_callback = function()
         if current_game.update_save_data ~= nil then
@@ -127,6 +139,7 @@ end)
 ---read a replay file and run the game with its inputs and seeds
 ---@param file_or_replay_obj string|Replay
 game_handler.replay_start = async(function(file_or_replay_obj)
+    game_handler.set_volume(game_config.get("music_volume"), game_config.get("sound_volume"))
     current_game.preview_mode = false
     local replay
     if type(file_or_replay_obj) == "table" then

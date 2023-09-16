@@ -98,6 +98,7 @@ public.start = async(function(pack_id, level_id, level_options)
     game.style.compute_colors()
     game.difficulty_mult = difficulty_mult
     game.status.reset_all_data()
+    music.stop()
     local new_music = game.pack_data.music[game.level_data.musicId]
     if new_music == nil then
         error("Music with id '" .. game.level_data.musicId .. "' doesn't exist!")
@@ -496,6 +497,10 @@ public.init = async(function(input_handler, config, audio)
         select_sound = assets.get_sound("select.ogg")
     end
 end)
+
+function public.set_volume(volume)
+    assets.set_volume(volume)
+end
 
 public.get_preview_data = async(function(pack, level)
     local pack_data = async.await(assets.get_pack(pack))

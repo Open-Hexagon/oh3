@@ -145,6 +145,13 @@ function assets.get_pack_sound(pack, id)
     return cached_sounds[glob_id]
 end
 
+function assets.set_volume(volume)
+    sound_volume = volume
+    for _, sound in pairs(cached_sounds) do
+        sound.volume = sound_volume
+    end
+end
+
 function assets.get_font(name, size)
     if loaded_fonts[name] == nil then
         loaded_fonts[name] = {}
