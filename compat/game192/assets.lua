@@ -17,6 +17,7 @@ local audio_path = "assets/audio/"
 local audio_module, sound_volume
 local cached_packs = {}
 local cached_sounds = {}
+local pending_packs = {}
 
 assets.init = async(function(audio, config)
     audio_module = audio
@@ -34,9 +35,13 @@ assets.init = async(function(audio, config)
 end)
 
 assets.get_pack = async(function(folder)
-    if not cached_packs[folder] then
-        cached_packs[folder] = async.await(threaded_assets.get_pack(192, folder))
+    if pending_packs[folder] then
+        async.await(pending_packs[folder])
+    elseif not cached_packs[folder] then
+        pending_packs[folder] = threaded_assets.get_pack(192, folder)
+        cached_packs[folder] = async.await(pending_packs[folder])
     end
+    pending_packs[folder] = nil
     return cached_packs[folder]
 end)
 
