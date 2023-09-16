@@ -429,7 +429,7 @@ function assets.get_pack(version, id)
                     g = g / 255
                     b = b / 255
                     a = a / 255
-                    local angle1 = i * 2 * math.pi / sides
+                    local angle1 = i * 2 * math.pi / sides - math.pi / 2
                     local cos1 = math.cos(angle1)
                     local sin1 = math.sin(angle1)
                     local angle2 = angle1 + 2 * math.pi / sides
