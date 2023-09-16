@@ -68,6 +68,11 @@ assets.get_pack = async(function(id)
     if not cached_packs[id] then
         local pack = async.await(threaded_assets.get_pack(21, id))
         compile_shaders(pack)
+        -- update pack in dependency_mapping now that shaders are compiled
+        do
+            local index_pack_id = build_pack_id(pack.disambiguator, pack.author, pack.name)
+            dependency_mapping[index_pack_id] = pack
+        end
         -- load the dependencies as well (has to be done here again in order to update depdendency mapping in main thread and to compile shaders (although rarely used dependency shaders are a thing))
         if pack.dependencies ~= nil then
             for i = 1, #pack.dependencies do

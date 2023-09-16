@@ -10,7 +10,7 @@ function music.play(music_data, random_segment, time, pitch)
     if not music_data then
         return
     end
-    if not music_data.source and not args.headless then
+    if not music_data.source and not args.headless and music_data.file_path then
         music_data.source = audio.new_stream(music_data.file_path)
     end
     if time then
