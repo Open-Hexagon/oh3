@@ -338,15 +338,14 @@ function game_handler.is_running()
     return current_game and current_game.running or false
 end
 
----draws a minimal level preview to a canvas
----@param canvas love.Canvas
+---gets vertices and colors for a minimal level preview
 ---@param game_version number
 ---@param pack string
 ---@param level string
 ---@return table?
-function game_handler.draw_preview(canvas, game_version, pack, level)
-    if games[game_version].draw_preview then
-        return games[game_version].draw_preview(canvas, pack, level)
+function game_handler.get_preview_data(game_version, pack, level)
+    if games[game_version].get_preview_data then
+        return games[game_version].get_preview_data(pack, level)
     end
 end
 

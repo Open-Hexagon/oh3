@@ -575,4 +575,9 @@ function public.update_save_data()
     end
 end
 
+public.get_preview_data = async(function(pack, level)
+    local pack_data = async.await(assets.get_pack(pack))
+    return pack_data.preview_data[level]
+end)
+
 return public

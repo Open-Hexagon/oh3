@@ -378,7 +378,68 @@ function assets.get_pack(version, id)
                 asset_loading_progress_channel:push(loaded_files / total_files)
             end
         end
+
+        -- small preview data
+        if not is_headless then
+            pack_data.preview_data = {}
+            for level_id, level in pairs(pack_data.levels) do
+                local polygons = {}
+                local colors = {}
+                local sides = 6
+                if version == 192 then
+                    sides = level.sides or 6
+                else
+                    local lua_path = pack_data.path .. "/" .. level.lua_file
+                    if love.filesystem.getInfo(lua_path) then
+                        local code = love.filesystem.read(lua_path)
+                        -- match set sides calls in the lua file to get the number of sides
+                        for match in code:gmatch("function.-onInit.-l_setSides%((.-)%).-end") do
+                            sides = tonumber(match) or sides
+                        end
+                    end
+                end
+                local distance = 50
+                local radius = distance / 3
+                local cap_poly = {}
+                local pivot_thickness = 5
+                for i = 1, sides do
+                    local angle1 = i * 2 * math.pi / sides
+                    local angle2 = angle1 + 2 * math.pi / sides
+                    local polygon = {
+                        0,
+                        0,
+                        math.cos(angle1) * distance,
+                        math.sin(angle1) * distance,
+                        math.cos(angle2) * distance,
+                        math.sin(angle2) * distance,
+                    }
+                    polygons[#polygons + 1] = polygon
+                    colors[#colors + 1] = {0, 0, 0, 1}
+                    local pivot_poly = {
+                        math.cos(angle2) * radius,
+                        math.sin(angle2) * radius,
+                        math.cos(angle1) * radius,
+                        math.sin(angle1) * radius,
+                        math.cos(angle1) * (radius + pivot_thickness),
+                        math.sin(angle1) * (radius + pivot_thickness),
+                        math.cos(angle2) * (radius + pivot_thickness),
+                        math.sin(angle2) * (radius + pivot_thickness),
+                    }
+                    polygons[#polygons + 1] = pivot_poly
+                    colors[#colors + 1] = {1, 1, 1, 1}
+                    cap_poly[#cap_poly + 1] = math.cos(angle1) * radius
+                    cap_poly[#cap_poly + 1] = math.sin(angle1) * radius
+                end
+                polygons[#polygons + 1] = cap_poly
+                colors[#colors + 1] = {1, 1, 1, 0.5}
+                pack_data.preview_data[level_id] = {
+                    polygons = polygons,
+                    colors = colors,
+                }
+            end
+        end
     end
+
     pack_data.loaded = true
     return pack_data
 end
