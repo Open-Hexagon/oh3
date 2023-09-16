@@ -20,8 +20,8 @@ local function back_to_menu()
         overlays.remove_overlay(death_overlay_index)
         death_overlay_index = nil
     end
-    game_handler.stop()
     local ui = require("ui")
+    game_handler.preview_start("", "", {}, false, true)
     ui.open_screen("levelselect")
 end
 

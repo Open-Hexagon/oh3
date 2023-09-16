@@ -16,6 +16,7 @@ local last_pack, last_level, last_level_settings, last_version
 local current_game
 local current_game_version
 local first_play = true
+local is_resumed = false
 local start_time
 -- enforce aspect ratio by rendering to canvas
 local aspect_ratio = 16 / 9
@@ -75,16 +76,23 @@ end
 ---@param level string
 ---@param level_settings table
 ---@param is_retry boolean
-game_handler.preview_start = async(function(pack, level, level_settings, is_retry)
+---@param resume boolean
+game_handler.preview_start = async(function(pack, level, level_settings, is_retry, resume)
+    if resume and not game_handler.is_running() then
+        error("cannot resume game as preview if no game is running")
+    end
     game_handler.set_volume(game_config.get("background_preview_music_volume"), game_config.get("background_preview_sound_volume"))
     current_game.preview_mode = true
     current_game.death_callback = nil
     current_game.persistent_data = nil
-    first_play = not is_retry
-    current_game.first_play = first_play
-    async.await(current_game.start(pack, level, level_settings))
-    start_time = love.timer.getTime()
-    current_game.update(1 / current_game.tickrate)
+    is_resumed = resume
+    if not resume then
+        first_play = not is_retry
+        current_game.first_play = first_play
+        async.await(current_game.start(pack, level, level_settings))
+        start_time = love.timer.getTime()
+        current_game.update(1 / current_game.tickrate)
+    end
 end)
 
 ---start a level and start recording a replay
@@ -93,6 +101,7 @@ end)
 ---@param level_settings table
 ---@param is_retry boolean = false
 game_handler.record_start = async(function(pack, level, level_settings, is_retry)
+    is_resumed = false
     game_handler.set_volume(game_config.get("music_volume"), game_config.get("sound_volume"))
     current_game.preview_mode = false
     current_game.death_callback = function()
@@ -139,6 +148,7 @@ end)
 ---read a replay file and run the game with its inputs and seeds
 ---@param file_or_replay_obj string|Replay
 game_handler.replay_start = async(function(file_or_replay_obj)
+    is_resumed = false
     game_handler.set_volume(game_config.get("music_volume"), game_config.get("sound_volume"))
     current_game.preview_mode = false
     local replay
@@ -288,7 +298,13 @@ function game_handler.draw(frametime)
             -- make (0, 0) be the center
             love.graphics.translate(width / 2, height / 2)
             love.graphics.setColor(1, 1, 1, 1)
+            if is_resumed then
+                current_game.preview_mode = false
+            end
             current_game.draw(love.graphics, frametime)
+            if is_resumed then
+                current_game.preview_mode = true
+            end
         elseif screen ~= nil then
             -- render onto the screen
             love.graphics.setCanvas(screen)
