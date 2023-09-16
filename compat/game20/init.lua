@@ -44,10 +44,8 @@ local instance_colors = {}
 ---@param level_id string
 ---@param level_options table
 public.start = async(function(pack_id, level_id, level_options)
+    level_options.difficulty_mult = level_options.difficulty_mult or 1
     game.difficulty_mult = level_options.difficulty_mult
-    if not game.difficulty_mult then
-        error("Cannot start compat game without difficulty mult")
-    end
     local seed = math.floor(uv.hrtime())
     math.randomseed(game.input.next_seed(seed))
     game.pack = async.await(assets.get_pack(pack_id))
@@ -196,7 +194,9 @@ function public.update(frametime)
     end
     if not game.status.has_died then
         game.walls.update(frametime)
-        game.player.update(frametime, move, focus, swap)
+        if not public.preview_mode then
+            game.player.update(frametime, move, focus, swap)
+        end
         game.event_timeline:update(frametime)
         if game.event_timeline.finished then
             game.event_timeline:clear()
@@ -307,7 +307,7 @@ end
 
 ---draw the game to the current canvas
 ---@param screen love.Canvas
-function public.draw(screen, _, preview)
+function public.draw(screen)
     local width, height = screen:getDimensions()
     -- do the resize adjustment the old game did after already enforcing our aspect ratio
     local zoom_factor = 1 / math.max(1024 / width, 768 / height)
@@ -328,7 +328,7 @@ function public.draw(screen, _, preview)
     end
     main_quads:clear()
     game.walls.draw(main_quads)
-    if preview then
+    if public.preview_mode then
         game.player.draw_pivot(main_quads)
     else
         game.player.draw(main_quads)

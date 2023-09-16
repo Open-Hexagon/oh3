@@ -60,12 +60,29 @@ function game_handler.set_version(version)
     last_version = version
 end
 
+---start a level in preview mode
+---@param pack string
+---@param level string
+---@param level_settings table
+---@param is_retry boolean
+game_handler.preview_start = async(function(pack, level, level_settings, is_retry)
+    current_game.preview_mode = true
+    current_game.death_callback = nil
+    current_game.persistent_data = nil
+    first_play = not is_retry
+    current_game.first_play = first_play
+    async.await(current_game.start(pack, level, level_settings))
+    start_time = love.timer.getTime()
+    current_game.update(1 / current_game.tickrate)
+end)
+
 ---start a level and start recording a replay
 ---@param pack string
 ---@param level string
 ---@param level_settings table
 ---@param is_retry boolean = false
 game_handler.record_start = async(function(pack, level, level_settings, is_retry)
+    current_game.preview_mode = false
     current_game.death_callback = function()
         if current_game.update_save_data ~= nil then
             current_game.update_save_data()
@@ -110,6 +127,7 @@ end)
 ---read a replay file and run the game with its inputs and seeds
 ---@param file_or_replay_obj string|Replay
 game_handler.replay_start = async(function(file_or_replay_obj)
+    current_game.preview_mode = false
     local replay
     if type(file_or_replay_obj) == "table" then
         replay = file_or_replay_obj
@@ -191,6 +209,9 @@ end
 ---@return integer
 ---@return integer
 function game_handler.get_game_dimensions()
+    if current_game and current_game.preview_mode then
+        return love.graphics.getDimensions()
+    end
     if screen then
         return screen:getDimensions()
     else
@@ -202,6 +223,9 @@ end
 ---@return number
 ---@return number
 function game_handler.get_game_position()
+    if current_game and current_game.preview_mode then
+        return 0, 0
+    end
     local width, height = love.graphics.getDimensions()
     return (width - width * scale[1]) / 2, (height - height * scale[2]) / 2
 end
@@ -227,13 +251,13 @@ function game_handler.update(ensure_tickrate)
                 if current_game.reset_timings then
                     start_time = love.timer.getTime()
                 end
-                if game_handler.onupdate then
+                if game_handler.onupdate and not current_game.preview_mode then
                     game_handler.onupdate()
                 end
             end
         else
             current_game.update(1 / current_game.tickrate)
-            if game_handler.onupdate then
+            if game_handler.onupdate and not current_game.preview_mode then
                 game_handler.onupdate()
             end
         end
@@ -244,22 +268,29 @@ end
 ---@param frametime number?
 function game_handler.draw(frametime)
     -- can only start rendering once the initial resize event was processed
-    if current_game and current_game.running and screen ~= nil then
+    if current_game and current_game.running then
         frametime = frametime or love.timer.getDelta()
         local width, height = love.graphics.getDimensions()
-        -- render onto the screen
-        love.graphics.setCanvas(screen)
-        love.graphics.clear(0, 0, 0, 1)
-        -- make (0, 0) be the center
-        love.graphics.translate(screen:getWidth() / 2, screen:getHeight() / 2)
-        current_game.draw(screen, frametime)
-        love.graphics.setCanvas()
-        -- render the canvas in the middle of the window
-        love.graphics.origin()
-        love.graphics.translate((width - width * scale[1]) / 2, (height - height * scale[2]) / 2)
-        -- the color of the canvas' contents will look wrong if color isn't white
-        love.graphics.setColor(1, 1, 1, 1)
-        love.graphics.draw(screen)
+        if current_game.preview_mode then
+            -- make (0, 0) be the center
+            love.graphics.translate(width / 2, height / 2)
+            love.graphics.setColor(1, 1, 1, 1)
+            current_game.draw(love.graphics, frametime)
+        elseif screen ~= nil then
+            -- render onto the screen
+            love.graphics.setCanvas(screen)
+            love.graphics.clear(0, 0, 0, 1)
+            -- make (0, 0) be the center
+            love.graphics.translate(screen:getWidth() / 2, screen:getHeight() / 2)
+            current_game.draw(screen, frametime)
+            love.graphics.setCanvas()
+            -- render the canvas in the middle of the window
+            love.graphics.origin()
+            love.graphics.translate((width - width * scale[1]) / 2, (height - height * scale[2]) / 2)
+            -- the color of the canvas' contents will look wrong if color isn't white
+            love.graphics.setColor(1, 1, 1, 1)
+            love.graphics.draw(screen)
+        end
         love.graphics.origin()
     end
 end

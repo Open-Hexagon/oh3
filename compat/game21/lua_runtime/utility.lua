@@ -103,7 +103,7 @@ local keycode_conversion = {
     [99] = "f15",
     [100] = "pause",
 }
-return function(game, assets)
+return function(public, game, assets)
     local pack = game.pack_data
     local lua_runtime = game.lua_runtime
     local env = lua_runtime.env
@@ -202,6 +202,9 @@ return function(game, assets)
         game.walls.clear()
     end
     env.u_getPlayerAngle = function()
+        if public.preview_mode then
+            return -(0 / 0)
+        end
         return game.player.get_player_angle()
     end
     env.u_setPlayerAngle = function(angle)

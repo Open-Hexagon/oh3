@@ -13,6 +13,11 @@ EventList.__index = EventList
 function EventList:new(event_table)
     for i = 1, #event_table do
         local event = event_table[i]
+        if type(event) == "userdata" then
+            -- null in end of list (parsing erro)
+            event_table[i] = nil
+            break
+        end
         event.type = event.type or ""
         event.duration = event.duration or 0
         event.value_name = event.value_name or ""

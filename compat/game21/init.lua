@@ -77,10 +77,8 @@ public.start = async(function(pack_id, level_id, level_options)
         game.width = love.graphics.getWidth()
         game.height = love.graphics.getHeight()
     end
+    level_options.difficulty_mult = level_options.difficulty_mult or 1
     local difficulty_mult = level_options.difficulty_mult
-    if not difficulty_mult or type(difficulty_mult) ~= "number" then
-        error("Must specify a numeric difficulty mult when running a compat game")
-    end
     local seed = uv.hrtime()
     math.randomseed(game.input.next_seed(seed))
     math.random()
@@ -257,15 +255,17 @@ function public.update(frametime)
 
             game.player.update_position(game.status.radius)
             game.walls.update(frametime, game.status.radius)
-            if
-                game.walls.handle_collision(input.move, frametime, game.player, game.status.radius)
-                or game.custom_walls.handle_collision(input.move, game.status.radius, game.player, frametime)
-            then
-                local fatal = not game.config.get("invincible") and not game.level_status.tutorial_mode
-                game.player.kill(fatal)
-                game.death()
+            if not public.preview_mode then
+                if
+                    game.walls.handle_collision(input.move, frametime, game.player, game.status.radius)
+                    or game.custom_walls.handle_collision(input.move, game.status.radius, game.player, frametime)
+                then
+                    local fatal = not game.config.get("invincible") and not game.level_status.tutorial_mode
+                    game.player.kill(fatal)
+                    game.death()
+                end
+                game.custom_walls.update_old_vertices()
             end
-            game.custom_walls.update_old_vertices()
         else
             game.level_status.rotation_speed = game.level_status.rotation_speed * 0.99
         end
@@ -320,8 +320,7 @@ end
 ---draw the game to the current canvas
 ---@param screen love.Canvas
 ---@param frametime number
----@param preview boolean
-function public.draw(screen, frametime, preview)
+function public.draw(screen, frametime)
     -- for lua access
     game.width, game.height = screen:getDimensions()
 
@@ -330,9 +329,7 @@ function public.draw(screen, frametime, preview)
     -- apply pulse as well
     local zoom = pulse.get_zoom(zoom_factor)
     love.graphics.scale(zoom, zoom)
-    if not preview then
-        camera_shake.apply()
-    end
+    camera_shake.apply()
     pseudo3d.apply_skew()
     rotation.apply(game)
 
@@ -373,7 +370,7 @@ function public.draw(screen, frametime, preview)
     player_tris:clear()
     pivot_quads:clear()
     cap_tris:clear()
-    if preview then
+    if public.preview_mode then
         game.player.draw_pivot(game.level_status.sides, game.style, pivot_quads, cap_tris, black_and_white)
     elseif game.status.started then
         game.player.draw(
@@ -390,7 +387,7 @@ function public.draw(screen, frametime, preview)
     love.graphics.setColor(1, 1, 1, 1)
     pseudo3d.draw(set_render_stage, wall_quads, pivot_quads, player_tris, black_and_white)
 
-    if not preview then
+    if not public.preview_mode then
         if game.config.get("show_player_trail") and game.status.show_player_trail then
             love.graphics.setShader()
             trail_particles.draw()
@@ -414,9 +411,7 @@ function public.draw(screen, frametime, preview)
     -- text shouldn't be affected by rotation/pulse
     love.graphics.origin()
     love.graphics.scale(zoom_factor, zoom_factor)
-    if not preview then
-        camera_shake.apply()
-    end
+    camera_shake.apply()
     set_render_stage(8)
     if game.message_text ~= "" then
         -- text

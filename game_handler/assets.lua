@@ -404,7 +404,7 @@ function assets.get_pack(version, id)
                 -- get colors
                 set_function(pack_data.styles[level.style_id])
                 style_module.compute_colors()
-                local main_color = {style_module.get_main_color()}
+                local main_color = { style_module.get_main_color() }
                 for i = 1, 4 do
                     main_color[i] = main_color[i] / 255
                 end

@@ -123,10 +123,8 @@ end
 
 public.start = async(function(pack_folder, level_id, level_options)
     public.tickrate = 960
+    level_options.difficulty_mult = level_options.difficulty_mult or 1
     local difficulty_mult = level_options.difficulty_mult
-    if not difficulty_mult or type(difficulty_mult) ~= "number" then
-        error("Must specify a numeric difficulty mult when running a compat game")
-    end
     local seed = math.floor(uv.hrtime() * 1000)
     math.randomseed(game.input.next_seed(seed))
 
@@ -264,7 +262,7 @@ function public.update(frametime)
             move = 0
         end
         game.walls.update(frametime, game.status.radius)
-        if game.player.update(frametime, game.status.radius, move, focus, game.walls) then
+        if game.player.update(frametime, game.status.radius, move, focus, game.walls) and not public.preview_mode then
             playsound(death_sound)
             playsound(game_over_sound)
             if not game.config.get("invincible") then
@@ -401,7 +399,7 @@ function public.update(frametime)
     public.tickrate = 60 / target_frametime
 end
 
-function public.draw(screen, _, preview)
+function public.draw(screen)
     local width, height = screen:getDimensions()
     -- do the resize adjustment the old game did after already enforcing our aspect ratio
     local zoom_factor = 1 / math.max(1024 / width, 768 / height)
@@ -422,7 +420,7 @@ function public.draw(screen, _, preview)
     end
     main_quads:clear()
     game.walls.draw(main_quads, game.get_main_color(black_and_white))
-    if preview then
+    if public.preview_mode then
         game.player.draw_pivot(
             game.level_data.sides,
             game.status.radius,
