@@ -68,6 +68,7 @@ if not args.headless then
 end
 
 function style.select(style_data)
+    style_data = style_data or {}
     _current_hue = style_data.hue_min or 0
     _current_swap_time = 0
     _pulse_factor = 0
