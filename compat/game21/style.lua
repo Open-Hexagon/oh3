@@ -72,10 +72,10 @@ function style.select(style_data)
     _current_swap_time = 0
     _pulse_factor = 0
     _current_3D_override_color = { 0, 0, 0, 0 }
-    _main_color_data = style_data.main
-    _player_color_data = style_data.player_color or style_data.main
-    _text_color = style_data.text_color or style_data.main
-    _wall_color = style_data.wall_color or style_data.main
+    _main_color_data = style_data.main or {}
+    _player_color_data = style_data.player_color or _main_color_data
+    _text_color = style_data.text_color or _main_color_data
+    _wall_color = style_data.wall_color or _main_color_data
     _cap_color = parse_cap_color(style_data.cap_color)
     _cap_color_obj = style_data.cap_color
     _color_datas = {}
@@ -110,7 +110,7 @@ function style.select(style_data)
     set_color_data_defaults(_player_color_data)
     set_color_data_defaults(_text_color)
     set_color_data_defaults(_wall_color)
-    local colors = style_data.colors
+    local colors = style_data.colors or {}
     for i = 1, #colors do
         set_color_data_defaults(colors[i])
         _color_datas[i] = colors[i]
