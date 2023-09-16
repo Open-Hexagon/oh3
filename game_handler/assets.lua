@@ -444,7 +444,7 @@ function assets.get_pack(version, id)
                         sin2 * distance,
                     }
                     polygons[#polygons + 1] = polygon
-                    colors[#colors + 1] = { r, g, b, a }
+                    colors[#colors + 1] = { r * a, g * a, b * a, 1 }
                     local pivot_poly = {
                         cos2 * radius,
                         sin2 * radius,
