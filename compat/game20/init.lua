@@ -452,8 +452,8 @@ end
 ---@param input_handler table
 ---@param config table
 ---@param audio table
-function public.init(input_handler, config, audio)
-    assets.init(audio, config)
+public.init = async(function(input_handler, config, audio)
+    async.await(assets.init(audio, config))
     game.audio = audio
     game.config = config
     game.input = input_handler
@@ -488,6 +488,6 @@ function public.init(input_handler, config, audio)
             ]]
         )
     end
-end
+end)
 
 return public

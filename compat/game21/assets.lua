@@ -26,21 +26,6 @@ local cached_packs = {}
 
 local assets = {}
 
-assets.init = async(function(audio, config)
-    audio_module = audio
-    sound_volume = config.get("sound_volume")
-    dependency_mapping = async.await(threaded_assets.get_dependency_pack_mapping21())
-end)
-
-local function build_pack_id(disambiguator, author, name, version)
-    local pack_id = disambiguator .. "_" .. author .. "_" .. name
-    if version ~= nil then
-        pack_id = pack_id .. "_" .. math.floor(version)
-    end
-    pack_id = pack_id:gsub(" ", "_")
-    return pack_id
-end
-
 ---compile shaders if not done already
 ---@param pack table
 local function compile_shaders(pack)
@@ -51,6 +36,32 @@ local function compile_shaders(pack)
             end
         end
     end
+end
+
+assets.init = async(function(audio, config)
+    audio_module = audio
+    sound_volume = config.get("sound_volume")
+    if config.get("preload_all_packs") then
+        local game_handler = require("game_handler")
+        local packs = game_handler.get_packs()
+        for i = 1, #packs do
+            if packs[i].game_version == 21 then
+                local pack = async.await(threaded_assets.get_pack(21, packs[i].id))
+                compile_shaders(pack)
+                cached_packs[packs[i].id] = pack
+            end
+        end
+    end
+    dependency_mapping = async.await(threaded_assets.get_dependency_pack_mapping21())
+end)
+
+local function build_pack_id(disambiguator, author, name, version)
+    local pack_id = disambiguator .. "_" .. author .. "_" .. name
+    if version ~= nil then
+        pack_id = pack_id .. "_" .. math.floor(version)
+    end
+    pack_id = pack_id:gsub(" ", "_")
+    return pack_id
 end
 
 assets.get_pack = async(function(id)

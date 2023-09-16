@@ -18,10 +18,20 @@ local audio_module, sound_volume
 local cached_packs = {}
 local cached_sounds = {}
 
-function assets.init(audio, config)
+assets.init = async(function(audio, config)
     audio_module = audio
     sound_volume = config.get("sound_volume")
-end
+    if config.get("preload_all_packs") then
+        local game_handler = require("game_handler")
+        local packs = game_handler.get_packs()
+        for i = 1, #packs do
+            local pack = packs[i]
+            if pack.game_version == 192 then
+                cached_packs[pack.id] = async.await(threaded_assets.get_pack(192, pack.id))
+            end
+        end
+    end
+end)
 
 assets.get_pack = async(function(folder)
     if not cached_packs[folder] then

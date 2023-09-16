@@ -6,12 +6,21 @@ local audio_module, sound_volume
 local sound_path = "assets/audio/"
 local cached_sounds = {}
 local cached_packs = {}
-local packs = {}
 
-function assets.init(audio, config)
+assets.init = async(function(audio, config)
     sound_volume = config.get("sound_volume")
     audio_module = audio
-end
+    if config.get("preload_all_packs") then
+        local game_handler = require("game_handler")
+        local packs = game_handler.get_packs()
+        for i = 1, #packs do
+            local pack = packs[i]
+            if pack.game_version == 20 then
+                cached_packs[pack.id] = async.await(threaded_assets.get_pack(20, pack.id))
+            end
+        end
+    end
+end)
 
 assets.get_pack = async(function(folder)
     if not cached_packs[folder] then
@@ -30,9 +39,9 @@ function assets.get_sound(filename)
                 -- possibly a pack sound
                 local location = filename:find("_")
                 local pack = filename:sub(1, location - 1)
-                if packs[pack] then
+                if cached_packs[pack] then
                     local name = filename:sub(location + 1)
-                    local path = packs[pack].path .. "Sounds/" .. name
+                    local path = cached_packs[pack].path .. "Sounds/" .. name
                     if not love.filesystem.getInfo(path) then
                         return
                     end

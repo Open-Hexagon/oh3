@@ -547,9 +547,9 @@ end
 ---@param input_handler table
 ---@param config table
 ---@param audio table?
-function public.init(input_handler, config, audio)
+public.init = async(function(input_handler, config, audio)
     game.input = input_handler
-    assets.init(audio, config)
+    async.await(assets.init(audio, config))
     game.config = config
     game.audio = audio
     if not args.headless then
@@ -559,7 +559,7 @@ function public.init(input_handler, config, audio)
         go_sound = assets.get_sound("go.ogg")
         level_up_sound = assets.get_sound("level_up.ogg")
     end
-end
+end)
 
 ---updates the persistent data
 function public.update_save_data()
