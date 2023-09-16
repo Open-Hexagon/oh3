@@ -6,6 +6,7 @@ local level_preview = require("ui.elements.level_preview")
 local game_handler = require("game_handler")
 local config = require("config")
 local profile = require("game_handler.profile")
+local async = require("async")
 
 local cache_folder_flex = {}
 local root
@@ -76,13 +77,26 @@ local function make_options_elements(pack, level)
     }, { direction = "column", align_items = "stretch" })
 end
 
+local pending_promise
+local set_preview_level = async(function(pack, level)
+    if config.get("background_preview") then
+        if pending_promise then
+            async.await(pending_promise)
+        end
+        if game_handler.is_running() then
+            game_handler.stop()
+        end
+        game_handler.set_version(pack.game_version)
+        pending_promise = game_handler.preview_start(pack.id, level.id, {})
+    end
+end)
+
 local function make_level_element(pack, level, extra_info)
     extra_info = extra_info or {}
     extra_info.song = extra_info.song or "no song"
     extra_info.composer = extra_info.composer or "no composer"
     local music = extra_info.song .. "\n" .. extra_info.composer
     local preview = level_preview:new(pack.game_version, pack.id, level.id, { style = { padding = 0, border_color = { 1, 1, 1, 1 }, border_thickness = 2 } })
-                --style = { background_color = { 0, 0, 0, 0 }, border_color = { 1, 1, 1, 1 } },
     local elem = quad:new({
         child_element = flex:new({
             preview,
@@ -122,13 +136,7 @@ local function make_level_element(pack, level, extra_info)
                 level_element_selected = self
                 -- reset options (TODO: make options not be dm specific)
                 level_options_selected = { difficulty_mult = 1 }
-                if config.get("background_preview") then
-                    if game_handler.is_running() then
-                        game_handler.stop()
-                    end
-                    game_handler.set_version(pack.game_version)
-                    game_handler.preview_start(pack.id, level.id, {})
-                end
+                set_preview_level(pack, level)
             else
                 local ui = require("ui")
                 game_handler.set_version(pack.game_version)
