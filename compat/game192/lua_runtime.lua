@@ -133,6 +133,10 @@ function lua_runtime.init_env(game, public)
             clock = function()
                 clock_count = clock_count + 1
                 if clock_count > block_threshold then
+                    -- remove debug hook for handled blocking call (if not in menu)
+                    if not public.preview_mode then
+                        debug.sethook()
+                    end
                     -- blocking call (something like: `while os.clock() < x do ...`)
                     game.real_time = game.real_time + game.current_frametime / 60
                     game.blocked_updates = game.blocked_updates + 1
@@ -291,6 +295,10 @@ function lua_runtime.init_env(game, public)
         end
         key_count = key_count + 1
         if key_count > block_threshold then
+            -- remove debug hook for handled blocking call (if not in menu)
+            if not public.preview_mode then
+                debug.sethook()
+            end
             -- blocking loop like `while not isKeyPressed("left") do ...`
             if not args.headless then
                 love.event.pump()
@@ -315,8 +323,24 @@ function lua_runtime.init_env(game, public)
     log("initialized environment")
 end
 
+local function limit_function_calls(fn, ...)
+    local count = 0
+    debug.sethook(function()
+        count = count + 1
+        if count > 1000000 then
+            debug.sethook()
+            lua_runtime.reset_timings = true
+            require("game_handler").stop()
+            error("too many function calls without returning to the game")
+        end
+    end, "c")
+    local ret = {fn(...)}
+    debug.sethook()
+    return unpack(ret)
+end
+
 local function run_fn(name, ...)
-    return env[name](...)
+    return limit_function_calls(env[name], ...)
 end
 
 function lua_runtime.run_fn_if_exists(name, ...)
@@ -344,7 +368,7 @@ function lua_runtime.run_lua_file(path)
         end
         local lua_file = file_cache[path]
         setfenv(lua_file, env)
-        lua_file()
+        limit_function_calls(lua_file)
     end
 end
 

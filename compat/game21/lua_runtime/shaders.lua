@@ -1,4 +1,5 @@
 local args = require("args")
+
 return function(game, assets)
     local pack = game.pack_data
     local lua_runtime = game.lua_runtime

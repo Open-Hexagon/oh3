@@ -3,13 +3,19 @@ local database = require("server.database")
 local app = require("extlibs.milua.milua")
 local json = require("extlibs.json.json")
 local msgpack = require("extlibs.msgpack.msgpack")
+local threadify = require("threadify")
+local uv = require("luv")
 
 local packs
 -- garbage collect everything when done
 do
     local game_handler = require("game_handler")
     local config = require("config")
-    game_handler.init(config)
+    local promise = game_handler.init(config)
+    while not promise.executed do
+        threadify.update()
+        uv.sleep(10)
+    end
     packs = game_handler.get_packs()
 end
 
@@ -93,7 +99,7 @@ end)
 app.start({
     HOST = "0.0.0.0",
     PORT = 8001,
-    key = "cert/key.pem",
-    cert = "cert/cert.pem",
+    key = os.getenv("TLS_KEY"),
+    cert = os.getenv("TLS_CERT"),
     cors_url = os.getenv("CORS_URL"),
 })

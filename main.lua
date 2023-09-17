@@ -3,7 +3,10 @@ if love.system.getOS() == "Android" then
     package.preload.luv = package.loadlib("libluv.so", "luaopen_luv")
 end
 local log = require("log")(...)
+local async = require("async")
 local args = require("args")
+local threadify = require("threadify")
+local channel_callbacks = require("channel_callbacks")
 
 local function add_require_path(path)
     love.filesystem.setRequirePath(love.filesystem.getRequirePath() .. ";" .. path)
@@ -13,13 +16,15 @@ local function add_c_require_path(path)
     love.filesystem.setCRequirePath(love.filesystem.getCRequirePath() .. ";" .. path)
 end
 
-local function render_replay(game_handler, video_encoder, audio, replay, out_file, final_score)
+local render_replay = async(function(game_handler, video_encoder, audio, replay, out_file, final_score)
+    local ui = require("ui")
+    ui.open_screen("game")
     local fps = 60
     local ticks_to_frame = 0
     video_encoder.start(out_file, 1920, 1080, fps, audio.sample_rate)
     audio.set_encoder(video_encoder)
     local after_death_frames = 3 * fps
-    game_handler.replay_start(replay)
+    async.await(game_handler.replay_start(replay))
     local frames = 0
     local last_print = love.timer.getTime()
     return function()
@@ -50,6 +55,7 @@ local function render_replay(game_handler, video_encoder, audio, replay, out_fil
             love.graphics.origin()
             love.graphics.clear(0, 0, 0, 1)
             game_handler.draw(1 / fps)
+            ui.draw()
             love.graphics.captureScreenshot(video_encoder.supply_video_data)
             love.graphics.present()
             if game_handler.is_dead() then
@@ -62,9 +68,9 @@ local function render_replay(game_handler, video_encoder, audio, replay, out_fil
             end
         end
     end
-end
+end)
 
-function love.run()
+local main = async(function()
     -- make sure no level accesses malicious files via symlinks
     love.filesystem.setSymlinksEnabled(false)
 
@@ -103,7 +109,7 @@ function love.run()
         local audio = require("game_handler.video.audio")
         local video_encoder = require("game_handler.video")
         global_config.init(config, game_handler.profile)
-        game_handler.init(config, audio)
+        async.await(game_handler.init(config, audio))
         game_handler.process_event("resize", 1920, 1080)
         local Replay = require("game_handler.replay")
         return function()
@@ -113,7 +119,15 @@ function love.run()
                 local replay = Replay:new(replay_file)
                 local out_file_path = love.filesystem.getSaveDirectory() .. "/" .. replay_file .. ".part.mp4"
                 log("Got new #1 on '" .. replay.level_id .. "' from '" .. replay.pack_id .. "', rendering...")
-                local fn = render_replay(game_handler, video_encoder, audio, replay, out_file_path, replay.score)
+                local promise = render_replay(game_handler, video_encoder, audio, replay, out_file_path, replay.score)
+                local fn
+                promise:done(function(func)
+                    fn = func
+                end)
+                while not promise.executed do
+                    threadify.update()
+                    love.timer.sleep(0.01)
+                end
                 local aborted = false
                 while fn() ~= 0 do
                     local abort_hash = love.thread.getChannel("abort_replay_render"):pop()
@@ -141,8 +155,8 @@ function love.run()
         end
         local game_handler = require("game_handler")
         global_config.init(config, game_handler.profile)
-        game_handler.init(config)
-        game_handler.replay_start(args.no_option)
+        async.await(game_handler.init(config))
+        async.await(game_handler.replay_start(args.no_option))
         game_handler.run_until_death()
         log("Score: " .. game_handler.get_score())
         return function()
@@ -159,26 +173,28 @@ function love.run()
         local audio = require("game_handler.video.audio")
         local video_encoder = require("game_handler.video")
         global_config.init(config, game_handler.profile)
-        game_handler.init(config, audio)
+        async.await(game_handler.init(config, audio))
         game_handler.process_event("resize", 1920, 1080)
-        return render_replay(game_handler, video_encoder, audio, args.no_option, "output.mp4")
+        return async.await(render_replay(game_handler, video_encoder, audio, args.no_option, "output.mp4"))
     end
 
-    local game_handler = require("game_handler")
-    local threadify = require("threadify")
-    global_config.init(config, game_handler.profile)
-    game_handler.init(config)
     local ui = require("ui")
-    if args.no_option then
-        game_handler.replay_start(args.no_option)
-        ui.open_screen("game")
-    else
-        ui.open_screen("levelselect")
-    end
+    ui.open_screen("loading")
+    local game_handler = require("game_handler")
+    global_config.init(config, game_handler.profile)
 
     local fps_limit = config.get("fps_limit")
     local delta_target = 1 / fps_limit
     local last_time = love.timer.getTime()
+
+    game_handler.init(config):done(function()
+        if args.no_option then
+            async.await(game_handler.replay_start(args.no_option))
+            ui.open_screen("game")
+        else
+            ui.open_screen("levelselect")
+        end
+    end)
 
     -- function is called every frame by love
     return function()
@@ -201,6 +217,7 @@ function love.run()
         end
 
         threadify.update()
+        channel_callbacks.update()
         ui.update(love.timer.getDelta())
 
         -- ensures tickrate on its own
@@ -216,4 +233,17 @@ function love.run()
         end
         love.timer.step()
     end
+end)
+
+function love.run()
+    local promise = main()
+    local result
+    promise:done(function(...)
+        result = ...
+    end)
+    while not result do
+        threadify.update()
+        love.timer.sleep(0.01)
+    end
+    return result
 end

@@ -1,5 +1,6 @@
 -- 2.1.X compatibility mode
 local args = require("args")
+local log = require("log")(...)
 local playsound = require("compat.game21.playsound")
 local Timeline = require("compat.game21.timeline")
 local Quads = require("compat.game21.dynamic_quads")
@@ -18,6 +19,8 @@ local input = require("compat.game21.input")
 local level_update = require("compat.game21.level_update")
 local camera_shake = require("compat.game21.camera_shake")
 local rotation = require("compat.game21.rotation")
+local async = require("async")
+local music = require("compat.music")
 local public = {
     running = false,
     first_play = true,
@@ -69,20 +72,18 @@ local message_font, go_sound, level_up_sound, restart_sound, select_sound
 ---@param pack_id string
 ---@param level_id string
 ---@param level_options table
-function public.start(pack_id, level_id, level_options)
+public.start = async(function(pack_id, level_id, level_options)
     -- update inital window dimensions when starting as well (for onInit/onLoad)
     if not args.headless then
         game.width = love.graphics.getWidth()
         game.height = love.graphics.getHeight()
     end
+    level_options.difficulty_mult = level_options.difficulty_mult or 1
     local difficulty_mult = level_options.difficulty_mult
-    if not difficulty_mult or type(difficulty_mult) ~= "number" then
-        error("Must specify a numeric difficulty mult when running a compat game")
-    end
     local seed = uv.hrtime()
     math.randomseed(game.input.next_seed(seed))
     math.random()
-    game.pack_data = assets.get_pack_from_id(pack_id)
+    game.pack_data = async.await(assets.get_pack(pack_id))
     game.level_data = game.pack_data.levels[level_id]
     if game.level_data == nil then
         error("Error: level with id '" .. level_id .. "' not found")
@@ -90,28 +91,20 @@ function public.start(pack_id, level_id, level_options)
     game.level_status.reset(game.config.get("sync_music_to_dm"), assets)
     local style_data = game.pack_data.styles[game.level_data.styleId]
     if style_data == nil then
-        error("Error: style with id '" .. game.level_data.styleId .. "' not found")
+        log("Warn: style with id '" .. game.level_data.styleId .. "' not found")
+        -- still continue with default style values
     end
-    game.style.select(style_data)
+    game.style.select(style_data or {})
     game.style.compute_colors()
     game.difficulty_mult = difficulty_mult
     game.status.reset_all_data()
-    game.music = game.pack_data.music[game.level_data.musicId]
-    if game.music == nil then
+    music.stop()
+    local new_music = game.pack_data.music[game.level_data.musicId]
+    if new_music == nil then
         error("Music with id '" .. game.level_data.musicId .. "' doesn't exist!")
     end
-    game.refresh_music_pitch()
-    local segment
-    if public.first_play then
-        segment = game.music.segments[1]
-    else
-        segment = game.music.segments[math.random(1, #game.music.segments)]
-    end
-    game.status.beat_pulse_delay = game.status.beat_pulse_delay + (segment.beat_pulse_delay_offset or 0)
-    if game.music.source ~= nil then
-        game.music.source:seek(segment.time)
-        game.music.source:play()
-    end
+    music.play(new_music, not public.first_play, nil, game.refresh_music_pitch())
+    game.status.beat_pulse_delay = game.status.beat_pulse_delay + (music.segment.beat_pulse_delay_offset or 0)
 
     game.rng.set_seed(game.input.next_seed(seed))
 
@@ -135,7 +128,6 @@ function public.start(pack_id, level_id, level_options)
     end
     game.lua_runtime.init_env(game, public, assets)
     game.lua_runtime.run_lua_file(game.pack_data.path .. "/" .. game.level_data.luaFile)
-    public.running = true
     if public.first_play then
         playsound(select_sound)
     else
@@ -155,7 +147,8 @@ function public.start(pack_id, level_id, level_options)
         swap_particles.init(assets)
         trail_particles.init(assets, game)
     end
-end
+    public.running = true
+end)
 
 function game.set_sides(sides)
     playsound(game.level_status.beep_sound)
@@ -184,9 +177,7 @@ function game.death(force)
         if force or not (game.level_status.tutorial_mode or game.config.get("invincible")) then
             game.lua_runtime.run_fn_if_exists("onDeath")
             camera_shake.start()
-            if not args.headless and game.music ~= nil and game.music.source ~= nil then
-                game.music.source:stop()
-            end
+            music.stop()
             flash.start_white()
             game.status.has_died = true
             if public.death_callback ~= nil then
@@ -209,20 +200,19 @@ local function get_music_dm_sync_factor()
 end
 
 function game.refresh_music_pitch()
-    if game.music.source ~= nil then
-        local pitch = game.level_status.music_pitch
-            * game.config.get("music_speed_mult")
-            * (game.level_status.sync_music_to_dm and get_music_dm_sync_factor() or 1)
-        if pitch ~= pitch then
-            -- pitch is NaN, happens with negative difficulty mults
-            pitch = 1
-        end
-        if pitch < 0 then
-            -- pitch can't be 0, setting it to almost 0, not sure if this could cause issues
-            pitch = 0.001
-        end
-        game.music.source:set_pitch(pitch)
+    local pitch = game.level_status.music_pitch
+        * game.config.get("music_speed_mult")
+        * (game.level_status.sync_music_to_dm and get_music_dm_sync_factor() or 1)
+    if pitch ~= pitch then
+        -- pitch is NaN, happens with negative difficulty mults
+        pitch = 1
     end
+    if pitch < 0 then
+        -- pitch can't be 0, setting it to almost 0, not sure if this could cause issues
+        pitch = 0.001
+    end
+    music.set_pitch(pitch)
+    return pitch
 end
 
 function game.increment_difficulty()
@@ -268,15 +258,17 @@ function public.update(frametime)
 
             game.player.update_position(game.status.radius)
             game.walls.update(frametime, game.status.radius)
-            if
-                game.walls.handle_collision(input.move, frametime, game.player, game.status.radius)
-                or game.custom_walls.handle_collision(input.move, game.status.radius, game.player, frametime)
-            then
-                local fatal = not game.config.get("invincible") and not game.level_status.tutorial_mode
-                game.player.kill(fatal)
-                game.death()
+            if not public.preview_mode then
+                if
+                    game.walls.handle_collision(input.move, frametime, game.player, game.status.radius)
+                    or game.custom_walls.handle_collision(input.move, game.status.radius, game.player, frametime)
+                then
+                    local fatal = not game.config.get("invincible") and not game.level_status.tutorial_mode
+                    game.player.kill(fatal)
+                    game.death()
+                end
+                game.custom_walls.update_old_vertices()
             end
-            game.custom_walls.update_old_vertices()
         else
             game.level_status.rotation_speed = game.level_status.rotation_speed * 0.99
         end
@@ -331,8 +323,7 @@ end
 ---draw the game to the current canvas
 ---@param screen love.Canvas
 ---@param frametime number
----@param preview boolean
-function public.draw(screen, frametime, preview)
+function public.draw(screen, frametime)
     -- for lua access
     game.width, game.height = screen:getDimensions()
 
@@ -341,9 +332,7 @@ function public.draw(screen, frametime, preview)
     -- apply pulse as well
     local zoom = pulse.get_zoom(zoom_factor)
     love.graphics.scale(zoom, zoom)
-    if not preview then
-        camera_shake.apply()
-    end
+    camera_shake.apply()
     pseudo3d.apply_skew()
     rotation.apply(game)
 
@@ -384,7 +373,7 @@ function public.draw(screen, frametime, preview)
     player_tris:clear()
     pivot_quads:clear()
     cap_tris:clear()
-    if preview then
+    if public.preview_mode then
         game.player.draw_pivot(game.level_status.sides, game.style, pivot_quads, cap_tris, black_and_white)
     elseif game.status.started then
         game.player.draw(
@@ -401,7 +390,7 @@ function public.draw(screen, frametime, preview)
     love.graphics.setColor(1, 1, 1, 1)
     pseudo3d.draw(set_render_stage, wall_quads, pivot_quads, player_tris, black_and_white)
 
-    if not preview then
+    if not public.preview_mode then
         if game.config.get("show_player_trail") and game.status.show_player_trail then
             love.graphics.setShader()
             trail_particles.draw()
@@ -425,9 +414,7 @@ function public.draw(screen, frametime, preview)
     -- text shouldn't be affected by rotation/pulse
     love.graphics.origin()
     love.graphics.scale(zoom_factor, zoom_factor)
-    if not preview then
-        camera_shake.apply()
-    end
+    camera_shake.apply()
     set_render_stage(8)
     if game.message_text ~= "" then
         -- text
@@ -486,19 +473,16 @@ end
 ---stop the game
 function public.stop()
     public.running = false
-    if not args.headless and game.music ~= nil and game.music.source ~= nil then
-        game.music.source:stop()
-    end
+    music.stop()
 end
 
 ---initialize the game
----@param data any
 ---@param input_handler any
 ---@param config any
 ---@param audio any
-function public.init(data, input_handler, config, _, audio)
+public.init = async(function(input_handler, config, audio)
     game.input = input_handler
-    assets.init(data, audio, config)
+    async.await(assets.init(audio, config))
     game.config = config
     game.audio = audio
     pseudo3d.init(game)
@@ -512,55 +496,15 @@ function public.init(data, input_handler, config, _, audio)
         restart_sound = assets.get_sound("restart.ogg")
         select_sound = assets.get_sound("select.ogg")
     end
+end)
+
+function public.set_volume(volume)
+    assets.set_volume(volume)
 end
 
----draws a minimal level preview to a canvas
----@param canvas love.Canvas
----@param pack string
----@param level string
----@return table?
-function public.draw_preview(canvas, pack, level)
-    local pack_data = assets.get_pack_no_load(pack)
-    if not pack_data then
-        error("pack with id '" .. pack .. "not found")
-    end
-    assets.preload(pack_data)
-    if pack_data.preload_promise and not pack_data.preload_promise.executed then
-        return pack_data.preload_promise
-    end
-    game.pack_data = pack_data
-    game.level_data = game.pack_data.levels[level]
-    if game.level_data == nil then
-        error("Error: level with id '" .. level .. "' not found")
-    end
-    game.level_status.reset(game.config.get("sync_music_to_dm"), assets)
-    local style_data = game.pack_data.styles[game.level_data.styleId]
-    if style_data == nil then
-        error("Error: style with id '" .. game.level_data.styleId .. "' not found")
-    end
-    game.style.select(style_data)
-    game.style.compute_colors()
-    game.status.reset_all_data()
-    game.player.reset(
-        game.get_swap_cooldown(),
-        game.config.get("player_size"),
-        game.config.get("player_speed"),
-        game.config.get("player_focus_speed")
-    )
-    game.player.update_position(game.status.radius)
-    game.walls.reset(game.level_status)
-    game.custom_walls.cw_clear()
-    flash.init(game)
-    game.current_rotation = 0
-    local sides = pack_data.preview_side_counts[level] or 6
-    if sides < 3 then
-        sides = 3
-    end
-    game.level_status.sides = sides
-    pulse.init(game)
-    beat_pulse.init(game)
-    game.message_text = ""
-    public.draw(canvas, 0, true)
-end
+public.get_preview_data = async(function(pack, level)
+    local pack_data = async.await(assets.get_pack(pack))
+    return pack_data.preview_data[level]
+end)
 
 return public

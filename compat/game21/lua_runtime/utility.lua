@@ -103,7 +103,7 @@ local keycode_conversion = {
     [99] = "f15",
     [100] = "pause",
 }
-return function(game, assets)
+return function(public, game, assets)
     local pack = game.pack_data
     local lua_runtime = game.lua_runtime
     local env = lua_runtime.env
@@ -165,9 +165,9 @@ return function(game, assets)
         local dependency_pack = assets.get_pack_from_metadata(disambiguator, author, name)
         local old = env.u_execScript
         env.u_execScript = function(path)
-            lua_runtime.run_lua_file(dependency_pack.path .. "/Scripts/" .. path)
+            lua_runtime.run_lua_file(dependency_pack.path .. "Scripts/" .. path)
         end
-        lua_runtime.run_lua_file(dependency_pack.path .. "/Scripts/" .. script)
+        lua_runtime.run_lua_file(dependency_pack.path .. "Scripts/" .. script)
         env.u_execScript = old
     end
     env.u_getWidth = function()
@@ -201,7 +201,15 @@ return function(game, assets)
     env.u_clearWalls = function()
         game.walls.clear()
     end
+    local first_angle_get = true
     env.u_getPlayerAngle = function()
+        if public.preview_mode then
+            -- send real value for the first call for levels that initialize pattern spawning at player position
+            if not first_angle_get then
+                return -(0 / 0)
+            end
+            first_angle_get = false
+        end
         return game.player.get_player_angle()
     end
     env.u_setPlayerAngle = function(angle)

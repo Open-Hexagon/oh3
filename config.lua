@@ -18,6 +18,10 @@ local function add_setting(name, default, can_change_in_offical, game_version)
     properties[name] = { default = default, can_change_in_offical = can_change_in_offical, game = game_version }
 end
 
+add_setting("background_preview", true, true)
+add_setting("background_preview_music_volume", 0, true)
+add_setting("background_preview_sound_volume", 0, true)
+add_setting("preload_all_packs", false, true)
 add_setting("fps_limit", 200, true)
 add_setting("official_mode", true, false, { 192, 20, 21, 3 })
 add_setting("sound_volume", 1, true, { 192, 20, 21, 3 })

@@ -1,3 +1,4 @@
+local log = require("log")
 local utils = require("compat.game192.utils")
 local vfs = {
     pack_path = "",
@@ -125,7 +126,8 @@ vfs.io.open = function(path, mode)
                 local file = love.filesystem.newFile(new_path)
                 local success, error_msg = file:open("r")
                 if not success then
-                    error("Error loading file '" .. new_path .. "': " .. error_msg)
+                    log("Error loading file '" .. new_path .. "': " .. error_msg)
+                    return
                 end
                 local contents = file:read()
                 file:close()
@@ -135,7 +137,8 @@ vfs.io.open = function(path, mode)
                 virtual_filesystem[path] = file
                 return file
             else
-                error("attempted to access file outside of pack folder: '" .. path .. "'")
+                log("attempted to access file outside of pack folder: '" .. path .. "'")
+                return
             end
         else
             virtual_filesystem[path]:seek("set", 0)
@@ -150,7 +153,12 @@ vfs.io.lines = function(filename)
     if filename == nil then
         -- TODO
     else
-        return vfs.io.open(filename):lines()
+        local file = vfs.io.open(filename)
+        if file then
+            return file:lines()
+        else
+            error("cannot open '" .. filename .. "' no such file or directory")
+        end
     end
 end
 

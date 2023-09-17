@@ -2,6 +2,10 @@ local args = require("args")
 local input = require("game_handler.input")
 local Replay = require("game_handler.replay")
 local pack_level_data = require("game_handler.data")
+local async = require("async")
+local music = require("compat.music")
+local threadify = require("threadify")
+local threaded_assets = threadify.require("game_handler.assets")
 local game_handler = {}
 local games = {
     [192] = require("compat.game192"),
@@ -12,7 +16,7 @@ local last_pack, last_level, last_level_settings, last_version
 local current_game
 local current_game_version
 local first_play = true
-local real_start_time
+local is_resumed = false
 local start_time
 -- enforce aspect ratio by rendering to canvas
 local aspect_ratio = 16 / 9
@@ -27,7 +31,7 @@ game_handler.profile = require("game_handler.profile")
 
 ---initialize all games (has to be called before doing anything)
 ---@param config any
-function game_handler.init(config, audio)
+game_handler.init = async(function(config, audio)
     game_config = config
     audio = audio or require("audio")
     -- 1.92 needs persistent data for asset loading as it can overwrite any file
@@ -35,8 +39,24 @@ function game_handler.init(config, audio)
     if not args.server and not args.migrate then
         persistent_data = game_handler.profile.get_all_data()
     end
+    local packs = async.await(threaded_assets.init(persistent_data, args.headless))
+    pack_level_data.import_packs(packs)
     for _, game in pairs(games) do
-        game.init(pack_level_data, input, config, persistent_data, audio)
+        local promise = game.init(input, config, audio)
+        if promise then
+            async.await(promise)
+        end
+    end
+    music.init(audio)
+end)
+
+---set music and sound volume (0..1)
+---@param music_volume number
+---@param sound_volume number
+function game_handler.set_volume(music_volume, sound_volume)
+    music.update_volume(music_volume)
+    for _, game in pairs(games) do
+        game.set_volume(sound_volume)
     end
 end
 
@@ -51,12 +71,42 @@ function game_handler.set_version(version)
     last_version = version
 end
 
+---start a level in preview mode
+---@param pack string
+---@param level string
+---@param level_settings table
+---@param is_retry boolean
+---@param resume boolean
+game_handler.preview_start = async(function(pack, level, level_settings, is_retry, resume)
+    if resume and not game_handler.is_running() then
+        error("cannot resume game as preview if no game is running")
+    end
+    game_handler.set_volume(
+        game_config.get("background_preview_music_volume"),
+        game_config.get("background_preview_sound_volume")
+    )
+    current_game.preview_mode = true
+    current_game.death_callback = nil
+    current_game.persistent_data = nil
+    is_resumed = resume
+    if not resume then
+        first_play = not is_retry
+        current_game.first_play = first_play
+        async.await(current_game.start(pack, level, level_settings))
+        start_time = love.timer.getTime()
+        current_game.update(1 / current_game.tickrate)
+    end
+end)
+
 ---start a level and start recording a replay
 ---@param pack string
 ---@param level string
 ---@param level_settings table
 ---@param is_retry boolean = false
-function game_handler.record_start(pack, level, level_settings, is_retry)
+game_handler.record_start = async(function(pack, level, level_settings, is_retry)
+    is_resumed = false
+    game_handler.set_volume(game_config.get("music_volume"), game_config.get("sound_volume"))
+    current_game.preview_mode = false
     current_game.death_callback = function()
         if current_game.update_save_data ~= nil then
             current_game.update_save_data()
@@ -83,24 +133,27 @@ function game_handler.record_start(pack, level, level_settings, is_retry)
     )
     current_game.first_play = first_play
     input.record_start()
-    current_game.start(pack, level, level_settings)
+    async.await(current_game.start(pack, level, level_settings))
     start_time = love.timer.getTime()
-    real_start_time = start_time
     current_game.update(1 / current_game.tickrate)
     last_pack = pack
     last_level = level
     last_level_settings = level_settings
-end
+end)
 
 ---retry the level that was last started with record_start
-function game_handler.retry()
+game_handler.retry = async(function()
+    game_handler.stop()
     game_handler.set_version(last_version)
     game_handler.record_start(last_pack, last_level, last_level_settings, true)
-end
+end)
 
 ---read a replay file and run the game with its inputs and seeds
 ---@param file_or_replay_obj string|Replay
-function game_handler.replay_start(file_or_replay_obj)
+game_handler.replay_start = async(function(file_or_replay_obj)
+    is_resumed = false
+    game_handler.set_volume(game_config.get("music_volume"), game_config.get("sound_volume"))
+    current_game.preview_mode = false
     local replay
     if type(file_or_replay_obj) == "table" then
         replay = file_or_replay_obj
@@ -130,13 +183,12 @@ function game_handler.replay_start(file_or_replay_obj)
         end
     end
     input.replay_start()
-    current_game.start(replay.pack_id, replay.level_id, replay.data.level_settings)
+    async.await(current_game.start(replay.pack_id, replay.level_id, replay.data.level_settings))
     if not args.headless then
         start_time = love.timer.getTime()
-        real_start_time = start_time
     end
     current_game.update(1 / current_game.tickrate)
-end
+end)
 
 ---stops the game (it will not be updated or rendered anymore)
 function game_handler.stop()
@@ -183,6 +235,9 @@ end
 ---@return integer
 ---@return integer
 function game_handler.get_game_dimensions()
+    if current_game and current_game.preview_mode then
+        return love.graphics.getDimensions()
+    end
     if screen then
         return screen:getDimensions()
     else
@@ -194,15 +249,17 @@ end
 ---@return number
 ---@return number
 function game_handler.get_game_position()
+    if current_game and current_game.preview_mode then
+        return 0, 0
+    end
     local width, height = love.graphics.getDimensions()
     return (width - width * scale[1]) / 2, (height - height * scale[2]) / 2
 end
 
 ---save the score and replay of the current attempt (gets called automatically on death)
 function game_handler.save_score()
-    local elapsed_time = love.timer.getTime() - real_start_time
     input.replay.score = current_game.get_score()
-    game_handler.profile.save_score(elapsed_time, input.replay)
+    game_handler.profile.save_score(game_handler.get_timed_score(), input.replay)
 end
 
 ---update the game if it's running
@@ -220,13 +277,17 @@ function game_handler.update(ensure_tickrate)
                 if current_game.reset_timings then
                     start_time = love.timer.getTime()
                 end
-                if game_handler.onupdate then
+                if game_handler.onupdate and not current_game.preview_mode then
                     game_handler.onupdate()
+                end
+                -- stopped during execution
+                if not current_game.running then
+                    break
                 end
             end
         else
             current_game.update(1 / current_game.tickrate)
-            if game_handler.onupdate then
+            if game_handler.onupdate and not current_game.preview_mode then
                 game_handler.onupdate()
             end
         end
@@ -237,22 +298,35 @@ end
 ---@param frametime number?
 function game_handler.draw(frametime)
     -- can only start rendering once the initial resize event was processed
-    if current_game and current_game.running and screen ~= nil then
+    if current_game and current_game.running then
         frametime = frametime or love.timer.getDelta()
         local width, height = love.graphics.getDimensions()
-        -- render onto the screen
-        love.graphics.setCanvas(screen)
-        love.graphics.clear(0, 0, 0, 1)
-        -- make (0, 0) be the center
-        love.graphics.translate(screen:getWidth() / 2, screen:getHeight() / 2)
-        current_game.draw(screen, frametime)
-        love.graphics.setCanvas()
-        -- render the canvas in the middle of the window
-        love.graphics.origin()
-        love.graphics.translate((width - width * scale[1]) / 2, (height - height * scale[2]) / 2)
-        -- the color of the canvas' contents will look wrong if color isn't white
-        love.graphics.setColor(1, 1, 1, 1)
-        love.graphics.draw(screen)
+        if current_game.preview_mode then
+            -- make (0, 0) be the center
+            love.graphics.translate(width / 2, height / 2)
+            love.graphics.setColor(1, 1, 1, 1)
+            if is_resumed then
+                current_game.preview_mode = false
+            end
+            current_game.draw(love.graphics, frametime)
+            if is_resumed then
+                current_game.preview_mode = true
+            end
+        elseif screen ~= nil then
+            -- render onto the screen
+            love.graphics.setCanvas(screen)
+            love.graphics.clear(0, 0, 0, 1)
+            -- make (0, 0) be the center
+            love.graphics.translate(screen:getWidth() / 2, screen:getHeight() / 2)
+            current_game.draw(screen, frametime)
+            love.graphics.setCanvas()
+            -- render the canvas in the middle of the window
+            love.graphics.origin()
+            love.graphics.translate((width - width * scale[1]) / 2, (height - height * scale[2]) / 2)
+            -- the color of the canvas' contents will look wrong if color isn't white
+            love.graphics.setColor(1, 1, 1, 1)
+            love.graphics.draw(screen)
+        end
         love.graphics.origin()
     end
 end
@@ -331,15 +405,14 @@ function game_handler.is_running()
     return current_game and current_game.running or false
 end
 
----draws a minimal level preview to a canvas
----@param canvas love.Canvas
+---gets vertices and colors for a minimal level preview
 ---@param game_version number
 ---@param pack string
 ---@param level string
 ---@return table?
-function game_handler.draw_preview(canvas, game_version, pack, level)
-    if games[game_version].draw_preview then
-        return games[game_version].draw_preview(canvas, pack, level)
+function game_handler.get_preview_data(game_version, pack, level)
+    if games[game_version].get_preview_data then
+        return games[game_version].get_preview_data(pack, level)
     end
 end
 

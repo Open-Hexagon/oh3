@@ -7,6 +7,8 @@ local lua_runtime = require("compat.game20.lua_runtime")
 local dynamic_quads = require("compat.game21.dynamic_quads")
 local set_color = require("compat.game21.color_transform")
 local timeline = require("compat.game20.timeline")
+local async = require("async")
+local music = require("compat.music")
 local public = {
     running = false,
     first_play = true,
@@ -41,39 +43,20 @@ local instance_colors = {}
 ---@param pack_id string
 ---@param level_id string
 ---@param level_options table
-function public.start(pack_id, level_id, level_options)
+public.start = async(function(pack_id, level_id, level_options)
+    level_options.difficulty_mult = level_options.difficulty_mult or 1
     game.difficulty_mult = level_options.difficulty_mult
-    if not game.difficulty_mult then
-        error("Cannot start compat game without difficulty mult")
-    end
     local seed = math.floor(uv.hrtime())
     math.randomseed(game.input.next_seed(seed))
-    game.pack = assets.get_pack(pack_id)
+    game.pack = async.await(assets.get_pack(pack_id))
     game.level.set(game.pack.levels[level_id])
     game.level_status.reset()
     game.style.set(game.pack.styles[game.level.styleId])
-    public.running = true
-    local segment
-    if not args.headless and game.music and game.music.source then
-        game.music.source:stop()
-    end
-    game.music = game.pack.music[game.level.musicId]
-    if not public.first_play then
-        segment = math.random(1, #game.music.segments)
-    end
+    music.stop()
+    local pitch = game.config.get("sync_music_to_dm") and math.pow(game.difficulty_mult, 0.12) or 1
+    music.play(game.pack.music[game.level.musicId], not public.first_play, nil, pitch)
     if not args.headless then
         go_sound:play()
-        if game.music and game.music.source then
-            if public.first_play then
-                game.music.source:seek(math.floor(game.music.segments[1].time))
-            else
-                game.music.source:seek(math.floor(game.music.segments[segment].time))
-            end
-            game.music.source:set_pitch(
-                game.config.get("sync_music_to_dm") and math.pow(game.difficulty_mult, 0.12) or 1
-            )
-            game.music.source:play()
-        end
     end
 
     -- virtual filesystem init
@@ -115,7 +98,8 @@ function public.start(pack_id, level_id, level_options)
     game.current_rotation = 0
     game.style._3D_depth = math.min(game.style._3D_depth, game.config.get("3D_max_depth"))
     depth = game.style._3D_depth
-end
+    public.running = true
+end)
 
 function game.increment_difficulty()
     playsound(level_up_sound)
@@ -160,9 +144,7 @@ function game.death(force)
         shake_move[1], shake_move[2] = 0, 0
     end)
     game.status.has_died = true
-    if not args.headless and game.music and game.music.source then
-        game.music.source:stop()
-    end
+    music.stop()
     if public.death_callback then
         public.death_callback()
     end
@@ -212,7 +194,9 @@ function public.update(frametime)
     end
     if not game.status.has_died then
         game.walls.update(frametime)
-        game.player.update(frametime, move, focus, swap)
+        if not public.preview_mode then
+            game.player.update(frametime, move, focus, swap)
+        end
         game.event_timeline:update(frametime)
         if game.event_timeline.finished then
             game.event_timeline:clear()
@@ -323,7 +307,7 @@ end
 
 ---draw the game to the current canvas
 ---@param screen love.Canvas
-function public.draw(screen, _, preview)
+function public.draw(screen)
     local width, height = screen:getDimensions()
     -- do the resize adjustment the old game did after already enforcing our aspect ratio
     local zoom_factor = 1 / math.max(1024 / width, 768 / height)
@@ -344,7 +328,7 @@ function public.draw(screen, _, preview)
     end
     main_quads:clear()
     game.walls.draw(main_quads)
-    if preview then
+    if public.preview_mode then
         game.player.draw_pivot(main_quads)
     else
         game.player.draw(main_quads)
@@ -447,9 +431,7 @@ end
 ---stop the game
 function public.stop()
     public.running = false
-    if not args.headless and game.music and game.music.source then
-        game.music.source:stop()
-    end
+    music.stop()
 end
 
 ---updates the persistent data
@@ -467,13 +449,12 @@ function public.update_save_data()
 end
 
 ---initialize the game
----@param pack_level_data table
 ---@param input_handler table
 ---@param config table
----@param persistent_data table
 ---@param audio table
-function public.init(pack_level_data, input_handler, config, persistent_data, audio)
-    assets.init(pack_level_data, persistent_data, audio, config)
+public.init = async(function(input_handler, config, audio)
+    async.await(assets.init(audio, config))
+    game.audio = audio
     game.config = config
     game.input = input_handler
     if not args.headless then
@@ -507,33 +488,15 @@ function public.init(pack_level_data, input_handler, config, persistent_data, au
             ]]
         )
     end
+end)
+
+function public.set_volume(volume)
+    assets.set_volume(volume)
 end
 
-function public.draw_preview(canvas, pack, level)
-    local pack_data = assets.get_pack_no_load(pack)
-    if not pack_data then
-        error("pack with id '" .. pack .. "' not found")
-    end
-    assets.preload(pack_data)
-    if pack_data.preload_promise and not pack_data.preload_promise.executed then
-        return pack_data.preload_promise
-    end
-    game.level.set(pack_data.levels[level])
-    game.level_status.reset()
-    game.level_status.sides = pack_data.preview_side_counts[level] or 6
-    if game.level_status.sides < 3 then
-        game.level_status.sides = 3
-    end
-    game.status.reset()
-    game.player.reset(game, assets)
-    game.style.set(pack_data.styles[game.level.styleId])
-    game.current_rotation = 0
-    game.style._3D_depth = math.min(game.style._3D_depth, game.config.get("3D_max_depth"))
-    depth = game.style._3D_depth
-    game.message_text = ""
-    game.walls.init(game)
-    shake_move[1], shake_move[2] = 0, 0
-    public.draw(canvas, 0, true)
-end
+public.get_preview_data = async(function(pack, level)
+    local pack_data = async.await(assets.get_pack(pack))
+    return pack_data.preview_data[level]
+end)
 
 return public

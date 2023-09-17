@@ -4,7 +4,9 @@ local quad = require("ui.elements.quad")
 local dropdown = require("ui.elements.dropdown")
 local level_preview = require("ui.elements.level_preview")
 local game_handler = require("game_handler")
+local config = require("config")
 local profile = require("game_handler.profile")
+local async = require("async")
 
 local cache_folder_flex = {}
 local root
@@ -81,18 +83,38 @@ local function make_options_elements(pack, level)
     }, { direction = "column", align_items = "stretch" })
 end
 
+local pending_promise
+local set_preview_level = async(function(pack, level)
+    if config.get("background_preview") then
+        if pending_promise then
+            async.await(pending_promise)
+            pending_promise = nil
+        end
+        game_handler.set_version(pack.game_version)
+        pending_promise = game_handler.preview_start(pack.id, level.id, {})
+    end
+end)
+
+local start_game = async(function(pack, level)
+    local ui = require("ui")
+    ui.open_screen("loading")
+    if pending_promise then
+        async.await(pending_promise)
+    end
+    game_handler.set_version(pack.game_version)
+    async.await(game_handler.record_start(pack.id, level.id, level_options_selected))
+    ui.open_screen("game")
+end)
+
 local function make_level_element(pack, level, extra_info)
     extra_info = extra_info or {}
     extra_info.song = extra_info.song or "no song"
     extra_info.composer = extra_info.composer or "no composer"
     local music = extra_info.song .. "\n" .. extra_info.composer
-    local preview = level_preview:new(pack.game_version, pack.id, level.id, { style = { padding = 0 } })
+    local preview = level_preview:new(pack.game_version, pack.id, level.id, { style = { padding = 0, border_color = { 1, 1, 1, 1 }, border_thickness = 2 } })
     local elem = quad:new({
         child_element = flex:new({
-            quad:new({
-                child_element = preview,
-                style = { background_color = { 0, 0, 0, 0 }, border_color = { 1, 1, 1, 1 } },
-            }),
+            preview,
             flex:new({
                 flex:new({
                     label:new(level.name, { font_size = 40, wrap = true }),
@@ -129,16 +151,12 @@ local function make_level_element(pack, level, extra_info)
                 level_element_selected = self
                 -- reset options (TODO: make options not be dm specific)
                 level_options_selected = { difficulty_mult = 1 }
+                set_preview_level(pack, level)
             else
-                local ui = require("ui")
-                game_handler.set_version(pack.game_version)
-                game_handler.record_start(pack.id, level.id, level_options_selected)
-                ui.open_screen("game")
+                start_game(pack, level)
             end
         end,
     })
-    -- store in here for better access
-    elem.preview = preview
     return elem
 end
 
@@ -183,13 +201,6 @@ local function make_pack_elements()
                         then
                             levels:set_scale(root.scale)
                             levels:calculate_layout(last_levels.last_available_area)
-                        end
-                        -- check if previews need redraw (happens when game is started during load)
-                        for j = 1, #levels.elements do
-                            local preview = levels.elements[j].preview
-                            if not preview.image then
-                                preview:redraw()
-                            end
                         end
                     else
                         -- element does not exist in cache, create it

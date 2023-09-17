@@ -64,7 +64,7 @@ function lua_runtime.init_env(game, public, assets)
     add_style_functions(game)
     add_audio_functions(game, assets)
     add_timeline_functions(public, game)
-    add_utility_functions(game, assets)
+    add_utility_functions(public, game, assets)
     add_wall_functions(game)
     game.custom_timelines.add_lua_functions(game)
 

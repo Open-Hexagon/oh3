@@ -1,4 +1,6 @@
 local args = require("args")
+local music = require("compat.music")
+
 return function(game, assets)
     local pack = game.pack_data
     local lua_runtime = game.lua_runtime
@@ -7,35 +9,21 @@ return function(game, assets)
         env.a_setMusicSegment(music_id, 0)
     end
     env.a_setMusicSegment = function(music_id, segment)
-        if not args.headless then
-            local music = game.pack_data.music[music_id]
-            if music == nil then
-                lua_runtime.error("Music with id '" .. music_id .. "' doesn't exist!")
-            else
-                if game.music ~= nil and game.music.source ~= nil then
-                    game.music.source:stop()
-                end
-                game.music = music
-                game.refresh_music_pitch()
-                game.music.source:seek(game.music.segments[segment + 1].time)
-                game.music.source:play()
-            end
+        local new_music = game.pack_data.music[music_id]
+        if new_music == nil then
+            lua_runtime.error("Music with id '" .. music_id .. "' doesn't exist!")
+        else
+            music.stop()
+            music.play(new_music, segment + 1, nil, game.refresh_music_pitch())
         end
     end
     env.a_setMusicSeconds = function(music_id, seconds)
-        if not args.headless then
-            local music = game.pack_data.music[music_id]
-            if music == nil then
-                lua_runtime.error("Music with id '" .. music_id .. "' doesn't exist!")
-            else
-                if game.music ~= nil and game.music.source ~= nil then
-                    game.music.source:stop()
-                end
-                game.music = music
-                game.refresh_music_pitch()
-                game.music.source:seek(seconds)
-                game.music.source:play()
-            end
+        local new_music = game.pack_data.music[music_id]
+        if new_music == nil then
+            lua_runtime.error("Music with id '" .. music_id .. "' doesn't exist!")
+        else
+            music.stop()
+            music.play(new_music, false, seconds, game.refresh_music_pitch())
         end
     end
     env.a_playSound = function(sound_id)

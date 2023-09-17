@@ -64,7 +64,8 @@ To install openssl headers on a debian-based distribution execute: `apt install 
 On an arch based distribution you can use `pacman -S openssl`.
 Then install the lua modules using luarocks: `luarocks --lua-version 5.1 install net-url http`
 
-To run the web api server your private key and certificate need to be at `cert/key.pem` and `cert/cert.pem` respectively.
+To run the web api server with tls you need to set the environment variables `TLS_KEY` and `TLS_CERT` to point to their respective .pem files.
+For cross origin requests to work you should set the `CORS_URL` environment variable to the url of the calling website.
 
 ## Tests
 Run tests with `luajit test/main.lua` in the source directory.
