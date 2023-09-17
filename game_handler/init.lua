@@ -81,7 +81,10 @@ game_handler.preview_start = async(function(pack, level, level_settings, is_retr
     if resume and not game_handler.is_running() then
         error("cannot resume game as preview if no game is running")
     end
-    game_handler.set_volume(game_config.get("background_preview_music_volume"), game_config.get("background_preview_sound_volume"))
+    game_handler.set_volume(
+        game_config.get("background_preview_music_volume"),
+        game_config.get("background_preview_sound_volume")
+    )
     current_game.preview_mode = true
     current_game.death_callback = nil
     current_game.persistent_data = nil

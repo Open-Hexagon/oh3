@@ -258,7 +258,8 @@ function assets.init(persistent_data, headless)
                         if version == 21 and pack_data.dependencies ~= nil then
                             for k = 1, #pack_data.dependencies do
                                 local dependency = pack_data.dependencies[k]
-                                local index_pack_id = build_pack_id21(dependency.disambiguator, dependency.author, dependency.name)
+                                local index_pack_id =
+                                    build_pack_id21(dependency.disambiguator, dependency.author, dependency.name)
                                 local dependency_pack_data = dependency_pack_mapping21[index_pack_id]
                                 if dependency_pack_data == nil then
                                     has_all_deps = false
