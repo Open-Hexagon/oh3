@@ -115,15 +115,13 @@ local function make_level_element(pack, level, extra_info)
             if level_element_selected ~= self then
                 local elems = self.parent.elements
                 for i = 1, #elems do
-					if(elems[i] == self) then 
-						description = label:new(level.description, { font_size = 16, wrap = true })
-						self.background_color = { 0.5, 0.5, 0, 0.7 }
-					else
-						description = label:new("", { font_size = 16, wrap = true })
-						elems[i].background_color = { 0, 0, 0, 0.7 }
-					end
+					description = label:new("", { font_size = 16, wrap = true })
+					elems[i].background_color = { 0, 0, 0, 0.7 }
 					elems[i].element.elements[2].elements[2] = update_element(description, elems[i].element.elements[2], 2, elems[i].element.elements[2].elements[2])
                 end
+				description = label:new(level.description, { font_size = 16, wrap = true })
+				self.background_color = { 0.5, 0.5, 0, 0.7 }
+				self.element.elements[2].elements[2] = update_element(description, self.element.elements[2], 2, self.element.elements[2].elements[2])
                 root.elements[2] = update_element(root.elements[2], root, 2, root.elements[2])
                 local score = flex:new({
                     make_localscore_elements(pack.id, level.id, { difficulty_mult = 1 }),
@@ -209,7 +207,9 @@ local function make_pack_elements()
                         cache_folder_flex[pack.id] = update_element(levels, root, 2, last_levels)
                     end
                     root.elements[2] = levels
-					levels.elements[1]:click(false)
+                    if levels.elements[1] ~= level_element_selected then
+                        levels.elements[1]:click(false)
+                    end
                 end
             })
         end
