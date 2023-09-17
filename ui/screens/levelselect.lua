@@ -85,6 +85,28 @@ local function make_level_element(pack, level, extra_info)
     extra_info = extra_info or {}
     extra_info.song = extra_info.song or "no song"
     extra_info.composer = extra_info.composer or "no composer"
+	local expand
+	if(string.find(level.description,"\n") == nil) then 
+		expand = label:new("", { font_size = 16, wrap = true })
+	else
+		expand = quad:new({
+			child_element = label:new("V", { font_size = 16, wrap = true }),
+			style = { background_color = { 0, 0, 0, 0 }, border_color = { 1, 1, 1, 1 } },
+			selectable = true,
+			click_handler = function(self)
+                local elems = root.elements[2].elements
+                for i = 1, #elems do
+					print(elems[i].element.elements[2].elements[2].elements[1].raw_text)
+					text = elems[i].element.elements[2].elements[2].elements[1].raw_text
+					if (elems[i].element.elements[2].elements[2].elements[2] == self) then description = label:new(level.description, { font_size = 16, wrap = true })
+					elseif(string.find(text,"\n") == nil) then description = label:new(text, { font_size = 16, wrap = true })
+					else description = label:new(string.sub(text,1,string.find(text,"\n")-1), { font_size = 16, wrap = true }) end
+					elems[i].element.elements[2].elements[2].elements[1] = update_element(description, elems[i].element.elements[2].elements[2], 2, elems[i].element.elements[2].elements[2].elements[1])
+				end
+                root.elements[2] = update_element(root.elements[2], root, 2, root.elements[2])
+			end
+		})
+	end
     local music = extra_info.song .. "\n" .. extra_info.composer
     local preview = level_preview:new(pack.game_version, pack.id, level.id, { style = { padding = 0 } })
     local elem = quad:new({
@@ -98,7 +120,10 @@ local function make_level_element(pack, level, extra_info)
                     label:new(level.name, { font_size = 40, wrap = true }),
                     label:new(level.author, { font_size = 26, wrap = true }),
                 }, { direction = "column", style = { padding = 5 } }),
-                label:new(level.description, { font_size = 16, wrap = true }), -- the future is now!
+                flex:new({
+					label:new(string.sub(level.description,1,string.find(level.description,"\n")), { font_size = 16, wrap = true }), -- the future is now!
+					expand
+                }, { direction = "row", style = { padding = 5 } })
             }, { direction = "column" }),
             --flex:new({label:new(music, { font_size = 30, wrap = true })}, { align_items = "end", direction = "column" }),
         }, { direction = "row" }),
@@ -116,16 +141,14 @@ local function make_level_element(pack, level, extra_info)
                 local elems = self.parent.elements
                 for i = 1, #elems do
 					if(elems[i] == self) then 
-						description = label:new(level.description, { font_size = 16, wrap = true })
 						self.background_color = { 0.5, 0.5, 0, 0.7 }
 					else
-						--description = label:new("", { })
-						text = elems[i].element.elements[2].elements[2].raw_text
-						if(string.find(text,"\n") == nil) then description = label:new(text, { font_size = 16, wrap = true })
-						else description = label:new(string.sub(text,1,string.find(text,"\n")-1) .. "\nRead more...", { font_size = 16, wrap = true }) end
 						elems[i].background_color = { 0, 0, 0, 0.7 }
 					end
-					elems[i].element.elements[2].elements[2] = update_element(description, elems[i].element.elements[2], 2, elems[i].element.elements[2].elements[2])
+					text = elems[i].element.elements[2].elements[2].elements[1].raw_text
+					if(string.find(text,"\n") == nil) then description = label:new(text, { font_size = 16, wrap = true })
+					else description = label:new(string.sub(text,1,string.find(text,"\n")-1), { font_size = 16, wrap = true }) end
+					elems[i].element.elements[2].elements[2].elements[1] = update_element(description, elems[i].element.elements[2].elements[2], 2, elems[i].element.elements[2].elements[2].elements[1])
                 end
                 root.elements[2] = update_element(root.elements[2], root, 2, root.elements[2])
                 local score = flex:new({
@@ -140,10 +163,13 @@ local function make_level_element(pack, level, extra_info)
                 -- reset options (TODO: make options not be dm specific)
                 level_options_selected = { difficulty_mult = 1 }
             else
-                local ui = require("ui")
-                game_handler.set_version(pack.game_version)
-                game_handler.record_start(pack.id, level.id, level_options_selected)
-                ui.open_screen("game")
+				--im not sure how to fix this problem: pressing the "show description" button automatically starts the level
+				--[[
+				local ui = require("ui")
+				game_handler.set_version(pack.game_version)
+				game_handler.record_start(pack.id, level.id, level_options_selected)
+				ui.open_screen("game")
+				--]]
             end
         end,
     })
