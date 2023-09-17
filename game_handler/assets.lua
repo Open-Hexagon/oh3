@@ -187,6 +187,7 @@ function assets.init(persistent_data, headless)
 
                             -- level data has to be loaded immediately for level selection purposes
                             pack_data.levels = {}
+                            pack_data.level_list = {}
                             for contents, filename in file_iter("Levels", ".json", pack_data) do
                                 local success, level_json = decode_json(contents, filename)
                                 if success then
@@ -196,7 +197,15 @@ function assets.init(persistent_data, headless)
                                     end
                                     if proceed then
                                         -- make keys have the same name for all versions
-                                        for key, value in pairs(level_json) do
+                                        -- get key names
+                                        local key_names = {}
+                                        for key in pairs(level_json) do
+                                            key_names[#key_names + 1] = key
+                                        end
+                                        -- and then translate them to avoid modifying the table while iterating (which may skip some keys)
+                                        for k = 1, #key_names do
+                                            local key = key_names[k]
+                                            local value = level_json[key]
                                             local snake_case_key = key:gsub("([a-z])([A-Z])", "%1_%2"):lower()
                                             snake_case_key = snake_case_key:gsub("multipliers", "mults")
                                             level_json[snake_case_key] = value
@@ -219,6 +228,9 @@ function assets.init(persistent_data, headless)
                                         table.sort(level_json.difficulty_mults)
 
                                         pack_data.levels[level_json.id] = level_json
+                                        pack_data.level_list[#pack_data.level_list + 1] = level_json
+                                        -- ensure original order for same priority levels
+                                        level_json.sort_index = #pack_data.level_list
                                     end
                                 else
                                     log("Failed to parse level json:", filename)
@@ -257,15 +269,15 @@ function assets.init(persistent_data, headless)
                             data.register_pack(pack_data.id, pack_data.name, version)
 
                             -- register levels in menu priority order
-                            local level_list = {}
-                            for _, level in pairs(pack_data.levels) do
-                                level_list[#level_list + 1] = level
-                            end
-                            table.sort(level_list, function(a, b)
-                                return (a.menu_priority or 0) < (b.menu_priority or 0)
+                            table.sort(pack_data.level_list, function(a, b)
+                                if a.menu_priority == b.menu_priority then
+                                    return a.sort_index > b.sort_index
+                                end
+                                return a.menu_priority < b.menu_priority
                             end)
-                            for k = 1, #level_list do
-                                local level = level_list[k]
+                            for k = 1, #pack_data.level_list do
+                                local level = pack_data.level_list[k]
+                                level.sort_index = nil
                                 data.register_level(
                                     pack_data.id,
                                     level.id,
@@ -278,6 +290,8 @@ function assets.init(persistent_data, headless)
                         else
                             log("Pack with id '" .. pack_data.id .. "' has unsatisfied dependencies!")
                         end
+                        -- only used for temporary sorting (same priority levels are sorted after file list)
+                        pack_data.level_list = nil
                     end
                 end
             end
