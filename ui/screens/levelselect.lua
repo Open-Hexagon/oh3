@@ -30,8 +30,13 @@ local function make_localscore_elements(pack, level, level_options)
         end
     end
     return flex:new({
-        label:new("Your Score:", { font_size = 16, wrap = true }),
-        label:new(tostring(math.floor(score * 1000) / 1000), { font_size = 60, cutoff_suffix = "..." }),
+        quad:new({
+            child_element = flex:new({
+                label:new("Your Score:", { font_size = 16, wrap = true }),
+                label:new(tostring(math.floor(score * 1000) / 1000), { font_size = 60, cutoff_suffix = "..." }),
+            }, { direction = "column", align_items = "stretch" }),
+            style = { background_color = { 0, 0, 0, 0.7 }, border_color = { 0, 0, 0, 0.7 }, border_thickness = 5 },
+        }),
     }, { direction = "column", align_items = "stretch" })
 end
 
@@ -49,13 +54,13 @@ local function make_options_elements(pack, level)
             selections[selections_index],
             { font_size = 30, style = { color = { 0, 0, 0, 1 } }, wrap = true }
         ),
-        style = { background_color = { 1, 1, 1, 1 }, border_color = { 1, 1, 1, 1 }, border_thickness = 5 },
+        style = { background_color = { 1, 1, 1, 1 }, border_color = { 0, 0, 0, 1 }, border_thickness = 5 },
         selectable = true,
         selection_handler = function(self)
             if self.selected then
                 self.border_color = { 0, 0, 1, 1 }
             else
-                self.border_color = { 1, 1, 1, 1 }
+                self.border_color = { 0, 0, 0, 1 }
             end
         end,
         click_handler = function(self)
@@ -64,6 +69,7 @@ local function make_options_elements(pack, level)
                 selections[selections_index],
                 { font_size = 30, style = { color = { 0, 0, 0, 1 }, padding = 8 }, wrap = true }
             )
+            self.background_color = { 1, 1, 0, 1 }
             self.element = update_element(selections_element, self, 1, self.element)
             level_options_selected = { difficulty_mult = selections[selections_index] }
             local score = flex:new({
@@ -114,7 +120,7 @@ local function make_level_element(pack, level, extra_info)
                     label:new(level.name, { font_size = 40, wrap = true }),
                     label:new(level.author, { font_size = 26, wrap = true }),
                 }, { direction = "column", style = { padding = 5 } }),
-                label:new(level.description, { font_size = 16, wrap = true }), -- future: use elements[2] to change this to only appear when selected
+                label:new(level.description, { font_size = 16, wrap = true }),
             }, { direction = "column" }),
             --flex:new({label:new(music, { font_size = 30, wrap = true })}, { align_items = "end", direction = "column" }),
         }, { direction = "row" }),
@@ -170,13 +176,13 @@ local function make_pack_elements()
                     pack.name,
                     { font_size = 30, style = { color = { 0, 0, 0, 1 } }, wrap = true }
                 ),
-                style = { background_color = { 1, 1, 1, 1 }, border_color = { 1, 1, 1, 1 }, border_thickness = 4 },
+                style = { background_color = { 1, 1, 1, 1 }, border_color = { 0, 0, 0, 1 }, border_thickness = 4 },
                 selectable = true,
                 selection_handler = function(self)
                     if self.selected then
-                        self.border_color = { 0, 0, 1, 1 }
+                        self.border_color = { 0, 0, 1, 0.7 }
                     else
-                        self.border_color = { 1, 1, 1, 1 }
+                        self.border_color = { 0, 0, 0, 0.7 }
                     end
                 end,
                 click_handler = function(self)
@@ -209,10 +215,16 @@ local function make_pack_elements()
                         )
                         cache_folder_flex[pack.id] = update_element(levels, root, 2, last_levels)
                     end
-                    if root.elements[2] ~= levels then
+                    root.elements[2] = levels
+                    local set = true
+                    for i = 1, #levels.elements do
+                        if levels.elements[i] == level_element_selected then
+                            set = false
+                        end
+                    end
+                    if set == true then
                         levels.elements[1]:click(false)
                     end
-                    root.elements[2] = levels
                 end,
             })
         end
