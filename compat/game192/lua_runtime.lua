@@ -348,6 +348,7 @@ function lua_runtime.run_fn_if_exists(name, ...)
     key_count = 0
     if env[name] ~= nil then
         xpcall(run_fn, lua_runtime.error, name, ...)
+        debug.sethook()
     end
     if key_count > block_threshold then
         lua_runtime.reset_timings = true

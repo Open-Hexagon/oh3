@@ -170,7 +170,7 @@ public.start = async(function(pack_folder, level_id, level_options)
     game.vfs.load_files(files)
 
     game.message_text = ""
-    game.events.init(game)
+    game.events.init(game, public)
     game.status.reset()
     game.restart_id = level_id
     game.restart_first_time = false

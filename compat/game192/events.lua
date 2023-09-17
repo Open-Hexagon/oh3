@@ -60,7 +60,7 @@ function EventList:execute(time)
 end
 
 -- initalize the events defined in the level json
-function events.init(game)
+function events.init(game, public)
     level_events = EventList:new(game.level_data.events == 0 and {} or game.level_data.events)
     executing_events = {}
     queued_events = {}
@@ -71,8 +71,8 @@ function events.init(game)
             game.restart_first_time = true
         end,
         menu = function()
-            -- TODO: actually go to menu instead of closing the game
-            love.event.push("quit")
+            public.death_callback()
+            require("game_handler").stop()
         end,
         message_add = function(event)
             game.lua_runtime.env.messageAdd(event.message, event.duration)

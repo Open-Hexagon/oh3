@@ -14,14 +14,14 @@ local timer = quad:new({
 
 local death_overlay_index
 
-local function back_to_menu(no_resume)
+local function back_to_menu(_, no_resume)
     if death_overlay_index then
         keyboard_navigation.set_screen()
         overlays.remove_overlay(death_overlay_index)
         death_overlay_index = nil
     end
     local ui = require("ui")
-    if no_resume then
+    if not no_resume then
         game_handler.preview_start("", "", {}, false, true)
     end
     ui.open_screen("levelselect")
@@ -80,10 +80,9 @@ game_handler.onupdate = function()
             death_overlay_index = overlays.add_overlay(death_overlay)
             keyboard_navigation.set_screen(death_overlay)
         end
-    end
-    -- execution aborted from somewhere else (not due to player death)
-    if not game_handler.is_running() then
-        back_to_menu(true)
+    elseif not game_handler.is_running() then
+        -- execution aborted from somewhere else (not due to player death)
+        back_to_menu(nil, true)
     end
 end
 
