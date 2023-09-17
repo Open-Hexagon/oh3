@@ -28,13 +28,13 @@ local function make_localscore_elements(pack, level, level_options)
         end
     end
     return flex:new({
-		quad:new({
-			child_element = flex:new({
-				label:new("Your Score:", { font_size = 16, wrap = true }),
-				label:new(tostring(math.floor(score * 1000) / 1000), { font_size = 60, cutoff_suffix = "..." })
-			}, { direction = "column", align_items = "stretch" }),
-			style = { background_color = { 0, 0, 0, 0.7 }, border_color = { 0, 0, 0, 0.7 }, border_thickness = 5 }
-		})
+        quad:new({
+            child_element = flex:new({
+                label:new("Your Score:", { font_size = 16, wrap = true }),
+                label:new(tostring(math.floor(score * 1000) / 1000), { font_size = 60, cutoff_suffix = "..." }),
+            }, { direction = "column", align_items = "stretch" }),
+            style = { background_color = { 0, 0, 0, 0.7 }, border_color = { 0, 0, 0, 0.7 }, border_thickness = 5 },
+        }),
     }, { direction = "column", align_items = "stretch" })
 end
 
@@ -98,7 +98,7 @@ local function make_level_element(pack, level, extra_info)
                     label:new(level.name, { font_size = 40, wrap = true }),
                     label:new(level.author, { font_size = 26, wrap = true }),
                 }, { direction = "column", style = { padding = 5 } }),
-                label:new("", { font_size = 16, wrap = true }), -- the future is now!
+                label:new(level.description, { font_size = 16, wrap = true }),
             }, { direction = "column" }),
             --flex:new({label:new(music, { font_size = 30, wrap = true })}, { align_items = "end", direction = "column" }),
         }, { direction = "row" }),
@@ -115,14 +115,9 @@ local function make_level_element(pack, level, extra_info)
             if level_element_selected ~= self then
                 local elems = self.parent.elements
                 for i = 1, #elems do
-					description = label:new("", { font_size = 16, wrap = true })
-					elems[i].background_color = { 0, 0, 0, 0.7 }
-					elems[i].element.elements[2].elements[2] = update_element(description, elems[i].element.elements[2], 2, elems[i].element.elements[2].elements[2])
+                    elems[i].background_color = { 0, 0, 0, 0.7 }
                 end
-				description = label:new(level.description, { font_size = 16, wrap = true })
-				self.background_color = { 0.5, 0.5, 0, 0.7 }
-				self.element.elements[2].elements[2] = update_element(description, self.element.elements[2], 2, self.element.elements[2].elements[2])
-                root.elements[2] = update_element(root.elements[2], root, 2, root.elements[2])
+                self.background_color = { 0.5, 0.5, 0, 0.7 }
                 local score = flex:new({
                     make_localscore_elements(pack.id, level.id, { difficulty_mult = 1 }),
                     make_options_elements(pack, level),
@@ -159,16 +154,19 @@ local function make_pack_elements()
         local pack = packs[i]
         if #pack.levels > 0 then
             elements[#elements + 1] = quad:new({
-                child_element = label:new(pack.name, { font_size = 30, style = { color = { 0, 0, 0, 1 } }, wrap = true }),
+                child_element = label:new(
+                    pack.name,
+                    { font_size = 30, style = { color = { 0, 0, 0, 1 } }, wrap = true }
+                ),
                 style = { background_color = { 1, 1, 1, 1 }, border_color = { 0, 0, 0, 1 }, border_thickness = 4 },
                 selectable = true,
-				selection_handler = function(self)
-					if self.selected then
-						self.border_color = { 0, 0, 1, 0.7 }
-					else
-						self.border_color = { 0, 0, 0, 0.7 }
-					end
-				end,
+                selection_handler = function(self)
+                    if self.selected then
+                        self.border_color = { 0, 0, 1, 0.7 }
+                    else
+                        self.border_color = { 0, 0, 0, 0.7 }
+                    end
+                end,
                 click_handler = function(self)
                     for j = 1, #elements do
                         elements[j].background_color = { 1, 1, 1, 1 }
@@ -207,10 +205,16 @@ local function make_pack_elements()
                         cache_folder_flex[pack.id] = update_element(levels, root, 2, last_levels)
                     end
                     root.elements[2] = levels
-                    if levels.elements[1] ~= level_element_selected then
+                    local set = true
+                    for i = 1, #levels.elements do
+                        if levels.elements[i] == level_element_selected then
+                            set = false
+                        end
+                    end
+                    if set == true then
                         levels.elements[1]:click(false)
                     end
-                end
+                end,
             })
         end
     end
