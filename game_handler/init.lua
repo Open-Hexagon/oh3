@@ -280,6 +280,10 @@ function game_handler.update(ensure_tickrate)
                 if game_handler.onupdate and not current_game.preview_mode then
                     game_handler.onupdate()
                 end
+                -- stopped during execution
+                if not current_game.running then
+                    break
+                end
             end
         else
             current_game.update(1 / current_game.tickrate)

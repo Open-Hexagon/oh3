@@ -158,7 +158,7 @@ public.start = async(function(pack_folder, level_id, level_options)
     -- virtual filesystem init
     game.vfs.clear()
     game.vfs.pack_path = game.pack.path
-    game.vfs.pack_folder_name = game.pack.folder
+    game.vfs.pack_folder_name = game.pack.id
     local files = {
         ["config.json"] = make_fake_config(game.config),
     }
@@ -209,13 +209,6 @@ end
 local function get_smoother_step(edge0, edge1, x)
     x = math.max(0, math.min(1, (x - edge0) / (edge1 - edge0)))
     return x * x * x * (x * (x * 6 - 15) + 10)
-end
-
-function public.keypressed(key)
-    -- TODO: make this work with ui? or make it specific only for levels that need it?
-    if key == "r" or key == "up" then
-        game.status.must_restart = true
-    end
 end
 
 function public.update(frametime)
