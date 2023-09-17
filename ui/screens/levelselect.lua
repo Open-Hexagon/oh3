@@ -98,7 +98,7 @@ local function make_level_element(pack, level, extra_info)
                     label:new(level.name, { font_size = 40, wrap = true }),
                     label:new(level.author, { font_size = 26, wrap = true }),
                 }, { direction = "column", style = { padding = 5 } }),
-                label:new(level.description, { font_size = 16, wrap = true }), -- the future is now!
+                label:new("", { font_size = 16, wrap = true }), -- the future is now!
             }, { direction = "column" }),
             --flex:new({label:new(music, { font_size = 30, wrap = true })}, { align_items = "end", direction = "column" }),
         }, { direction = "row" }),
@@ -208,10 +208,8 @@ local function make_pack_elements()
                         )
                         cache_folder_flex[pack.id] = update_element(levels, root, 2, last_levels)
                     end
-                    if root.elements[2] ~= levels then
-                        levels.elements[1]:click(false)
-                    end
                     root.elements[2] = levels
+					levels.elements[1]:click(false)
                 end
             })
         end
