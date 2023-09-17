@@ -212,6 +212,7 @@ function assets.init(persistent_data, headless)
                                         end
 
                                         -- default
+                                        level_json.id = level_json.id or "nullId"
                                         level_json.difficulty_mults = level_json.difficulty_mults or {}
                                         -- add 1x difficulty mult if it doesn't exist
                                         local has1 = false
