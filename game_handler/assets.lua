@@ -172,7 +172,6 @@ function assets.init(persistent_data, headless)
                             else
                                 pack_data.id = pack_folders[j]
                             end
-                            data.register_pack(pack_data.id, pack_data.name, version)
                             if version ~= 21 then
                                 -- initialize virtual filesystem for reading
                                 vfs.clear()
@@ -227,20 +226,38 @@ function assets.init(persistent_data, headless)
                                 end
                             end
 
-                            -- register levels in menu priority order
-                            table.sort(level_list, function(a, b)
-                                return (a.menu_priority or 0) < (b.menu_priority or 0)
-                            end)
-                            for k = 1, #level_list do
-                                local level = level_list[k]
-                                data.register_level(
-                                    pack_data.id,
-                                    level.id,
-                                    level.name,
-                                    level.author,
-                                    level.description,
-                                    { difficulty_mult = level.difficulty_mults }
-                                )
+                            -- only register pack if dependencies are satisfied
+                            local has_all_deps = true
+                            if version == 21 and pack_data.dependencies ~= nil then
+                                for k = 1, #pack_data.dependencies do
+                                    local dependency = pack_data.dependencies[k]
+                                    local index_pack_id = build_pack_id21(dependency.disambiguator, dependency.author, dependency.name)
+                                    local dependency_pack_data = dependency_pack_mapping21[index_pack_id]
+                                    if dependency_pack_data == nil then
+                                        has_all_deps = false
+                                    end
+                                end
+                            end
+                            if has_all_deps then
+                                data.register_pack(pack_data.id, pack_data.name, version)
+
+                                -- register levels in menu priority order
+                                table.sort(level_list, function(a, b)
+                                    return (a.menu_priority or 0) < (b.menu_priority or 0)
+                                end)
+                                for k = 1, #level_list do
+                                    local level = level_list[k]
+                                    data.register_level(
+                                        pack_data.id,
+                                        level.id,
+                                        level.name,
+                                        level.author,
+                                        level.description,
+                                        { difficulty_mult = level.difficulty_mults }
+                                    )
+                                end
+                            else
+                                log("Pack with id '" .. pack_data.id .. "' has unsatisfied dependencies!")
                             end
 
                             if packs[pack_data.id] then
