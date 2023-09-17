@@ -215,14 +215,9 @@ local function make_pack_elements()
                         )
                         cache_folder_flex[pack.id] = update_element(levels, root, 2, last_levels)
                     end
+                    local pack_changed = levels ~= root.elements[2]
                     root.elements[2] = levels
-                    local set = true
-                    for i = 1, #levels.elements do
-                        if levels.elements[i] == level_element_selected then
-                            set = false
-                        end
-                    end
-                    if set == true then
+                    if pack_changed then
                         levels.elements[1]:click(false)
                     end
                 end,
