@@ -47,6 +47,7 @@ function level_preview:draw()
     if self.data then
         love.graphics.push()
         love.graphics.translate(center_x, center_y)
+        love.graphics.scale(self.scale, self.scale)
         for i = 1, #self.data.polygons do
             love.graphics.setColor(self.data.colors[i])
             love.graphics.polygon("fill", self.data.polygons[i])
