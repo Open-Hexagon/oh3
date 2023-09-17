@@ -126,6 +126,7 @@ function assets.init(persistent_data, headless)
             if version then
                 log("Loading pack information for game" .. version)
                 asset_loading_text_channel:push("Loading pack information for game" .. version)
+                local pack_list = {}
                 local is_compat = version ~= 3
                 local pack_folder = "packs" .. version .. "/"
                 local pack_folders = love.filesystem.getDirectoryItems(pack_folder)
@@ -186,7 +187,6 @@ function assets.init(persistent_data, headless)
 
                             -- level data has to be loaded immediately for level selection purposes
                             pack_data.levels = {}
-                            local level_list = {}
                             for contents, filename in file_iter("Levels", ".json", pack_data) do
                                 local success, level_json = decode_json(contents, filename)
                                 if success then
@@ -219,56 +219,66 @@ function assets.init(persistent_data, headless)
                                         table.sort(level_json.difficulty_mults)
 
                                         pack_data.levels[level_json.id] = level_json
-                                        level_list[#level_list + 1] = level_json
                                     end
                                 else
                                     log("Failed to parse level json:", filename)
                                 end
                             end
 
-                            -- only register pack if dependencies are satisfied
-                            local has_all_deps = true
-                            if version == 21 and pack_data.dependencies ~= nil then
-                                for k = 1, #pack_data.dependencies do
-                                    local dependency = pack_data.dependencies[k]
-                                    local index_pack_id = build_pack_id21(dependency.disambiguator, dependency.author, dependency.name)
-                                    local dependency_pack_data = dependency_pack_mapping21[index_pack_id]
-                                    if dependency_pack_data == nil then
-                                        has_all_deps = false
-                                    end
-                                end
-                            end
-                            if has_all_deps then
-                                data.register_pack(pack_data.id, pack_data.name, version)
-
-                                -- register levels in menu priority order
-                                table.sort(level_list, function(a, b)
-                                    return (a.menu_priority or 0) < (b.menu_priority or 0)
-                                end)
-                                for k = 1, #level_list do
-                                    local level = level_list[k]
-                                    data.register_level(
-                                        pack_data.id,
-                                        level.id,
-                                        level.name,
-                                        level.author,
-                                        level.description,
-                                        { difficulty_mult = level.difficulty_mults }
-                                    )
-                                end
-                            else
-                                log("Pack with id '" .. pack_data.id .. "' has unsatisfied dependencies!")
-                            end
-
                             if packs[pack_data.id] then
                                 log("Id conflict: ", pack_data.id)
                             end
                             packs[pack_data.id] = pack_data
+                            pack_list[#pack_list + 1] = pack_data
                         else
                             log("Failed to decode", folder .. "pack.json")
                         end
                     end
                     asset_loading_progress_channel:push(j / #pack_folders)
+                end
+
+                -- register pack and levels
+                for j = 1, #pack_list do
+                    local pack_data = pack_list[j]
+                    if pack_data.game_version ~= 3 then
+                        -- only register pack if dependencies are satisfied
+                        local has_all_deps = true
+                        if version == 21 and pack_data.dependencies ~= nil then
+                            for k = 1, #pack_data.dependencies do
+                                local dependency = pack_data.dependencies[k]
+                                local index_pack_id = build_pack_id21(dependency.disambiguator, dependency.author, dependency.name)
+                                local dependency_pack_data = dependency_pack_mapping21[index_pack_id]
+                                if dependency_pack_data == nil then
+                                    has_all_deps = false
+                                end
+                            end
+                        end
+                        if has_all_deps then
+                            data.register_pack(pack_data.id, pack_data.name, version)
+
+                            -- register levels in menu priority order
+                            local level_list = {}
+                            for _, level in pairs(pack_data.levels) do
+                                level_list[#level_list + 1] = level
+                            end
+                            table.sort(level_list, function(a, b)
+                                return (a.menu_priority or 0) < (b.menu_priority or 0)
+                            end)
+                            for k = 1, #level_list do
+                                local level = level_list[k]
+                                data.register_level(
+                                    pack_data.id,
+                                    level.id,
+                                    level.name,
+                                    level.author,
+                                    level.description,
+                                    { difficulty_mult = level.difficulty_mults }
+                                )
+                            end
+                        else
+                            log("Pack with id '" .. pack_data.id .. "' has unsatisfied dependencies!")
+                        end
+                    end
                 end
             end
         end
