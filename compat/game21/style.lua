@@ -159,7 +159,7 @@ function style.calculate_color(color_data)
         end
     end
     for i = 1, 4 do
-        local value = color_data.result[i] + (color_data.pulse[i] or 0) * _pulse_factor
+        local value = (color_data.result[i] % 256) + (color_data.pulse[i] or 0) * _pulse_factor
         if value > 255 then
             value = 255
         elseif value < 0 then

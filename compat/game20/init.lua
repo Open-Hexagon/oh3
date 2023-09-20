@@ -28,6 +28,7 @@ local game = {
     effect_timeline = timeline:new(),
     message_text = "",
     beep_sound = nil,
+    real_time = 0,
 }
 local shake_move = { 0, 0 }
 local main_quads
