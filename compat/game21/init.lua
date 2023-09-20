@@ -416,7 +416,7 @@ function public.draw(screen, frametime)
     love.graphics.scale(zoom_factor, zoom_factor)
     camera_shake.apply()
     set_render_stage(8)
-    if game.message_text ~= "" then
+    if game.message_text ~= "" and not public.preview_mode then
         -- text
         -- TODO: offset_color = game.style.get_color(0)  -- black in bw mode
         -- TODO: draw outlines (if not disabled in config)
