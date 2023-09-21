@@ -71,7 +71,9 @@ function events.init(game, public)
             game.restart_first_time = true
         end,
         menu = function()
-            public.death_callback()
+            if public.death_callback then
+                public.death_callback()
+            end
             require("game_handler").stop()
         end,
         message_add = function(event)
