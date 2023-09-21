@@ -191,48 +191,42 @@ function assets.init(persistent_data, headless)
                             for contents, filename in file_iter("Levels", ".json", pack_data) do
                                 local success, level_json = decode_json(contents, filename)
                                 if success then
-                                    local proceed = true
-                                    if pack_data.game_version == 192 then
-                                        proceed = level_json.selectable
+                                    -- make keys have the same name for all versions
+                                    -- get key names
+                                    local key_names = {}
+                                    for key in pairs(level_json) do
+                                        key_names[#key_names + 1] = key
                                     end
-                                    if proceed then
-                                        -- make keys have the same name for all versions
-                                        -- get key names
-                                        local key_names = {}
-                                        for key in pairs(level_json) do
-                                            key_names[#key_names + 1] = key
-                                        end
-                                        -- and then translate them to avoid modifying the table while iterating (which may skip some keys)
-                                        for k = 1, #key_names do
-                                            local key = key_names[k]
-                                            local value = level_json[key]
-                                            local snake_case_key = key:gsub("([a-z])([A-Z])", "%1_%2"):lower()
-                                            snake_case_key = snake_case_key:gsub("multipliers", "mults")
-                                            level_json[snake_case_key] = value
-                                        end
-
-                                        -- default
-                                        level_json.id = level_json.id or "nullId"
-                                        level_json.difficulty_mults = level_json.difficulty_mults or {}
-                                        -- add 1x difficulty mult if it doesn't exist
-                                        local has1 = false
-                                        for k = 1, #level_json.difficulty_mults do
-                                            if level_json.difficulty_mults[k] == 1 then
-                                                has1 = true
-                                                break
-                                            end
-                                        end
-                                        if not has1 then
-                                            level_json.difficulty_mults[#level_json.difficulty_mults + 1] = 1
-                                        end
-                                        -- sort difficulties
-                                        table.sort(level_json.difficulty_mults)
-
-                                        pack_data.levels[level_json.id] = level_json
-                                        pack_data.level_list[#pack_data.level_list + 1] = level_json
-                                        -- ensure original order for same priority levels
-                                        level_json.sort_index = #pack_data.level_list
+                                    -- and then translate them to avoid modifying the table while iterating (which may skip some keys)
+                                    for k = 1, #key_names do
+                                        local key = key_names[k]
+                                        local value = level_json[key]
+                                        local snake_case_key = key:gsub("([a-z])([A-Z])", "%1_%2"):lower()
+                                        snake_case_key = snake_case_key:gsub("multipliers", "mults")
+                                        level_json[snake_case_key] = value
                                     end
+
+                                    -- default
+                                    level_json.id = level_json.id or "nullId"
+                                    level_json.difficulty_mults = level_json.difficulty_mults or {}
+                                    -- add 1x difficulty mult if it doesn't exist
+                                    local has1 = false
+                                    for k = 1, #level_json.difficulty_mults do
+                                        if level_json.difficulty_mults[k] == 1 then
+                                            has1 = true
+                                            break
+                                        end
+                                    end
+                                    if not has1 then
+                                        level_json.difficulty_mults[#level_json.difficulty_mults + 1] = 1
+                                    end
+                                    -- sort difficulties
+                                    table.sort(level_json.difficulty_mults)
+
+                                    pack_data.levels[level_json.id] = level_json
+                                    pack_data.level_list[#pack_data.level_list + 1] = level_json
+                                    -- ensure original order for same priority levels
+                                    level_json.sort_index = #pack_data.level_list
                                 else
                                     log("Failed to parse level json:", filename)
                                 end
@@ -280,14 +274,20 @@ function assets.init(persistent_data, headless)
                             for k = 1, #pack_data.level_list do
                                 local level = pack_data.level_list[k]
                                 level.sort_index = nil
-                                data.register_level(
-                                    pack_data.id,
-                                    level.id,
-                                    level.name,
-                                    level.author,
-                                    level.description,
-                                    { difficulty_mult = level.difficulty_mults }
-                                )
+                                local proceed = true
+                                if pack_data.game_version == 192 then
+                                    proceed = level.selectable
+                                end
+                                if proceed then
+                                    data.register_level(
+                                        pack_data.id,
+                                        level.id,
+                                        level.name,
+                                        level.author,
+                                        level.description,
+                                        { difficulty_mult = level.difficulty_mults }
+                                    )
+                                end
                             end
                         else
                             log("Pack with id '" .. pack_data.id .. "' has unsatisfied dependencies!")

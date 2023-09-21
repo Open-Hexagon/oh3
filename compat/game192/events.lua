@@ -67,7 +67,7 @@ function events.init(game, public)
     event_executors = {
         level_change = function(event)
             game.status.must_restart = true
-            game.restart_id = game.pack.folder .. "_" .. event.id:match("/(.*)"):match("/(.*)")
+            game.restart_id = event.id:match("/(.*)"):match("/(.*)")
             game.restart_first_time = true
         end,
         menu = function()
