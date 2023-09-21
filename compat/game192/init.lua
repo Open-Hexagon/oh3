@@ -478,7 +478,7 @@ function public.draw(screen)
     -- message and flash shouldn't be affected by skew/rotation
     love.graphics.origin()
     love.graphics.scale(zoom_factor, zoom_factor)
-    if game.message_text ~= nil and not public.preview_mode then
+    if game.message_text ~= nil and (not public.preview_mode or game.config.get("background_preview_has_text")) then
         local function draw_text(ox, oy)
             love.graphics.print(
                 game.message_text,
