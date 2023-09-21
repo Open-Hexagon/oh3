@@ -149,6 +149,24 @@ function shader_compat.translate(code, filename)
     }
 end
 
+local function compile_with_es_strictness(code0, code1)
+    local status, message
+    if code1 then
+        status, message = love.graphics.validateShader(true, code1, code0)
+    else
+        status, message = love.graphics.validateShader(true, code0)
+    end
+    if status then
+        if code1 then
+            return love.graphics.newShader(code0, code1)
+        else
+            return love.graphics.newShader(code0)
+        end
+    else
+        error(message)
+    end
+end
+
 ---this function compiles a shader to work with the new rendering techniques used in this compat mode
 ---@param new_code any
 ---@param code any
@@ -157,11 +175,11 @@ end
 function shader_compat.compile(new_code, code, filename)
     local result
     xpcall(function()
-        local shader = love.graphics.newShader(new_code)
+        local shader = compile_with_es_strictness(new_code)
         -- compile the shader a second time but with 3d layer offset instance code
         -- (since we don't know where the shader will be used yet and we don't wanted
         -- to slow down the game with runtime compilation)
-        local instance_shader = love.graphics.newShader(
+        local instance_shader = compile_with_es_strictness(
             [[
                 attribute vec2 instance_position;
                 attribute vec4 instance_color;
@@ -201,7 +219,7 @@ function shader_compat.compile(new_code, code, filename)
             uniforms = uniforms,
             shader = shader,
             instance_shader = instance_shader,
-            text_shader = love.graphics.newShader("#define TEXT\n" .. new_code),
+            text_shader = compile_with_es_strictness("#define TEXT\n" .. new_code),
         }
     end, function(msg)
         log("Failed compiling shader: '" .. filename .. "':\n" .. msg)

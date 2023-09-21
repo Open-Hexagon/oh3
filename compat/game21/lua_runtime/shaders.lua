@@ -41,8 +41,12 @@ return function(game, assets)
         if args.headless then
             return false
         end
-        if id < 0 or id > #shaders then
+        if id > #shaders then
             lua_runtime.error("Invalid shader id: '" .. id .. "'")
+            return false
+        end
+        if id < 0 then
+            -- don't print here so compilation errors are still visible
             return false
         end
         return true
