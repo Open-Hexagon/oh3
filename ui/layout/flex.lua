@@ -73,12 +73,13 @@ function flex:mutated()
 end
 
 ---send an event for the children to process (returns true if propagation should be stopped)
+---@param transform love.Transform
 ---@param name string
 ---@param ... unknown
 ---@return boolean?
-function flex:process_event(name, ...)
+function flex:process_event(transform, name, ...)
     for i = 1, #self.elements do
-        if self.elements[i]:process_event(name, ...) then
+        if self.elements[i]:process_event(transform, name, ...) then
             return true
         end
     end
