@@ -38,13 +38,11 @@ end
 function toggle:calculate_element_layout()
     -- max and min size is the same, so available area doesn't matter here at all
     local radius = self.radius * self.scale
-    local padding = self.padding * 2 * self.scale
-    return radius * 4 + padding, radius * 2 + padding
+    return radius * 4, radius * 2
 end
 
-function toggle:draw()
+function toggle:draw_element()
     local radius = self.radius * self.scale
-    local padding = self.padding * self.scale
     if self.state then
         -- TODO: replace temporary indicator color
         love.graphics.setColor(0.5, 0.5, 1, 1)
@@ -52,35 +50,17 @@ function toggle:draw()
         love.graphics.setColor(self.background_color)
     end
     local segments = 100
-    love.graphics.circle("fill", self.bounds[1] + padding + radius, self.bounds[2] + padding + radius, radius, segments)
-    love.graphics.circle(
-        "fill",
-        self.bounds[1] + padding + 3 * radius,
-        self.bounds[2] + padding + radius,
-        radius,
-        segments
-    )
-    love.graphics.rectangle("fill", self.bounds[1] + padding + radius, self.bounds[2] + padding, 2 * radius, 2 * radius)
+    love.graphics.circle("fill", radius, radius, radius, segments)
+    love.graphics.circle("fill", 3 * radius, radius, radius, segments)
+    love.graphics.rectangle("fill", radius, 0, 2 * radius, 2 * radius)
     love.graphics.setColor(self.color)
-    love.graphics.circle(
-        "fill",
-        self.bounds[1] + padding + radius + self.state_indicator_offset() * self.scale,
-        self.bounds[2] + padding + radius,
-        radius,
-        segments
-    )
+    love.graphics.circle("fill", radius + self.state_indicator_offset() * self.scale, radius, radius, segments)
     if self.selected then
         -- TODO: add select border width option
         love.graphics.setLineWidth(self.scale)
         -- TODO: replace temporary selection color
         love.graphics.setColor(0, 0, 1, 1)
-        love.graphics.circle(
-            "line",
-            self.bounds[1] + padding + radius + self.state_indicator_offset() * self.scale,
-            self.bounds[2] + padding + radius,
-            radius,
-            segments
-        )
+        love.graphics.circle("line", radius + self.state_indicator_offset() * self.scale, radius, radius, segments)
     end
 end
 

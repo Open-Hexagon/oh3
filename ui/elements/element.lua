@@ -23,6 +23,8 @@ function element:new(options)
     self.height = 0
     self.transform = love.math.newTransform()
     self._transform = love.math.newTransform()
+    self.local_mouse_x = 0
+    self.local_mouse_y = 0
     if options.style then
         self:set_style(options.style)
     end
@@ -51,7 +53,11 @@ function element:calculate_layout(width, height)
     self.last_available_width = width
     self.last_available_height = height
     if self.calculate_element_layout then
-        self.width, self.height = self:calculate_element_layout(width, height)
+        -- * 2 as padding is added on both sides
+        local padding = self.padding * self.scale * 2
+        self.width, self.height = self:calculate_element_layout(width - padding, height - padding)
+        self.width = self.width + padding
+        self.height = self.height + padding
     else
         log("Element has no calculate_element_layout function?")
     end
@@ -118,6 +124,7 @@ function element:process_event(transform, name, ...)
 
     if name == "mousemoved" or name == "mousepressed" or name == "mousereleased" then
         local x, y = ...
+        self.local_mouse_x, self.local_mouse_y = global_to_element_space(x, y)
         self.is_mouse_over = contains(x, y)
         if name == "mousereleased" and self.selectable then
             if self.selected ~= self.is_mouse_over then
@@ -147,6 +154,17 @@ function element:process_event(transform, name, ...)
             end
         end
     end
+end
+
+---draw the element
+function element:draw()
+    love.graphics.push()
+    love.graphics.applyTransform(self._transform)
+    love.graphics.applyTransform(self.transform)
+    local padding = self.padding * self.scale
+    love.graphics.translate(padding, padding)
+    self:draw_element()
+    love.graphics.pop()
 end
 
 return element

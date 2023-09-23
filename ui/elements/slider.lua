@@ -23,8 +23,8 @@ function slider:new(options)
     return obj
 end
 
-function slider:process_event(name, ...)
-    element.process_event(self, name, ...)
+function slider:process_event(transform, name, ...)
+    element.process_event(self, transform, name, ...)
     local last_state = self.state
     if name == "wheelmoved" and self.is_mouse_over and self:check_screen() then
         self.selected = true
@@ -38,10 +38,7 @@ function slider:process_event(name, ...)
         self.state = extmath.clamp(self.state - direction, 0, self.steps)
     end
     if (name == "mousemoved" or name == "mousepressed") and self.is_mouse_over and love.mouse.isDown(1) then
-        local x = ...
-        self.state = math.floor(
-            (x - self.bounds[1] - (self.padding + self.radius) * self.scale) / (self.step_size * self.scale) + 0.5
-        )
+        self.state = math.floor((self.local_mouse_x - self.radius * self.scale) / (self.step_size * self.scale) + 0.5)
         self.state = extmath.clamp(self.state, 0, self.steps)
     end
     if name == "keypressed" and self.selected then
@@ -66,19 +63,17 @@ end
 
 function slider:calculate_element_layout()
     -- max and min size is the same, so available area doesn't matter here at all
-    local padding = 2 * self.padding * self.scale
     local diameter = self.radius * 2 * self.scale
-    local width = self.steps * self.step_size * self.scale + diameter + padding
-    local height = diameter + padding
+    local width = self.steps * self.step_size * self.scale + diameter
+    local height = diameter
     return width, height
 end
 
-function slider:draw()
-    local padding = self.padding * self.scale
+function slider:draw_element()
     local radius = self.radius * self.scale
     local inner_radius = radius * 0.5
-    local x = self.bounds[1] + padding + radius
-    local y = self.bounds[2] + padding + radius
+    local x = radius
+    local y = radius
     local inner_width = self.steps * self.step_size * self.scale
     local segments = 100
     love.graphics.setColor(self.background_color)
