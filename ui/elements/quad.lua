@@ -84,7 +84,16 @@ function quad:calculate_element_layout(available_width, available_height)
     local height = available_height - bot - top
     if self.element then
         if self.flex_expand then
-            self.element:calculate_layout(width, height)
+            local res_width, res_height = self.element:calculate_layout(width, height)
+            width = math.max(width, res_width)
+            height = math.max(height, res_height)
+            if self.flex_expand == 1 then
+                -- only expand in width
+                height = res_height
+            elseif self.flex_expand == 2 then
+                -- only expand in height
+                width = res_width
+            end
         else
             width, height = self.element:calculate_layout(width, height)
         end

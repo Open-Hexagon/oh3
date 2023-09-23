@@ -143,7 +143,7 @@ function flex:calculate_layout(width, height)
     end
     if self.align_items == "stretch" then
         for i = 1, #self.elements do
-            self.elements[i].flex_expand = true
+            self.elements[i].flex_expand = self.direction == "row" and 2 or 1
         end
     end
     local final_thickness = 0
