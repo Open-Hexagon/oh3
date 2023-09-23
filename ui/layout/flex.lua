@@ -353,3 +353,5 @@ function flex:draw()
     end
     love.graphics.pop()
 end
+
+return flex
