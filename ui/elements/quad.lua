@@ -75,15 +75,14 @@ function quad:calculate_element_layout(available_width, available_height)
     local bot = math.max(vertex_offsets[6], vertex_offsets[8])
     local left = math.max(vertex_offsets[1], vertex_offsets[7])
     local right = math.max(vertex_offsets[3], vertex_offsets[5])
-    local new_width = available_width - right - left
-    local new_height = available_height - bot - top
-    local width, height
+    local width = available_width - right - left
+    local height = available_height - bot - top
     if self.element then
-        width, height = self.element:calculate_layout(new_width, new_height)
-    end
-    if self.flex_expand then
-        width = new_width
-        height = new_height
+        if self.flex_expand then
+            self.element:calculate_layout(width, height)
+        else
+            width, height = self.element:calculate_layout(width, height)
+        end
     end
     self.vertices[1] = left - vertex_offsets[1]
     self.vertices[2] = top - vertex_offsets[2]

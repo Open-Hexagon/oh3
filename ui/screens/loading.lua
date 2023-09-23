@@ -34,13 +34,13 @@ local root = flex:new({
 
 channel_callbacks.register("asset_loading_text", function(text)
     bar_label.raw_text = text
-    root:calculate_layout()
+    bar_label.parent:mutated()
 end)
 
 channel_callbacks.register("asset_loading_progress", function(progress)
     bar.size_ratios[1] = progress
     bar.size_ratios[2] = 1 - progress
-    bar:calculate_layout()
+    root:mutated()
 end)
 
 return root

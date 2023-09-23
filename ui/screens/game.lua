@@ -68,7 +68,7 @@ game_handler.onupdate = function()
         score_str = score_str .. ".000"
     end
     timer.element.raw_text = score_str
-    timer:calculate_layout()
+    timer:calculate_layout(timer.last_available_width)
     -- show death screen when dead
     if game_handler.is_dead() then
         if game_handler.is_replaying() then
