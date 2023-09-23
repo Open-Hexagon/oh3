@@ -1,7 +1,3 @@
-local signal = require("ui.anim.signal")
-local ease = require("ui.anim.ease")
-local point_in_polygon = require("ui.extmath").point_in_polygon
-local SCROLL_THRESHOLD = 10
 local flex = {}
 flex.__index = flex
 
@@ -12,32 +8,28 @@ flex.__index = flex
 function flex:new(elements, options)
     options = options or {}
     local obj = setmetatable({
+        -- direction the flex container will position elements in
         direction = options.direction or "row",
+        -- size ratios of the elements, length has to be identical to elements list
         size_ratios = options.size_ratios,
+        -- aligns items on the container's thickness (values are "start", "stretch", "center" and "end")
         align_items = options.align_items or "start",
+        -- set if aligning happens relative to given "area" or to total "thickness"
         align_relative_to = options.align_relative_to or "area",
         elements = elements,
         scale = 1,
-        scrollable = options.scrollable or false,
-        needs_scroll = false,
-        last_scroll_value = 0,
-        scroll_target = 0,
-        scroll = signal.new_queue(0),
-        max_scroll = 0,
-        external_scroll_offset = { 0, 0 },
-        own_scroll_offset = { 0, 0 },
-        scrollbar_visibility_timer = 0,
-        scrollbar_vanish = true,
-        scrollbar_color = { 1, 1, 1, 1 },
-        scrollbar_width = 10,
-        scrollbar_area = { x = 0, y = 0, width = 0, height = 0 },
-        scrollbar_grabbed = false,
-        scroll_velocity = 0,
-        last_mouse_pos = { 0, 0 },
-        bounds = {},
-        last_available_area = { x = 0, y = 0, width = 0, height = 0 },
+        style = {},
+        -- transform the user can modify
+        transform = love.math.newTransform(),
+        -- transform used for internal layouting (user transform is applied on it during the layout calculation process)
+        _transform = love.math.newTransform(),
+        -- store last available area in order to only recalculate this container's layout in response to mutation
+        last_available_width = 0,
+        last_available_height = 0,
+        -- last resulting width and height
+        width = 0,
+        height = 0,
     }, flex)
-    obj.scroll:persist()
     for i = 1, #elements do
         elements[i].parent = obj
         elements[i].parent_index = i
@@ -54,9 +46,7 @@ function flex:set_style(style)
     for i = 1, #self.elements do
         self.elements[i]:set_style(style)
     end
-    self.scrollbar_vanish = style.scrollbar_vanish or self.scrollbar_vanish
-    self.scrollbar_color = style.scrollbar_color or self.scrollbar_color
-    self.scrollbar_width = style.scrollbar_width or self.scrollbar_width
+    self.style = style
 end
 
 ---set the gui scale of all elements in the flex container
@@ -68,459 +58,277 @@ function flex:set_scale(scale)
     self.scale = scale
 end
 
-local function clamp_scroll_target(self)
-    if self.scroll_target > self.max_scroll then
-        self.scroll_target = self.max_scroll
-    elseif self.scroll_target < 0 then
-        self.scroll_target = 0
-    end
-end
-
-local function get_rect_bounds(bounds)
-    local minmax = { math.huge, math.huge, -math.huge, -math.huge }
-    for i = 1, #bounds, 2 do
-        minmax[1] = math.min(bounds[i], minmax[1])
-        minmax[2] = math.min(bounds[i + 1], minmax[2])
-        minmax[3] = math.max(bounds[i], minmax[3])
-        minmax[4] = math.max(bounds[i + 1], minmax[4])
-    end
-    return minmax
-end
-
----scroll some bounds from this container into view
----@param bounds table
----@param instant boolean
-function flex:scroll_into_view(bounds, instant)
-    local minmax = get_rect_bounds(bounds)
-    if self.needs_scroll then
-        local scroll_before = self.scroll_target
-        if self.direction == "row" then
-            local visual_width = self.canvas:getWidth()
-            if self.scroll_target + self.bounds[1] > minmax[1] then
-                self.scroll_target = minmax[1] - self.bounds[1]
-            elseif self.scroll_target + visual_width + self.bounds[1] < minmax[3] then
-                self.scroll_target = minmax[3] - visual_width - self.bounds[1]
-            end
-        elseif self.direction == "column" then
-            local visual_height = self.canvas:getHeight()
-            if self.scroll_target + self.bounds[2] > minmax[2] then
-                self.scroll_target = minmax[2] - self.bounds[2]
-            elseif self.scroll_target + visual_height + self.bounds[2] < minmax[4] then
-                self.scroll_target = minmax[4] - visual_height - self.bounds[2]
-            end
-        end
-        clamp_scroll_target(self)
-        if scroll_before ~= self.scroll_target then
-            self.scroll:stop()
-            if instant then
-                self.scroll:set_immediate_value(self.scroll_target)
-            else
-                self.scroll:keyframe(0.2, self.scroll_target)
-            end
-            self.scrollbar_visibility_timer = love.timer.getTime()
+---update the container when a child element changed size or when elements were added or removed
+function flex:mutated()
+    for i = 1, #self.elements do
+        local element = self.elements[i]
+        if element.parent_index ~= i or element.parent ~= self then
+            element.parent = self
+            element.parent_index = i
+            element:set_scale(self.scale)
+            element:set_style(self.style)
         end
     end
+    self:calculate_layout(self.last_available_width, self.last_available_height)
 end
 
-local function point_in_scrollbar(self, x, y)
-    return x >= self.scrollbar_area.x
-        and y >= self.scrollbar_area.y
-        and x <= self.scrollbar_area.x + self.scrollbar_area.width
-        and y <= self.scrollbar_area.y + self.scrollbar_area.height
-end
-
----have all children process an event
+---send an event for the children to process (returns true if propagation should be stopped)
 ---@param name string
 ---@param ... unknown
+---@return boolean?
 function flex:process_event(name, ...)
-    if flex.scrolled_already == nil then
-        flex.scrolled_already = false
-    end
-    local propagate = true
-    if name == "mousepressed" then
-        local x, y = ...
-        if point_in_scrollbar(self, x, y) then
-            propagate = false
-            self.scrollbar_grabbed = true
-        end
-        self.last_mouse_pos[1], self.last_mouse_pos[2] = x, y
-    end
-    if name == "mousereleased" then
-        if self.last_finger then
-            propagate = false
-            self.scroll:stop()
-            self.scroll_target = self.scroll() + self.scroll_velocity * 10
-            clamp_scroll_target(self)
-            self.scroll:keyframe(0.3, self.scroll_target, ease.out_sine)
-        end
-        if self.scrollbar_grabbed then
-            propagate = false
-        end
-        self.last_finger = nil
-        self.last_finger_x = nil
-        self.last_finger_y = nil
-        self.first_touch_pos = nil
-        self.scrollbar_grabbed = false
-    end
-    if propagate then
-        for i = 1, #self.elements do
-            if self.elements[i]:process_event(name, ...) then
-                return true
-            end
-        end
-    end
-    if name == "touchmoved" and self.needs_scroll and not self.scrollbar_grabbed and not flex.scrolled_already then
-        local finger, x, y = ...
-        if not self.first_touch_pos then
-            self.first_touch_pos = { x, y }
-        end
-        if
-            point_in_polygon(self.bounds, x + self.external_scroll_offset[1], y + self.external_scroll_offset[2])
-            and (
-                math.abs(x - self.first_touch_pos[1]) > SCROLL_THRESHOLD
-                or math.abs(y - self.first_touch_pos[2]) > SCROLL_THRESHOLD
-            )
-        then
-            if finger == self.last_finger then
-                local dx = x - self.last_finger_x
-                local dy = y - self.last_finger_y
-                if self.direction == "row" then
-                    self.scroll_target = self.scroll_target - dx
-                    self.scroll_velocity = -dx
-                elseif self.direction == "column" then
-                    self.scroll_target = self.scroll_target - dy
-                    self.scroll_velocity = -dy
-                end
-                flex.scrolled_already = true
-                self.scrollbar_visibility_timer = love.timer.getTime()
-                clamp_scroll_target(self)
-                self.scroll:stop()
-                self.scroll:set_immediate_value(self.scroll_target)
-            end
-            self.last_finger = finger
-            self.last_finger_x = x
-            self.last_finger_y = y
-        end
-    elseif name == "touchmoved" then
-        self.last_finger = nil
-    end
-    if name == "mousemoved" and self.needs_scroll then
-        local x, y = ...
-        if self.scrollbar_grabbed and not flex.scrolled_already then
-            local dx = x - self.last_mouse_pos[1]
-            local dy = y - self.last_mouse_pos[2]
-            if self.direction == "row" then
-                local max_move = self.canvas:getWidth() - self.scrollbar_area.width
-                self.scroll_target = self.scroll_target + dx * self.max_scroll / max_move
-            elseif self.direction == "column" then
-                local max_move = self.canvas:getHeight() - self.scrollbar_area.height
-                self.scroll_target = self.scroll_target + dy * self.max_scroll / max_move
-            end
-            flex.scrolled_already = true
-            self.scrollbar_visibility_timer = love.timer.getTime()
-            clamp_scroll_target(self)
-            self.scroll:stop()
-            self.scroll:set_immediate_value(self.scroll_target)
-        elseif point_in_scrollbar(self, x, y) then
-            self.scrollbar_visibility_timer = love.timer.getTime()
-        end
-        self.last_mouse_pos[1], self.last_mouse_pos[2] = ...
-    end
-    if name == "wheelmoved" and self.needs_scroll and not flex.scrolled_already then
-        local x, y = love.mouse.getPosition()
-        if point_in_polygon(self.bounds, x + self.external_scroll_offset[1], y + self.external_scroll_offset[2]) then
-            local _, direction = ...
-            self.scroll_target = self.scroll_target - 30 * direction
-            flex.scrolled_already = true
-            self.scrollbar_visibility_timer = love.timer.getTime()
-            clamp_scroll_target(self)
-            self.scroll:stop()
-            self.scroll:keyframe(0.1, self.scroll_target)
-        end
-    end
-end
-
-local function update_scrollbar_area(self)
-    local normalized_scroll = self.scroll() / self.max_scroll
-    local bar_width = math.floor(self.scrollbar_width * self.scale)
-    local x = self.bounds[1] - self.external_scroll_offset[1]
-    local y = self.bounds[2] - self.external_scroll_offset[2]
-    if self.direction == "row" then
-        local visible_width = self.canvas:getWidth()
-        local scrollbar_size = visible_width ^ 2 / (visible_width + self.max_scroll)
-        local max_move = visible_width - scrollbar_size
-        self.scrollbar_area.x = normalized_scroll * max_move + x
-        self.scrollbar_area.y = self.canvas:getHeight() - bar_width + y
-        self.scrollbar_area.width = scrollbar_size
-        self.scrollbar_area.height = bar_width
-        self.own_scroll_offset[1] = self.scroll()
-    elseif self.direction == "column" then
-        local visible_height = self.canvas:getHeight()
-        local scrollbar_size = visible_height ^ 2 / (visible_height + self.max_scroll)
-        local max_move = visible_height - scrollbar_size
-        self.scrollbar_area.x = self.canvas:getWidth() - bar_width + x
-        self.scrollbar_area.y = normalized_scroll * max_move + y
-        self.scrollbar_area.width = bar_width
-        self.scrollbar_area.height = scrollbar_size
-        self.own_scroll_offset[2] = self.scroll()
-    end
-end
-
----set scroll offset for this and child elements
----@param scroll_offset any
-function flex:set_scroll_offset(scroll_offset)
-    scroll_offset = scroll_offset or self.external_scroll_offset
-    self.external_scroll_offset = scroll_offset
-    local new_scroll_offset = { unpack(scroll_offset) }
-    for i = 1, 2 do
-        new_scroll_offset[i] = new_scroll_offset[i] + self.own_scroll_offset[i]
-    end
     for i = 1, #self.elements do
-        self.elements[i]:set_scroll_offset(new_scroll_offset)
-    end
-    if self.needs_scroll then
-        update_scrollbar_area(self)
+        if self.elements[i]:process_event(name, ...) then
+            return true
+        end
     end
 end
 
 ---calculate the positions and size of the elements in the container (returns total width and height)
----@param available_area table
+---@param width number
+---@param height number
 ---@return number
 ---@return number
-function flex:calculate_layout(available_area)
-    available_area = available_area or self.last_available_area
-    for k, v in pairs(available_area) do
-        self.last_available_area[k] = v
-    end
-    local element_area = {
-        x = available_area.x,
-        y = available_area.y,
-        width = available_area.width,
-        height = available_area.height,
-    }
-    local final_width, final_height
-    if self.size_ratios then
-        -- available area is divided according to the given ratios
-        local ratio_sum = 0
-        for i = 1, #self.size_ratios do
-            ratio_sum = ratio_sum + self.size_ratios[i]
+function flex:calculate_layout(width, height)
+    self.last_available_width = width
+    self.last_available_height = height
+    -- define some useful values and functions depending on direction (this prevents cluttering the code with lots of ifs for the direction)
+    local available_length, available_thickness, lt2wh, wh2lt
+    if self.direction == "row" then
+        -- container is a row
+        -- +---+---+---+---+---+ ^
+        -- |   |   |   |   |   | | thickness
+        -- +---+---+---+---+---+ v
+        -- <------------------->
+        --        length
+        available_length = width
+        available_thickness = height
+        --converts length and thickness to width and height (defaults to avalable area)
+        lt2wh = function(length, thickness)
+            return length or available_length, thickness or available_thickness
         end
-        local ratio_size_unit
-        if self.direction == "row" then
-            ratio_size_unit = element_area.width / ratio_sum
-        elseif self.direction == "column" then
-            ratio_size_unit = element_area.height / ratio_sum
-        end
-        local thickness = 0
-        local scale_factor = 1
-        for i = 1, #self.elements do
-            local size = self.size_ratios[i] * ratio_size_unit
-            if self.direction == "row" then
-                element_area.width = size
-            elseif self.direction == "column" then
-                element_area.height = size
-            end
-            local width, height = self.elements[i]:calculate_layout(element_area)
-            if width > element_area.width or height > element_area.height then
-                scale_factor =
-                    math.max(scale_factor, math.max(width / element_area.width, height / element_area.height))
-            end
-            if self.direction == "row" then
-                element_area.x = element_area.x + size
-                thickness = math.max(thickness, height)
-            elseif self.direction == "column" then
-                element_area.y = element_area.y + size
-                thickness = math.max(thickness, width)
-            end
-        end
-        -- check if elements fit in the area and if not provide them with a large still same size area so they barely fit
-        if scale_factor ~= 1 then
-            element_area.x = available_area.x
-            element_area.y = available_area.y
-            thickness = 0
-            for i = 1, #self.elements do
-                local size = self.size_ratios[i] * ratio_size_unit * scale_factor
-                if self.direction == "row" then
-                    element_area.width = size
-                elseif self.direction == "column" then
-                    element_area.height = size
-                end
-                local width, height = self.elements[i]:calculate_layout(element_area)
-                if self.direction == "row" then
-                    element_area.x = element_area.x + size
-                    thickness = math.max(thickness, height)
-                elseif self.direction == "column" then
-                    element_area.y = element_area.y + size
-                    thickness = math.max(thickness, width)
-                end
-            end
-        end
-        if self.direction == "row" then
-            final_width = element_area.x - available_area.x
-            final_height = thickness
-        elseif self.direction == "column" then
-            final_width = thickness
-            final_height = element_area.y - available_area.y
+        --converts witdth and height to length and thickness
+        wh2lt = function(w, h)
+            return w, h
         end
     else
-        -- calculate the total and individual size of all elements (in flex direction)
-        local sizes = {}
-        local total_size = 0
-        local x = element_area.x
-        local y = element_area.y
-        local thickness = 0
-        for i = 1, #self.elements do
-            local width, height = self.elements[i]:calculate_layout(element_area)
-            if self.direction == "row" then
-                element_area.x = element_area.x + width
-                sizes[i] = width
-                total_size = total_size + width
-                thickness = math.max(thickness, height)
-            elseif self.direction == "column" then
-                element_area.y = element_area.y + height
-                sizes[i] = height
-                total_size = total_size + height
-                thickness = math.max(thickness, width)
-            end
+        -- container is a column
+        -- +---+ ^
+        -- |   | |
+        -- +---+ |
+        -- |   | |
+        -- +---+ |
+        -- |   | | length
+        -- +---+ |
+        -- |   | |
+        -- +---+ |
+        -- |   | |
+        -- +---+ v
+        -- <--->
+        --  thickness
+        available_thickness = width
+        available_length = height
+        --converts length and thickness to width and height (defaults to avalable area)
+        lt2wh = function(length, thickness)
+            return thickness or available_thickness, length or available_length
         end
-        local target_size, target_property
-        if self.direction == "row" then
-            target_size = available_area.width
-            target_property = "width"
-        elseif self.direction == "column" then
-            target_size = available_area.height
-            target_property = "height"
-        end
-        -- if the total size of all elements is too big then scale down each individual area calculated in the last step and give it to the element as available area (this way the ratio between element sizes is preserved)
-        -- however if some elements do not fit in the downscaled area, adjust the factor accordingly and try again until it either fits or all elements can't become smaller anymore
-        if total_size > target_size and not self.scrollable then
-            local too_large_elems = {}
-            local last_too_large_elems = {}
-            local must_stop = false
-            local original_total_size = total_size
-            repeat
-                local taken = 0
-                for i = 1, #too_large_elems do
-                    taken = taken + too_large_elems[i]
-                end
-                if taken > target_size then
-                    break
-                end
-                element_area.x = x
-                element_area.y = y
-                thickness = 0
-                local factor = (target_size - taken) / (original_total_size - taken)
-                too_large_elems = {}
-                total_size = 0
-                for i = 1, #sizes do
-                    local target_elem_size = sizes[i] * factor
-                    element_area[target_property] = target_elem_size
-                    local width, height = self.elements[i]:calculate_layout(element_area)
-                    local size
-                    if self.direction == "row" then
-                        element_area.x = element_area.x + width
-                        size = width
-                        thickness = math.max(thickness, height)
-                    elseif self.direction == "column" then
-                        element_area.y = element_area.y + height
-                        size = height
-                        thickness = math.max(thickness, width)
-                    end
-                    total_size = total_size + size
-                    if size > target_elem_size then
-                        too_large_elems[#too_large_elems + 1] = size
-                    else
-                        too_large_elems[#too_large_elems + 1] = 0
-                    end
-                end
-                -- stop if no progress is being made
-                must_stop = true
-                for i = 1, #too_large_elems do
-                    if too_large_elems[i] ~= last_too_large_elems[i] then
-                        must_stop = false
-                    end
-                    last_too_large_elems[i] = too_large_elems[i]
-                end
-            until total_size <= target_size or must_stop
-        end
-        if self.direction == "row" then
-            final_width = element_area.x - x
-            final_height = thickness
-        elseif self.direction == "column" then
-            final_width = thickness
-            final_height = element_area.y - y
-        end
-    end
-    if self.align_relative_to ~= "area" and self.align_relative_to ~= "thickness" then
-        error("Invalid value for align_relative_to: '" .. self.align_relative_to .. "'.")
-    end
-    if self.align_items ~= "start" then
-        if self.align_relative_to == "area" then
-            for i = 1, #self.elements do
-                local elem = self.elements[i]
-                if self.direction == "row" then
-                    final_height = math.max(elem.last_available_area.height, final_height)
-                elseif self.direction == "column" then
-                    final_width = math.max(elem.last_available_area.width, final_width)
-                end
-            end
-        end
-        for i = 1, #self.elements do
-            local elem = self.elements[i]
-            if self.direction == "row" then
-                elem.last_available_area.height = final_height
-            elseif self.direction == "column" then
-                elem.last_available_area.width = final_width
-            end
+        --converts witdth and height to length and thickness
+        wh2lt = function(w, h)
+            return h, w
         end
     end
     if self.align_items == "stretch" then
         for i = 1, #self.elements do
-            local elem = self.elements[i]
-            if self.direction == "row" then
-                if self.elements[i + 1] then
-                    elem.last_available_area.width = self.elements[i + 1].last_available_area.x
-                        - elem.last_available_area.x
-                else
-                    elem.last_available_area.width = available_area.x + final_width - elem.last_available_area.x
-                end
-            elseif self.direction == "column" then
-                if self.elements[i + 1] then
-                    elem.last_available_area.height = self.elements[i + 1].last_available_area.y
-                        - elem.last_available_area.y
-                else
-                    elem.last_available_area.height = available_area.y + final_height - elem.last_available_area.y
-                end
+            self.elements[i].flex_expand = true
+        end
+    end
+    local final_thickness = 0
+    local final_length = 0
+    if self.size_ratios then
+        -- available length is divided according to the given ratios
+        -- e.g. this would be the result of this table: {1, 2, 1}
+        -- +---+-------+---+
+        -- | 1 |   2   | 1 |
+        -- +---+-------+---+
+        local ratio_sum = 0
+        for i = 1, #self.size_ratios do
+            ratio_sum = ratio_sum + self.size_ratios[i]
+        end
+        -- ratio_size_unit * ratio number in list = size of element (in length)
+        local ratio_size_unit = available_length / ratio_sum
+        local scale_factor = 1
+        local length = 0
+        local thickness = 0
+        for i = 1, #self.elements do
+            local size = self.size_ratios[i] * ratio_size_unit
+            local len, thick = wh2lt(self.elements[i]:calculate_layout(lt2wh(size)))
+            if len > size or thick > available_thickness then
+                scale_factor = math.max(scale_factor, math.max(len / size, thick / available_thickness))
             end
-            elem.flex_expand = true
-            elem:calculate_layout()
-            elem.flex_expand = nil
+            local transform = self.elements[i]._transform
+            transform:reset()
+            transform:translate(lt2wh(length, 0))
+            length = length + size
+            thickness = math.max(thickness, thick)
+        end
+        -- check if elements fit in the area
+        if scale_factor ~= 1 then
+            -- they don't fit, return larger area causing the gui scale to lower
+            return width * scale_factor, height * scale_factor
+        end
+        final_length = length
+        final_thickness = thickness
+    else
+        -- calculate the total and individual size of all elements (in flex direction)
+        local sizes = {}
+        local length = 0
+        local thickness = 0
+        for i = 1, #self.elements do
+            -- give every element the whole area of the container and see how much space they take for now
+            local len, thick = wh2lt(self.elements[i]:calculate_layout(lt2wh()))
+            -- transform the element to its position
+            local transform = self.elements[i]._transform
+            transform:reset()
+            transform:translate(lt2wh(length, 0))
+            -- store the space it took
+            sizes[i] = len
+            -- add the space to the total space
+            length = length + len
+            thickness = math.max(thickness, thick)
+        end
+        if length > available_length then
+            -- All elements together take too much size.
+            -- possible output from the first step:
+            -- +-----+----------+
+            -- |     |          |
+            -- +-----+----------+
+            -- <---->
+            --  available length
+            local new_sizes = {}
+            local last_sizes = {}
+            for i = 1, #sizes do
+                last_sizes[i] = sizes[i]
+            end
+            local too_large_set = {}
+            local must_stop = false
+            local original_length = length
+            repeat
+                -- calculate the total length of all elements that can no longer shrink (this is 0 for the first iteration)
+                local taken = 0
+                -- also calculate the amount of space that these elements took in the original attempt
+                local original_taken = 0
+                for i = 1, #new_sizes do
+                    if new_sizes[i] ~= 0 or new_sizes[i] == sizes[i] then
+                        taken = taken + new_sizes[i]
+                        original_taken = original_taken + sizes[i]
+                    end
+                end
+                -- if all elements can no longer shrink and still don't fit abort (gui scale will be lowered)
+                if taken > available_length then
+                    break
+                end
+                -- calculate a factor for scaling down each elements size so it barely fits
+                -- if all elements manage to shrink the result from the above example would look like this:
+                -- +-+--+
+                -- | |  |
+                -- +-+--+
+                -- if some couldn't shrink in the last iteration then only scale down the remaining elements
+                -- +--+--+
+                -- |  |  | < this one must be scaled down more accordingly
+                -- +--+--+                                               +-+
+                --  ^                                                    | |
+                --  couldn't shrink to fit in the prior calculated area: +-+
+                --
+                -- the scale factor is calculated like this like this:
+                --   available_length - taken = now available length to fit all possibly shrinkable elements
+                --   original_length - original_taken = total length the now possibly shrinkable elements took in the first attempt
+                --   (original_length - original_taken) * factor = available_length - taken
+                local factor = (available_length - taken) / (original_length - original_taken)
+                thickness = 0
+                length = 0
+                for i = 1, #sizes do
+                    local len, thick = wh2lt(self.elements[i].width, self.elements[i].height)
+                    local target_length = sizes[i] * factor
+                    -- only recalculate possibly shrinkable element layouts
+                    if not too_large_set[i] then
+                        len, thick = wh2lt(self.elements[i]:calculate_layout(lt2wh(target_length)))
+                    end
+                    if len > target_length then
+                        too_large_set[i] = true
+                        new_sizes[i] = len
+                    else
+                        -- keep array dimensions and order consistent
+                        new_sizes[i] = 0
+                    end
+                    -- transform the element to its new position
+                    local transform = self.elements[i]._transform
+                    transform:reset()
+                    transform:translate(lt2wh(length, 0))
+                    length = length + len
+                    thickness = math.max(thickness, thick)
+                end
+                -- stop if sizes didn't change from the last iteration
+                must_stop = true
+                for i = 1, #new_sizes do
+                    if new_sizes[i] ~= last_sizes[i] then
+                        must_stop = false
+                        last_sizes[i] = new_sizes[i]
+                    end
+                end
+            until length <= available_length or must_stop
+        end
+        final_length = length
+        final_thickness = thickness
+    end
+
+    -- available area:
+    -- +-----------+
+    -- |           |
+    -- |           |
+    -- |           |
+    -- +-----------+
+    -- without align:
+    -- +---+---+---+
+    -- |   +---+   |
+    -- +---+   |   |
+    -- |       +---+
+    -- +-----------+
+    -- align end relative to area
+    -- +-----------+
+    -- |       +---+
+    -- +---+   |   |
+    -- |   +---+   |
+    -- +---+---+---+
+    -- align end relative to thickness
+    -- +-------+---+
+    -- +---+   |   |
+    -- |   +---+   |
+    -- +---+---+---+
+    -- +-----------+
+    if self.align_relative_to ~= "area" and self.align_relative_to ~= "thickness" then
+        error("Invalid value for align_relative_to: '" .. self.align_relative_to .. "'.")
+    end
+    -- no need to do anything on "start" it's the default
+    if self.align_items ~= "start" then
+        if self.align_relative_to == "area" then
+            final_thickness = math.max(final_thickness, available_thickness)
+        end
+    end
+    if self.align_items == "stretch" then
+        for i = 1, #self.elements do
+            self.elements[i].flex_expand = nil
         end
     elseif self.align_items == "center" then
         for i = 1, #self.elements do
             local elem = self.elements[i]
-            local minmax = get_rect_bounds(elem.bounds)
-            if self.direction == "row" then
-                local empty_space = elem.last_available_area.y + final_height - minmax[4]
-                elem.last_available_area.y = elem.last_available_area.y + empty_space / 2
-            elseif self.direction == "column" then
-                local empty_space = elem.last_available_area.x + final_width - minmax[3]
-                elem.last_available_area.x = elem.last_available_area.x + empty_space / 2
-            end
-            elem:calculate_layout()
+            local _, thick = wh2lt(elem.width, elem.height)
+            elem._transform:translate(lt2wh(0, final_thickness / 2 - thick / 2))
         end
     elseif self.align_items == "end" then
         for i = 1, #self.elements do
             local elem = self.elements[i]
-            local minmax = get_rect_bounds(elem.bounds)
-            if self.direction == "row" then
-                local empty_space = elem.last_available_area.y + final_height - minmax[4]
-                elem.last_available_area.y = elem.last_available_area.y + empty_space
-            elseif self.direction == "column" then
-                local empty_space = elem.last_available_area.x + final_width - minmax[3]
-                elem.last_available_area.x = elem.last_available_area.x + empty_space
-            end
-            elem:calculate_layout()
+            local _, thick = wh2lt(elem.width, elem.height)
+            elem._transform:translate(lt2wh(0, final_thickness / 2 - thick / 2))
         end
     elseif self.align_items ~= "start" then
         error(
@@ -529,112 +337,18 @@ function flex:calculate_layout(available_area)
                 .. "' possible values are: 'start', 'center', 'end' and 'stretch'"
         )
     end
-    self.needs_scroll = false
-    if self.scrollable then
-        if self.direction == "row" then
-            if final_width > available_area.width then
-                self.max_scroll = final_width - available_area.width
-                final_width = available_area.width
-                self.needs_scroll = true
-            end
-        elseif self.direction == "column" then
-            if final_height > available_area.height then
-                self.max_scroll = final_height - available_area.height
-                final_height = available_area.height
-                self.needs_scroll = true
-            end
-        end
-        if
-            not self.is_animating
-            and (not self.canvas or self.canvas:getWidth() ~= final_width or self.canvas:getHeight() ~= final_height)
-        then
-            local width, height = final_width, final_height
-            width = math.max(width, 1)
-            height = math.max(height, 1)
-            self.canvas = love.graphics.newCanvas(width, height, {
-                -- TODO: make configurable
-                msaa = 4,
-            })
-        end
-    end
-    self.bounds = {
-        available_area.x,
-        available_area.y,
-        available_area.x + final_width,
-        available_area.y,
-        available_area.x + final_width,
-        available_area.y + final_height,
-        available_area.x,
-        available_area.y + final_height,
-    }
-    if not self.is_animating then
-        if not self.needs_scroll then
-            self.scroll_target = 0
-            self.scroll:stop()
-            self.scroll:set_immediate_value(0)
-            self.own_scroll_offset = { 0, 0 }
-        end
-        self:set_scroll_offset()
-        if self.needs_scroll then
-            self.scrollbar_visibility_timer = -2
-        end
-    end
-    if self.needs_scroll then
-        clamp_scroll_target(self)
-        self.scroll:stop()
-        self.scroll:keyframe(0.1, self.scroll_target)
-    end
-    return final_width, final_height
+
+    self.width, self.height = lt2wh(final_length, final_thickness)
+    return self.width, self.height
 end
 
 ---draw all the elements in the container
 function flex:draw()
-    if self.needs_scroll then
-        if self.scroll() ~= self.last_scroll_value then
-            update_scrollbar_area(self)
-            self:set_scroll_offset()
-            self.last_scroll_value = self.scroll()
-        end
-        love.graphics.push()
-        local before_canvas = love.graphics.getCanvas()
-        love.graphics.setCanvas(self.canvas)
-        love.graphics.origin()
-        love.graphics.translate(-self.bounds[1], -self.bounds[2])
-        love.graphics.clear(0, 0, 0, 0)
-        if self.direction == "row" then
-            love.graphics.translate(-math.floor(self.scroll()), 0)
-        elseif self.direction == "column" then
-            love.graphics.translate(0, -math.floor(self.scroll()))
-        end
-        for i = 1, #self.elements do
-            self.elements[i]:draw()
-        end
-        love.graphics.setCanvas(before_canvas)
-        love.graphics.pop()
-        love.graphics.setColor(1, 1, 1, 1)
-        love.graphics.draw(self.canvas, self.bounds[1], self.bounds[2])
-        love.graphics.push()
-        love.graphics.origin()
-        if self.scrollbar_vanish then
-            self.scrollbar_color[4] = math.max(1.5 - love.timer.getTime() + self.scrollbar_visibility_timer, 0)
-            if self.scrollbar_color[4] > 1 then
-                self.scrollbar_color[4] = 1
-            end
-        end
-        love.graphics.setColor(self.scrollbar_color)
-        love.graphics.rectangle(
-            "fill",
-            self.scrollbar_area.x,
-            self.scrollbar_area.y,
-            self.scrollbar_area.width,
-            self.scrollbar_area.height
-        )
-        love.graphics.pop()
-    else
-        for i = 1, #self.elements do
-            self.elements[i]:draw()
-        end
+    love.graphics.push()
+    love.graphics.applyTransform(self._transform)
+    love.graphics.applyTransform(self.transform)
+    for i = 1, #self.elements do
+        self.elements[i]:draw()
     end
+    love.graphics.pop()
 end
-
-return flex
