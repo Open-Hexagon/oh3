@@ -8,14 +8,6 @@ local flex = require("ui.layout.flex")
 local make_options_element = require("ui.screens.levelselect.options")
 local make_localscore_element = require("ui.screens.levelselect.score")
 
-local function update_element(self, parent, parent_index, layout)
-    self.parent_index = parent_index
-    self.parent = parent
-    self:set_scale(parent.scale)
-    self:calculate_layout(layout.last_available_area)
-    return self
-end
-
 local pending_promise
 local set_preview_level = async(function(pack, level)
     if config.get("background_preview") then
@@ -82,7 +74,8 @@ return function(state, pack, level, extra_info)
                 if level_element_selected then
                     level_element_selected.background_color = { 0, 0, 0, 0.7 }
                 end
-                state.root.elements[3] = update_element(score, state.root, 3, state.root.elements[3])
+                state.root.elements[3] = score
+                state.root:mutated()
                 level_element_selected = self
                 -- reset options (TODO: make options not be dm specific)
                 state.level_options_selected = { difficulty_mult = 1 }

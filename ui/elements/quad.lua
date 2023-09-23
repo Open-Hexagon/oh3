@@ -50,11 +50,16 @@ end
 ---process an event
 ---@param ... unknown
 function quad:process_event(...)
+    love.graphics.push()
+    love.graphics.applyTransform(self._transform)
+    love.graphics.applyTransform(self.transform)
     if self.element then
         if self.element:process_event(...) then
+            love.graphics.pop()
             return true
         end
     end
+    love.graphics.pop()
     if element.process_event(self, ...) then
         return true
     end

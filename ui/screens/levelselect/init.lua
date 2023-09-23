@@ -10,7 +10,8 @@ local pack_elems = make_pack_elements(state)
 state.root = flex:new({
     --packs
     flex:new({
-        dropdown:new({ "All Packs", "Favorites" }, { limit_to_inital_width = true, style = { border_thickness = 5 } }),
+        -- dropdowns are broken atm TODO: fix
+        --dropdown:new({ "All Packs", "Favorites" }, { limit_to_inital_width = true, style = { border_thickness = 5 } }),
         flex:new(pack_elems, { direction = "column", align_items = "stretch", scrollable = true }),
     }, { direction = "column", align_items = "stretch" }),
 

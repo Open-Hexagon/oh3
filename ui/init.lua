@@ -68,15 +68,16 @@ end
 ---@param name string
 ---@param ... unknown
 function ui.process_event(name, ...)
+    love.graphics.origin()
     if current_screen then
         if name == "resize" then
             calculate_layout(...)
         end
     end
-    local stop_propagation = overlays.process_event(transform, name, ...)
+    local stop_propagation = overlays.process_event(name, ...)
     if current_screen then
         if not stop_propagation then
-            stop_propagation = current_screen:process_event(transform, name, ...)
+            stop_propagation = current_screen:process_event(name, ...)
         end
         if not stop_propagation and keyboard_navigation.get_screen() == current_screen then
             keyboard_navigation.process_event(name, ...)

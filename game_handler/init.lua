@@ -153,7 +153,6 @@ end)
 game_handler.replay_start = async(function(file_or_replay_obj)
     is_resumed = false
     game_handler.set_volume(game_config.get("music_volume"), game_config.get("sound_volume"))
-    current_game.preview_mode = false
     local replay
     if type(file_or_replay_obj) == "table" then
         replay = file_or_replay_obj
@@ -167,6 +166,7 @@ game_handler.replay_start = async(function(file_or_replay_obj)
     if replay.game_version ~= current_game_version then
         game_handler.set_version(replay.game_version)
     end
+    current_game.preview_mode = false
     current_game.persistent_data = replay.data.persistent_data
     input.replay = replay
     first_play = replay.first_play

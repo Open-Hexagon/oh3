@@ -73,16 +73,19 @@ function flex:mutated()
 end
 
 ---send an event for the children to process (returns true if propagation should be stopped)
----@param transform love.Transform
 ---@param name string
 ---@param ... unknown
 ---@return boolean?
-function flex:process_event(transform, name, ...)
+function flex:process_event(name, ...)
+    love.graphics.push()
+    love.graphics.applyTransform(self._transform)
+    love.graphics.applyTransform(self.transform)
     for i = 1, #self.elements do
-        if self.elements[i]:process_event(transform, name, ...) then
+        if self.elements[i]:process_event(name, ...) then
             return true
         end
     end
+    love.graphics.pop()
 end
 
 ---calculate the positions and size of the elements in the container (returns total width and height)

@@ -97,20 +97,19 @@ function element:click(should_select)
 end
 
 ---process an event (handles selection and clicking)
----@param transform love.Transform
 ---@param name string
 ---@param ... unknown
 ---@return boolean?
-function element:process_event(transform, name, ...)
+function element:process_event(name, ...)
     ---converts a point to element space (top left corner of element = 0, 0)
     ---@param x number
     ---@param y number
     ---@return number
     ---@return number
     local function global_to_element_space(x, y)
-        x, y = transform:transformPoint(x, y)
-        x, y = self._transform:transformPoint(x, y)
-        return self.transform:transformPoint(x, y)
+        x, y = love.graphics.inverseTransformPoint(x, y)
+        x, y = self._transform:inverseTransformPoint(x, y)
+        return self.transform:inverseTransformPoint(x, y)
     end
 
     ---check if element contains a point

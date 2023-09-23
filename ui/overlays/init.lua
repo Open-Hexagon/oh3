@@ -31,11 +31,10 @@ function overlay_module.remove_overlay(index)
 end
 
 ---process an event
----@param transform love.Transform
 ---@param name string
 ---@param ... unknown
 ---@return boolean
-function overlay_module.process_event(transform, name, ...)
+function overlay_module.process_event(name, ...)
     for i = 1, #overlays do
         if overlays[i] then
             if name == "resize" then
@@ -43,7 +42,7 @@ function overlay_module.process_event(transform, name, ...)
                 local ui = require("ui")
                 overlays[i]:set_scale(ui.get_screen().scale)
             end
-            if overlays[i]:process_event(transform, name, ...) then
+            if overlays[i]:process_event(name, ...) then
                 return true
             end
             if not overlays[i] then

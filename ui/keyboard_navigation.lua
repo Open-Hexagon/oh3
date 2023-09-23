@@ -44,7 +44,8 @@ function keyboard_navigation.set_screen(screen)
 end
 
 local function scroll_into_view(element)
-    if element.parent then
+    -- TODO: fix scroll_into_view not working (no scroll yet)
+    if element.parent and false then
         scroll_into_view(element.parent)
         if element.parent.elements then
             element.parent:scroll_into_view(element.bounds)
