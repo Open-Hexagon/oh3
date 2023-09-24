@@ -21,7 +21,7 @@ function flex:new(elements, options)
         style = {},
         -- transform the user can modify
         transform = love.math.newTransform(),
-        -- transform used for internal layouting (user transform is applied on it during the layout calculation process)
+        -- transform used for internal layouting
         _transform = love.math.newTransform(),
         -- store last available area in order to only recalculate this container's layout in response to mutation
         last_available_width = 0,
@@ -180,6 +180,7 @@ function flex:calculate_layout(width, height)
             -- they don't fit, return larger area causing the gui scale to lower
             return width * scale_factor, height * scale_factor
         end
+        -- size ratio layout calculation done
         final_length = length
         final_thickness = thickness
     else
@@ -281,10 +282,12 @@ function flex:calculate_layout(width, height)
                 end
             until length <= available_length or must_stop
         end
+        -- default flex layout calculation done
         final_length = length
         final_thickness = thickness
     end
 
+    -- align_relative_to example:
     -- available area:
     -- +-----------+
     -- |           |
@@ -298,16 +301,16 @@ function flex:calculate_layout(width, height)
     -- |       +---+
     -- +-----------+
     -- align end relative to area
-    -- +-----------+
-    -- |       +---+
-    -- +---+   |   |
-    -- |   +---+   |
-    -- +---+---+---+
+    -- +-----------+ ^
+    -- |       +---+ |
+    -- +---+   |   | | area height
+    -- |   +---+   | |
+    -- +---+---+---+ v
     -- align end relative to thickness
-    -- +-------+---+
-    -- +---+   |   |
-    -- |   +---+   |
-    -- +---+---+---+
+    -- +-------+---+ ^
+    -- +---+   |   | |
+    -- |   +---+   | | thickness
+    -- +---+---+---+ v
     -- +-----------+
     if self.align_relative_to ~= "area" and self.align_relative_to ~= "thickness" then
         error("Invalid value for align_relative_to: '" .. self.align_relative_to .. "'.")
