@@ -335,8 +335,12 @@ function scroll:calculate_layout(width, height)
     -- scroll if there is overflow
     self.scrollable = overflow > 0
     self.max_scroll = math.max(overflow, 0)
-    self.scroll_pos:stop()
-    self.scroll_pos:set_immediate_value(extmath.clamp(self.scroll_pos(), 0, self.max_scroll))
+    local new_scroll_target = extmath.clamp(self.scroll_target, 0, self.max_scroll)
+    if self.scroll_target ~= new_scroll_target then
+        self.scroll_target = new_scroll_target
+        self.scroll_pos:stop()
+        self.scroll_pos:set_immediate_value(self.scroll_target)
+    end
     self.width, self.height = self.lt2wh(math.min(self.content_length, avail_len), thick)
     return self.width, self.height
 end
