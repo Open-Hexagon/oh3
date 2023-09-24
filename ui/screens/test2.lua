@@ -3,9 +3,10 @@
 local flex = require("ui.layout.flex")
 local slider = require("ui.elements.slider")
 local label = require("ui.elements.label")
+local scroll = require("ui.layout.scroll")
 
 -- reproduce flex wrap label sizing issue (fixed now)
-return flex:new({
+return scroll:new(flex:new({
     flex:new({
         slider:new(),
         flex:new({
@@ -16,4 +17,4 @@ return flex:new({
         }, { direction = "column" }),
         slider:new(),
     }),
-}, { direction = "column", scrollable = true })
+}, { direction = "column" }))

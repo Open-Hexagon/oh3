@@ -86,4 +86,6 @@ return scroll:new(flex:new({
         direction = "column",
         style = { border_thickness = 2, background_color = { 0, 0, 0, 1 } },
     })),
-}, { size_ratios = { 1, 1, 1 } }))
+}, {
+    --size_ratios = { 1, 1, 1 }
+}), { direction = "horizontal" })
