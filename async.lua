@@ -15,13 +15,20 @@ function promise:new(fn)
         obj.result = { ... }
         obj.executed = true
         for i = 1, #obj.done_callbacks do
-            obj.done_callbacks[i](...)
+            xpcall(obj.done_callbacks[i], function(err)
+                print("Error in done callback: ", err)
+                error("Uncaught error in done callback of promise")
+            end, ...)
         end
     end, function(...)
         obj.result = { ... }
         obj.executed = true
         for i = 1, #obj.error_callbacks do
-            obj.error_callbacks[i](...)
+            xpcall(obj.error_callbacks[i], function(err)
+                print("During the handling of: ", unpack(obj.result))
+                print("another error occured: ", err)
+                error("Uncaught error in done callback of promise")
+            end, ...)
         end
         if #obj.error_callbacks == 0 then
             print("Error: ", ...)
@@ -34,7 +41,10 @@ end
 function promise:done(callback)
     if self.executed then
         if self.resolved then
-            callback(unpack(self.result))
+            xpcall(callback, function(err)
+                print("Error in done callback: ", err)
+                error("Uncaught error in done callback of promise")
+            end, unpack(self.result))
         end
         return
     end
@@ -45,11 +55,15 @@ end
 function promise:err(callback)
     if self.executed then
         if not self.resolved then
-            callback(unpack(self.result))
+            xpcall(callback, function(err)
+                print("During the handling of: ", unpack(self.result))
+                print("another error occured: ", err)
+                error("Uncaught error in promise")
+            end, unpack(self.result))
         end
         return
     end
-    self.error_callback[#self.error_callback + 1] = callback
+    self.error_callbacks[#self.error_callbacks + 1] = callback
     return self
 end
 
@@ -57,7 +71,7 @@ local async = setmetatable({}, {
     __call = function(_, fn)
         return function(...)
             local args = { ... }
-            return promise:new(function(resolve, reject)
+            local prom = promise:new(function(resolve, reject)
                 local co = coroutine.create(function()
                     local ret = { xpcall(fn, reject, unpack(args)) }
                     if ret[1] then
@@ -66,6 +80,10 @@ local async = setmetatable({}, {
                 end)
                 coroutine.resume(co)
             end)
+            if prom.executed and not prom.resolved and #prom.error_callbacks == 0 then
+                error("Uncaught error in promise: " .. prom.result[1])
+            end
+            return prom
         end
     end,
 })
