@@ -1,6 +1,7 @@
 local signal = require("ui.anim.signal")
 local overlays = require("ui.overlays")
 local game_handler = require("game_handler")
+local scroll = require("ui.layout.scroll")
 local ui = {}
 local keyboard_navigation = require("ui.keyboard_navigation")
 local current_screen
@@ -68,6 +69,8 @@ end
 ---@param name string
 ---@param ... unknown
 function ui.process_event(name, ...)
+    -- reset scrolled_already value (determines if a container can still scroll, ensures child priority over parent with scrolling (children are processed before parents))
+    scroll.scrolled_already = false
     love.graphics.origin()
     if current_screen then
         if name == "resize" then

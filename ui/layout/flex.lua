@@ -62,12 +62,10 @@ end
 function flex:mutated()
     for i = 1, #self.elements do
         local element = self.elements[i]
-        if element.parent_index ~= i or element.parent ~= self then
-            element.parent = self
-            element.parent_index = i
-            element:set_scale(self.scale)
-            element:set_style(self.style)
-        end
+        element.parent = self
+        element.parent_index = i
+        element:set_scale(self.scale)
+        element:set_style(self.style)
     end
     self:calculate_layout(self.last_available_width, self.last_available_height)
 end

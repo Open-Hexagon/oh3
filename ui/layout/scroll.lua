@@ -12,6 +12,7 @@ scroll.__index = scroll
 ---@param element table
 ---@return table
 function scroll:new(element, options)
+    options = options or {}
     if not element then
         error("cannot create a scroll container without a child elemencannot create a scroll container without a child element")
     end
@@ -43,10 +44,12 @@ function scroll:new(element, options)
         scroll_pos = signal.new_queue(0),
         -- max amount that can be scrolled
         max_scroll = 0,
+        -- target of the current scroll animation
+        scroll_target = 0,
         -- true while the user is dragging the scrollbar
         scrollbar_grabbed = false,
         -- timestamp of last scroll interaction, controls scrollbar vanishing
-        scrollbar_visibility_timer = 0,
+        scrollbar_visibility_timer = -2,
         -- controls if the scrollbar should vanish at all
         scrollbar_vanish = true,
         -- the color of the scrollbar
@@ -57,6 +60,8 @@ function scroll:new(element, options)
         scrollbar_area = { x = 0, y = 0, width = 0, height = 0 },
         -- velocity of touch scroll
         scroll_velocity = 0,
+        -- used for scroll
+        last_mouse_pos = { 0, 0 }
     }, scroll)
     -- make sure signal isn't getting garbage collected randomly while still being used (yes this can actually happen somehow)
     obj.scroll_pos:persist()
@@ -120,9 +125,9 @@ end
 function scroll:mutated()
     if self.element.parent ~= self then
         self.element.parent = self
-        self.element:set_scale(self.scale)
-        self.element:set_style(self.style)
     end
+    self.element:set_scale(self.scale)
+    self.element:set_style(self.style)
     self:calculate_layout(self.last_available_width, self.last_available_height)
 end
 
@@ -137,29 +142,28 @@ function scroll:scroll_into_view(x, y, width, height, instant)
         local bounds_start = self.wh2lt(x, y)
         local bounds_end = self.wh2lt(x + width, y + height)
         local scroll_before = self.scroll_pos()
-        local scroll_target = scroll_before
         local visual_length = self.wh2lt(self.width, self.height)
-        if scroll_target > bounds_start then
+        if self.scroll_target > bounds_start then
             --          +---+------------+
             -- bounds > |   |    view    |
             --          +---+------------+
             -- view has to move so the start of the bounds (left side) is on the start of the view
-            scroll_target = bounds_start
-        elseif scroll_target + visual_length < bounds_end then
+            self.scroll_target = bounds_start
+        elseif self.scroll_target + visual_length < bounds_end then
             -- +------------+---+
             -- |    view    |   | < bounds
             -- +------------+---+
             -- view has to move so the end of the bounds (right side) is on the end of the view
-            scroll_target = bounds_end - visual_length
+            self.scroll_target = bounds_end - visual_length
         end
         -- ensure it doesn't scroll outside even if bounds are outside the container
-        scroll_target = extmath.clamp(scroll_target, 0, self.max_scroll)
-        if scroll_before ~= scroll_target then
+        self.scroll_target = extmath.clamp(self.scroll_target, 0, self.max_scroll)
+        if scroll_before ~= self.scroll_target then
             self.scroll_pos:stop()
             if instant then
-                self.scroll_pos:set_immediate_value(scroll_target)
+                self.scroll_pos:set_immediate_value(self.scroll_target)
             else
-                self.scroll_pos:keyframe(0.2, scroll_target)
+                self.scroll_pos:keyframe(0.2, self.scroll_target)
             end
         end
     end
@@ -173,12 +177,6 @@ end
 ---@param name string
 ---@param ... unknown
 function scroll:process_event(name, ...)
-    if self.parent == nil then
-        -- element has no parent (top level)
-        -- -> all other elements may be inside this one
-        -- -> can reset scrolled_already value (determines if a container can still scroll, ensures child priority over parent with scrolling (children are processed before parents))
-        scroll.scrolled_already = false
-    end
     love.graphics.push()
     -- can just apply transforms and scroll, canvas is only a rendering detail (may need to limit interaction to container dimensions though)
     love.graphics.applyTransform(self._transform)
@@ -207,8 +205,8 @@ function scroll:process_event(name, ...)
             -- last finger that touched the screen is not nil -> was touch scrolling
             propagate = false
             self.scroll_pos:stop()
-            local scroll_target = extmath.clamp(self.scroll_pos() + self.scroll_velocity * 10, 0, self.max_scroll)
-            self.scroll_pos:keyframe(0.3, scroll_target, ease.out_sine)
+            self.scroll_target = extmath.clamp(self.scroll_target + self.scroll_velocity * 10, 0, self.max_scroll)
+            self.scroll_pos:keyframe(0.3, self.scroll_target, ease.out_sine)
         end
         if self.scrollbar_grabbed then
             -- scrollbar was grabbed, mouse was released to stop scrolling, not to click
@@ -222,7 +220,7 @@ function scroll:process_event(name, ...)
     end
     if propagate then
         love.graphics.push()
-        love.graphics.translate(self.lt2wh(self.scroll_pos(), 0))
+        love.graphics.translate(self.lt2wh(-self.scroll_pos(), 0))
         if self.element:process_event(name, ...) then
             love.graphics.pop()
             return true
@@ -245,10 +243,10 @@ function scroll:process_event(name, ...)
                 -- set scroll velocity to change amount
                 self.scroll_velocity = -scroll_delta
                 -- change scroll
-                local scroll_target = self.scroll_pos() - scroll_delta
-                scroll_target = extmath.clamp(scroll_target, 0, self.max_scroll)
+                self.scroll_target = self.scroll_target - scroll_delta
+                self.scroll_target = extmath.clamp(self.scroll_target, 0, self.max_scroll)
                 self.scroll_pos:stop()
-                self.scroll_pos:set_immediate_value(scroll_target)
+                self.scroll_pos:set_immediate_value(self.scroll_target)
                 -- tell other containers that scroll is already happening
                 scroll.scrolled_already = true
                 -- show the scrollbar while scrolling
@@ -275,10 +273,10 @@ function scroll:process_event(name, ...)
             -- max amount the scrollbar itself can move
             local max_move = visible_length - scrollbar_length
             -- translate scrollbar movement to scroll position
-            local scroll_target = self.scroll_pos() + scroll_delta * self.max_scroll / max_move
-            scroll_target = extmath.clamp(scroll_target, 0, self.max_scroll)
+            self.scroll_target = self.scroll_target + scroll_delta * self.max_scroll / max_move
+            self.scroll_target = extmath.clamp(self.scroll_target, 0, self.max_scroll)
             self.scroll_pos:stop()
-            self.scroll_pos:set_immediate_value(scroll_target)
+            self.scroll_pos:set_immediate_value(self.scroll_target)
             -- tell other containers that scroll is already happening
             scroll.scrolled_already = true
             -- show the scrollbar while scrolling
@@ -297,10 +295,14 @@ function scroll:process_event(name, ...)
         if contains(x, y) then
             -- when the mouse is inside the container move 30px depending on wheel direction
             local _, direction = ...
-            local scroll_target = self.scroll_pos() - 30 * direction
-            scroll_target = extmath.clamp(scroll_target, 0, self.max_scroll)
+            self.scroll_target = self.scroll_target - 30 * direction
+            self.scroll_target = extmath.clamp(self.scroll_target, 0, self.max_scroll)
             self.scroll_pos:stop()
-            self.scroll_pos:keyframe(0.1, scroll_target)
+            self.scroll_pos:keyframe(0.1, self.scroll_target)
+            -- tell other containers that scroll is already happening
+            scroll.scrolled_already = true
+            -- show the scrollbar while scrolling
+            self.scrollbar_visibility_timer = love.timer.getTime()
         end
     end
     love.graphics.pop()
@@ -312,6 +314,8 @@ end
 ---@return number
 ---@return number
 function scroll:calculate_layout(width, height)
+    self.last_available_width = width
+    self.last_available_height = height
     local avail_len = self.wh2lt(width, height)
     local len, thick = self.wh2lt(self.element:calculate_layout(width, height))
     -- determine if container is overflowing
@@ -328,13 +332,21 @@ function scroll:calculate_layout(width, height)
     -- scroll if there is overflow
     self.scrollable = overflow > 0
     self.max_scroll = math.max(overflow, 0)
+    self.scroll_pos:stop()
+    self.scroll_pos:set_immediate_value(extmath.clamp(self.scroll_pos(), 0, self.max_scroll))
     self.width, self.height = self.lt2wh(math.min(len, avail_len), thick)
     return self.width, self.height
 end
 
 ---draw the scroll container with its child
 function scroll:draw()
-    if self.width ~= self.last_width or self.height ~= self.last_height or (self.scrollable and not self.canvas) then
+    local size_changed = false
+    if self.width ~= self.last_width or self.height ~= self.last_height then
+        size_changed = true
+        self.last_width = self.width
+        self.last_height = self.height
+    end
+    if size_changed or (self.scrollable and not self.canvas) then
         if self.scrollable then
             -- dimensions changed or scrollable but no canvas created yet
             self.canvas = love.graphics.newCanvas(self.width, self.height)
@@ -342,7 +354,7 @@ function scroll:draw()
         self.last_width = self.width
         self.last_height = self.height
     end
-    if self.scrollable and self.scroll_pos() ~= self.last_scroll_value then
+    if self.scrollable and (self.scroll_pos() ~= self.last_scroll_value or size_changed) then
         self.last_scroll_value = self.scroll_pos()
         -- update the scrollbar area
         local normalized_scroll = self.last_scroll_value / self.max_scroll
@@ -359,8 +371,9 @@ function scroll:draw()
         self.scrollbar_area.width, self.scrollbar_area.height = self.lt2wh(bar_length, bar_thick)
     end
     love.graphics.push()
-    if self.canvas then
+    if self.scrollable then
         love.graphics.setCanvas(self.canvas)
+        love.graphics.clear(0, 0, 0, 0)
         -- when drawing on canvas 0, 0 (origin) will always be the top left corner
         love.graphics.origin()
         love.graphics.translate(self.lt2wh(-self.scroll_pos(), 0))
@@ -369,17 +382,8 @@ function scroll:draw()
         love.graphics.applyTransform(self._transform)
         love.graphics.applyTransform(self.transform)
     end
-    if self.scrollable then
-        if self.scrollbar_vanish then
-            -- visible for 1.5s after interaction, then fading out
-            self.scrollbar_color[4] = math.min(math.max(1.5 - love.timer.getTime() + self.scrollbar_visibility_timer, 0), 1)
-        end
-        -- draw scrollbar
-        love.graphics.setColor(self.scrollbar_color)
-        love.graphics.rectangle("fill", self.scrollbar_area.x, self.scrollbar_area.y, self.scrollbar_area.width, self.scrollbar_area.height)
-    end
     self.element:draw()
-    if self.canvas then
+    if self.scrollable then
         love.graphics.setCanvas()
         love.graphics.pop()
         love.graphics.push()
@@ -388,6 +392,13 @@ function scroll:draw()
         love.graphics.applyTransform(self.transform)
         love.graphics.setColor(1, 1, 1, 1)
         love.graphics.draw(self.canvas)
+        if self.scrollbar_vanish then
+            -- visible for 1.5s after interaction, then fading out
+            self.scrollbar_color[4] = math.min(math.max(1.5 - love.timer.getTime() + self.scrollbar_visibility_timer, 0), 1)
+        end
+        -- draw scrollbar
+        love.graphics.setColor(self.scrollbar_color)
+        love.graphics.rectangle("fill", self.scrollbar_area.x, self.scrollbar_area.y, self.scrollbar_area.width, self.scrollbar_area.height)
     end
     love.graphics.pop()
 end

@@ -2,6 +2,7 @@ local game_handler = require("game_handler")
 local label = require("ui.elements.label")
 local quad = require("ui.elements.quad")
 local flex = require("ui.layout.flex")
+local scroll = require("ui.layout.scroll")
 local make_level_element = require("ui.screens.levelselect.level")
 
 local cache_folder_flex = {}
@@ -42,14 +43,14 @@ return function(state)
                         end
                         levels = flex:new(
                             level_elements,
-                            { direction = "column", align_items = "stretch", scrollable = true }
+                            { direction = "column", align_items = "stretch" }
                         )
                         cache_folder_flex[pack.id] = levels
                     end
-                    local pack_changed = levels ~= state.root.elements[2]
-                    state.root.elements[2] = levels
-                    state.root:mutated()
+                    local pack_changed = levels ~= state.root.elements[2].element
                     if pack_changed then
+                        state.root.elements[2].element = levels
+                        state.root.elements[2]:mutated()
                         levels.elements[1]:click(false)
                     end
                 end,
