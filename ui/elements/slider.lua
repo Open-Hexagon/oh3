@@ -23,8 +23,8 @@ function slider:new(options)
     return obj
 end
 
-function slider:process_event(transform, name, ...)
-    element.process_event(self, transform, name, ...)
+function slider:process_event(name, ...)
+    element.process_event(self, name, ...)
     local last_state = self.state
     if name == "wheelmoved" and self.is_mouse_over and self:check_screen() then
         self.selected = true

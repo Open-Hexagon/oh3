@@ -192,7 +192,7 @@ local main = async(function()
             async.await(game_handler.replay_start(args.no_option))
             ui.open_screen("game")
         else
-            ui.open_screen("levelselect")
+            ui.open_screen("test")
         end
     end)
 

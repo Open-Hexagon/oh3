@@ -6,13 +6,14 @@ local quad = require("ui.elements.quad")
 local dropdown = require("ui.elements.dropdown")
 local toggle = require("ui.elements.toggle")
 local slider = require("ui.elements.slider")
-return flex:new({
+local scroll = require("ui.layout.scroll")
+return scroll:new(flex:new({
     flex:new({
-        dropdown:new({ "first", "second", "third", "and last selection!" }),
+        --dropdown:new({ "first", "second", "third", "and last selection!" }),
         label:new("Hello"),
         label:new("World", { selectable = true }),
         label:new("This is some incredibly, unimaginably, unfathomably long wrapping text!!!!!!!!!!", { wrap = true }),
-        dropdown:new({
+        --[[dropdown:new({
             "this",
             "dropdown",
             "has",
@@ -34,7 +35,7 @@ return flex:new({
             "to try",
             "scrolling",
             "now",
-        }),
+        }),]]
         flex:new({
             label:new("You can toggle this one:"),
             toggle:new(),
@@ -48,7 +49,7 @@ return flex:new({
         label:new("With 5 and not 4 elements this time!", { wrap = true }),
         label:new("This column also has more padding"),
     }, { direction = "column", style = { color = { 1, 0, 1, 1 }, padding = 20 }, align_items = "center" }),
-    flex:new({
+    scroll:new(flex:new({
         label:new("Look at that:"),
         quad:new({
             child_element = label:new("I'm in a quad!"),
@@ -83,7 +84,6 @@ return flex:new({
         }),
     }, {
         direction = "column",
-        scrollable = true,
         style = { border_thickness = 2, background_color = { 0, 0, 0, 1 } },
-    }),
-}, { scrollable = true, size_ratios = { 1, 1, 1 } })
+    })),
+}, { size_ratios = { 1, 1, 1 } }))
