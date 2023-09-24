@@ -61,7 +61,9 @@ function scroll:new(element, options)
         -- velocity of touch scroll
         scroll_velocity = 0,
         -- used for scroll
-        last_mouse_pos = { 0, 0 }
+        last_mouse_pos = { 0, 0 },
+        content_length = 0,
+        last_content_length = 0,
     }, scroll)
     -- make sure signal isn't getting garbage collected randomly while still being used (yes this can actually happen somehow)
     obj.scroll_pos:persist()
@@ -293,9 +295,9 @@ function scroll:process_event(name, ...)
         local x, y = love.mouse.getPosition()
         x, y = love.graphics.inverseTransformPoint(x, y)
         if contains(x, y) then
-            -- when the mouse is inside the container move 30px depending on wheel direction
+            -- when the mouse is inside the container move 50px depending on wheel direction
             local _, direction = ...
-            self.scroll_target = self.scroll_target - 30 * direction
+            self.scroll_target = self.scroll_target - 50 * direction
             self.scroll_target = extmath.clamp(self.scroll_target, 0, self.max_scroll)
             self.scroll_pos:stop()
             self.scroll_pos:keyframe(0.1, self.scroll_target)
@@ -317,7 +319,8 @@ function scroll:calculate_layout(width, height)
     self.last_available_width = width
     self.last_available_height = height
     local avail_len = self.wh2lt(width, height)
-    local len, thick = self.wh2lt(self.element:calculate_layout(width, height))
+    local thick
+    self.content_length, thick = self.wh2lt(self.element:calculate_layout(width, height))
     -- determine if container is overflowing
      --            overflow
     --           <---------->
@@ -325,16 +328,16 @@ function scroll:calculate_layout(width, height)
     -- |         |          |
     -- +---------+----------+
     -- <-------------------->
-    --  content length (len)
+    --  content length
     -- <--------->
     --  avail_len
-    local overflow = len - avail_len
+    local overflow = self.content_length - avail_len
     -- scroll if there is overflow
     self.scrollable = overflow > 0
     self.max_scroll = math.max(overflow, 0)
     self.scroll_pos:stop()
     self.scroll_pos:set_immediate_value(extmath.clamp(self.scroll_pos(), 0, self.max_scroll))
-    self.width, self.height = self.lt2wh(math.min(len, avail_len), thick)
+    self.width, self.height = self.lt2wh(math.min(self.content_length, avail_len), thick)
     return self.width, self.height
 end
 
@@ -354,7 +357,8 @@ function scroll:draw()
         self.last_width = self.width
         self.last_height = self.height
     end
-    if self.scrollable and (self.scroll_pos() ~= self.last_scroll_value or size_changed) then
+    if self.scrollable and (self.scroll_pos() ~= self.last_scroll_value or size_changed or self.content_length ~= self.last_content_length) then
+        self.last_content_length = self.content_length
         self.last_scroll_value = self.scroll_pos()
         -- update the scrollbar area
         local normalized_scroll = self.last_scroll_value / self.max_scroll

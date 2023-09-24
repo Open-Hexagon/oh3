@@ -55,25 +55,23 @@ return function(state, pack, level, extra_info)
         selectable = true,
         selection_handler = function(self)
             if self.selected then
-                self.border_color = { 0, 0, 1, 0.7 }
+                self.style.border_color = { 0, 0, 1, 0.7 }
             else
-                self.border_color = { 0, 0, 0, 0.7 }
+                self.style.border_color = { 0, 0, 0, 0.7 }
             end
+            self:set_style(self.style)
         end,
         click_handler = function(self)
             if level_element_selected ~= self then
                 local elems = self.parent.elements
                 for i = 1, #elems do
-                    elems[i].background_color = { 0, 0, 0, 0.7 }
+                    elems[i].style.background_color = { 0, 0, 0, 0.7 }
                 end
-                self.background_color = { 0.5, 0.5, 0, 0.7 }
+                self.style.background_color = { 0.5, 0.5, 0, 0.7 }
                 local score = flex:new({
                     make_localscore_element(pack.id, level.id, { difficulty_mult = 1 }),
                     make_options_element(state, pack, level),
                 }, { direction = "column", align_items = "stretch" })
-                if level_element_selected then
-                    level_element_selected.background_color = { 0, 0, 0, 0.7 }
-                end
                 state.root.elements[3] = score
                 state.root:mutated()
                 level_element_selected = self

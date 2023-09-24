@@ -23,16 +23,17 @@ return function(state)
                 selectable = true,
                 selection_handler = function(self)
                     if self.selected then
-                        self.border_color = { 0, 0, 1, 0.7 }
+                        self.style.border_color = { 0, 0, 1, 0.7 }
                     else
-                        self.border_color = { 0, 0, 0, 0.7 }
+                        self.style.border_color = { 0, 0, 0, 0.7 }
                     end
+                    self:set_style(self.style)
                 end,
                 click_handler = function(self)
                     for j = 1, #elements do
-                        elements[j].background_color = { 1, 1, 1, 1 }
+                        elements[j].style.background_color = { 1, 1, 1, 1 }
                     end
-                    self.background_color = { 1, 1, 0, 1 }
+                    self.style.background_color = { 1, 1, 0, 1 }
                     local levels = cache_folder_flex[pack.id]
                     if not levels then
                         -- element does not exist in cache, create it
