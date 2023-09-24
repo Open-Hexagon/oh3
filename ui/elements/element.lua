@@ -8,6 +8,7 @@ function element:new(options)
     self.style = options.style or {}
     self.scale = 1
     self.padding = 8
+	self.margins = { 0, 0 }
     self.color = { 1, 1, 1, 1 }
     self.selectable = options.selectable or false
     self.is_mouse_over = false
@@ -25,6 +26,7 @@ end
 
 function element:set_style(style)
     self.padding = self.style.padding or style.padding or self.padding
+    self.margins = self.style.margins or style.margins or self.margins
     self.color = self.style.color or style.color or self.color
 end
 
@@ -72,7 +74,7 @@ function element:click(select)
         select = true
     end
     if not self.selected and select then
-        keyboard_navigation.select_element(self)
+        keyboard_navigation.select_element(self, true, self.click_handler)
     end
     if self.click_handler then
         self.click_handler(self)
@@ -91,9 +93,9 @@ function element:process_event(name, ...)
             if self.selected ~= self.is_mouse_over then
                 self.selected = self.is_mouse_over
                 if self.selected then
-                    keyboard_navigation.select_element(self)
+                    keyboard_navigation.select_element(self, true, false)
                 else
-                    keyboard_navigation.deselect_element(self)
+                    keyboard_navigation.deselect_element(self, true, true)
                 end
             end
             if self.click_handler and self.is_mouse_over then

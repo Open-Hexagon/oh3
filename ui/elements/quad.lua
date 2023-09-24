@@ -80,10 +80,10 @@ function quad:calculate_layout(available_area)
         -- offsets must be positive (outwards) and must be whole numbers
         vertex_offsets[i] = math.floor(math.abs(self.vertex_offsets[i]) * self.scale)
     end
-    local top = math.max(vertex_offsets[2], vertex_offsets[4]) + self.padding * self.scale
-    local bot = math.max(vertex_offsets[6], vertex_offsets[8]) + self.padding * self.scale
-    local left = math.max(vertex_offsets[1], vertex_offsets[7]) + self.padding * self.scale
-    local right = math.max(vertex_offsets[3], vertex_offsets[5]) + self.padding * self.scale
+    local top = math.max(vertex_offsets[2], vertex_offsets[4]) + (self.padding + self.margins[2]) * self.scale
+    local bot = math.max(vertex_offsets[6], vertex_offsets[8]) + (self.padding + self.margins[2]) * self.scale
+    local left = math.max(vertex_offsets[1], vertex_offsets[7]) + (self.padding + self.margins[1]) * self.scale
+    local right = math.max(vertex_offsets[3], vertex_offsets[5]) + (self.padding + self.margins[1]) * self.scale
     local new_area = {
         x = available_area.x + left,
         y = available_area.y + top,

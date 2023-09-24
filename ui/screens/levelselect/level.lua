@@ -84,13 +84,13 @@ return function(state, pack, level, extra_info)
                 local elems = self.parent.elements
                 for i = 1, #elems do
                     description = label:new("", { font_size = 16, wrap = true })
-                    elems[i].padding = 8
-                    elems[i].background_color = { 0, 0, 0, 0.7 }
+                    elems[i].margins = {0,0}
+                    elems[i].border_color = { 0, 0, 0, 0.7 }
                     elems[i].element.elements[2].elements[2] = update_element(description, elems[i].element.elements[2], 2, elems[i].element.elements[2].elements[2])
                 end
                 description = label:new(level.description, { font_size = 16, wrap = true })
-                self.background_color = { 0.5, 0.5, 0, 0.7 }
-				self.padding = 32
+                self.border_color = { 0, 0, 1, 0.7 }
+				self.margins = {0,32}
                 self.element.elements[2].elements[2] = update_element(description, self.element.elements[2], 2, self.element.elements[2].elements[2])
 				
 				local width, height = self:calculate_layout(self.last_available_area)
@@ -105,7 +105,7 @@ return function(state, pack, level, extra_info)
                     make_options_element(state, pack, level),
                 }, { direction = "column", align_items = "stretch" })
                 if level_element_selected then
-                    level_element_selected.background_color = { 0, 0, 0, 0.7 }
+                    level_element_selected.border_color = { 0, 0, 0, 0.7 }
                 end
                 state.root.elements[3] = update_element(score, state.root, 3, state.root.elements[3])
                 level_element_selected = self

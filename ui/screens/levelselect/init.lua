@@ -26,7 +26,7 @@ state.root = flex:new({
 }, { size_ratios = { 1, 2, 1 }, scrollable = false })
 
 if #pack_elems > 0 then
-    pack_elems[1]:click(false)
+    pack_elems[1]:click(true)
 end
 
 return state.root

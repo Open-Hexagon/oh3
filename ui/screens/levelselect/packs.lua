@@ -1,4 +1,5 @@
 local game_handler = require("game_handler")
+local keyboard_navigation = require("ui.keyboard_navigation")
 local label = require("ui.elements.label")
 local quad = require("ui.elements.quad")
 local flex = require("ui.layout.flex")
@@ -73,6 +74,8 @@ return function(state)
                     state.root.elements[2] = levels
                     if pack_changed then
                         levels.elements[1]:click(false)
+						keyboard_navigation.select_element(levels.elements[1], true, false)
+						keyboard_navigation.select_element(self, true, false)
                     end
                 end,
             })
