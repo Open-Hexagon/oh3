@@ -16,6 +16,17 @@ local function update_element(self, parent, parent_index, layout)
     return self
 end
 
+local function get_rect_bounds(bounds)
+    local minmax = { math.huge, math.huge, -math.huge, -math.huge }
+    for i = 1, #bounds, 2 do
+        minmax[1] = math.min(bounds[i], minmax[1])
+        minmax[2] = math.min(bounds[i + 1], minmax[2])
+        minmax[3] = math.max(bounds[i], minmax[3])
+        minmax[4] = math.max(bounds[i + 1], minmax[4])
+    end
+    return minmax
+end
+
 local pending_promise
 local set_preview_level = async(function(pack, level)
     if config.get("background_preview") then
@@ -72,9 +83,23 @@ return function(state, pack, level, extra_info)
             if level_element_selected ~= self then
                 local elems = self.parent.elements
                 for i = 1, #elems do
+                    description = label:new("", { font_size = 16, wrap = true })
+                    elems[i].padding = 8
                     elems[i].background_color = { 0, 0, 0, 0.7 }
+                    elems[i].element.elements[2].elements[2] = update_element(description, elems[i].element.elements[2], 2, elems[i].element.elements[2].elements[2])
                 end
+                description = label:new(level.description, { font_size = 16, wrap = true })
                 self.background_color = { 0.5, 0.5, 0, 0.7 }
+				self.padding = 32
+                self.element.elements[2].elements[2] = update_element(description, self.element.elements[2], 2, self.element.elements[2].elements[2])
+				
+				local width, height = self:calculate_layout(self.last_available_area)
+				local visual_height = state.root.elements[2].canvas:getHeight()
+				local minmax = get_rect_bounds(self.bounds)
+				state.root.elements[2].scroll_target = minmax[4] - height/2 - visual_height/2
+				state.root.elements[2].scroll:keyframe(0.2,scroll_target)
+				
+                state.root.elements[2] = update_element(state.root.elements[2], state.root, 2, state.root.elements[2])
                 local score = flex:new({
                     make_localscore_element(pack.id, level.id, { difficulty_mult = 1 }),
                     make_options_element(state, pack, level),

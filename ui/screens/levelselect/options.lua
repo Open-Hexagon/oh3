@@ -12,12 +12,10 @@ local function update_element(self, parent, parent_index, layout)
 end
 
 return function(state, pack, level)
-    local selections = {}
+    local selections = level.options.difficulty_mult
     local selections_index = 1
-    --this has a weird forumla because: the last diff is always 1, but it should be the first diff.
-    selections[1] = level.options.difficulty_mult[#level.options.difficulty_mult]
-    for i = 1, #level.options.difficulty_mult - 1 do
-        selections[i + 1] = level.options.difficulty_mult[i]
+    for i = 1, #selections do
+        if selections[i] == 1 then selections_index = i end
     end
     --this is for the level selection presets! the proper level settings need their own button and menu (see prototype)
     local selection_element = quad:new({
