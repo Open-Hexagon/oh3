@@ -69,12 +69,15 @@ function element:check_screen()
     return self:get_root() == keyboard_navigation.get_screen()
 end
 
-function element:click(select)
+function element:click(select, keyboard_selected)
     if select == nil then
         select = true
     end
+    if keyboard_selected == nil then
+        keyboard_selected = false
+    end
     if not self.selected and select then
-        keyboard_navigation.select_element(self, true, self.click_handler)
+        keyboard_navigation.select_element(self, true, keyboard_selected)
     end
     if self.click_handler then
         self.click_handler(self)
@@ -95,7 +98,7 @@ function element:process_event(name, ...)
                 if self.selected then
                     keyboard_navigation.select_element(self, true, false)
                 else
-                    keyboard_navigation.deselect_element(self, true, true)
+                    keyboard_navigation.deselect_element(self)
                 end
             end
             if self.click_handler and self.is_mouse_over then

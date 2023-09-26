@@ -73,9 +73,7 @@ return function(state)
                     local pack_changed = levels ~= state.root.elements[2]
                     state.root.elements[2] = levels
                     if pack_changed then
-                        levels.elements[1]:click(false)
-						keyboard_navigation.select_element(levels.elements[1], true, false)
-						keyboard_navigation.select_element(self, true, false)
+                        levels.elements[1]:click(false, true)
                     end
                 end,
             })

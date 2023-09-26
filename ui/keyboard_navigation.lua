@@ -52,9 +52,12 @@ local function scroll_into_view(element)
     end
 end
 
-function keyboard_navigation.select_element(element, call_selection_handler, call_click_handler)
+function keyboard_navigation.select_element(element, call_handlers, keyboard_selected)
     if call_handlers == nil then
         call_handlers = true
+    end
+    if keyboard_selected == nil then
+        keyboard_selected = false
     end
     if element ~= selected_element then
         if selected_element then
@@ -66,9 +69,8 @@ function keyboard_navigation.select_element(element, call_selection_handler, cal
         selected_element = element
         if element then
             element.selected = true
-            if element.selection_handler then
-                if call_click_handler then element.click_handler(element) end
-                if call_selection_handler then element.selection_handler(element) end
+            if element.selection_handler and call_handlers then
+                element.selection_handler(element, keyboard_selected)
             end
             local elem = element
             while elem.parent do
@@ -160,8 +162,7 @@ function keyboard_navigation.move(dx, dy)
     end
     if new_elem then
 		-- sorry in advance
-        if current_screen == require("ui.screens.levelselect") and dx == 0 then keyboard_navigation.select_element(new_elem, true, true)
-		else keyboard_navigation.select_element(new_elem, true, false) end
+        keyboard_navigation.select_element(new_elem, true, true)
     end
 end
 

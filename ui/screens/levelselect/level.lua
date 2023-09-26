@@ -72,12 +72,13 @@ return function(state, pack, level, extra_info)
         }, { direction = "row" }),
         style = { background_color = { 0, 0, 0, 0.7 }, border_color = { 0, 0, 0, 0.7 }, border_thickness = 5 },
         selectable = true,
-        selection_handler = function(self)
+        selection_handler = function(self, keyboard_selected)
             if self.selected then
                 self.border_color = { 0, 0, 1, 0.7 }
             else
                 self.border_color = { 0, 0, 0, 0.7 }
             end
+			if keyboard_selected and level_element_selected ~= self then self:click(false) end
         end,
         click_handler = function(self)
             if level_element_selected ~= self then
