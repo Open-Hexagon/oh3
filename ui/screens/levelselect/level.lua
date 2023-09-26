@@ -57,16 +57,16 @@ return function(state, pack, level, extra_info)
     extra_info.song = extra_info.song or "no song"
     extra_info.composer = extra_info.composer or "no composer"
     local music = extra_info.song .. "\n" .. extra_info.composer
-    local preview = level_preview:new(pack.game_version, pack.id, level.id, { style = { padding = 0, border_color = { 1, 1, 1, 1 }, border_thickness = 2 } })
+    local preview = level_preview:new(pack.game_version, pack.id, level.id, { style = { padding = 6, border_color = { 1, 1, 1, 1 }, border_thickness = 3 } })
     local elem = quad:new({
         child_element = flex:new({
             preview,
             flex:new({
                 flex:new({
-                    label:new(level.name, { font_size = 40, wrap = true }),
-                    label:new(level.author, { font_size = 26, wrap = true }),
+                    label:new(level.name, { font_size = 30, wrap = true }),
+                    label:new(level.author, { font_size = 20, wrap = true }),
                 }, { direction = "column", style = { padding = 5 } }),
-                label:new(level.description, { font_size = 16, wrap = true }),
+                label:new(level.description, { font_size = 20, wrap = true }),
             }, { direction = "column" }),
             --flex:new({label:new(music, { font_size = 30, wrap = true })}, { align_items = "end", direction = "column" }),
         }, { direction = "row" }),
@@ -84,20 +84,24 @@ return function(state, pack, level, extra_info)
             if level_element_selected ~= self then
                 local elems = self.parent.elements
                 for i = 1, #elems do
-                    description = label:new("", { font_size = 16, wrap = true })
-                    elems[i].margins = {0,0}
+                    description = label:new("", { font_size = 20, wrap = true })
+                    elems[i].margins = {16,0}
                     elems[i].border_color = { 0, 0, 0, 0.7 }
                     elems[i].element.elements[2].elements[2] = update_element(description, elems[i].element.elements[2], 2, elems[i].element.elements[2].elements[2])
+					elems[i].element.elements[2].elements[1].elements[1].font_size = 30
+					elems[i].element.elements[2].elements[1].elements[2].font_size = 20
                 end
-                description = label:new(level.description, { font_size = 16, wrap = true })
                 self.border_color = { 0, 0, 1, 0.7 }
-				self.margins = {0,32}
+				self.margins = {0,36}
+				self.element.elements[2].elements[1].elements[1].font_size = 60
+				self.element.elements[2].elements[1].elements[2].font_size = 40
+                local description = label:new(level.description, { font_size = 20, wrap = true })
                 self.element.elements[2].elements[2] = update_element(description, self.element.elements[2], 2, self.element.elements[2].elements[2])
 				
 				local width, height = self:calculate_layout(self.last_available_area)
 				local visual_height = state.root.elements[2].canvas:getHeight()
 				local minmax = get_rect_bounds(self.bounds)
-				state.root.elements[2].scroll_target = minmax[4] - height/2 - visual_height/2
+				state.root.elements[2].scroll_target = self.bounds[2] - height/2 - visual_height/2
 				state.root.elements[2].scroll:keyframe(0.2,scroll_target)
 				
                 state.root.elements[2] = update_element(state.root.elements[2], state.root, 2, state.root.elements[2])
