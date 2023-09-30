@@ -1,5 +1,12 @@
 local flex = {}
 flex.__index = flex
+-- ensure that changed is set to true when any property in the change_map is changed
+flex.__newindex = function(t, key, value)
+    if t.change_map[key] and t[key] ~= value then
+        t.changed = true
+    end
+    rawset(t, key, value)
+end
 
 ---create a new flex container
 ---@param elements table
@@ -29,6 +36,15 @@ function flex:new(elements, options)
         -- last resulting width and height
         width = 0,
         height = 0,
+        -- something changed, requires layout recalculation
+        changed = true,
+        change_map = {
+            direction = true,
+            size_ratios = true,
+            align_items = true,
+            align_relative_to = true,
+            scale = true,
+        },
     }, flex)
     for i = 1, #elements do
         elements[i].parent = obj
@@ -66,6 +82,9 @@ function flex:mutated()
         element.parent_index = i
         element:set_scale(self.scale)
         element:set_style(self.style)
+        if element.changed then
+            self.changed = true
+        end
     end
     self:calculate_layout(self.last_available_width, self.last_available_height)
 end
@@ -92,6 +111,9 @@ end
 ---@return number
 ---@return number
 function flex:calculate_layout(width, height)
+    if self.last_available_width == width and self.last_available_height == height and not self.changed then
+        return self.width, self.height
+    end
     self.last_available_width = width
     self.last_available_height = height
     -- define some useful values and functions depending on direction (this prevents cluttering the code with lots of ifs for the direction)
@@ -344,6 +366,7 @@ function flex:calculate_layout(width, height)
     end
 
     self.width, self.height = lt2wh(final_length, final_thickness)
+    self.changed = false
     return self.width, self.height
 end
 

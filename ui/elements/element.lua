@@ -2,12 +2,24 @@ local log = require("log")(...)
 local keyboard_navigation = require("ui.keyboard_navigation")
 local element = {}
 element.__index = element
+-- ensure that changed is set to true when any property in the change_map is changed
+element.__newindex = function(t, key, value)
+    if t.change_map[key] and t[key] ~= value then
+        t.changed = true
+    end
+    rawset(t, key, value)
+end
 
 ---create a new element, implements base functionality for all other elements (does nothing on its own)
 ---@param options any
 ---@return table
 function element:new(options)
     options = options or {}
+    self.changed = true
+    self.change_map = {
+        padding = true,
+        scale = true,
+    }
     self.style = options.style or {}
     self.scale = 1
     self.padding = 8
@@ -50,6 +62,9 @@ end
 ---@return number
 ---@return number
 function element:calculate_layout(width, height)
+    if self.last_available_width == width and self.last_available_height == height and not self.changed then
+        return self.width, self.height
+    end
     self.last_available_width = width
     self.last_available_height = height
     if self.calculate_element_layout then
@@ -58,6 +73,7 @@ function element:calculate_layout(width, height)
         self.width, self.height = self:calculate_element_layout(width - padding, height - padding)
         self.width = self.width + padding
         self.height = self.height + padding
+        self.changed = false
     else
         log("Element has no calculate_element_layout function?")
     end

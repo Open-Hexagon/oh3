@@ -7,6 +7,13 @@ local SCROLL_THRESHOLD = 10
 
 local scroll = {}
 scroll.__index = scroll
+-- ensure that changed is set to true when any property in the change_map is changed
+scroll.__newindex = function(t, key, value)
+    if t.change_map[key] and t[key] ~= value then
+        t.changed = true
+    end
+    rawset(t, key, value)
+end
 
 ---create a scroll container whith a child element
 ---@param element table
@@ -14,7 +21,9 @@ scroll.__index = scroll
 function scroll:new(element, options)
     options = options or {}
     if not element then
-        error("cannot create a scroll container without a child elemencannot create a scroll container without a child element")
+        error(
+            "cannot create a scroll container without a child elemencannot create a scroll container without a child element"
+        )
     end
     local obj = setmetatable({
         -- child element that will be made scrollable
@@ -64,6 +73,11 @@ function scroll:new(element, options)
         last_mouse_pos = { 0, 0 },
         content_length = 0,
         last_content_length = 0,
+        -- something requiring layout recalculation changed
+        changed = true,
+        change_map = {
+            scale = true,
+        },
     }, scroll)
     -- make sure signal isn't getting garbage collected randomly while still being used (yes this can actually happen somehow)
     obj.scroll_pos:persist()
@@ -128,6 +142,7 @@ function scroll:mutated()
     if self.element.parent ~= self then
         self.element.parent = self
     end
+    self.changed = self.changed or self.element.changed
     self.element:set_scale(self.scale)
     self.element:set_style(self.style)
     self:calculate_layout(self.last_available_width, self.last_available_height)
@@ -172,7 +187,10 @@ function scroll:scroll_into_view(x, y, width, height, instant)
 end
 
 local function point_in_scrollbar(self, x, y)
-    return x >= self.scrollbar_area.x and y >= self.scrollbar_area.y and x <= self.scrollbar_area.x + self.scrollbar_area.width and y <= self.scrollbar_area.y + self.scrollbar_area.height
+    return x >= self.scrollbar_area.x
+        and y >= self.scrollbar_area.y
+        and x <= self.scrollbar_area.x + self.scrollbar_area.width
+        and y <= self.scrollbar_area.y + self.scrollbar_area.height
 end
 
 ---process an event
@@ -236,7 +254,14 @@ function scroll:process_event(name, ...)
         if not self.first_touch_pos then
             self.first_touch_pos = { x, y }
         end
-        if contains(x, y) and (math.abs(x - self.first_touch_pos[1]) > SCROLL_THRESHOLD or math.abs(y - self.first_touch_pos[2]) > SCROLL_THRESHOLD or self.last_finger ~= nil) then
+        if
+            contains(x, y)
+            and (
+                math.abs(x - self.first_touch_pos[1]) > SCROLL_THRESHOLD
+                or math.abs(y - self.first_touch_pos[2]) > SCROLL_THRESHOLD
+                or self.last_finger ~= nil
+            )
+        then
             if finger == self.last_finger then
                 -- get position change in scroll direction
                 local dx = x - self.last_finger_x
@@ -316,13 +341,16 @@ end
 ---@return number
 ---@return number
 function scroll:calculate_layout(width, height)
+    if self.last_available_width == width and self.last_available_height == height and not self.changed then
+        return self.width, self.height
+    end
     self.last_available_width = width
     self.last_available_height = height
     local avail_len = self.wh2lt(width, height)
     local thick
     self.content_length, thick = self.wh2lt(self.element:calculate_layout(width, height))
     -- determine if container is overflowing
-     --            overflow
+    --            overflow
     --           <---------->
     -- +---------+----------+
     -- |         |          |
@@ -342,6 +370,7 @@ function scroll:calculate_layout(width, height)
         self.scroll_pos:set_immediate_value(self.scroll_target)
     end
     self.width, self.height = self.lt2wh(math.min(self.content_length, avail_len), thick)
+    self.changed = false
     return self.width, self.height
 end
 
@@ -361,7 +390,14 @@ function scroll:draw()
         self.last_width = self.width
         self.last_height = self.height
     end
-    if self.scrollable and (self.scroll_pos() ~= self.last_scroll_value or size_changed or self.content_length ~= self.last_content_length) then
+    if
+        self.scrollable
+        and (
+            self.scroll_pos() ~= self.last_scroll_value
+            or size_changed
+            or self.content_length ~= self.last_content_length
+        )
+    then
         self.last_content_length = self.content_length
         self.last_scroll_value = self.scroll_pos()
         -- update the scrollbar area
@@ -375,7 +411,8 @@ function scroll:draw()
         local bar_length = visible_length ^ 2 / (visible_length + self.max_scroll)
         -- max the scrollbar can move around
         local max_move = visible_length - bar_length
-        self.scrollbar_area.x, self.scrollbar_area.y = self.lt2wh(normalized_scroll * max_move, visible_thickness - bar_thick)
+        self.scrollbar_area.x, self.scrollbar_area.y =
+            self.lt2wh(normalized_scroll * max_move, visible_thickness - bar_thick)
         self.scrollbar_area.width, self.scrollbar_area.height = self.lt2wh(bar_length, bar_thick)
     end
     love.graphics.push()
@@ -402,11 +439,18 @@ function scroll:draw()
         love.graphics.draw(self.canvas)
         if self.scrollbar_vanish then
             -- visible for 1.5s after interaction, then fading out
-            self.scrollbar_color[4] = math.min(math.max(1.5 - love.timer.getTime() + self.scrollbar_visibility_timer, 0), 1)
+            self.scrollbar_color[4] =
+                math.min(math.max(1.5 - love.timer.getTime() + self.scrollbar_visibility_timer, 0), 1)
         end
         -- draw scrollbar
         love.graphics.setColor(self.scrollbar_color)
-        love.graphics.rectangle("fill", self.scrollbar_area.x, self.scrollbar_area.y, self.scrollbar_area.width, self.scrollbar_area.height)
+        love.graphics.rectangle(
+            "fill",
+            self.scrollbar_area.x,
+            self.scrollbar_area.y,
+            self.scrollbar_area.width,
+            self.scrollbar_area.height
+        )
     end
     love.graphics.pop()
 end

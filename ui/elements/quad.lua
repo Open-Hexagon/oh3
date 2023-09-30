@@ -23,7 +23,16 @@ function quad:new(options)
     if obj.element then
         obj.element.parent = obj
     end
+    obj.change_map.element = true
+    obj.change_map.vertex_offsets = true
     return obj
+end
+
+---notify the element about mutations to its child
+function quad:mutated()
+    if self.element then
+        self.changed = self.changed or self.element.changed
+    end
 end
 
 ---set the style

@@ -42,10 +42,7 @@ return function(state)
                             local level = pack.levels[j]
                             level_elements[j] = make_level_element(state, pack, level)
                         end
-                        levels = flex:new(
-                            level_elements,
-                            { direction = "column", align_items = "stretch" }
-                        )
+                        levels = flex:new(level_elements, { direction = "column", align_items = "stretch" })
                         cache_folder_flex[pack.id] = levels
                     end
                     local pack_changed = levels ~= state.root.elements[2].element

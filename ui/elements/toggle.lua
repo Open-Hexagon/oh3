@@ -27,6 +27,7 @@ function toggle:new(options)
     if obj.state then
         obj.state_indicator_offset:set_immediate_value(obj.radius * 2)
     end
+    obj.change_map.radius = true
     return obj
 end
 

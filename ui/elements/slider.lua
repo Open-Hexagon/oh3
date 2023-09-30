@@ -20,6 +20,9 @@ function slider:new(options)
     )
     obj.selectable = true
     obj.position:set_immediate_value(obj.state)
+    obj.change_map.steps = true
+    obj.change_map.step_size = true
+    obj.change_map.radius = true
     return obj
 end
 

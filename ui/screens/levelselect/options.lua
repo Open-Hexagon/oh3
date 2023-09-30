@@ -33,7 +33,7 @@ return function(state, pack, level)
                 { font_size = 30, style = { color = { 0, 0, 0, 1 }, padding = 8 }, wrap = true }
             )
             self.background_color = { 1, 1, 0, 1 }
-            self.element = selections_element  -- later mutated call on root will handle this
+            self.element = selections_element -- later mutated call on root will handle this
             state.level_options_selected = { difficulty_mult = selections[selections_index] }
             local score = flex:new({
                 make_localscore_element(pack.id, level.id, state.level_options_selected),

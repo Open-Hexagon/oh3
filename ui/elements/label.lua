@@ -26,7 +26,7 @@ function label:new(text, options)
     if not font[font_size] then
         font[font_size] = love.graphics.newFont(options.font_file or default_font_file, font_size)
     end
-    return element.new(
+    local obj = element.new(
         setmetatable({
             raw_text = text,
             text = love.graphics.newText(font[font_size], text),
@@ -38,6 +38,13 @@ function label:new(text, options)
         }, label),
         options
     )
+    obj.change_map.raw_text = true
+    obj.change_map.wrap = true
+    obj.change_map.font = true
+    obj.change_map.font_file = true
+    obj.change_map.font_size = true
+    obj.change_map.cutoff_suffix = true
+    return obj
 end
 
 ---set the gui scale for the label
