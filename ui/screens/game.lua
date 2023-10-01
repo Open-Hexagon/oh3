@@ -38,6 +38,7 @@ local function retry()
 end
 
 local death_overlay = get_death_overlay(back_to_menu, retry)
+local last_width, last_height
 
 game_handler.onupdate = function()
     local score = game_handler.get_score()
@@ -58,7 +59,12 @@ game_handler.onupdate = function()
     timer.element.raw_text = score_str
     timer.element.changed = true
     timer:mutated()
-    death_overlay:calculate_layout(love.graphics.getWidth(), love.graphics.getHeight())
+    local width, height = love.graphics.getDimensions()
+    if last_width ~= width or last_height ~= height then
+        last_width = width
+        last_height = height
+        death_overlay:calculate_layout(width, height)
+    end
     -- show death screen when dead
     if game_handler.is_dead() then
         if game_handler.is_replaying() then
