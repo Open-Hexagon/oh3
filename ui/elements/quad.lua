@@ -106,6 +106,8 @@ function quad:calculate_element_layout(available_width, available_height)
         else
             width, height = self.element:calculate_layout(width, height)
         end
+        self.element._transform:reset()
+        self.element._transform:translate(left, top)
     end
     self.vertices[1] = left - vertex_offsets[1]
     self.vertices[2] = top - vertex_offsets[2]
