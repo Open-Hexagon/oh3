@@ -99,6 +99,7 @@ function flex:process_event(name, ...)
     love.graphics.applyTransform(self.transform)
     for i = 1, #self.elements do
         if self.elements[i]:process_event(name, ...) then
+            love.graphics.pop()
             return true
         end
     end

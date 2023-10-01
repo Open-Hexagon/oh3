@@ -243,6 +243,7 @@ function scroll:process_event(name, ...)
         love.graphics.translate(self.lt2wh(-self.scroll_pos(), 0))
         if self.element:process_event(name, ...) then
             love.graphics.pop()
+            love.graphics.pop()
             return true
         end
         love.graphics.pop()
