@@ -50,6 +50,11 @@ return function(state)
                         state.root.elements[2].element = levels
                         state.root.elements[2]:mutated()
                         levels.elements[1]:click(false)
+                        -- reset scroll
+                        levels.parent.scroll_pos:stop()
+                        levels.parent.scrollbar_visibility_timer = -2
+                        levels.parent.scroll_pos:set_immediate_value(0)
+                        levels.parent.scroll_target = 0
                     end
                 end,
             })
