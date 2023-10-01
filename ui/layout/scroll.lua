@@ -72,6 +72,9 @@ function scroll:new(element, options)
         last_mouse_pos = { 0, 0 },
         content_length = 0,
         last_content_length = 0,
+        -- amount that children can expand
+        expandable_x = 0,
+        expandable_y = 0,
         -- something requiring layout recalculation changed
         changed = true,
         change_map = {
@@ -352,7 +355,7 @@ function scroll:calculate_layout(width, height)
     end
     self.last_available_width = width
     self.last_available_height = height
-    local avail_len = self.wh2lt(width, height)
+    local avail_len, avail_thick = self.wh2lt(width, height)
     local thick
     self.content_length, thick = self.wh2lt(self.element:calculate_layout(width, height))
     -- determine if container is overflowing
@@ -375,6 +378,7 @@ function scroll:calculate_layout(width, height)
         self.scroll_pos:stop()
         self.scroll_pos:set_immediate_value(self.scroll_target)
     end
+    self.expandable_x, self.expandable_y = self.lt2wh(math.huge, avail_thick - thick)
     self.width, self.height = self.lt2wh(math.min(self.content_length, avail_len), thick)
     self.changed = false
     return self.width, self.height

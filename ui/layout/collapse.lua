@@ -1,3 +1,4 @@
+local log = require("log")(...)
 local animated_transform = require("ui.anim.transform")
 local signal = require("ui.anim.signal")
 
@@ -50,6 +51,9 @@ function collapse:new(element, options)
         is_open = false,
         -- time it takes to open/close
         duration = options.duration or 0.2,
+        -- how much child can expand
+        expandable_x = 0,
+        expandable_y = 0,
         -- something requiring layout recalculation changed
         changed = true,
         change_map = {
@@ -176,12 +180,37 @@ function collapse:calculate_layout(width, height)
     end
     self.content_length, self.content_thickness = self.wh2lt(content_width, content_height)
     self.width, self.height = self.lt2wh(self.pos(), self.content_thickness)
+    self.expandable_x = width - self.width
+    self.expandable_y = height - self.height
     self.changed = false
     return self.width, self.height
 end
 
+---find a sufficiently expandable parent
+---@param self any
+local function find_expandable_parent(self, elem)
+    local expand_amount = self.content_length - self.pos()
+    local elem_amount = self.wh2lt(elem.expandable_x, elem.expandable_y)
+    elem.changed = true
+    if elem_amount >= expand_amount then
+        return elem
+    else
+        if elem.parent then
+            return find_expandable_parent(self, elem.parent)
+        else
+            log("collapse does not have sufficiently expandable parent!")
+            return elem
+        end
+    end
+end
+
 ---draw the collapse container with its child
 function collapse:draw()
+    if self.pos() ~= self.last_pos then
+        self.last_pos = self.pos()
+        self.changed = true
+        find_expandable_parent(self, self.parent):mutated()
+    end
     if math.floor(self.width) == 0 or math.floor(self.height) == 0 or self.canvas == nil then
         -- don't draw anything without having any size or canvas
         return
@@ -192,7 +221,7 @@ function collapse:draw()
     love.graphics.origin()
     love.graphics.clear(0, 0, 0, 0)
     -- this way the child moves in
-    -- closed state          animating state   open state
+    -- closed state            animating state     open state
     -- +--------+              +--------+          +--------+
     -- |        +--------+     |    +---+----+     +--------+
     -- | canvas | child  | <-> | can| child  | <-> | child  |

@@ -37,6 +37,9 @@ function flex:new(elements, options)
         -- last resulting width and height
         width = 0,
         height = 0,
+        -- amount that children can expand
+        expandable_x = 0,
+        expandable_y = 0,
         -- something changed, requires layout recalculation
         changed = true,
         change_map = {
@@ -386,6 +389,8 @@ function flex:calculate_layout(width, height)
     end
 
     self.width, self.height = lt2wh(final_length, final_thickness)
+    self.expandable_x = width - self.width
+    self.expandable_y = height - self.height
     self.changed = false
     return self.width, self.height
 end

@@ -38,6 +38,8 @@ function element:new(options)
     self._transform = love.math.newTransform()
     self.local_mouse_x = 0
     self.local_mouse_y = 0
+    self.expandable_x = 0
+    self.expandable_y = 0
     if options.style then
         self:set_style(options.style)
     end
@@ -85,6 +87,8 @@ function element:calculate_layout(width, height)
     else
         log("Element has no calculate_element_layout function?")
     end
+    self.expandable_x = width - self.width
+    self.expandable_y = height - self.height
     return self.width, self.height
 end
 
