@@ -22,6 +22,7 @@ local start_time
 local aspect_ratio = 16 / 9
 local scale = { 1, 1 }
 local screen
+local was_replaying
 if not args.headless then
     -- correct aspect ratio initially (before the user resizes the window)
     love.event.push("resize", love.graphics.getDimensions())
@@ -85,6 +86,7 @@ game_handler.preview_start = async(function(pack, level, level_settings, is_retr
         game_config.get("background_preview_music_volume"),
         game_config.get("background_preview_sound_volume")
     )
+    was_replaying = false
     current_game.preview_mode = true
     current_game.death_callback = nil
     current_game.persistent_data = nil
@@ -105,9 +107,11 @@ end)
 ---@param is_retry boolean = false
 game_handler.record_start = async(function(pack, level, level_settings, is_retry)
     is_resumed = false
+    was_replaying = false
     game_handler.set_volume(game_config.get("music_volume"), game_config.get("sound_volume"))
     current_game.preview_mode = false
     current_game.death_callback = function()
+        input.record_stop()
         if current_game.update_save_data ~= nil then
             current_game.update_save_data()
         end
@@ -152,6 +156,7 @@ end)
 ---@param file_or_replay_obj string|Replay
 game_handler.replay_start = async(function(file_or_replay_obj)
     is_resumed = false
+    was_replaying = true
     game_handler.set_volume(game_config.get("music_volume"), game_config.get("sound_volume"))
     local replay
     if type(file_or_replay_obj) == "table" then
@@ -178,6 +183,7 @@ game_handler.replay_start = async(function(file_or_replay_obj)
         game_config.set(name, value)
     end
     current_game.death_callback = function()
+        input.replay_stop()
         for name, value in pairs(old_config_values) do
             game_config.set(name, value)
         end
@@ -198,7 +204,7 @@ end
 ---check if the game is replaying a replay
 ---@return boolean
 function game_handler.is_replaying()
-    return input.is_replaying()
+    return was_replaying
 end
 
 ---process an event (mainly used for aspect ratio resizing)
