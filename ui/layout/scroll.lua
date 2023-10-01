@@ -81,8 +81,6 @@ function scroll:new(element, options)
             scale = true,
         },
     }, scroll)
-    -- make sure signal isn't getting garbage collected randomly while still being used (yes this can actually happen somehow)
-    obj.scroll_pos:persist()
     obj.element.parent = obj
     if options.style then
         obj:set_style(options.style)
@@ -150,7 +148,7 @@ function scroll:mutated()
     if self.element.parent ~= self then
         self.element.parent = self
     end
-    self.changed = self.changed or self.element.changed
+    self.changed = true
     self.element:set_scale(self.scale)
     self.element:set_style(self.style)
     self:calculate_layout(self.last_available_width, self.last_available_height)

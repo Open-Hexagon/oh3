@@ -31,9 +31,8 @@ end
 
 ---notify the element about mutations to its child
 function quad:mutated()
-    if self.element then
-        self.changed = self.changed or self.element.changed
-    end
+    self.changed = true
+    self:calculate_layout(self.last_available_width, self.last_available_height)
 end
 
 ---set the style

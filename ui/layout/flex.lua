@@ -104,10 +104,8 @@ function flex:mutated()
         element.parent_index = i
         element:set_scale(self.scale)
         element:set_style(self.style)
-        if element.changed then
-            self.changed = true
-        end
     end
+    self.changed = true
     self:calculate_layout(self.last_available_width, self.last_available_height)
 end
 
