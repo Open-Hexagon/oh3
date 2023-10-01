@@ -62,6 +62,21 @@ function flex:set_style(style)
     for i = 1, #self.elements do
         self.elements[i]:set_style(style)
     end
+    -- detect changes
+    for key, value in pairs(style) do
+        if self.style[key] ~= value then
+            self.changed = true
+            break
+        end
+    end
+    if not self.changed then
+        for key, value in pairs(self.style) do
+            if style[key] ~= value then
+                self.changed = true
+                break
+            end
+        end
+    end
     self.style = style
 end
 
@@ -70,6 +85,9 @@ end
 function flex:set_scale(scale)
     for i = 1, #self.elements do
         self.elements[i]:set_scale(scale)
+    end
+    if self.scale ~= scale then
+        self.changed = true
     end
     self.scale = scale
 end

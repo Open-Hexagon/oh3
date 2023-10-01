@@ -46,13 +46,20 @@ end
 ---set the style of the element
 ---@param style table
 function element:set_style(style)
-    self.padding = self.style.padding or style.padding or self.padding
+    local new_padding = self.style.padding or style.padding or self.padding
+    if self.padding ~= new_padding then
+        self.changed = true
+    end
+    self.padding = new_padding
     self.color = self.style.color or style.color or self.color
 end
 
 ---set the scale of the element
 ---@param scale number
 function element:set_scale(scale)
+    if self.scale ~= scale then
+        self.changed = true
+    end
     self.scale = scale
 end
 

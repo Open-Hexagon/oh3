@@ -55,6 +55,9 @@ function label:set_scale(scale)
         self.font[font_size] = love.graphics.newFont(self.font_file, font_size)
     end
     self.text:setFont(self.font[font_size])
+    if self.scale ~= scale then
+        self.changed = true
+    end
     self.scale = scale
 end
 

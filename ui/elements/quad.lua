@@ -40,6 +40,7 @@ end
 function quad:set_style(style)
     if self.element then
         self.element:set_style(style)
+        self.changed = self.changed or self.element.changed
     end
     self.background_color = self.style.background_color or style.background_color or self.background_color
     self.border_thickness = self.style.border_thickness or style.border_thickness or self.border_thickness
@@ -52,6 +53,9 @@ end
 function quad:set_scale(scale)
     if self.element then
         self.element:set_scale(scale)
+    end
+    if self.scale ~= scale then
+        self.changed = true
     end
     self.scale = scale
 end

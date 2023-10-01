@@ -125,6 +125,9 @@ end
 ---@param style table
 function scroll:set_style(style)
     self.element:set_style(style)
+    if self.element.changed then
+        self.changed = true
+    end
     self.scrollbar_vanish = style.scrollbar_vanish or self.scrollbar_vanish
     self.scrollbar_color = style.scrollbar_color or self.scrollbar_color
     self.scrollbar_thickness = style.scrollbar_thickness or self.scrollbar_thickness
@@ -134,6 +137,9 @@ end
 ---@param scale any
 function scroll:set_scale(scale)
     self.element:set_scale(scale)
+    if self.scale ~= scale then
+        self.changed = true
+    end
     self.scale = scale
 end
 
