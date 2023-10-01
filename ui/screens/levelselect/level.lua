@@ -42,7 +42,7 @@ return function(state, pack, level, extra_info)
         pack.game_version,
         pack.id,
         level.id,
-        { style = { padding = 0, border_color = { 1, 1, 1, 1 }, border_thickness = 2 } }
+        { style = { padding = 4, border_color = { 1, 1, 1, 1 }, border_thickness = 2 } }
     )
     return quad:new({
         child_element = flex:new({
