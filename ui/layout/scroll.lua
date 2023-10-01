@@ -383,6 +383,10 @@ end
 
 ---draw the scroll container with its child
 function scroll:draw()
+    if math.floor(self.width) == 0 or math.floor(self.height) == 0 then
+        -- don't draw anything without having any size
+        return
+    end
     local size_changed = false
     if self.width ~= self.last_width or self.height ~= self.last_height then
         size_changed = true
