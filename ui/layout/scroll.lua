@@ -1,3 +1,4 @@
+local animated_transform = require("ui.anim.transform")
 local signal = require("ui.anim.signal")
 local ease = require("ui.anim.ease")
 local extmath = require("ui.extmath")
@@ -33,7 +34,7 @@ function scroll:new(element, options)
         scale = 1,
         style = {},
         -- transform the user can modify
-        transform = love.math.newTransform(),
+        transform = animated_transform:new(),
         -- transform used for internal layouting
         _transform = love.math.newTransform(),
         -- store last available area in order to only recalculate this container's layout in response to mutation
@@ -206,7 +207,7 @@ function scroll:process_event(name, ...)
     love.graphics.push()
     -- can just apply transforms and scroll, canvas is only a rendering detail (may need to limit interaction to container dimensions though)
     love.graphics.applyTransform(self._transform)
-    love.graphics.applyTransform(self.transform)
+    animated_transform.apply(self.transform)
 
     ---check if container contains a point
     ---@param x number
@@ -436,7 +437,7 @@ function scroll:draw()
     else
         -- when not drawing on canvas transformations have to be taken into account
         love.graphics.applyTransform(self._transform)
-        love.graphics.applyTransform(self.transform)
+        animated_transform.apply(self.transform)
     end
     self.element:draw()
     if self.scrollable then
@@ -445,7 +446,7 @@ function scroll:draw()
         love.graphics.push()
         -- canvas is drawn with transformations now (elements in canvas are not)
         love.graphics.applyTransform(self._transform)
-        love.graphics.applyTransform(self.transform)
+        animated_transform.apply(self.transform)
         love.graphics.setColor(1, 1, 1, 1)
         love.graphics.draw(self.canvas)
         if self.scrollbar_vanish then

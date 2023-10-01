@@ -1,3 +1,4 @@
+local animated_transform = require("ui.anim.transform")
 local element = require("ui.elements.element")
 local quad = {}
 quad.__index = setmetatable(quad, {
@@ -65,7 +66,7 @@ end
 function quad:process_event(...)
     love.graphics.push()
     love.graphics.applyTransform(self._transform)
-    love.graphics.applyTransform(self.transform)
+    animated_transform.apply(self.transform)
     if self.element then
         if self.element:process_event(...) then
             love.graphics.pop()

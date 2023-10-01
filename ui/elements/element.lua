@@ -1,4 +1,5 @@
 local log = require("log")(...)
+local animated_transform = require("ui.anim.transform")
 local keyboard_navigation = require("ui.keyboard_navigation")
 local element = {}
 element.__index = element
@@ -33,7 +34,7 @@ function element:new(options)
     self.last_available_height = 0
     self.width = 0
     self.height = 0
-    self.transform = love.math.newTransform()
+    self.transform = animated_transform:new()
     self._transform = love.math.newTransform()
     self.local_mouse_x = 0
     self.local_mouse_y = 0
@@ -182,7 +183,7 @@ end
 function element:draw()
     love.graphics.push()
     love.graphics.applyTransform(self._transform)
-    love.graphics.applyTransform(self.transform)
+    animated_transform.apply(self.transform)
     local padding = self.padding * self.scale
     love.graphics.translate(padding, padding)
     self:draw_element()

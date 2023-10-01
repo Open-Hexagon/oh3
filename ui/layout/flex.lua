@@ -1,3 +1,4 @@
+local animated_transform = require("ui.anim.transform")
 local flex = {}
 flex.__index = flex
 -- ensure that changed is set to true when any property in the change_map is changed
@@ -27,7 +28,7 @@ function flex:new(elements, options)
         scale = 1,
         style = {},
         -- transform the user can modify
-        transform = love.math.newTransform(),
+        transform = animated_transform:new(),
         -- transform used for internal layouting
         _transform = love.math.newTransform(),
         -- store last available area in order to only recalculate this container's layout in response to mutation
@@ -114,7 +115,7 @@ end
 function flex:process_event(name, ...)
     love.graphics.push()
     love.graphics.applyTransform(self._transform)
-    love.graphics.applyTransform(self.transform)
+    animated_transform.apply(self.transform)
     for i = 1, #self.elements do
         if self.elements[i]:process_event(name, ...) then
             love.graphics.pop()
@@ -393,7 +394,7 @@ end
 function flex:draw()
     love.graphics.push()
     love.graphics.applyTransform(self._transform)
-    love.graphics.applyTransform(self.transform)
+    animated_transform.apply(self.transform)
     for i = 1, #self.elements do
         self.elements[i]:draw()
     end
