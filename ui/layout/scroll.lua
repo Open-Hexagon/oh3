@@ -16,15 +16,13 @@ scroll.__newindex = function(t, key, value)
     rawset(t, key, value)
 end
 
----create a scroll container whith a child element
+---create a scroll container with a child element
 ---@param element table
 ---@return table
 function scroll:new(element, options)
     options = options or {}
     if not element then
-        error(
-            "cannot create a scroll container without a child elemencannot create a scroll container without a child element"
-        )
+        error("cannot create a scroll container without a child element")
     end
     local obj = setmetatable({
         -- child element that will be made scrollable
