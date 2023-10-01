@@ -3,43 +3,26 @@
 local flex = require("ui.layout.flex")
 local label = require("ui.elements.label")
 local quad = require("ui.elements.quad")
-local dropdown = require("ui.elements.dropdown")
+local collapse = require("ui.layout.collapse")
 local toggle = require("ui.elements.toggle")
 local slider = require("ui.elements.slider")
 local scroll = require("ui.layout.scroll")
+local test_collapse = collapse:new(flex:new({
+    label:new("this is in"),
+    label:new("a collapsible"),
+    label:new("container"),
+}, { direction = "column" }))
 return scroll:new(
     flex:new({
         flex:new({
-            dropdown:new({ "first", "second", "third", "and last selection!" }),
+            label:new("Click on me", { selectable = true, click_handler = function() test_collapse:toggle() end }),
+            test_collapse,
             label:new("Hello"),
             label:new("World", { selectable = true }),
             label:new(
                 "This is some incredibly, unimaginably, unfathomably long wrapping text!!!!!!!!!!",
                 { wrap = true }
             ),
-            dropdown:new({
-                "this",
-                "dropdown",
-                "has",
-                "many",
-                "selections",
-                "in",
-                "order",
-                "to",
-                "test",
-                "the",
-                "scroll",
-                "try some longer text as well",
-                "maybe something weird will happen if it gets too long",
-                "otherwise",
-                "i really hope",
-                "i have",
-                "enough",
-                "entries",
-                "to try",
-                "scrolling",
-                "now",
-            }),
             flex:new({
                 label:new("You can toggle this one:"),
                 toggle:new(),
