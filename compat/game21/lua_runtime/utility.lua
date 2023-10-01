@@ -201,14 +201,12 @@ return function(public, game, assets)
     env.u_clearWalls = function()
         game.walls.clear()
     end
-    local first_angle_get = true
     env.u_getPlayerAngle = function()
         if public.preview_mode then
-            -- send real value for the first call for levels that initialize pattern spawning at player position
-            if not first_angle_get then
+            -- return real angle if called from a function named 'getPlayerSide'
+            if not debug.traceback():match("in function 'getPlayerSide'") then
                 return -(0 / 0)
             end
-            first_angle_get = false
         end
         return game.player.get_player_angle()
     end
