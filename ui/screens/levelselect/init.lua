@@ -1,6 +1,5 @@
 local flex = require("ui.layout.flex")
 local label = require("ui.elements.label")
-local dropdown = require("ui.elements.dropdown")
 local scroll = require("ui.layout.scroll")
 local make_pack_elements = require("ui.screens.levelselect.packs")
 
@@ -11,8 +10,6 @@ local pack_elems = make_pack_elements(state)
 state.root = flex:new({
     --packs
     flex:new({
-        -- dropdowns are broken atm TODO: fix
-        --dropdown:new({ "All Packs", "Favorites" }, { limit_to_inital_width = true, style = { border_thickness = 5 } }),
         scroll:new(flex:new(pack_elems, { direction = "column", align_items = "stretch" })),
     }, { direction = "column", align_items = "stretch" }),
 
