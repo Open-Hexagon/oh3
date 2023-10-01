@@ -15,6 +15,7 @@ function slider:new(options)
             radius = options.radius or 16,
             background_color = { 0.5, 0.5, 0.5, 1 },
             position = signal.new_queue(0),
+            grabbed = false,
         }, slider),
         options
     )
@@ -27,22 +28,41 @@ function slider:new(options)
 end
 
 function slider:process_event(name, ...)
-    element.process_event(self, name, ...)
-    local last_state = self.state
-    if name == "wheelmoved" and self.is_mouse_over and self:check_screen() then
-        self.selected = true
-        keyboard_navigation.select_element(self)
+    if element.process_event(self, name, ...) then
+        return true
+    end
+    local function select_this_elem()
+        -- don't call handlers there to respect handlers stopping propagation
+        keyboard_navigation.select_element(self, false)
         if self.selection_handler then
             if self.selection_handler(self) then
                 return true
             end
         end
+    end
+    local last_state = self.state
+    if name == "wheelmoved" and self.is_mouse_over and self:check_screen() then
+        select_this_elem()
         local _, direction = ...
         self.state = extmath.clamp(self.state - direction, 0, self.steps)
     end
-    if (name == "mousemoved" or name == "mousepressed") and self.is_mouse_over and love.mouse.isDown(1) then
+    local function move_state_to_mouse()
         self.state = math.floor((self.local_mouse_x - self.radius * self.scale) / (self.step_size * self.scale) + 0.5)
         self.state = extmath.clamp(self.state, 0, self.steps)
+    end
+    if name == "mousepressed" and self.is_mouse_over then
+        self.grabbed = true
+        select_this_elem()
+        move_state_to_mouse()
+    end
+    if name == "mousemoved" and self.grabbed then
+        move_state_to_mouse()
+    end
+    if name == "mousereleased" then
+        if self.grabbed then
+            self.grabbed = false
+            return true
+        end
     end
     if name == "keypressed" and self.selected then
         local key = ...
