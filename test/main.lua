@@ -23,6 +23,7 @@ love.filesystem.setIdentity("ohtest")
 require("love.arg")
 require("love.timer")
 require("love.keyboard")
+require("love.thread")
 local newarg = { "test", "--pattern", "lua", "--exclude-pattern", "main.lua" }
 for i = 1, #arg do
     newarg[#newarg + 1] = arg[i]
