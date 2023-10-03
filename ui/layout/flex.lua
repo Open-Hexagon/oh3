@@ -171,6 +171,7 @@ function flex:calculate_layout(width, height)
         -- +---+ v
         -- <--->
         --  thickness
+		-- these diagrams are so cute :3 thx baum
         available_thickness = width
         available_length = height
         --converts length and thickness to width and height (defaults to avalable area)

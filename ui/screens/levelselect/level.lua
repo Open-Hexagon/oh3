@@ -7,6 +7,7 @@ local quad = require("ui.elements.quad")
 local flex = require("ui.layout.flex")
 local make_options_element = require("ui.screens.levelselect.options")
 local make_localscore_element = require("ui.screens.levelselect.score")
+local extmath = require("ui.extmath")
 
 local function get_rect_bounds(bounds)
     local minmax = { math.huge, math.huge, -math.huge, -math.huge }
@@ -63,7 +64,7 @@ return function(state, pack, level, extra_info)
                     label:new(level.name, { font_size = 30, wrap = true }),
                     label:new(level.author, { font_size = 20, wrap = true }),
                 }, { direction = "column", style = { padding = 5 } }),
-                label:new(level.description, { font_size = 20, wrap = true }),
+                label:new("", { font_size = 20, wrap = true }),
             }, { direction = "column" }),
             --flex:new({label:new(music, { font_size = 30, wrap = true })}, { align_items = "end", direction = "column" }),
         }, { direction = "row" }),
@@ -82,10 +83,10 @@ return function(state, pack, level, extra_info)
             if level_element_selected ~= self then
                 local elems = self.parent.elements
                 for i = 1, #elems do
-                    description = label:new("", { font_size = 20, wrap = true })
+                    local description = label:new("", { font_size = 20, wrap = true })
                     elems[i].margins = {16,0}
                     elems[i].border_color = { 0, 0, 0, 0.7 }
-                    --elems[i].element.elements[2].elements[2] = update_element(description, elems[i].element.elements[2], 2, elems[i].element.elements[2].elements[2])
+                    elems[i].element.elements[2].elements[2] = description
 					elems[i].element.elements[2].elements[1].elements[1].font_size = 30
 					elems[i].element.elements[2].elements[1].elements[2].font_size = 20
                 end
@@ -94,15 +95,19 @@ return function(state, pack, level, extra_info)
 				self.element.elements[2].elements[1].elements[1].font_size = 60
 				self.element.elements[2].elements[1].elements[2].font_size = 40
                 local description = label:new(level.description, { font_size = 20, wrap = true })
-                --self.element.elements[2].elements[2] = update_element(description, self.element.elements[2], 2, self.element.elements[2].elements[2])
+                self.element.elements[2].elements[2] = description
+                self.parent:mutated()
+                self.parent.parent:mutated()
 				
-				local width, height = self:calculate_layout(self.last_available_area)
-				local visual_height = state.root.elements[2].canvas:getHeight()
-				local minmax = get_rect_bounds(self.bounds)
-				state.root.elements[2].scroll_target = self.bounds[2] - height/2 - visual_height/2
-				state.root.elements[2].scroll:keyframe(0.2,scroll_target)
-				
-                --state.root.elements[2] = update_element(state.root.elements[2], state.root, 2, state.root.elements[2])
+				local x, y = self.transform:transformPoint(self._transform:transformPoint(0, 0))
+				local bounds_start = state.root.elements[2].wh2lt(x, y)
+				local visual_length = state.root.elements[2].wh2lt(state.root.elements[2].width, state.root.elements[2].height)
+				local width, height = self:calculate_layout(self.width,self.height)
+				local screen_bounds_start = state.root.elements[2].wh2lt(x, y)
+				local screen_bounds_end = state.root.elements[2].wh2lt(x + state.root.elements[2].width, y + state.root.elements[2].height)
+				state.root.elements[2].scroll_target = bounds_start + height/2 - visual_length/2
+				state.root.elements[2].scroll_target = extmath.clamp(state.root.elements[2].scroll_target, 0, state.root.elements[2].max_scroll)
+				state.root.elements[2].scroll_pos:keyframe(0.2,state.root.elements[2].scroll_target)
 				
                 local score = flex:new({
                     make_localscore_element(pack.id, level.id, { difficulty_mult = 1 }),
