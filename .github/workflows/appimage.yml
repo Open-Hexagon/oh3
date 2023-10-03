@@ -30,10 +30,11 @@ jobs:
 
     - name: Create App image
       run: |
-        cd extra/linux
-        mkdir -p sqashfs-root/share/games/oh3
-        cp -r *.lua assets compat extlibs game game_handler server ui squashfs-root/share/games/oh3
+        mkdir -p extra/linux/sqashfs-root/share/games/oh3
+        tree extra/linux
+        cp -r *.lua assets compat extlibs game game_handler server ui extra/linux/squashfs-root/share/games/oh3
         # extract love over everything
+        cd extra/linux
         wget https://github.com/love2d/love/releases/download/11.4/love-11.4-x86_64.AppImage
         chmod +x love-11.4-x86_64.AppImage
         ./love-11.4-x86_64.AppImage --appimage-extract
