@@ -38,7 +38,6 @@ local clib = (function()
                     "/usr/lib/x86_64-linux-gnu/libsqlite3.so.0",
                     "/usr/lib64/libsqlite3.so",
                     "/usr/lib/libsqlite3.so",
-                    "lib/libsqlite3.so",
                 }
                 for _, v in pairs(linux_paths) do
                     if file_exists(v) then
