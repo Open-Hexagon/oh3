@@ -1,5 +1,8 @@
 local args = require("args")
 local utils = require("compat.game192.utils")
+local config = require("config")
+local status = require("compat.game21.status")
+local style = require("compat.game21.style")
 local pseudo3d = {}
 local game, layer_shader
 local layer_offsets = {}
@@ -36,23 +39,22 @@ function pseudo3d.init(pass_game)
 end
 
 function pseudo3d.update(frametime)
-    game.status.pulse3D = utils.float_round(
-        game.status.pulse3D + game.style.pseudo_3D_pulse_speed * game.status.pulse3D_direction * frametime
-    )
-    if game.status.pulse3D > game.style.pseudo_3D_pulse_max then
-        game.status.pulse3D_direction = -1
-    elseif game.status.pulse3D < game.style.pseudo_3D_pulse_min then
-        game.status.pulse3D_direction = 1
+    status.pulse3D =
+        utils.float_round(status.pulse3D + style.pseudo_3D_pulse_speed * status.pulse3D_direction * frametime)
+    if status.pulse3D > style.pseudo_3D_pulse_max then
+        status.pulse3D_direction = -1
+    elseif status.pulse3D < style.pseudo_3D_pulse_min then
+        status.pulse3D_direction = 1
     end
 end
 
 local depth, pulse_3d, effect, rad_rot, sin_rot, cos_rot
 
 function pseudo3d.apply_skew()
-    if game.config.get("3D_enabled") then
-        depth = game.style.pseudo_3D_depth
-        pulse_3d = game.config.get("pulse") and game.status.pulse3D or 1
-        effect = game.style.pseudo_3D_skew * pulse_3d * game.config.get("3D_multiplier")
+    if config.get("3D_enabled") then
+        depth = style.pseudo_3D_depth
+        pulse_3d = config.get("pulse") and status.pulse3D or 1
+        effect = style.pseudo_3D_skew * pulse_3d * config.get("3D_multiplier")
         rad_rot = math.rad(game.current_rotation + 90)
         sin_rot = math.sin(rad_rot)
         cos_rot = math.cos(rad_rot)
@@ -61,10 +63,10 @@ function pseudo3d.apply_skew()
 end
 
 local function adjust_alpha(a, i)
-    if game.style.pseudo_3D_alpha_mult == 0 then
+    if style.pseudo_3D_alpha_mult == 0 then
         return a
     end
-    local new_alpha = (a / game.style.pseudo_3D_alpha_mult) - i * game.style.pseudo_3D_alpha_falloff
+    local new_alpha = (a / style.pseudo_3D_alpha_mult) - i * style.pseudo_3D_alpha_falloff
     if new_alpha > 255 then
         return 255
     elseif new_alpha < 0 then
@@ -74,37 +76,32 @@ local function adjust_alpha(a, i)
 end
 
 function pseudo3d.draw(set_render_stage, wall_quads, pivot_quads, player_tris, black_and_white)
-    if game.config.get("3D_enabled") then
+    if config.get("3D_enabled") then
         for j = 1, depth do
             local i = depth - j
-            local offset = game.style.pseudo_3D_spacing
-                * (i + 1)
-                * game.style.pseudo_3D_perspective_mult
-                * effect
-                * 3.6
-                * 1.4
+            local offset = style.pseudo_3D_spacing * (i + 1) * style.pseudo_3D_perspective_mult * effect * 3.6 * 1.4
             layer_offsets[j] = layer_offsets[j] or {}
             layer_offsets[j][1] = offset * cos_rot
             layer_offsets[j][2] = offset * sin_rot
-            local r, g, b, a = game.style.get_3D_override_color()
+            local r, g, b, a = style.get_3D_override_color()
             if black_and_white then
                 r, g, b = 255, 255, 255
-                game.style.pseudo_3D_override_is_main = false
+                style.pseudo_3D_override_is_main = false
             end
-            r = r / game.style.pseudo_3D_darken_mult
-            g = g / game.style.pseudo_3D_darken_mult
-            b = b / game.style.pseudo_3D_darken_mult
+            r = r / style.pseudo_3D_darken_mult
+            g = g / style.pseudo_3D_darken_mult
+            b = b / style.pseudo_3D_darken_mult
             a = adjust_alpha(a, i)
             pivot_layer_colors[j] = pivot_layer_colors[j] or {}
             pivot_layer_colors[j][1] = r
             pivot_layer_colors[j][2] = g
             pivot_layer_colors[j][3] = b
             pivot_layer_colors[j][4] = a
-            if game.style.pseudo_3D_override_is_main then
-                r, g, b, a = game.style.get_wall_color()
-                r = r / game.style.pseudo_3D_darken_mult
-                g = g / game.style.pseudo_3D_darken_mult
-                b = b / game.style.pseudo_3D_darken_mult
+            if style.pseudo_3D_override_is_main then
+                r, g, b, a = style.get_wall_color()
+                r = r / style.pseudo_3D_darken_mult
+                g = g / style.pseudo_3D_darken_mult
+                b = b / style.pseudo_3D_darken_mult
                 a = adjust_alpha(a, i)
             end
             wall_layer_colors[j] = wall_layer_colors[j] or {}
@@ -112,11 +109,11 @@ function pseudo3d.draw(set_render_stage, wall_quads, pivot_quads, player_tris, b
             wall_layer_colors[j][2] = g
             wall_layer_colors[j][3] = b
             wall_layer_colors[j][4] = a
-            if game.style.pseudo_3D_override_is_main then
-                r, g, b, a = game.style.get_player_color()
-                r = r / game.style.pseudo_3D_darken_mult
-                g = g / game.style.pseudo_3D_darken_mult
-                b = b / game.style.pseudo_3D_darken_mult
+            if style.pseudo_3D_override_is_main then
+                r, g, b, a = style.get_player_color()
+                r = r / style.pseudo_3D_darken_mult
+                g = g / style.pseudo_3D_darken_mult
+                b = b / style.pseudo_3D_darken_mult
                 a = adjust_alpha(a, i)
             end
             player_layer_colors[j] = player_layer_colors[j] or {}

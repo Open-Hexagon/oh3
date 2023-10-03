@@ -3,6 +3,13 @@ local args = require("args")
 local playsound = require("compat.game21.playsound")
 local utils = require("compat.game192.utils")
 local speed_data = require("compat.game20.speed_data")
+local config = require("config")
+local input = require("game_handler.input")
+local status = require("compat.game20.status")
+local level_status = require("compat.game20.level_status")
+local vfs = require("compat.game192.virtual_filesystem")
+local style = require("compat.game20.style")
+local walls = require("compat.game20.walls")
 local lua_runtime = {
     env = {},
 }
@@ -129,7 +136,7 @@ function lua_runtime.init_env(game, public, assets)
             execute = function(command)
                 log("Level attempted to execute potentially malicious command: '" .. command .. "'")
             end,
-            remove = game.vfs.remove,
+            remove = vfs.remove,
         },
         next = next,
         error = error,
@@ -147,10 +154,10 @@ function lua_runtime.init_env(game, public, assets)
         ipairs = ipairs,
         pairs = pairs,
         print = print,
-        io = game.vfs.io,
+        io = vfs.io,
         math = {
             randomseed = function(seed)
-                math.randomseed(game.input.next_seed(seed))
+                math.randomseed(input.next_seed(seed))
             end,
         },
         tostring = tostring,
@@ -164,15 +171,17 @@ function lua_runtime.init_env(game, public, assets)
     env._G = env
     env.math = setmetatable(env.math, { __index = math })
     env.dofile = function(path)
-        local file = game.vfs.io.open(path, "r")
-        local code = file:read("*a")
-        file:close()
-        local func = loadstring(code)
-        if func == nil then
-            error("Failed executing virtual file '" .. path .. "'")
+        local file = vfs.io.open(path, "r")
+        if file then
+            local code = file:read("*a")
+            file:close()
+            local func = loadstring(code)
+            if func == nil then
+                error("Failed executing virtual file '" .. path .. "'")
+            end
+            setfenv(func, env)
+            return func()
         end
-        setfenv(func, env)
-        return func()
     end
 
     -- utils
@@ -200,10 +209,10 @@ function lua_runtime.init_env(game, public, assets)
             lua_runtime.error("Could not find key with sfml keycode '" .. key_code .. "'!")
             return false
         end
-        return game.input.get(key)
+        return input.get(key)
     end
     env.u_isFastSpinning = function()
-        return game.status.fast_spin > 0
+        return status.fast_spin > 0
     end
     env.u_forceIncrement = function()
         game.increment_difficulty()
@@ -241,14 +250,14 @@ function lua_runtime.init_env(game, public, assets)
     end
     env.m_messageAdd = function(msg, duration)
         game.event_timeline:append_do(function()
-            if public.first_play and game.config.get("messages") then
+            if public.first_play and config.get("messages") then
                 add_message(msg, duration)
             end
         end)
     end
     env.m_messageAddImportant = function(msg, duration)
         game.event_timeline:append_do(function()
-            if game.config.get("messages") then
+            if config.get("messages") then
                 add_message(msg, duration)
             end
         end)
@@ -264,7 +273,7 @@ function lua_runtime.init_env(game, public, assets)
     env.t_waitUntilS = function(time)
         game.main_timeline:append_wait(10)
         game.main_timeline:append_do(function()
-            if game.status.current_time < time then
+            if status.current_time < time then
                 game.main_timeline:jump_to(game.main_timeline:get_current_index() - 2)
             end
         end)
@@ -273,12 +282,12 @@ function lua_runtime.init_env(game, public, assets)
     -- event timeline control
     env.e_eventStopTime = function(duration)
         game.event_timeline:append_do(function()
-            game.status.time_stop = duration
+            status.time_stop = duration
         end)
     end
     env.e_eventStopTimeS = function(duration)
         game.event_timeline:append_do(function()
-            game.status.time_stop = duration * 60
+            status.time_stop = duration * 60
         end)
     end
     env.e_eventWait = function(duration)
@@ -290,7 +299,7 @@ function lua_runtime.init_env(game, public, assets)
     env.e_eventWaitUntilS = function(time)
         game.event_timeline:append_wait(10)
         game.event_timeline:append_do(function()
-            if game.status.current_time < time then
+            if status.current_time < time then
                 game.event_timeline:jump_to(game.event_timeline:get_current_index() - 2)
             end
         end)
@@ -298,131 +307,131 @@ function lua_runtime.init_env(game, public, assets)
 
     -- level control
     env.l_setSpeedMult = function(value)
-        game.level_status.speed_mult = value
+        level_status.speed_mult = value
     end
     env.l_setSpeedInc = function(value)
-        game.level_status.speed_inc = value
+        level_status.speed_inc = value
     end
     env.l_setRotationSpeed = function(value)
-        game.level_status.rotation_speed = value
+        level_status.rotation_speed = value
     end
     env.l_setRotationSpeedMax = function(value)
-        game.level_status.rotation_speed_max = value
+        level_status.rotation_speed_max = value
     end
     env.l_setRotationSpeedInc = function(value)
-        game.level_status.rotation_speed_inc = value
+        level_status.rotation_speed_inc = value
     end
     env.l_setDelayMult = function(value)
-        game.level_status.delay_mult = value
+        level_status.delay_mult = value
     end
     env.l_setDelayInc = function(value)
-        game.level_status.delay_inc = value
+        level_status.delay_inc = value
     end
     env.l_setFastSpin = function(value)
-        game.level_status.fast_spin = value
+        level_status.fast_spin = value
     end
     env.l_setSides = function(value)
-        game.level_status.sides = utils.round_to_even(value)
+        level_status.sides = utils.round_to_even(value)
     end
     env.l_setSidesMin = function(value)
-        game.level_status.sides_min = utils.round_to_even(value)
+        level_status.sides_min = utils.round_to_even(value)
     end
     env.l_setSidesMax = function(value)
-        game.level_status.sides_max = utils.round_to_even(value)
+        level_status.sides_max = utils.round_to_even(value)
     end
     env.l_setIncTime = function(value)
-        game.level_status.inc_time = value
+        level_status.inc_time = value
     end
     env.l_setPulseMin = function(value)
-        game.level_status.pulse_min = value
+        level_status.pulse_min = value
     end
     env.l_setPulseMax = function(value)
-        game.level_status.pulse_max = value
+        level_status.pulse_max = value
     end
     env.l_setPulseSpeed = function(value)
-        game.level_status.pulse_speed = value
+        level_status.pulse_speed = value
     end
     env.l_setPulseSpeedR = function(value)
-        game.level_status.pulse_speed_r = value
+        level_status.pulse_speed_r = value
     end
     env.l_setPulseDelayMax = function(value)
-        game.level_status.pulse_delay_max = value
+        level_status.pulse_delay_max = value
     end
     env.l_setBeatPulseMax = function(value)
-        game.level_status.beat_pulse_max = value
+        level_status.beat_pulse_max = value
     end
     env.l_setBeatPulseDelayMax = function(value)
-        game.level_status.beat_pulse_delay_max = value
+        level_status.beat_pulse_delay_max = value
     end
     env.l_setWallSkewLeft = function(value)
-        game.level_status.wall_skew_left = value
+        level_status.wall_skew_left = value
     end
     env.l_setWallSkewRight = function(value)
-        game.level_status.wall_skew_right = value
+        level_status.wall_skew_right = value
     end
     env.l_setWallAngleLeft = function(value)
-        game.level_status.wall_angle_left = value
+        level_status.wall_angle_left = value
     end
     env.l_setWallAngleRight = function(value)
-        game.level_status.wall_angle_right = value
+        level_status.wall_angle_right = value
     end
     env.l_setRadiusMin = function(value)
-        game.level_status.radius_min = value
+        level_status.radius_min = value
     end
     env.l_setSwapEnabled = function(value)
-        game.level_status.swap_enabled = value
+        level_status.swap_enabled = value
     end
     env.l_setTutorialMode = function(value)
-        game.level_status.tutorial_mode = value
+        level_status.tutorial_mode = value
     end
     env.l_setIncEnabled = function(value)
-        game.level_status.inc_enabled = value
+        level_status.inc_enabled = value
     end
     env.l_addTracked = function(var, name)
-        game.level_status.tracked_variables[var] = name
+        level_status.tracked_variables[var] = name
     end
     env.l_enableRndSideChanges = function(value)
-        game.level_status.rnd_side_changes_enabled = value
+        level_status.rnd_side_changes_enabled = value
     end
     env.l_getRotationSpeed = function()
-        return game.level_status.rotation_speed
+        return level_status.rotation_speed
     end
     env.l_getSides = function()
-        return game.level_status.sides
+        return level_status.sides
     end
     env.l_getSpeedMult = function()
-        return game.level_status.speed_mult
+        return level_status.speed_mult
     end
     env.l_getDelayMult = function()
-        return game.level_status.delay_mult
+        return level_status.delay_mult
     end
 
     -- style control
     env.s_setPulseInc = function(value)
-        game.style.pulse_increment = value
+        style.pulse_increment = value
     end
     env.s_setHueInc = function(value)
-        game.style.hue_increment = value
+        style.hue_increment = value
     end
     env.s_getHueInc = function()
-        return game.style.hue_increment
+        return style.hue_increment
     end
 
     -- wall creation
     env.w_wall = function(side, thickness)
         game.main_timeline:append_do(function()
-            game.walls.create(0, side, thickness, speed_data:new(game.get_speed_mult_dm()))
+            walls.create(0, side, thickness, speed_data:new(game.get_speed_mult_dm()))
         end)
     end
     env.w_wallAdj = function(side, thickness, speed_adj)
         game.main_timeline:append_do(function()
-            game.walls.create(0, side, thickness, speed_data:new(speed_adj * game.get_speed_mult_dm()))
+            walls.create(0, side, thickness, speed_data:new(speed_adj * game.get_speed_mult_dm()))
         end)
     end
     env.w_wallAcc = function(side, thickness, speed_adj, acceleration, min_speed, max_speed)
         game.main_timeline:append_do(function()
             local speed_mult_dm = game.get_speed_mult_dm()
-            game.walls.create(
+            walls.create(
                 0,
                 side,
                 thickness,
@@ -437,7 +446,7 @@ function lua_runtime.init_env(game, public, assets)
     end
     env.w_wallHModSpeedData = function(hmod, side, thickness, sadj, sacc, smin, smax, sping_pong)
         game.main_timeline:append_do(function()
-            game.walls.create(
+            walls.create(
                 hmod,
                 side,
                 thickness,
@@ -447,7 +456,7 @@ function lua_runtime.init_env(game, public, assets)
     end
     env.w_wallHModCurveData = function(hmod, side, thickness, cadj, cacc, cmin, cmax, cping_pong)
         game.main_timeline:append_do(function()
-            game.walls.create(
+            walls.create(
                 hmod,
                 side,
                 thickness,

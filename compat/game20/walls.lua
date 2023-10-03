@@ -2,7 +2,10 @@ local utils = require("compat.game192.utils")
 local transform_hue = require("compat.game21.hue").transform
 local extra_math = require("compat.game21.math")
 local speed_data = require("compat.game20.speed_data")
-local level_status, status, style
+local config = require("config")
+local status = require("compat.game20.status")
+local level_status = require("compat.game20.level_status")
+local style = require("compat.game20.style")
 local CENTER = { 0, 0 }
 local SPAWN_DISTANCE = 1600
 local black_and_white = false
@@ -86,11 +89,8 @@ local walls = {
     entities = {},
 }
 
-function walls.init(game)
-    level_status = game.level_status
-    status = game.status
-    style = game.style
-    black_and_white = game.config.get("black_and_white")
+function walls.init()
+    black_and_white = config.get("black_and_white")
     walls.entities = {}
 end
 

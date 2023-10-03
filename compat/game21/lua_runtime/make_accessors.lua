@@ -1,6 +1,6 @@
 local utils = require("compat.game192.utils")
-return function(game)
-    local env = game.lua_runtime.env
+return function()
+    local env = require("compat.game21.lua_runtime").env
     return function(prefix, name, t, f)
         if type(t[f]) == "number" then
             env[prefix .. "_set" .. name] = function(value)

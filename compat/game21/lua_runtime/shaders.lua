@@ -1,8 +1,11 @@
 local args = require("args")
+local log = require("log")(...)
+local status = require("compat.game21.status")
+local assets = require("compat.game21.assets")
 
-return function(game, assets)
+return function(game)
     local pack = game.pack_data
-    local lua_runtime = game.lua_runtime
+    local lua_runtime = require("compat.game21.lua_runtime")
     local env = lua_runtime.env
     local shaders = {}
     local loaded_filenames = {}
@@ -20,6 +23,7 @@ return function(game, assets)
                 shaders[id] = shader
                 loaded_filenames[pack_data.path] = loaded_filenames[pack_data.path] or {}
                 loaded_filenames[pack_data.path][filename] = id
+                print(id)
                 return id
             end
         end
@@ -41,14 +45,14 @@ return function(game, assets)
         if args.headless then
             return false
         end
-        if id < 0 or id > #shaders then
-            lua_runtime.error("Invalid shader id: '" .. id .. "'")
+        if id < 1 or id > #shaders then
+            log("Invalid shader id: '" .. id .. "'")
             return false
         end
         return true
     end
     local function set_uniform(id, uniform_type, name, value)
-        id = id or 0
+        id = id or -1
         if check_valid_shader_id(id) then
             local shader_type = shaders[id].uniforms[name]
             -- would be nil if uniform didn't exist (not printing errors because of spam)
@@ -115,7 +119,7 @@ return function(game, assets)
     end
     env.shdr_resetAllActiveFragmentShaders = function()
         for i = 0, 8 do
-            game.status.fragment_shaders[i] = nil
+            status.fragment_shaders[i] = nil
         end
     end
     local function check_valid_render_stage(render_stage)
@@ -128,14 +132,14 @@ return function(game, assets)
     env.shdr_resetActiveFragmentShader = function(render_stage)
         render_stage = render_stage or 0
         if check_valid_render_stage(render_stage) then
-            game.status.fragment_shaders[render_stage] = nil
+            status.fragment_shaders[render_stage] = nil
         end
     end
     env.shdr_setActiveFragmentShader = function(render_stage, id)
         render_stage = render_stage or 0
         id = id or 0
         if check_valid_render_stage(render_stage) and check_valid_shader_id(id) then
-            game.status.fragment_shaders[render_stage] = shaders[id]
+            status.fragment_shaders[render_stage] = shaders[id]
         end
     end
 end

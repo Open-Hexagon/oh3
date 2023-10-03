@@ -1,6 +1,10 @@
 local args = require("args")
+local config = require("config")
+local level_status = require("compat.game21.level_status")
+local status = require("compat.game21.status")
+
 return function(public, game)
-    local env = game.lua_runtime.env
+    local env = require("compat.game21.lua_runtime").env
 
     -- Main timeline functions
     env.t_eval = function(code)
@@ -24,7 +28,7 @@ return function(public, game)
     end
     env.t_waitUntilS = function(time)
         game.main_timeline:append_wait_until_fn(function()
-            return game.status.get_level_start_tp() + math.floor(time * 1000)
+            return status.get_level_start_tp() + math.floor(time * 1000)
         end)
     end
 
@@ -42,12 +46,12 @@ return function(public, game)
 
     env.e_stopTime = function(duration)
         game.event_timeline:append_do(function()
-            game.status.pause_time(duration / 60)
+            status.pause_time(duration / 60)
         end)
     end
     env.e_stopTimeS = function(duration)
         game.event_timeline:append_do(function()
-            game.status.pause_time(duration)
+            status.pause_time(duration)
         end)
     end
     env.e_wait = function(duration)
@@ -58,15 +62,15 @@ return function(public, game)
     end
     env.e_waitUntilS = function(time)
         game.event_timeline:append_wait_until_fn(function()
-            return game.status.get_level_start_tp() + math.floor(time * 1000)
+            return status.get_level_start_tp() + math.floor(time * 1000)
         end)
     end
     local function add_message(message, duration, sound_toggle)
         sound_toggle = sound_toggle and not args.headless
-        if game.config.get("messages") then
+        if config.get("messages") then
             game.message_timeline:append_do(function()
                 if sound_toggle then
-                    game.level_status.beep_sound:play()
+                    level_status.beep_sound:play()
                 end
                 game.message_text = message:upper()
             end)

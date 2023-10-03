@@ -43,7 +43,7 @@ game_handler.init = async(function(config, audio)
     local packs = async.await(threaded_assets.init(persistent_data, args.headless))
     pack_level_data.import_packs(packs)
     for _, game in pairs(games) do
-        local promise = game.init(input, config, audio)
+        local promise = game.init(config, audio)
         if promise then
             async.await(promise)
         end
@@ -413,13 +413,18 @@ end
 
 ---gets vertices and colors for a minimal level preview
 ---@param game_version number
----@param pack string
----@param level string
+---@param pack_id string
+---@param level_id string
 ---@return table?
-function game_handler.get_preview_data(game_version, pack, level)
-    if games[game_version].get_preview_data then
-        return games[game_version].get_preview_data(pack, level)
+game_handler.get_preview_data = async(function(game_version, pack_id, level_id)
+    local assets
+    if game_version == 3 then
+        assets = require("game.assets")
+    else
+        assets = require("compat.game" .. game_version .. ".assets")
     end
-end
+    local pack = async.await(assets.get_pack(pack_id))
+    return pack.preview_data[level_id]
+end)
 
 return game_handler

@@ -1,6 +1,8 @@
 local log = require("log")(...)
 local args = require("args")
 local music = require("compat.music")
+local style = require("compat.game192.style")
+local status = require("compat.game192.status")
 local executing_events = {}
 local queued_events = {}
 local events = {}
@@ -61,12 +63,14 @@ end
 
 -- initalize the events defined in the level json
 function events.init(game, public)
+    -- require here to avoid circular import
+    local lua_runtime = require("compat.game192.lua_runtime")
     level_events = EventList:new(game.level_data.events == 0 and {} or game.level_data.events)
     executing_events = {}
     queued_events = {}
     event_executors = {
         level_change = function(event)
-            game.status.must_restart = true
+            status.must_restart = true
             game.restart_id = event.id:match("/(.*)"):match("/(.*)")
             game.restart_first_time = true
         end,
@@ -77,16 +81,16 @@ function events.init(game, public)
             require("game_handler").stop()
         end,
         message_add = function(event)
-            game.lua_runtime.env.messageAdd(event.message, event.duration)
+            lua_runtime.env.messageAdd(event.message, event.duration)
         end,
         message_important_add = function(event)
-            game.lua_runtime.env.messageImportantAdd(event.message, event.duration)
+            lua_runtime.env.messageImportantAdd(event.message, event.duration)
         end,
         message_clear = function()
             game.message_text = nil
         end,
         time_stop = function(event)
-            game.status.time_stop = event.duration
+            status.time_stop = event.duration
         end,
         timeline_wait = function(event)
             game.main_timeline:append_wait(event.duration)
@@ -97,114 +101,114 @@ function events.init(game, public)
         end,
         -- level float set, add, subtract, multiply, divide
         level_float_set = function(event)
-            game.lua_runtime.env.setLevelValueFloat(event.value_name, event.value)
+            lua_runtime.env.setLevelValueFloat(event.value_name, event.value)
         end,
         level_float_add = function(event)
-            game.lua_runtime.env.setLevelValueFloat(
+            lua_runtime.env.setLevelValueFloat(
                 event.value_name,
-                game.lua_runtime.env.getLevelValueFloat(event.value_name) + event.value
+                lua_runtime.env.getLevelValueFloat(event.value_name) + event.value
             )
         end,
         level_float_subtract = function(event)
-            game.lua_runtime.env.setLevelValueFloat(
+            lua_runtime.env.setLevelValueFloat(
                 event.value_name,
-                game.lua_runtime.env.getLevelValueFloat(event.value_name) - event.value
+                lua_runtime.env.getLevelValueFloat(event.value_name) - event.value
             )
         end,
         level_float_multiply = function(event)
-            game.lua_runtime.env.setLevelValueFloat(
+            lua_runtime.env.setLevelValueFloat(
                 event.value_name,
-                game.lua_runtime.env.getLevelValueFloat(event.value_name) * event.value
+                lua_runtime.env.getLevelValueFloat(event.value_name) * event.value
             )
         end,
         level_float_divide = function(event)
-            game.lua_runtime.env.setLevelValueFloat(
+            lua_runtime.env.setLevelValueFloat(
                 event.value_name,
-                game.lua_runtime.env.getLevelValueFloat(event.value_name) / event.value
+                lua_runtime.env.getLevelValueFloat(event.value_name) / event.value
             )
         end,
         -- level int set, add, subtract, multiply, divide
         level_int_set = function(event)
-            game.lua_runtime.env.setLevelValueFloat(event.value_name, event.value)
+            lua_runtime.env.setLevelValueFloat(event.value_name, event.value)
         end,
         level_int_add = function(event)
-            game.lua_runtime.env.setLevelValueFloat(
+            lua_runtime.env.setLevelValueFloat(
                 event.value_name,
-                game.lua_runtime.env.getLevelValueFloat(event.value_name) + event.value
+                lua_runtime.env.getLevelValueFloat(event.value_name) + event.value
             )
         end,
         level_int_subtract = function(event)
-            game.lua_runtime.env.setLevelValueFloat(
+            lua_runtime.env.setLevelValueFloat(
                 event.value_name,
-                game.lua_runtime.env.getLevelValueFloat(event.value_name) - event.value
+                lua_runtime.env.getLevelValueFloat(event.value_name) - event.value
             )
         end,
         level_int_multiply = function(event)
-            game.lua_runtime.env.setLevelValueFloat(
+            lua_runtime.env.setLevelValueFloat(
                 event.value_name,
-                game.lua_runtime.env.getLevelValueFloat(event.value_name) * event.value
+                lua_runtime.env.getLevelValueFloat(event.value_name) * event.value
             )
         end,
         level_int_divide = function(event)
-            game.lua_runtime.env.setLevelValueFloat(
+            lua_runtime.env.setLevelValueFloat(
                 event.value_name,
-                game.lua_runtime.env.getLevelValueFloat(event.value_name) / event.value
+                lua_runtime.env.getLevelValueFloat(event.value_name) / event.value
             )
         end,
         -- style float set, add, subtract, multiply, divide
         style_float_set = function(event)
-            game.lua_runtime.env.setStyleValueFloat(event.value_name, event.value)
+            lua_runtime.env.setStyleValueFloat(event.value_name, event.value)
         end,
         style_float_add = function(event)
-            game.lua_runtime.env.setStyleValueFloat(
+            lua_runtime.env.setStyleValueFloat(
                 event.value_name,
-                game.lua_runtime.env.getLevelValueFloat(event.value_name) + event.value
+                lua_runtime.env.getLevelValueFloat(event.value_name) + event.value
             )
         end,
         style_float_subtract = function(event)
-            game.lua_runtime.env.setStyleValueFloat(
+            lua_runtime.env.setStyleValueFloat(
                 event.value_name,
-                game.lua_runtime.env.getLevelValueFloat(event.value_name) - event.value
+                lua_runtime.env.getLevelValueFloat(event.value_name) - event.value
             )
         end,
         style_float_multiply = function(event)
-            game.lua_runtime.env.setStyleValueFloat(
+            lua_runtime.env.setStyleValueFloat(
                 event.value_name,
-                game.lua_runtime.env.getLevelValueFloat(event.value_name) * event.value
+                lua_runtime.env.getLevelValueFloat(event.value_name) * event.value
             )
         end,
         style_float_divide = function(event)
-            game.lua_runtime.env.setStyleValueFloat(
+            lua_runtime.env.setStyleValueFloat(
                 event.value_name,
-                game.lua_runtime.env.getLevelValueFloat(event.value_name) / event.value
+                lua_runtime.env.getLevelValueFloat(event.value_name) / event.value
             )
         end,
         -- style int set, add, subtract, multiply, divide
         style_int_set = function(event)
-            game.lua_runtime.env.setStyleValueFloat(event.value_name, event.value)
+            lua_runtime.env.setStyleValueFloat(event.value_name, event.value)
         end,
         style_int_add = function(event)
-            game.lua_runtime.env.setStyleValueFloat(
+            lua_runtime.env.setStyleValueFloat(
                 event.value_name,
-                game.lua_runtime.env.getLevelValueFloat(event.value_name) + event.value
+                lua_runtime.env.getLevelValueFloat(event.value_name) + event.value
             )
         end,
         style_int_subtract = function(event)
-            game.lua_runtime.env.setStyleValueFloat(
+            lua_runtime.env.setStyleValueFloat(
                 event.value_name,
-                game.lua_runtime.env.getLevelValueFloat(event.value_name) - event.value
+                lua_runtime.env.getLevelValueFloat(event.value_name) - event.value
             )
         end,
         style_int_multiply = function(event)
-            game.lua_runtime.env.setStyleValueFloat(
+            lua_runtime.env.setStyleValueFloat(
                 event.value_name,
-                game.lua_runtime.env.getLevelValueFloat(event.value_name) * event.value
+                lua_runtime.env.getLevelValueFloat(event.value_name) * event.value
             )
         end,
         style_int_divide = function(event)
-            game.lua_runtime.env.setStyleValueFloat(
+            lua_runtime.env.setStyleValueFloat(
                 event.value_name,
-                game.lua_runtime.env.getLevelValueFloat(event.value_name) / event.value
+                lua_runtime.env.getLevelValueFloat(event.value_name) / event.value
             )
         end,
         music_set = function(event)
@@ -236,19 +240,19 @@ function events.init(game, public)
             if style_data == nil then
                 error("Invalid style id '" .. event.id .. "'")
             end
-            game.style.select(style_data)
+            style.select(style_data)
         end,
         side_changing_stop = function()
-            game.status.random_side_changes_enabled = false
+            status.random_side_changes_enabled = false
         end,
         side_changing_start = function()
-            game.status.random_side_changes_enabled = true
+            status.random_side_changes_enabled = true
         end,
         increment_stop = function()
-            game.status.increment_enabled = false
+            status.increment_enabled = false
         end,
         increment_start = function()
-            game.status.increment_enabled = true
+            status.increment_enabled = true
         end,
         event_exec = function(event)
             events.exec(game.pack.events[event.id])
@@ -257,7 +261,7 @@ function events.init(game, public)
             events.queue(game.pack.events[event.id])
         end,
         script_exec = function(event)
-            game.lua_runtime.run_lua_file(game.pack.path .. "Scripts/" .. event.value_name)
+            lua_runtime.run_lua_file(game.pack.path .. "Scripts/" .. event.value_name)
         end,
         play_sound = function(event)
             game.assets.get_pack_sound(game.pack, event.id):play()

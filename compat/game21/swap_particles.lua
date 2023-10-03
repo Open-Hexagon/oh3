@@ -1,12 +1,13 @@
-local args = require("args")
 local Particles = require("compat.game21.particles")
+local player = require("compat.game21.player")
+local assets = require("compat.game21.assets")
 local swap_particles = {}
 local spawn_swap_particles_ready = false
 local must_spawn_swap_particles = false
 local swap_particle_info = { x = 0, y = 0, angle = 0 }
 local particle_system
 
-function swap_particles.init(assets)
+function swap_particles.init()
     if not particle_system then
         local small_circle = assets.get_image("smallCircle.png")
         particle_system = Particles:new(small_circle, function(p, frametime)
@@ -20,18 +21,18 @@ function swap_particles.init(assets)
     particle_system:reset(30)
 end
 
-function swap_particles.ready(game)
+function swap_particles.ready()
     must_spawn_swap_particles = true
     spawn_swap_particles_ready = true
-    swap_particle_info.x, swap_particle_info.y = game.player.get_position()
-    swap_particle_info.angle = game.player.get_player_angle()
+    swap_particle_info.x, swap_particle_info.y = player.get_position()
+    swap_particle_info.angle = player.get_player_angle()
 end
 
-function swap_particles.swap(game)
+function swap_particles.swap()
     must_spawn_swap_particles = true
     spawn_swap_particles_ready = false
-    swap_particle_info.x, swap_particle_info.y = game.player.get_position()
-    swap_particle_info.angle = game.player.get_player_angle()
+    swap_particle_info.x, swap_particle_info.y = player.get_position()
+    swap_particle_info.angle = player.get_player_angle()
 end
 
 function swap_particles.update(frametime, current_trail_color)

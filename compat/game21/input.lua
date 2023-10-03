@@ -1,11 +1,18 @@
 local playsound = require("compat.game21.playsound")
+local config = require("config")
+local game_input = require("game_handler.input")
 local args = require("args")
+local lua_runtime = require("compat.game21.lua_runtime")
+local level_status = require("compat.game21.level_status")
+local status = require("compat.game21.status")
+local player = require("compat.game21.player")
+local assets = require("compat.game21.assets")
 local input = {
     move = 0,
 }
 local game, swap_particles, swap_blip_sound
 
-function input.init(pass_game, particles, assets)
+function input.init(pass_game, particles)
     game = pass_game
     swap_particles = particles
     if not args.headless then
@@ -14,10 +21,10 @@ function input.init(pass_game, particles, assets)
 end
 
 function input.update(frametime)
-    local focus = game.input.get(game.config.get("key_focus"))
-    local swap = game.input.get(game.config.get("key_swap"))
-    local cw = game.input.get(game.config.get("key_right"))
-    local ccw = game.input.get(game.config.get("key_left"))
+    local focus = game_input.get(config.get("key_focus"))
+    local swap = game_input.get(config.get("key_swap"))
+    local cw = game_input.get(config.get("key_right"))
+    local ccw = game_input.get(config.get("key_left"))
     if cw and not ccw then
         input.move = 1
         game.last_move = 1
@@ -30,26 +37,26 @@ function input.update(frametime)
         input.move = 0
     end
     -- TODO: update key icons and level info (needs ui)
-    game.player.update(focus, game.level_status.swap_enabled, frametime)
-    if not game.status.has_died then
-        local prevent_player_input = game.lua_runtime.run_fn_if_exists("onInput", frametime, input.move, focus, swap)
+    player.update(focus, level_status.swap_enabled, frametime)
+    if not status.has_died then
+        local prevent_player_input = lua_runtime.run_fn_if_exists("onInput", frametime, input.move, focus, swap)
         if not prevent_player_input then
-            game.player.update_input_movement(input.move, game.level_status.player_speed_mult, focus, frametime)
-            if not game.player_now_ready_to_swap and game.player.is_ready_to_swap() then
-                swap_particles.ready(game)
+            player.update_input_movement(input.move, level_status.player_speed_mult, focus, frametime)
+            if not game.player_now_ready_to_swap and player.is_ready_to_swap() then
+                swap_particles.ready()
                 game.player_now_ready_to_swap = true
-                if game.config.get("play_swap_sound") then
+                if config.get("play_swap_sound") then
                     playsound(swap_blip_sound)
                 end
             end
-            if game.level_status.swap_enabled and swap and game.player.is_ready_to_swap() then
-                swap_particles.swap(game)
+            if level_status.swap_enabled and swap and player.is_ready_to_swap() then
+                swap_particles.swap()
                 game.perform_player_swap(true)
-                game.player.reset_swap(game.get_swap_cooldown())
-                game.player.set_just_swapped(true)
+                player.reset_swap(game.get_swap_cooldown())
+                player.set_just_swapped(true)
                 game.player_now_ready_to_swap = false
             else
-                game.player.set_just_swapped(false)
+                player.set_just_swapped(false)
             end
         end
     end

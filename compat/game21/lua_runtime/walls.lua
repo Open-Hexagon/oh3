@@ -1,5 +1,7 @@
+local walls = require("compat.game21.walls")
+
 return function(game)
-    local env = game.lua_runtime.env
+    local env = require("compat.game21.lua_runtime").env
     local function wall(
         hue_modifier,
         side,
@@ -13,7 +15,7 @@ return function(game)
         speed_data_wall_thing
     )
         game.main_timeline:append_do(function()
-            game.walls.wall(
+            walls.wall(
                 game.get_speed_mult_dm(),
                 game.difficulty_mult,
                 hue_modifier,
