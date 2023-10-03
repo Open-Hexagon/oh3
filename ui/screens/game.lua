@@ -38,18 +38,7 @@ local function retry()
 end
 
 local death_overlay = get_death_overlay(back_to_menu, retry)
-
--- monkey patch layout calculation to add overlay (TODO: make this cleaner)
-local old_calculate_layout = timer.calculate_layout
-timer.calculate_layout = function(self, available_area)
-    death_overlay:calculate_layout({
-        x = 0,
-        y = 0,
-        width = love.graphics.getWidth(),
-        height = love.graphics.getHeight(),
-    })
-    return old_calculate_layout(self, available_area)
-end
+local last_width, last_height
 
 game_handler.onupdate = function()
     local score = game_handler.get_score()
@@ -68,7 +57,14 @@ game_handler.onupdate = function()
         score_str = score_str .. ".000"
     end
     timer.element.raw_text = score_str
-    timer:calculate_layout()
+    timer.element.changed = true
+    timer:mutated()
+    local width, height = love.graphics.getDimensions()
+    if last_width ~= width or last_height ~= height then
+        last_width = width
+        last_height = height
+        death_overlay:calculate_layout(width, height)
+    end
     -- show death screen when dead
     if game_handler.is_dead() then
         if game_handler.is_replaying() then

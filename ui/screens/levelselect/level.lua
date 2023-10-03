@@ -8,14 +8,6 @@ local flex = require("ui.layout.flex")
 local make_options_element = require("ui.screens.levelselect.options")
 local make_localscore_element = require("ui.screens.levelselect.score")
 
-local function update_element(self, parent, parent_index, layout)
-    self.parent_index = parent_index
-    self.parent = parent
-    self:set_scale(parent.scale)
-    self:calculate_layout(layout.last_available_area)
-    return self
-end
-
 local function get_rect_bounds(bounds)
     local minmax = { math.huge, math.huge, -math.huge, -math.huge }
     for i = 1, #bounds, 2 do
@@ -57,8 +49,13 @@ return function(state, pack, level, extra_info)
     extra_info.song = extra_info.song or "no song"
     extra_info.composer = extra_info.composer or "no composer"
     local music = extra_info.song .. "\n" .. extra_info.composer
-    local preview = level_preview:new(pack.game_version, pack.id, level.id, { style = { padding = 6, border_color = { 1, 1, 1, 1 }, border_thickness = 3 } })
-    local elem = quad:new({
+    local preview = level_preview:new(
+        pack.game_version,
+        pack.id,
+        level.id,
+        { style = { padding = 6, border_color = { 1, 1, 1, 1 }, border_thickness = 3 } }
+    )
+    return quad:new({
         child_element = flex:new({
             preview,
             flex:new({
@@ -74,11 +71,12 @@ return function(state, pack, level, extra_info)
         selectable = true,
         selection_handler = function(self, keyboard_selected)
             if self.selected then
-                self.border_color = { 0, 0, 1, 0.7 }
+                self.style.border_color = { 0, 0, 1, 0.7 }
             else
-                self.border_color = { 0, 0, 0, 0.7 }
+                self.style.border_color = { 0, 0, 0, 0.7 }
             end
 			if keyboard_selected and level_element_selected ~= self then self:click(false) end
+            self:set_style(self.style)
         end,
         click_handler = function(self)
             if level_element_selected ~= self then
@@ -87,7 +85,7 @@ return function(state, pack, level, extra_info)
                     description = label:new("", { font_size = 20, wrap = true })
                     elems[i].margins = {16,0}
                     elems[i].border_color = { 0, 0, 0, 0.7 }
-                    elems[i].element.elements[2].elements[2] = update_element(description, elems[i].element.elements[2], 2, elems[i].element.elements[2].elements[2])
+                    --elems[i].element.elements[2].elements[2] = update_element(description, elems[i].element.elements[2], 2, elems[i].element.elements[2].elements[2])
 					elems[i].element.elements[2].elements[1].elements[1].font_size = 30
 					elems[i].element.elements[2].elements[1].elements[2].font_size = 20
                 end
@@ -96,7 +94,7 @@ return function(state, pack, level, extra_info)
 				self.element.elements[2].elements[1].elements[1].font_size = 60
 				self.element.elements[2].elements[1].elements[2].font_size = 40
                 local description = label:new(level.description, { font_size = 20, wrap = true })
-                self.element.elements[2].elements[2] = update_element(description, self.element.elements[2], 2, self.element.elements[2].elements[2])
+                --self.element.elements[2].elements[2] = update_element(description, self.element.elements[2], 2, self.element.elements[2].elements[2])
 				
 				local width, height = self:calculate_layout(self.last_available_area)
 				local visual_height = state.root.elements[2].canvas:getHeight()
@@ -104,7 +102,8 @@ return function(state, pack, level, extra_info)
 				state.root.elements[2].scroll_target = self.bounds[2] - height/2 - visual_height/2
 				state.root.elements[2].scroll:keyframe(0.2,scroll_target)
 				
-                state.root.elements[2] = update_element(state.root.elements[2], state.root, 2, state.root.elements[2])
+                --state.root.elements[2] = update_element(state.root.elements[2], state.root, 2, state.root.elements[2])
+				
                 local score = flex:new({
                     make_localscore_element(pack.id, level.id, { difficulty_mult = 1 }),
                     make_options_element(state, pack, level),
@@ -112,7 +111,9 @@ return function(state, pack, level, extra_info)
                 if level_element_selected then
                     level_element_selected.border_color = { 0, 0, 0, 0.7 }
                 end
-                state.root.elements[3] = update_element(score, state.root, 3, state.root.elements[3])
+                state.root.elements[3] = score
+                state.root:mutated()
+				
                 level_element_selected = self
                 -- reset options (TODO: make options not be dm specific)
                 state.level_options_selected = { difficulty_mult = 1 }
@@ -122,5 +123,4 @@ return function(state, pack, level, extra_info)
             end
         end,
     })
-    return elem
 end

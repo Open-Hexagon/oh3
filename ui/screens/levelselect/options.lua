@@ -3,14 +3,6 @@ local label = require("ui.elements.label")
 local flex = require("ui.layout.flex")
 local make_localscore_element = require("ui.screens.levelselect.score")
 
-local function update_element(self, parent, parent_index, layout)
-    self.parent_index = parent_index
-    self.parent = parent
-    self:set_scale(parent.scale)
-    self:calculate_layout(layout.last_available_area)
-    return self
-end
-
 return function(state, pack, level)
     local selections = level.options.difficulty_mult
     local selections_index = 1
@@ -39,12 +31,13 @@ return function(state, pack, level)
                 { font_size = 30, style = { color = { 0, 0, 0, 1 }, padding = 8 }, wrap = true }
             )
             self.background_color = { 1, 1, 0, 1 }
-            self.element = update_element(selections_element, self, 1, self.element)
+            self.element = selections_element -- later mutated call on root will handle this
             state.level_options_selected = { difficulty_mult = selections[selections_index] }
             local score = flex:new({
                 make_localscore_element(pack.id, level.id, state.level_options_selected),
             }, { direction = "column", align_items = "stretch" })
-            state.root.elements[3].elements[1] = update_element(score, state.root, 3, state.root.elements[3].elements[1])
+            state.root.elements[3].elements[1] = score
+            state.root.elements[3]:mutated()
         end,
     })
     return flex:new({

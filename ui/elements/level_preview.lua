@@ -35,18 +35,13 @@ function level_preview:set_style(style)
 end
 
 function level_preview:calculate_element_layout()
-    -- * 2 as there should be padding on both sides
-    local padding = self.padding * 2 * self.scale
-    return SIZE * self.scale + padding, SIZE * self.scale + padding
+    return SIZE * self.scale, SIZE * self.scale
 end
 
-function level_preview:draw()
-    local pos_x, pos_y = self.bounds[1] + self.padding * self.scale, self.bounds[2] + self.padding * self.scale
+function level_preview:draw_element()
     local half_size = SIZE * self.scale / 2
-    local center_x, center_y = pos_x + half_size, pos_y + half_size
     if self.data then
-        love.graphics.push()
-        love.graphics.translate(center_x, center_y)
+        love.graphics.translate(half_size, half_size)
         love.graphics.scale(self.scale, self.scale)
         for i = 1, #self.data.polygons do
             love.graphics.setColor(self.data.colors[i])
@@ -55,23 +50,22 @@ function level_preview:draw()
         love.graphics.setColor(self.border_color)
         love.graphics.setLineWidth(self.scale * self.border_thickness)
         love.graphics.polygon("line", self.data.outline)
-        love.graphics.pop()
     else
         -- loading circle (TODO: replace hardcoded colors and line width maybe)
         love.graphics.setColor(1, 1, 1, 1)
         love.graphics.setLineWidth(self.scale * 5)
-        love.graphics.circle("line", center_x, center_y, half_size / 2, 100)
+        love.graphics.circle("line", half_size, half_size, half_size / 2, 100)
         local half_sector_size = math.pi / 4
         local radius = half_size
         love.graphics.setColor(0, 0, 0, 1)
         love.graphics.polygon(
             "fill",
-            center_x,
-            center_y,
-            center_x + math.cos(self.angle() - half_sector_size) * radius,
-            center_y + math.sin(self.angle() - half_sector_size) * radius,
-            center_x + math.cos(self.angle() + half_sector_size) * radius,
-            center_y + math.sin(self.angle() + half_sector_size) * radius
+            half_size,
+            half_size,
+            half_size + math.cos(self.angle() - half_sector_size) * radius,
+            half_size + math.sin(self.angle() - half_sector_size) * radius,
+            half_size + math.cos(self.angle() + half_sector_size) * radius,
+            half_size + math.sin(self.angle() + half_sector_size) * radius
         )
     end
 end

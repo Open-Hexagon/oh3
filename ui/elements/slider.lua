@@ -15,34 +15,54 @@ function slider:new(options)
             radius = options.radius or 16,
             background_color = { 0.5, 0.5, 0.5, 1 },
             position = signal.new_queue(0),
+            grabbed = false,
         }, slider),
         options
     )
     obj.selectable = true
     obj.position:set_immediate_value(obj.state)
+    obj.change_map.steps = true
+    obj.change_map.step_size = true
+    obj.change_map.radius = true
     return obj
 end
 
 function slider:process_event(name, ...)
-    element.process_event(self, name, ...)
-    local last_state = self.state
-    if name == "wheelmoved" and self.is_mouse_over and self:check_screen() then
-        self.selected = true
-        keyboard_navigation.select_element(self)
+    if element.process_event(self, name, ...) then
+        return true
+    end
+    local function select_this_elem()
+        -- don't call handlers there to respect handlers stopping propagation
+        keyboard_navigation.select_element(self, false)
         if self.selection_handler then
             if self.selection_handler(self) then
                 return true
             end
         end
+    end
+    local last_state = self.state
+    if name == "wheelmoved" and self.is_mouse_over and self:check_screen() then
+        select_this_elem()
         local _, direction = ...
         self.state = extmath.clamp(self.state - direction, 0, self.steps)
     end
-    if (name == "mousemoved" or name == "mousepressed") and self.is_mouse_over and love.mouse.isDown(1) then
-        local x = ...
-        self.state = math.floor(
-            (x - self.bounds[1] - (self.padding + self.radius) * self.scale) / (self.step_size * self.scale) + 0.5
-        )
+    local function move_state_to_mouse()
+        self.state = math.floor((self.local_mouse_x - self.radius * self.scale) / (self.step_size * self.scale) + 0.5)
         self.state = extmath.clamp(self.state, 0, self.steps)
+    end
+    if name == "mousepressed" and self.is_mouse_over then
+        self.grabbed = true
+        select_this_elem()
+        move_state_to_mouse()
+    end
+    if name == "mousemoved" and self.grabbed then
+        move_state_to_mouse()
+    end
+    if name == "mousereleased" then
+        if self.grabbed then
+            self.grabbed = false
+            return true
+        end
     end
     if name == "keypressed" and self.selected then
         local key = ...
@@ -66,19 +86,17 @@ end
 
 function slider:calculate_element_layout()
     -- max and min size is the same, so available area doesn't matter here at all
-    local padding = 2 * self.padding * self.scale
     local diameter = self.radius * 2 * self.scale
-    local width = self.steps * self.step_size * self.scale + diameter + padding
-    local height = diameter + padding
+    local width = self.steps * self.step_size * self.scale + diameter
+    local height = diameter
     return width, height
 end
 
-function slider:draw()
-    local padding = self.padding * self.scale
+function slider:draw_element()
     local radius = self.radius * self.scale
     local inner_radius = radius * 0.5
-    local x = self.bounds[1] + padding + radius
-    local y = self.bounds[2] + padding + radius
+    local x = radius
+    local y = radius
     local inner_width = self.steps * self.step_size * self.scale
     local segments = 100
     love.graphics.setColor(self.background_color)

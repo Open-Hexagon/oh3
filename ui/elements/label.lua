@@ -26,7 +26,7 @@ function label:new(text, options)
     if not font[font_size] then
         font[font_size] = love.graphics.newFont(options.font_file or default_font_file, font_size)
     end
-    return element.new(
+    local obj = element.new(
         setmetatable({
             raw_text = text,
             text = love.graphics.newText(font[font_size], text),
@@ -34,11 +34,17 @@ function label:new(text, options)
             font = font,
             font_file = options.font_file or default_font_file,
             font_size = font_size,
-            pos = { 0, 0 },
             cutoff_suffix = options.cutoff_suffix,
         }, label),
         options
     )
+    obj.change_map.raw_text = true
+    obj.change_map.wrap = true
+    obj.change_map.font = true
+    obj.change_map.font_file = true
+    obj.change_map.font_size = true
+    obj.change_map.cutoff_suffix = true
+    return obj
 end
 
 ---set the gui scale for the label
@@ -49,26 +55,25 @@ function label:set_scale(scale)
         self.font[font_size] = love.graphics.newFont(self.font_file, font_size)
     end
     self.text:setFont(self.font[font_size])
+    if self.scale ~= scale then
+        self.changed = true
+    end
     self.scale = scale
 end
 
 ---recalculate position and size depending on available area for the label, returns width and height
----@param available_area table
+---@param available_width number
 ---@return number
 ---@return number
-function label:calculate_element_layout(available_area)
-    -- * 2 as there should be padding on both sides
-    local padding = self.padding * 2 * self.scale
+function label:calculate_element_layout(available_width)
     local width, height
     local function get_dimensions()
         width, height = self.text:getDimensions()
-        width = width + padding
-        height = height + padding
     end
     local text = self.raw_text
     if self.cutoff_suffix then
         local amount = #self.raw_text
-        while self.text:getFont():getWidth(text) + padding > available_area.width do
+        while self.text:getFont():getWidth(text) > available_width do
             amount = amount - 1
             if amount < 1 then
                 break
@@ -78,24 +83,22 @@ function label:calculate_element_layout(available_area)
     end
     self.text:set(text)
     get_dimensions()
-    if self.wrap and available_area.width < width then
-        self.text:setf(self.raw_text, available_area.width - padding, "left")
+    if self.wrap and available_width < width then
+        self.text:setf(self.raw_text, available_width, "left")
         get_dimensions()
     end
-    self.pos[1] = available_area.x + self.padding * self.scale
-    self.pos[2] = available_area.y + self.padding * self.scale
     return width, height
 end
 
 ---draw the label
-function label:draw()
+function label:draw_element()
     -- TODO: replace temporary visual selection state
     if self.selected then
         love.graphics.setColor(0, 0, 1, 1)
     else
         love.graphics.setColor(self.color)
     end
-    love.graphics.draw(self.text, unpack(self.pos))
+    love.graphics.draw(self.text)
 end
 
 return label

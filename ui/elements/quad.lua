@@ -1,3 +1,4 @@
+local animated_transform = require("ui.anim.transform")
 local element = require("ui.elements.element")
 local quad = {}
 quad.__index = setmetatable(quad, {
@@ -23,7 +24,15 @@ function quad:new(options)
     if obj.element then
         obj.element.parent = obj
     end
+    obj.change_map.element = true
+    obj.change_map.vertex_offsets = true
     return obj
+end
+
+---notify the element about mutations to its child
+function quad:mutated()
+    self.changed = true
+    self:calculate_layout(self.last_available_width, self.last_available_height)
 end
 
 ---set the style
@@ -31,6 +40,7 @@ end
 function quad:set_style(style)
     if self.element then
         self.element:set_style(style)
+        self.changed = self.changed or self.element.changed
     end
     self.background_color = self.style.background_color or style.background_color or self.background_color
     self.border_thickness = self.style.border_thickness or style.border_thickness or self.border_thickness
@@ -44,77 +54,78 @@ function quad:set_scale(scale)
     if self.element then
         self.element:set_scale(scale)
     end
+    if self.scale ~= scale then
+        self.changed = true
+    end
     self.scale = scale
 end
 
 ---process an event
 ---@param ... unknown
 function quad:process_event(...)
+    love.graphics.push()
+    love.graphics.applyTransform(self._transform)
+    animated_transform.apply(self.transform)
     if self.element then
         if self.element:process_event(...) then
+            love.graphics.pop()
             return true
         end
     end
+    love.graphics.pop()
     if element.process_event(self, ...) then
         return true
     end
 end
 
----set scroll offset
----@param scroll_offset table
-function quad:set_scroll_offset(scroll_offset)
-    self.scroll_offset = scroll_offset
-    if self.element then
-        self.element:set_scroll_offset(scroll_offset)
-    end
-end
-
 ---calculate the layout
----@param available_area table
+---@param available_width number
+---@param available_height number
 ---@return number
 ---@return number
-function quad:calculate_layout(available_area)
-    available_area = available_area or self.last_available_area
+function quad:calculate_element_layout(available_width, available_height)
     local vertex_offsets = {}
     for i = 1, #self.vertex_offsets do
         -- offsets must be positive (outwards) and must be whole numbers
         vertex_offsets[i] = math.floor(math.abs(self.vertex_offsets[i]) * self.scale)
     end
-    local top = math.max(vertex_offsets[2], vertex_offsets[4]) + (self.padding + self.margins[2]) * self.scale
-    local bot = math.max(vertex_offsets[6], vertex_offsets[8]) + (self.padding + self.margins[2]) * self.scale
-    local left = math.max(vertex_offsets[1], vertex_offsets[7]) + (self.padding + self.margins[1]) * self.scale
-    local right = math.max(vertex_offsets[3], vertex_offsets[5]) + (self.padding + self.margins[1]) * self.scale
-    local new_area = {
-        x = available_area.x + left,
-        y = available_area.y + top,
-        width = available_area.width - right - left,
-        height = available_area.height - bot - top,
-    }
-    local width, height
-    if self.element and not self.flex_expand then
-        width, height = self.element:calculate_layout(new_area)
-    else
-        if self.element then
-            self.element:calculate_layout(new_area)
+    local top = math.max(vertex_offsets[2], vertex_offsets[4]) + self.margins[2] * self.scale
+    local bot = math.max(vertex_offsets[6], vertex_offsets[8]) + self.margins[2] * self.scale
+    local left = math.max(vertex_offsets[1], vertex_offsets[7]) + self.margins[1] * self.scale
+    local right = math.max(vertex_offsets[3], vertex_offsets[5]) + self.margins[1] * self.scale
+    local width = available_width - right - left
+    local height = available_height - bot - top
+    if self.element then
+        if self.flex_expand then
+            local res_width, res_height = self.element:calculate_layout(width, height)
+            width = math.max(width, res_width)
+            height = math.max(height, res_height)
+            if self.flex_expand == 1 then
+                -- only expand in width
+                height = res_height
+            elseif self.flex_expand == 2 then
+                -- only expand in height
+                width = res_width
+            end
+        else
+            width, height = self.element:calculate_layout(width, height)
         end
-        width = new_area.width
-        height = new_area.height
+        self.element._transform:reset()
+        self.element._transform:translate(left, top)
     end
-    self.vertices[1] = new_area.x - vertex_offsets[1]
-    self.vertices[2] = new_area.y - vertex_offsets[2]
-    self.vertices[3] = new_area.x + width + vertex_offsets[3]
-    self.vertices[4] = new_area.y - vertex_offsets[4]
-    self.vertices[5] = new_area.x + width + vertex_offsets[5]
-    self.vertices[6] = new_area.y + height + vertex_offsets[6]
-    self.vertices[7] = new_area.x - vertex_offsets[7]
-    self.vertices[8] = new_area.y + height + vertex_offsets[8]
-    self.bounds = self.vertices
-    self:_update_last_available_area(available_area)
+    self.vertices[1] = left - vertex_offsets[1]
+    self.vertices[2] = top - vertex_offsets[2]
+    self.vertices[3] = left + width + vertex_offsets[3]
+    self.vertices[4] = top - vertex_offsets[4]
+    self.vertices[5] = left + width + vertex_offsets[5]
+    self.vertices[6] = top + height + vertex_offsets[6]
+    self.vertices[7] = left - vertex_offsets[7]
+    self.vertices[8] = top + height + vertex_offsets[8]
     return left + width + right, top + height + bot
 end
 
 ---draw the quad
-function quad:draw()
+function quad:draw_element()
     love.graphics.setColor(self.background_color)
     love.graphics.polygon("fill", self.vertices)
     if self.border_thickness ~= 0 then

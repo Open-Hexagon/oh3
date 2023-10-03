@@ -1,4 +1,3 @@
-local point_in_polygon = require("ui.extmath").point_in_polygon
 local keyboard_navigation = require("ui.keyboard_navigation")
 local overlay_module = {}
 local overlays = {}
@@ -32,7 +31,7 @@ function overlay_module.remove_overlay(index)
 end
 
 ---process an event
----@param name any
+---@param name string
 ---@param ... unknown
 ---@return boolean
 function overlay_module.process_event(name, ...)
@@ -52,7 +51,7 @@ function overlay_module.process_event(name, ...)
             if keyboard_navigation.get_screen() == overlays[i] then
                 keyboard_navigation.process_event(name, ...)
             end
-            if point_in_polygon(overlays[i].bounds, love.mouse.getPosition()) then
+            if overlays[i].is_mouse_over then
                 return true
             end
         end

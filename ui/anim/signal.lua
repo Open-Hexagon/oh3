@@ -400,6 +400,8 @@ function M.new_queue(value)
         value = value or 0,
     }, signal.Queue)
     table.insert(updateable, newinst)
+    -- persist by default
+    newinst:persist()
     return newinst
 end
 

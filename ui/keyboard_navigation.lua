@@ -43,12 +43,17 @@ function keyboard_navigation.set_screen(screen)
     end
 end
 
-local function scroll_into_view(element)
+local function scroll_into_view(element, scroll_to_elem, x, y)
+    scroll_to_elem = scroll_to_elem or element
+    if not x or not y then
+        x, y = scroll_to_elem.transform:transformPoint(scroll_to_elem._transform:transformPoint(0, 0))
+    end
     if element.parent then
-        scroll_into_view(element.parent)
-        if element.parent.elements then
-            element.parent:scroll_into_view(element.bounds)
+        if element.parent.scrollable then
+            element.parent:scroll_into_view(x, y, scroll_to_elem.width, scroll_to_elem.height)
         end
+        x, y = element.parent.transform:transformPoint(element.parent._transform:transformPoint(x, y))
+        scroll_into_view(element.parent, scroll_to_elem, x, y)
     end
 end
 
