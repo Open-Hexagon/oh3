@@ -30,6 +30,9 @@ jobs:
 
     - name: Create App image
       run: |
+        # required for app image creation
+        sudo apt install desktop-file-utils
+        # create directory (git doesn't push empty directories)
         mkdir -p extra/linux/squashfs-root/share/games/oh3
         cp -r *.lua assets compat extlibs game game_handler server ui extra/linux/squashfs-root/share/games/oh3
         # extract love over everything
