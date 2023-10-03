@@ -22,6 +22,7 @@ jobs:
       run: |
         wget https://www.sqlite.org/2023/sqlite-amalgamation-3430100.zip
         7z x sqlite-amalgamation-3430100.zip
+        mkdir lib
         gcc -shared -fPIC sqlite-amalgamation-3430100/sqlite3.c -o lib/libsqlite3.so
 
     - name: Configure CMake
