@@ -2,6 +2,7 @@ local keyboard_navigation = require("ui.keyboard_navigation")
 local overlay_module = {}
 local overlays = {}
 local free_overlay_indices = {}
+local gui_scale = 1
 
 ---add an element to be rendered as overlay
 ---@param element any
@@ -15,9 +16,8 @@ function overlay_module.add_overlay(element)
         table.remove(free_overlay_indices, 1)
     end
     overlays[index] = element
-    -- require here to avoid circular import (now require just returns the cached table)
-    local ui = require("ui")
-    element:set_scale(ui.get_screen().scale)
+    element:set_scale(gui_scale)
+    element:mutated()
     return index
 end
 
@@ -30,6 +30,18 @@ function overlay_module.remove_overlay(index)
     overlays[index] = nil
 end
 
+---set the gui scale
+---@param scale number
+function overlay_module.set_scale(scale)
+    gui_scale = scale
+    for i = 1, #overlays do
+        if overlays[i] then
+            overlays[i]:set_scale(scale)
+            overlays[i]:mutated()
+        end
+    end
+end
+
 ---process an event
 ---@param name string
 ---@param ... unknown
@@ -37,11 +49,6 @@ end
 function overlay_module.process_event(name, ...)
     for i = 1, #overlays do
         if overlays[i] then
-            if name == "resize" then
-                -- require here to avoid circular import (now require just returns the cached table)
-                local ui = require("ui")
-                overlays[i]:set_scale(ui.get_screen().scale)
-            end
             if overlays[i]:process_event(name, ...) then
                 return true
             end

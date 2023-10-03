@@ -4,7 +4,7 @@ local async = require("async")
 local threadify = require("threadify")
 local threaded_assets = threadify.require("game_handler.assets")
 local shader_compat = require("compat.game21.shader_compat")
-local pack_id_json_map = {}
+local pack_id_map = {}
 local pack_id_list = {}
 local sound_mapping = {
     ["beep.ogg"] = "click.ogg",
@@ -54,6 +54,10 @@ assets.init = async(function(audio, config)
         end
     end
     dependency_mapping = async.await(threaded_assets.get_dependency_pack_mapping21())
+    for _, pack in pairs(dependency_mapping) do
+        pack_id_list[#pack_id_list + 1] = pack.id
+        pack_id_map[pack.id] = pack
+    end
 end)
 
 local function build_pack_id(disambiguator, author, name, version)
@@ -130,7 +134,7 @@ function assets.get_pack_sound(pack, id)
             local pack_id = pack_id_list[i]
             if id:sub(1, #pack_id) == pack_id then
                 id = id:sub(#pack_id + 2)
-                pack = pack_id_json_map[pack_id]
+                pack = pack_id_map[pack_id]
                 break
             end
         end

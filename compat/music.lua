@@ -1,4 +1,5 @@
 local args = require("args")
+local log = require("log")(...)
 local music = {
     volume = 1,
 }
@@ -40,13 +41,22 @@ function music.play(music_data, random_segment, time, pitch)
         end
     end
     if music_data.source then
-        music_data.source:set_pitch(pitch or 1)
+        pitch = pitch or 1
+        if pitch > 0 then
+            music_data.source:set_pitch(pitch)
+        else
+            log("Invalid pitch of", pitch)
+        end
         music_data.source:play()
     end
     music.playing = music_data
 end
 
 function music.set_pitch(pitch)
+    if pitch <= 0 then
+        log("Invalid pitch of", pitch)
+        return
+    end
     if music.playing and music.playing.source then
         music.playing.source:set_pitch(pitch)
     end

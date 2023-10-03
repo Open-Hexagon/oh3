@@ -1,4 +1,5 @@
 local Timeline = require("compat.game21.timeline")
+local status = require("compat.game21.status")
 local timelines = {}
 local custom_timelines = {}
 
@@ -24,7 +25,8 @@ function custom_timelines.update(time_point)
 end
 
 function custom_timelines.add_lua_functions(game)
-    local lua = game.lua_runtime.env
+    local lua_runtime = require("compat.game21.lua_runtime")
+    local lua = lua_runtime.env
 
     function lua.ct_create()
         timelines[#timelines + 1] = Timeline:new()
@@ -34,7 +36,7 @@ function custom_timelines.add_lua_functions(game)
     function lua.ct_eval(handle, code)
         local timeline = custom_timelines.get(handle)
         local fn = loadstring(code)
-        setfenv(fn, game.lua_runtime.env)
+        setfenv(fn, lua_runtime.env)
         timeline:append_do(fn)
     end
 
@@ -48,14 +50,14 @@ function custom_timelines.add_lua_functions(game)
     function lua.ct_stopTime(handle, duration)
         local timeline = custom_timelines.get(handle)
         timeline:append_do(function()
-            game.status.pause_time(duration / 60)
+            status.pause_time(duration / 60)
         end)
     end
 
     function lua.ct_stopTimeS(handle, duration)
         local timeline = custom_timelines.get(handle)
         timeline:append_do(function()
-            game.status.pause_time(duration)
+            status.pause_time(duration)
         end)
     end
 
@@ -72,7 +74,7 @@ function custom_timelines.add_lua_functions(game)
     function lua.ct_waitUntilS(handle, time)
         local timeline = custom_timelines.get(handle)
         timeline:append_wait_until_fn(function()
-            return game.status.get_level_start_tp() + math.floor(time * 1000)
+            return status.get_level_start_tp() + math.floor(time * 1000)
         end)
     end
 end

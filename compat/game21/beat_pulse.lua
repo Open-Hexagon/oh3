@@ -1,28 +1,28 @@
+local config = require("config")
+local level_status = require("compat.game21.level_status")
+local status = require("compat.game21.status")
 local beat_pulse = {}
-local game
 
-function beat_pulse.init(pass_game)
-    game = pass_game
-    game.status.beat_pulse_delay = game.status.beat_pulse_delay + game.level_status.beat_pulse_initial_delay
+function beat_pulse.init()
+    status.beat_pulse_delay = status.beat_pulse_delay + level_status.beat_pulse_initial_delay
 end
 
 function beat_pulse.update(frametime, dm_factor)
-    if game.config.get("beatpulse") then
-        if not game.level_status.manual_beat_pulse_control then
-            if game.status.beat_pulse_delay <= 0 then
-                game.status.beat_pulse = game.level_status.beat_pulse_max
-                game.status.beat_pulse_delay = game.level_status.beat_pulse_delay_max
+    if config.get("beatpulse") then
+        if not level_status.manual_beat_pulse_control then
+            if status.beat_pulse_delay <= 0 then
+                status.beat_pulse = level_status.beat_pulse_max
+                status.beat_pulse_delay = level_status.beat_pulse_delay_max
             else
-                game.status.beat_pulse_delay = game.status.beat_pulse_delay - frametime * dm_factor
+                status.beat_pulse_delay = status.beat_pulse_delay - frametime * dm_factor
             end
-            if game.status.beat_pulse > 0 then
-                game.status.beat_pulse = game.status.beat_pulse
-                    - 2 * frametime * dm_factor * game.level_status.beat_pulse_speed_mult
+            if status.beat_pulse > 0 then
+                status.beat_pulse = status.beat_pulse - 2 * frametime * dm_factor * level_status.beat_pulse_speed_mult
             end
         end
     end
-    local radius_min = game.config.get("beatpulse") and game.level_status.radius_min or 75
-    game.status.radius = radius_min * (game.status.pulse / game.level_status.pulse_min) + game.status.beat_pulse
+    local radius_min = config.get("beatpulse") and level_status.radius_min or 75
+    status.radius = radius_min * (status.pulse / level_status.pulse_min) + status.beat_pulse
 end
 
 return beat_pulse

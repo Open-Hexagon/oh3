@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Open Hexagon 3
+Comment=The new version of Open Hexagon
+MimeType=application/x-love-game;
+Exec=start %f
+Type=Application
+Categories=Game;
+Terminal=false
+Icon=oh3
+NoDisplay=true

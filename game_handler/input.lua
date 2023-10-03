@@ -38,7 +38,7 @@ end
 
 ---save the next seed when recording or get the next seed when replaying
 ---@param seed number
----@return number?
+---@return number
 function input.next_seed(seed)
     if recording then
         input.replay:record_seed(seed)
@@ -46,9 +46,8 @@ function input.next_seed(seed)
     elseif replaying then
         seed_index = seed_index + 1
         return input.replay.data.seeds[seed_index]
-    else
-        return seed
     end
+    return seed
 end
 
 ---stops replaying

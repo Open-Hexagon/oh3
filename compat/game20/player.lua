@@ -4,6 +4,11 @@ local playsound = require("compat.game21.playsound")
 local utils = require("compat.game192.utils")
 local extra_math = require("compat.game21.math")
 local timer = require("compat.game21.timer")
+local config = require("config")
+local walls = require("compat.game20.walls")
+local style = require("compat.game20.style")
+local level_status = require("compat.game20.level_status")
+local status = require("compat.game20.status")
 local player = {}
 
 local base_thickness = 5
@@ -31,10 +36,10 @@ function player.reset(pass_game, assets)
     angle = 0
     hue = 0
     dead = false
-    size = game.config.get("player_size")
-    speed = game.config.get("player_speed")
-    focus_speed = game.config.get("player_focus_speed")
-    black_and_white = game.config.get("black_and_white")
+    size = config.get("player_size")
+    speed = config.get("player_speed")
+    focus_speed = config.get("player_focus_speed")
+    black_and_white = config.get("black_and_white")
     pos = { 0, 0 }
     last_pos = { 0, 0 }
     if not args.headless then
@@ -43,16 +48,16 @@ function player.reset(pass_game, assets)
 end
 
 local function update_main_color()
-    color_main[1], color_main[2], color_main[3], color_main[4] = game.style.get_main_color()
+    color_main[1], color_main[2], color_main[3], color_main[4] = style.get_main_color()
     if black_and_white then
         color_main[1], color_main[2], color_main[3] = 255, 255, 255
     end
 end
 
 function player.draw_pivot(main_quads)
-    local sides = game.level_status.sides
+    local sides = level_status.sides
     local div = math.pi / sides
-    local radius = game.status.radius * 0.75
+    local radius = status.radius * 0.75
     update_main_color()
     local cap_vertex_count = 0
     for i = 0, sides - 1 do
@@ -76,7 +81,7 @@ function player.draw_pivot(main_quads)
 end
 
 local function draw_death_effect()
-    local sides = game.level_status.sides
+    local sides = level_status.sides
     local div = math.pi / sides
     local radius = hue / 8
     local thickness = hue / 20
@@ -129,7 +134,7 @@ function player.draw_cap()
     if dead_effect_timer.running then
         draw_death_effect()
     end
-    local r, g, b, a = game.style.get_color(2)
+    local r, g, b, a = style.get_color(2)
     if black_and_white then
         r, g, b, a = 0, 0, 0, 255
     end
@@ -141,31 +146,31 @@ end
 
 function player.update(frametime, movement, focus, swap)
     swap_blink_timer:update(frametime)
-    if dead_effect_timer:update(frametime) and game.level_status.tutorial_mode then
+    if dead_effect_timer:update(frametime) and level_status.tutorial_mode then
         dead_effect_timer:stop()
     end
-    if game.level_status.swap_enabled and swap_timer:update(frametime) then
+    if level_status.swap_enabled and swap_timer:update(frametime) then
         swap_timer:stop()
     end
     local current_speed = speed
     local last_angle = angle
-    local radius = game.status.radius
+    local radius = status.radius
     if focus then
         current_speed = focus_speed
     end
     angle = angle + math.rad(current_speed * movement * frametime)
-    if game.level_status.swap_enabled and swap and not swap_timer.running then
+    if level_status.swap_enabled and swap and not swap_timer.running then
         playsound(swap_sound)
         swap_timer:restart()
         angle = angle + math.pi
     end
     extra_math.get_orbit(start_pos, angle, radius, pos)
     extra_math.get_orbit(start_pos, last_angle, radius, last_pos)
-    for i = 1, #game.walls.entities do
-        if extra_math.point_in_polygon(game.walls.entities[i].vertices, unpack(pos)) then
-            if extra_math.point_in_polygon(game.walls.entities[i].vertices, unpack(last_pos)) then
+    for i = 1, #walls.entities do
+        if extra_math.point_in_polygon(walls.entities[i].vertices, unpack(pos)) then
+            if extra_math.point_in_polygon(walls.entities[i].vertices, unpack(last_pos)) then
                 dead_effect_timer:restart()
-                if not game.config.get("invincible") then
+                if not config.get("invincible") then
                     dead = true
                 end
                 extra_math.get_orbit(last_pos, angle, -5 * game.get_speed_mult_dm(), pos)

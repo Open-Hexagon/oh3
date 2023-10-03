@@ -1,4 +1,5 @@
 local set_color = require("compat.game21.color_transform")
+local status = require("compat.game21.status")
 local flash = {}
 local game
 
@@ -11,19 +12,19 @@ function flash.start_white()
     game.flash_color[1] = 255
     game.flash_color[2] = 255
     game.flash_color[3] = 255
-    game.status.flash_effect = 255
+    status.flash_effect = 255
 end
 
 function flash.update(frametime)
-    if game.status.flash_effect > 0 then
-        game.status.flash_effect = game.status.flash_effect - 3 * frametime
+    if status.flash_effect > 0 then
+        status.flash_effect = status.flash_effect - 3 * frametime
     end
-    if game.status.flash_effect < 0 then
-        game.status.flash_effect = 0
-    elseif game.status.flash_effect > 255 then
-        game.status.flash_effect = 255
+    if status.flash_effect < 0 then
+        status.flash_effect = 0
+    elseif status.flash_effect > 255 then
+        status.flash_effect = 255
     end
-    game.flash_color[4] = game.status.flash_effect
+    game.flash_color[4] = status.flash_effect
 end
 
 function flash.draw(should_draw, zoom_factor)

@@ -1,5 +1,13 @@
 local log = require("log")(...)
 local args = require("args")
+local input = require("game_handler.input")
+local level_status = require("compat.game21.level_status")
+local status = require("compat.game21.status")
+local player = require("compat.game21.player")
+local walls = require("compat.game21.walls")
+local rng = require("compat.game21.random")
+local assets = require("compat.game21.assets")
+
 local keycode_conversion = {
     [0] = "a",
     [1] = "b",
@@ -103,21 +111,21 @@ local keycode_conversion = {
     [99] = "f15",
     [100] = "pause",
 }
-return function(public, game, assets)
+return function(public, game)
     local pack = game.pack_data
-    local lua_runtime = game.lua_runtime
+    local lua_runtime = require("compat.game21.lua_runtime")
     local env = lua_runtime.env
     env.u_isHeadless = function()
         return args.headless
     end
     env.u_rndReal = function()
-        return game.rng.get_real(0, 1)
+        return rng.get_real(0, 1)
     end
     env.u_rndIntUpper = function(upper)
-        return game.rng.get_int(1, upper)
+        return rng.get_int(1, upper)
     end
     env.u_rndInt = function(lower, upper)
-        return game.rng.get_int(lower, upper)
+        return rng.get_int(lower, upper)
     end
     env.u_rndSwitch = function(mode, lower, upper)
         if mode == 0 then
@@ -139,7 +147,7 @@ return function(public, game, assets)
         end
     end
     env.u_getAttemptRandomSeed = function()
-        return game.rng.get_seed()
+        return rng.get_seed()
     end
     env.u_inMenu = function()
         -- the lua env shouldn't be active in the menu?
@@ -177,7 +185,7 @@ return function(public, game, assets)
         return game.height
     end
     env.u_setFlashEffect = function(value)
-        game.status.flash_effect = value
+        status.flash_effect = value
     end
     env.u_setFlashColor = function(r, g, b)
         game.flash_color[1] = r
@@ -193,13 +201,13 @@ return function(public, game, assets)
             lua_runtime.error("Could not find key with sfml keycode '" .. key_code .. "'!")
             return false
         end
-        return game.input.get(key)
+        return input.get(key)
     end
     env.u_haltTime = function(duration)
-        game.status.pause_time(duration / 60)
+        status.pause_time(duration / 60)
     end
     env.u_clearWalls = function()
-        game.walls.clear()
+        walls.clear()
     end
     env.u_getPlayerAngle = function()
         if public.preview_mode then
@@ -208,16 +216,16 @@ return function(public, game, assets)
                 return -(0 / 0)
             end
         end
-        return game.player.get_player_angle()
+        return player.get_player_angle()
     end
     env.u_setPlayerAngle = function(angle)
-        return game.player.set_player_angle(angle)
+        return player.set_player_angle(angle)
     end
     env.u_isMouseButtonPressed = function(button)
-        return game.input.get(button)
+        return input.get(button)
     end
     env.u_isFastSpinning = function()
-        return game.status.fast_spin > 0
+        return status.fast_spin > 0
     end
     env.u_forceIncrement = function()
         game.increment_difficulty()
@@ -229,11 +237,11 @@ return function(public, game, assets)
         return game.get_speed_mult_dm()
     end
     env.u_getDelayMultDM = function()
-        local result = game.level_status.delay_mult / math.pow(game.difficulty_mult, 0.1)
-        if not game.level_status.has_delay_max_limit() then
+        local result = level_status.delay_mult / math.pow(game.difficulty_mult, 0.1)
+        if not level_status.has_delay_max_limit() then
             return result
         end
-        return result < game.level_status.delay_max and result or game.level_status.delay_max
+        return result < level_status.delay_max and result or level_status.delay_max
     end
     env.u_swapPlayer = function(play_sound)
         game.perform_player_swap(play_sound)

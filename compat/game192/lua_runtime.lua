@@ -2,6 +2,13 @@ local log = require("log")(...)
 local args = require("args")
 local play_sound = require("compat.game192.play_sound")
 local utils = require("compat.game192.utils")
+local style = require("compat.game192.style")
+local status = require("compat.game192.status")
+local events = require("compat.game192.events")
+local walls = require("compat.game192.walls")
+local vfs = require("compat.game192.virtual_filesystem")
+local config = require("config")
+local input = require("game_handler.input")
 local lua_runtime = {
     env = {},
     reset_timings = false,
@@ -124,7 +131,6 @@ local block_threshold = 1000
 
 function lua_runtime.init_env(game, public)
     local pack = game.pack
-    local config = game.config
     lua_runtime.env = {
         os = {
             time = function(...)
@@ -146,7 +152,7 @@ function lua_runtime.init_env(game, public)
             execute = function(command)
                 log("Level attempted to execute potentially malicious command: '" .. command .. "'")
             end,
-            remove = game.vfs.remove,
+            remove = vfs.remove,
         },
         next = next,
         error = error,
@@ -170,11 +176,11 @@ function lua_runtime.init_env(game, public)
             setfenv(f, lua_runtime.env)
             return f
         end,
-        io = game.vfs.io,
+        io = vfs.io,
         -- allowing manual random seed setting, the randomseed calls will be recorded in the replay in order (with their seed)
         math = {
             randomseed = function(seed)
-                math.randomseed(game.input.next_seed(seed))
+                math.randomseed(input.next_seed(seed))
             end,
         },
     }
@@ -182,7 +188,7 @@ function lua_runtime.init_env(game, public)
     env._G = env
     env.math = setmetatable(env.math, { __index = math })
     env.dofile = function(path)
-        local file = game.vfs.io.open(path, "r")
+        local file = vfs.io.open(path, "r")
         local code = file:read("*a")
         file:close()
         local func = loadstring(code)
@@ -226,13 +232,13 @@ function lua_runtime.init_env(game, public)
         end
     end
     make_get_set_functions(game.level_data, "Level")
-    make_get_set_functions(game.style.get_table(), "Style")
+    make_get_set_functions(style.get_table(), "Style")
     env.log = function(text)
         log("Lua: " .. text)
     end
     env.wall = function(side, thickness)
         game.main_timeline:append_do(function()
-            game.walls.wall(side, thickness)
+            walls.wall(side, thickness)
         end)
     end
     env.getSides = function()
@@ -251,10 +257,10 @@ function lua_runtime.init_env(game, public)
         lua_runtime.run_lua_file(pack.path .. "Scripts/" .. script)
     end
     env.execEvent = function(id)
-        game.events.exec(game.pack.events[id])
+        events.exec(game.pack.events[id])
     end
     env.enqueueEvent = function(id)
-        game.events.queue(game.pack.events[id])
+        events.queue(game.pack.events[id])
     end
     env.wait = function(duration)
         game.main_timeline:append_wait(duration)
@@ -303,21 +309,21 @@ function lua_runtime.init_env(game, public)
             if not args.headless then
                 love.event.pump()
             end
-            game.input.update()
+            input.update()
         end
-        return game.input.get(key)
+        return input.get(key)
     end
     env.isFastSpinning = function()
-        return game.status.fast_spin > 0
+        return status.fast_spin > 0
     end
     env.wallAdj = function(side, thickness, speed)
         game.main_timeline:append_do(function()
-            game.walls.wallAdj(side, thickness, speed)
+            walls.wallAdj(side, thickness, speed)
         end)
     end
     env.wallAcc = function(side, thickness, speed, accel, min, max)
         game.main_timeline:append_do(function()
-            game.walls.wallAcc(side, thickness, speed, accel, min, max)
+            walls.wallAcc(side, thickness, speed, accel, min, max)
         end)
     end
     log("initialized environment")
@@ -334,7 +340,7 @@ local function limit_function_calls(fn, ...)
             error("too many function calls without returning to the game")
         end
     end, "c")
-    local ret = {fn(...)}
+    local ret = { fn(...) }
     debug.sethook()
     return unpack(ret)
 end

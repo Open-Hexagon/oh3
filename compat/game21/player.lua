@@ -3,6 +3,8 @@ local player = {}
 local timer = require("compat.game21.timer")
 local extra_math = require("compat.game21.math")
 local get_color_from_hue = require("compat.game21.hue").get_color
+local level_status = require("compat.game21.level_status")
+local style = require("compat.game21.style")
 
 local base_thickness = 5
 local unfocused_triangle_width = 3
@@ -77,13 +79,14 @@ function player.get_color_adjusted_for_swap(color)
     end
 end
 
-function player.draw_pivot(sides, style, pivotquads, cap_tris, black_and_white)
+function player.draw_pivot(pivotquads, cap_tris, black_and_white)
     local pr, pg, pb, pa = style.get_main_color()
     local cr, cg, cb, ca = style.get_cap_color_result()
     if black_and_white then
         cr, cg, cb, ca = 0, 0, 0, 0
         pr, pg, pb = 255, 255, 255
     end
+    local sides = level_status.sides
     local div = math.pi / sides
     local p_radius = _radius * 0.75
     for i = 0, sides - 1 do
@@ -112,21 +115,12 @@ local function draw_death_effect(quads)
     end
 end
 
-function player.draw(
-    sides,
-    style,
-    pivotquads,
-    playertris,
-    cap_tris,
-    angle_tilt_intensity,
-    swap_blinking_effect,
-    black_and_white
-)
+function player.draw(pivotquads, playertris, cap_tris, angle_tilt_intensity, swap_blinking_effect, black_and_white)
     _color[1], _color[2], _color[3], _color[4] = style.get_player_color()
     if black_and_white then
         _color[1], _color[2], _color[3] = 255, 255, 255
     end
-    player.draw_pivot(sides, style, pivotquads, cap_tris, black_and_white)
+    player.draw_pivot(pivotquads, cap_tris, black_and_white)
     if _dead_effect_timer.running then
         draw_death_effect(pivotquads)
     end

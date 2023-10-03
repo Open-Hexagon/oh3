@@ -1,0 +1,54 @@
+name: Build and package for linux
+
+on:
+  push:
+    branches: [ "newui" ]
+  pull_request:
+    branches: [ "newui" ]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    # should be as old as possible
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DVIDEO_EXPORT=0
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      
+    - name: Install
+      working-directory: ${{github.workspace}}/build
+      run: cmake --install .
+
+    - name: Create App image
+      run: |
+        # required for app image creation
+        sudo apt install desktop-file-utils
+        # create directory (git doesn't push empty directories)
+        mkdir -p extra/linux/squashfs-root/share/games/oh3
+        cp -r *.lua assets compat extlibs game game_handler server ui lib extra/linux/squashfs-root/share/games/oh3
+        # extract love over everything
+        cd extra/linux
+        wget https://github.com/love2d/love/releases/download/11.4/love-11.4-x86_64.AppImage
+        chmod +x love-11.4-x86_64.AppImage
+        ./love-11.4-x86_64.AppImage --appimage-extract
+        # remove unneeded parts
+        rm -r squashfs-root/share/applications/ squashfs-root/share/icons/ squashfs-root/share/lua squashfs-root/share/mime/ squashfs-root/share/pixmaps/ squashfs-root/love.desktop squashfs-root/love.svg
+        # get appimagetool
+        wget https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+        chmod +x appimagetool-x86_64.AppImage
+        ./appimagetool-x86_64.AppImage squashfs-root oh3.AppImage
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: oh3.AppImage
+        path: extra/linux/oh3.AppImage

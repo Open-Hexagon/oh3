@@ -1,9 +1,11 @@
 local args = require("args")
 local music = require("compat.music")
+local level_status = require("compat.game21.level_status")
+local assets = require("compat.game21.assets")
 
-return function(game, assets)
+return function(game)
     local pack = game.pack_data
-    local lua_runtime = game.lua_runtime
+    local lua_runtime = require("compat.game21.lua_runtime")
     local env = lua_runtime.env
     env.a_setMusic = function(music_id)
         env.a_setMusicSegment(music_id, 0)
@@ -55,23 +57,23 @@ return function(game, assets)
         end
     end
     env.a_syncMusicToDM = function(value)
-        game.level_status.sync_music_to_dm = value
+        level_status.sync_music_to_dm = value
     end
     env.a_setMusicPitch = function(pitch)
-        game.level_status.music_pitch = pitch
+        level_status.music_pitch = pitch
         game.refresh_music_pitch()
     end
     env.a_overrideBeepSound = function(filename)
-        game.level_status.beep_sound = get_pack_sound(filename) or game.level_status.beep_sound
+        level_status.beep_sound = get_pack_sound(filename) or level_status.beep_sound
     end
     env.a_overrideIncrementSound = function(filename)
-        game.level_status.level_up_sound = get_pack_sound(filename) or game.level_status.level_up_sound
+        level_status.level_up_sound = get_pack_sound(filename) or level_status.level_up_sound
     end
     env.a_overrideSwapSound = function(filename)
-        game.level_status.swap_sound = get_pack_sound(filename) or game.level_status.swap_sound
+        level_status.swap_sound = get_pack_sound(filename) or level_status.swap_sound
     end
     env.a_overrideDeathSound = function(filename)
-        game.level_status.death_sound = get_pack_sound(filename) or game.level_status.death_sound
+        level_status.death_sound = get_pack_sound(filename) or level_status.death_sound
     end
 
     -- deprecated

@@ -15,7 +15,12 @@ local test_collapse = collapse:new(flex:new({
 return scroll:new(
     flex:new({
         flex:new({
-            label:new("Click on me", { selectable = true, click_handler = function() test_collapse:toggle() end }),
+            label:new("Click on me", {
+                selectable = true,
+                click_handler = function()
+                    test_collapse:toggle()
+                end,
+            }),
             test_collapse,
             label:new("Hello"),
             label:new("World", { selectable = true }),
