@@ -2,6 +2,7 @@ local signal = require("ui.anim.signal")
 local overlays = require("ui.overlays")
 local game_handler = require("game_handler")
 local scroll = require("ui.layout.scroll")
+local config = require("config")
 local ui = {}
 local keyboard_navigation = require("ui.keyboard_navigation")
 local current_screen
@@ -11,12 +12,12 @@ local gui_scale = 1
 ---set gui scale
 ---@param scale number
 function ui.set_scale(scale)
-    gui_scale = scale
     if current_screen then
         current_screen:set_scale(scale)
         current_screen._transform:reset()
         current_screen._transform:apply(transform)
     end
+    overlays.set_scale(scale)
 end
 
 local function calculate_layout(width, height)
@@ -26,15 +27,19 @@ local function calculate_layout(width, height)
         game_width, game_height = game_handler.get_game_dimensions()
         transform:translate(game_handler.get_game_position())
     end
-    current_screen._transform:reset()
-    current_screen._transform:apply(transform)
     width = width or game_width or love.graphics.getWidth()
     height = height or game_height or love.graphics.getHeight()
+    local scale = gui_scale
+    if config.get("area_based_gui_scale") then
+        -- 1080p as reference for user setting in this scale mode
+        scale = gui_scale / math.max(1920 / width, 1080 / height)
+    end
+    ui.set_scale(scale)
     local res_width, res_height = current_screen:calculate_layout(width, height)
     -- as long as the resulting layout is smaller than the window, up gui scale (until user setting is reached)
-    while res_width <= width and res_height <= height do
+    while res_width < width and res_height < height do
         local new_scale = current_screen.scale + 0.1
-        if new_scale > gui_scale then
+        if new_scale > scale then
             break
         end
         current_screen:set_scale(new_scale)
@@ -61,6 +66,8 @@ function ui.open_screen(name)
     end
 end
 
+---get currently open screen
+---@return table
 function ui.get_screen()
     return current_screen
 end
@@ -74,7 +81,7 @@ function ui.process_event(name, ...)
     love.graphics.origin()
     if current_screen then
         if name == "resize" then
-            calculate_layout(...)
+            calculate_layout()
         end
     end
     local stop_propagation = overlays.process_event(name, ...)

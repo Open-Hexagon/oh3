@@ -1,4 +1,5 @@
 local element = require("ui.elements.element")
+local log = require("log")
 local label = {}
 label.__index = setmetatable(label, {
     __index = element,
@@ -51,6 +52,10 @@ end
 ---@param scale number
 function label:set_scale(scale)
     local font_size = math.floor(self.font_size * scale)
+    if font_size == 0 then
+        log("received invalid scale: ", scale)
+        return
+    end
     if not self.font[font_size] then
         self.font[font_size] = love.graphics.newFont(self.font_file, font_size)
     end
