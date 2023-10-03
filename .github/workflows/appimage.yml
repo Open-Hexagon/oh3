@@ -30,8 +30,7 @@ jobs:
 
     - name: Create App image
       run: |
-        mkdir -p extra/linux/sqashfs-root/share/games/oh3
-        tree extra/linux
+        mkdir -p extra/linux/squashfs-root/share/games/oh3
         cp -r *.lua assets compat extlibs game game_handler server ui extra/linux/squashfs-root/share/games/oh3
         # extract love over everything
         cd extra/linux
