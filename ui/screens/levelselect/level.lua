@@ -96,8 +96,8 @@ return function(state, pack, level, extra_info)
 				self.element.elements[2].elements[1].elements[2].font_size = 40
                 local description = label:new(level.description, { font_size = 20, wrap = true })
                 self.element.elements[2].elements[2] = description
+				--two things: 1) level select box gets shorter which is sad and 2) this should use a collapse elements :0
                 self.parent:mutated()
-                self.parent.parent:mutated()
 				
 				local x, y = self.transform:transformPoint(self._transform:transformPoint(0, 0))
 				local bounds_start = state.root.elements[2].wh2lt(x, y)
