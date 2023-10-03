@@ -18,6 +18,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Build sqlite3
+      run: |
+        wget https://www.sqlite.org/2023/sqlite-amalgamation-3430100.zip
+        7z x sqlite-amalgamation-3430100.zip
+        gcc -shared -fPIC sqlite-amalgamation-3430100/sqlite3.c -o lib/libsqlite3.so
+
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DVIDEO_EXPORT=0
 
