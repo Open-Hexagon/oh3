@@ -18,6 +18,13 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Build sqlite3
+      run: |
+        wget https://www.sqlite.org/2023/sqlite-amalgamation-3430100.zip
+        7z x sqlite-amalgamation-3430100.zip
+        mkdir lib
+        gcc -shared -fPIC sqlite-amalgamation-3430100/sqlite3.c -o lib/libsqlite3.so
+
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DVIDEO_EXPORT=0
 
@@ -34,15 +41,18 @@ jobs:
         sudo apt install desktop-file-utils
         # create directory (git doesn't push empty directories)
         mkdir -p extra/linux/squashfs-root/share/games/oh3
-        cp -r *.lua assets compat extlibs game game_handler server ui lib extra/linux/squashfs-root/share/games/oh3
+        cp -r *.lua assets compat extlibs game game_handler server ui extra/linux/squashfs-root/share/games/oh3
         # extract love over everything
         cd extra/linux
         wget https://github.com/love2d/love/releases/download/11.4/love-11.4-x86_64.AppImage
         chmod +x love-11.4-x86_64.AppImage
         ./love-11.4-x86_64.AppImage --appimage-extract
+        # put libs in their place
+        cp ../../lib/luv.so squashfs-root/lib/lua/5.1
+        cp ../../lib/libsqlite3.so squashfs-root/lib
         # remove unneeded parts
         rm -r squashfs-root/share/applications/ squashfs-root/share/icons/ squashfs-root/share/lua squashfs-root/share/mime/ squashfs-root/share/pixmaps/ squashfs-root/love.desktop squashfs-root/love.svg
-        # get appimagetool
+        # use appimagetool to create app image
         wget https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
         chmod +x appimagetool-x86_64.AppImage
         ./appimagetool-x86_64.AppImage squashfs-root oh3.AppImage
