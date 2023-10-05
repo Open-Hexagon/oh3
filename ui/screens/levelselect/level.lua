@@ -103,10 +103,7 @@ return function(state, pack, level, extra_info)
 				local bounds_start = state.root.elements[2].wh2lt(x, y)
 				local visual_length = state.root.elements[2].wh2lt(state.root.elements[2].width, state.root.elements[2].height)
 				local width, height = self:calculate_layout(self.width,self.height)
-				local screen_bounds_start = state.root.elements[2].wh2lt(x, y)
-				local screen_bounds_end = state.root.elements[2].wh2lt(x + state.root.elements[2].width, y + state.root.elements[2].height)
-				state.root.elements[2].scroll_target = bounds_start + height/2 - visual_length/2
-				state.root.elements[2].scroll_target = extmath.clamp(state.root.elements[2].scroll_target, 0, state.root.elements[2].max_scroll)
+				state.root.elements[2].scroll_target = extmath.clamp(bounds_start + height/2 - visual_length/2, 0, state.root.elements[2].max_scroll)
 				state.root.elements[2].scroll_pos:keyframe(0.2,state.root.elements[2].scroll_target)
 				
                 local score = flex:new({
