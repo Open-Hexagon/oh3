@@ -18,11 +18,6 @@ return function(state, pack, level)
         style = { background_color = { 1, 1, 1, 1 }, border_color = { 0, 0, 0, 1 }, border_thickness = 5 },
         selectable = true,
         selection_handler = function(self)
-            if self.selected then
-                self.border_color = { 0, 0, 1, 1 }
-            else
-                self.border_color = { 0, 0, 0, 1 }
-            end
         end,
         click_handler = function(self)
             selections_index = (selections_index % #selections) + 1

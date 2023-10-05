@@ -57,7 +57,7 @@ local function scroll_into_view(element, scroll_to_elem, x, y)
     end
 end
 
-function keyboard_navigation.select_element(element, call_handlers, keyboard_selected)
+function keyboard_navigation.select_element(element, call_handlers)
     if call_handlers == nil then
         call_handlers = true
     end
@@ -75,7 +75,7 @@ function keyboard_navigation.select_element(element, call_handlers, keyboard_sel
         if element then
             element.selected = true
             if element.selection_handler and call_handlers then
-                element.selection_handler(element, keyboard_selected)
+                element.selection_handler(element)
             end
             local elem = element
             while elem.parent do
@@ -167,7 +167,7 @@ function keyboard_navigation.move(dx, dy)
     end
     if new_elem then
 		-- sorry in advance
-        keyboard_navigation.select_element(new_elem, true, true)
+        keyboard_navigation.select_element(new_elem, true)
     end
 end
 

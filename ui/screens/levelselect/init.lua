@@ -1,6 +1,7 @@
 local flex = require("ui.layout.flex")
 local label = require("ui.elements.label")
 local scroll = require("ui.layout.scroll")
+local keyboard_navigation = require("ui.keyboard_navigation")
 local make_pack_elements = require("ui.screens.levelselect.packs")
 
 local state = {}
@@ -25,7 +26,7 @@ state.root = flex:new({
 }, { size_ratios = { 1, 2, 1 } })
 
 if #pack_elems > 0 then
-    pack_elems[1]:click(false)
+	pack_elems[1].selection_handler(pack_elems[1], true)
 end
 
 return state.root

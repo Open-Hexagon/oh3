@@ -115,18 +115,18 @@ end
 ---simulate a click on the element
 ---@param should_select boolean
 ---@param keyboard_selected boolean
-function element:click(should_select, keyboard_selected)
+function element:click(should_select)
     if should_select == nil then
         should_select = true
     end
     if keyboard_selected == nil then
         keyboard_selected = false
     end
-    if not self.selected and should_select then
-        keyboard_navigation.select_element(self, true, keyboard_selected)
-    end
     if self.click_handler then
         self.click_handler(self)
+    end
+    if not self.selected and should_select then
+        keyboard_navigation.select_element(self, true)
     end
 end
 
@@ -160,17 +160,17 @@ function element:process_event(name, ...)
         self.local_mouse_x, self.local_mouse_y = global_to_element_space(x, y)
         self.is_mouse_over = contains(x, y)
         if name == "mousereleased" and self.selectable then
-            if self.selected ~= self.is_mouse_over then
-                self.selected = self.is_mouse_over
-                if self.selected then
-                    keyboard_navigation.select_element(self, true, false)
-                else
-                    keyboard_navigation.deselect_element(self)
-                end
-            end
             if self.click_handler and self.is_mouse_over then
                 if self.click_handler(self) == true then
                     return true
+                end
+            end
+            if self.selected ~= self.is_mouse_over then
+                self.selected = self.is_mouse_over
+                if self.selected then
+                    keyboard_navigation.select_element(self, true)
+                else
+                    keyboard_navigation.deselect_element(self)
                 end
             end
         end
