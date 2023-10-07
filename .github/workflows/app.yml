@@ -50,4 +50,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: oh3.app
-        path: ./oh3.app/*
+        path: ./*/oh3.app
