@@ -51,8 +51,17 @@ local clib = (function()
             end
 
             if os.sysname == "Darwin" then
-                return os.machine == "arm64" and "/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib"
-                    or "/usr/local/opt/sqlite3/lib/libsqlite3.dylib"
+                local osx_paths = {
+                    "/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib",
+                    "/usr/local/opt/sqlite3/lib/libsqlite3.dylib",
+                }
+                for _, v in pairs(osx_paths) do
+                    if file_exists(v) then
+                        return v
+                    end
+                end
+                -- bundled sqlite
+                return "lib/libsqlite3.dylib"
             end
 
             -- assuming windows

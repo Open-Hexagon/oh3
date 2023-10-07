@@ -1,0 +1,42 @@
+63c63
+< 	<string>org.love2d.love</string>
+---
+> 	<string>fun.openhexagon.oh3</string>
+67c67
+< 	<string>LÖVE</string>
+---
+> 	<string>Open Hexagon 3</string>
+71c71
+< 	<string>11.4a</string>
+---
+> 	<string>1.0</string>
+106,134d105
+< 	<key>UTExportedTypeDeclarations</key>
+< 	<array>
+< 		<dict>
+< 			<key>UTTypeConformsTo</key>
+< 			<array>
+< 				<string>com.pkware.zip-archive</string>
+< 				<string>com.apple.package</string>
+< 			</array>
+< 			<key>UTTypeDescription</key>
+< 			<string>LÖVE Project</string>
+< 			<key>UTTypeIconFile</key>
+< 			<string>GameIcon</string>
+< 			<key>UTTypeIdentifier</key>
+< 			<string>org.love2d.love-game</string>
+< 			<key>UTTypeReferenceURL</key>
+< 			<string>http://love2d.org/wiki/Game_Distribution</string>
+< 			<key>UTTypeTagSpecification</key>
+< 			<dict>
+< 				<key>com.apple.ostype</key>
+< 				<string>LOVE</string>
+< 				<key>public.filename-extension</key>
+< 				<array>
+< 					<string>love</string>
+< 				</array>
+< 				<key>public.mime-type</key>
+< 				<string>application/x-love-game</string>
+< 			</dict>
+< 		</dict>
+< 	</array>
