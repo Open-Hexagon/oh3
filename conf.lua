@@ -10,6 +10,7 @@ function love.conf(t)
         t.window.resizable = true
         t.window.minwidth = 640
         t.window.minheight = 360
+        t.window.usedpiscale = false
 
         -- TODO: make configurable
         t.window.vsync = 0

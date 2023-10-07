@@ -179,10 +179,10 @@ return function(public, game)
         env.u_execScript = old
     end
     env.u_getWidth = function()
-        return game.width * love.graphics.getDPIScale()
+        return game.width
     end
     env.u_getHeight = function()
-        return game.height * love.graphics.getDPIScale()
+        return game.height
     end
     env.u_setFlashEffect = function(value)
         status.flash_effect = value
