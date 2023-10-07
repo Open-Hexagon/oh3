@@ -52,6 +52,8 @@ jobs:
         cp ../../lib/libsqlite3.so squashfs-root/lib
         # remove unneeded parts
         rm -r squashfs-root/share/applications/ squashfs-root/share/icons/ squashfs-root/share/lua squashfs-root/share/mime/ squashfs-root/share/pixmaps/ squashfs-root/love.desktop squashfs-root/love.svg
+        # replace AppRun with custom one
+        mv squashfs-root/AppRun_replace squashfs-root/AppRun
         # use appimagetool to create app image
         wget https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
         chmod +x appimagetool-x86_64.AppImage
