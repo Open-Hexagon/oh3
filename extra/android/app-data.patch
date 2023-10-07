@@ -10,7 +10,7 @@
 +#app.name_byte_array=76,195,150,86,69,32,102,111,114,32,65,110,100,114,111,105,100
 
 -app.application_id=org.love2d.android
-+app.application_id=org.github.oh3
++app.application_id=fun.openhexagon.oh3
  app.orientation=landscape
  app.version_code=31
 -app.version_name=11.5
