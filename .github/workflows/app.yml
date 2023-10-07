@@ -45,12 +45,11 @@ jobs:
         cp -r *.lua lib assets compat extlibs game game_handler server ui oh3.app/Contents/Resources/oh3.love
         # insert the right metadata
         patch oh3.app/Contents/Info.plist extra/osx/app-data.patch
-        # make extra path for the artifact to actually include the "oh3.app" folder
-        mkdir app_bundle
-        mv oh3.app app_bundle
+        # work around https://github.com/actions/upload-artifact/issues/38 (executable permission not preserved) by uploading a zipped tarball
+        tar -cf oh3.app.tar oh3.app
 
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: oh3.app
-        path: app_bundle
+        name: oh3.app.tar
+        path: oh3.app.tar
