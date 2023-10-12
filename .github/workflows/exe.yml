@@ -35,6 +35,7 @@ jobs:
         wget https://github.com/love2d/love/releases/download/11.4/love-11.4-win64.zip
         7z x love-11.4-win64.zip
         mv love-11.4-win64 oh3
+        mkdir oh3/lib
         cp /mingw64/bin/libsqlite3-0.dll oh3/lib/libsqlite3.dll
         cp /mingw64/bin/libluv.dll oh3/lib/luv.dll
         cp /mingw64/bin/libwinpthread-1.dll oh3
