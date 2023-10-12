@@ -39,6 +39,7 @@ jobs:
         cp /mingw64/bin/libsqlite3-0.dll oh3/lib/libsqlite3.dll
         cp /mingw64/bin/libluv.dll oh3/lib/luv.dll
         cp /mingw64/bin/libwinpthread-1.dll oh3
+        cp /mingw64/bin/libuv-1.dll oh3
         cp -r *.lua assets compat extlibs game game_handler server ui oh3
         cp extra/windows/launch.bat oh3
 
