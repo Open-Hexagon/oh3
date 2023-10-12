@@ -25,6 +25,7 @@ jobs:
           mingw-w64-x86_64-libsodium
           mingw-w64-x86_64-libluv
           mingw-w64-x86_64-sqlite3
+          mingw-w64-x86_64-p7zip
         update: true
 
     - uses: actions/checkout@v3
