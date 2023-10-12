@@ -1,0 +1,47 @@
+name: Build and package for linux
+
+on:
+  push:
+    branches: [ "newui" ]
+  pull_request:
+    branches: [ "newui" ]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - name: Install dependencies
+      uses: msys2/setup-msys2@v2
+      with:
+        install: >-
+          git
+          mingw-w64-x86_64-libsodium
+          mingw-w64-x86_64-libluv
+          mingw-w64-x86_64-sqlite3
+        update: true
+
+    - uses: actions/checkout@v3
+
+    - name: Create App bundle
+      run: |
+        wget https://github.com/love2d/love/releases/download/11.4/love-11.4-win64.zip
+        7z x love-11.4-win64.zip
+        mv love-11.4-win64 oh3
+        cp /mingw64/bin/libsqlite3-0.dll oh3/lib/libsqlite3.dll
+        cp /mingw64/bin/libluv.dll oh3/lib/luv.dll
+        cp /mingw64/bin/libwinpthread-1.dll oh3
+        cp -r lib *.lua assets compat extlibs game game_handler server ui *.dll oh3
+        cp extra/windows/launch.bat oh3
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: oh3
+        path: oh3
