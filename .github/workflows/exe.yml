@@ -42,9 +42,12 @@ jobs:
         cp /mingw64/bin/libuv-1.dll oh3
         cp -r *.lua assets compat extlibs game game_handler server ui oh3
         cp extra/windows/launch.bat oh3
+        # create extra folder so the zip contains an oh3 folder instead of directly having all files
+        mkdir zip_contents
+        mv oh3 zip_contents
 
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
         name: oh3
-        path: oh3
+        path: zip_contents
