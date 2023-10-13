@@ -28,6 +28,9 @@ local function create_server(host, port, on_connection)
 end
 
 local function process_packet(data, client)
+    if #data < 5 then
+        return "packet shorter than header"
+    end
     local protocol_version, game_version_major, game_version_minor, game_version_micro, packet_type, offset =
         love.data.unpack(">BBBBB", data, 3)
     if data:sub(1, 2) ~= "oh" then
