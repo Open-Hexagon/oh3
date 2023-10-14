@@ -3,6 +3,7 @@ local overlays = require("ui.overlays")
 local game_handler = require("game_handler")
 local scroll = require("ui.layout.scroll")
 local config = require("config")
+local key_repeat = require("ui.key_repeat")
 local ui = {}
 local keyboard_navigation = require("ui.keyboard_navigation")
 local current_screen
@@ -98,6 +99,7 @@ end
 ---update animations
 ---@param dt number
 function ui.update(dt)
+    key_repeat.update(dt)
     signal.update(dt)
     overlays.update(dt)
 end

@@ -64,11 +64,11 @@ function slider:process_event(name, ...)
             return true
         end
     end
-    if name == "keypressed" and self.selected then
+    if name == "customkeydown" or name == "customkeyrepeat" and self.selected then
         local key = ...
-        if key == "left" then
+        if key == "ui_left" then
             self.state = extmath.clamp(self.state - 1, 0, self.steps)
-        elseif key == "right" then
+        elseif key == "ui_right" then
             self.state = extmath.clamp(self.state + 1, 0, self.steps)
         end
     end

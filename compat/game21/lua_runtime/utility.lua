@@ -1,6 +1,6 @@
 local log = require("log")(...)
 local args = require("args")
-local input = require("game_handler.input")
+local input = require("input")
 local level_status = require("compat.game21.level_status")
 local status = require("compat.game21.status")
 local player = require("compat.game21.player")
@@ -201,7 +201,10 @@ return function(public, game)
             lua_runtime.error("Could not find key with sfml keycode '" .. key_code .. "'!")
             return false
         end
-        return input.get(key)
+        return input.get({ {
+            scheme = "keyboard",
+            ids = { key },
+        } })
     end
     env.u_haltTime = function(duration)
         status.pause_time(duration / 60)

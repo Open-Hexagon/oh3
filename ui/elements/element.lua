@@ -169,9 +169,9 @@ function element:process_event(name, ...)
             end
         end
     end
-    if name == "keypressed" then
+    if name == "customkeydown" then
         local key = ...
-        if key == "return" or key == "space" then
+        if key == "ui_click" then
             if self.selected then
                 if self.click_handler then
                     if self.click_handler(self) == true then

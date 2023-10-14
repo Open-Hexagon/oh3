@@ -1,6 +1,6 @@
 local playsound = require("compat.game21.playsound")
 local config = require("config")
-local game_input = require("game_handler.input")
+local game_input = require("input")
 local args = require("args")
 local lua_runtime = require("compat.game21.lua_runtime")
 local level_status = require("compat.game21.level_status")

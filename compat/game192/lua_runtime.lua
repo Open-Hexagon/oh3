@@ -8,7 +8,7 @@ local events = require("compat.game192.events")
 local walls = require("compat.game192.walls")
 local vfs = require("compat.game192.virtual_filesystem")
 local config = require("config")
-local input = require("game_handler.input")
+local input = require("input")
 local lua_runtime = {
     env = {},
     reset_timings = false,
@@ -311,7 +311,10 @@ function lua_runtime.init_env(game, public)
             end
             input.update()
         end
-        return input.get(key)
+        return input.get({ {
+            scheme = "keyboard",
+            ids = { key },
+        } })
     end
     env.isFastSpinning = function()
         return status.fast_spin > 0

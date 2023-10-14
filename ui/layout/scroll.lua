@@ -186,6 +186,7 @@ function scroll:scroll_into_view(x, y, width, height, instant)
             if instant then
                 self.scroll_pos:set_immediate_value(self.scroll_target)
             else
+                self.scrollbar_visibility_timer = love.timer.getTime()
                 self.scroll_pos:keyframe(0.2, self.scroll_target)
             end
         end

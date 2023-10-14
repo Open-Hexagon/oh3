@@ -98,15 +98,15 @@ function keyboard_navigation.get_selected_element()
 end
 
 function keyboard_navigation.process_event(name, ...)
-    if name == "keypressed" then
+    if name == "customkeydown" or name == "customkeyrepeat" then
         local key = ...
-        if key == "left" then
+        if key == "ui_left" then
             keyboard_navigation.move(-1, 0)
-        elseif key == "right" then
+        elseif key == "ui_right" then
             keyboard_navigation.move(1, 0)
-        elseif key == "up" then
+        elseif key == "ui_up" then
             keyboard_navigation.move(0, -1)
-        elseif key == "down" then
+        elseif key == "ui_down" then
             keyboard_navigation.move(0, 1)
         end
     end

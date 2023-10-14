@@ -4,7 +4,7 @@ local playsound = require("compat.game21.playsound")
 local utils = require("compat.game192.utils")
 local speed_data = require("compat.game20.speed_data")
 local config = require("config")
-local input = require("game_handler.input")
+local input = require("input")
 local status = require("compat.game20.status")
 local level_status = require("compat.game20.level_status")
 local vfs = require("compat.game192.virtual_filesystem")
@@ -209,7 +209,10 @@ function lua_runtime.init_env(game, public, assets)
             lua_runtime.error("Could not find key with sfml keycode '" .. key_code .. "'!")
             return false
         end
-        return input.get(key)
+        return input.get({ {
+            scheme = "keyboard",
+            ids = { key },
+        } })
     end
     env.u_isFastSpinning = function()
         return status.fast_spin > 0
