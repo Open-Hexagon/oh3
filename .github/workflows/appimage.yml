@@ -41,7 +41,7 @@ jobs:
         sudo apt install desktop-file-utils
         # create directory (git doesn't push empty directories)
         mkdir -p extra/linux/squashfs-root/share/games/oh3
-        cp -r *.lua assets compat extlibs game game_handler server ui extra/linux/squashfs-root/share/games/oh3
+        cp -r *.lua assets compat extlibs game game_handler server ui input_schemes extra/linux/squashfs-root/share/games/oh3
         # extract love over everything
         cd extra/linux
         wget https://github.com/love2d/love/releases/download/11.4/love-11.4-x86_64.AppImage

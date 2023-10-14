@@ -42,7 +42,7 @@ jobs:
         mv love.app oh3.app
         # copy files into bundle (.love folder ending to fool love into thinking there is a zip bundle to start)
         mkdir oh3.app/Contents/Resources/oh3.love
-        cp -r *.lua lib assets compat extlibs game game_handler server ui oh3.app/Contents/Resources/oh3.love
+        cp -r *.lua lib assets compat extlibs game game_handler server ui input_schemes oh3.app/Contents/Resources/oh3.love
         # insert the right metadata
         patch oh3.app/Contents/Info.plist extra/osx/app-data.patch
         # work around https://github.com/actions/upload-artifact/issues/38 (executable permission not preserved) by uploading a zipped tarball

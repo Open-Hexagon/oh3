@@ -40,7 +40,7 @@ jobs:
         cp /mingw64/bin/libluv.dll oh3/lib/luv.dll
         cp /mingw64/bin/libwinpthread-1.dll oh3
         cp /mingw64/bin/libuv-1.dll oh3
-        cp -r *.lua assets compat extlibs game game_handler server ui oh3
+        cp -r *.lua assets compat extlibs game game_handler server ui input_schemes oh3
         cp extra/windows/launch.bat oh3
         # create extra folder so the zip contains an oh3 folder instead of directly having all files
         mkdir zip_contents

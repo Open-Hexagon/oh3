@@ -1,3 +1,4 @@
+local schemes = require("input_schemes")
 -- wrapper for game inputs to automate replay recording
 local input = {
     replay = nil,
@@ -71,31 +72,34 @@ function input.update()
     end
 end
 
----gets the down state of any key
+---gets the down state of any input in the table of inputs given
 ---records changes if recording
 ---gets input state from replay if replaying
----@param key love.KeyConstant|number use number for mouse buttons
+---@param inputs table
 ---@return boolean
-function input.get(key)
-    if replaying then
-        return input_state[key] or false
-    end
-    local state
-    if type(key) == "number" then
-        state = love.mouse.isDown(key)
-    else
-        state = love.keyboard.isDown(key)
-    end
-    if recording then
-        if input.replay == nil then
-            error("attempted to record input without active replay")
+function input.get(inputs)
+    local ret = false
+    for i = 1, #inputs do
+        local scheme = inputs[i]
+        for j = 1, #scheme.ids do
+            local key = scheme.scheme .. "_" .. scheme.ids[j]
+            if replaying then
+                return input_state[key] or false
+            end
+            local state = schemes[scheme.scheme].is_down(scheme.ids[j])
+            if recording then
+                if input.replay == nil then
+                    error("attempted to record input without active replay")
+                end
+                if input_state[key] ~= state then
+                    input_state[key] = state
+                    input.replay:record_input(key, state, time)
+                end
+            end
+            ret = ret or state
         end
-        if input_state[key] ~= state then
-            input_state[key] = state
-            input.replay:record_input(key, state, time)
-        end
     end
-    return state
+    return ret
 end
 
 return input

@@ -60,7 +60,7 @@ jobs:
         cd ..
 
     - name: Copy embedded App
-      run: cp -r *.lua assets compat extlibs game game_handler server ui love-android/app/src/embed/assets
+      run: cp -r *.lua assets compat extlibs game game_handler server ui input_schemes love-android/app/src/embed/assets
 
     - name: Build sqlite3
       if: steps.cache-deps.outputs.cache-hit != 'true'

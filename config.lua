@@ -1,4 +1,5 @@
 local json = require("extlibs.json.json-beautify")
+local input_schemes = require("input_schemes")
 local config = {}
 local settings = {}
 local properties = {}
@@ -41,10 +42,6 @@ add_setting("background", true, false, { 192, 20, 21 })
 add_setting("invincible", false, false, { 192, 20, 21 })
 add_setting("rotation", true, false, { 192, 20, 21 })
 add_setting("messages", true, false, { 192, 20, 21 })
-add_setting("key_focus", "lshift", true, { 192, 20, 21 })
-add_setting("key_right", "right", true, { 192, 20, 21 })
-add_setting("key_left", "left", true, { 192, 20, 21 })
-add_setting("key_swap", "space", true, { 20, 21 })
 add_setting("sync_music_to_dm", true, true, { 20, 21 })
 add_setting("music_speed_mult", 1, true, 21)
 add_setting("play_swap_sound", true, true, 21)
@@ -60,6 +57,27 @@ add_setting("player_trail_scale", 0.9, true, 21)
 add_setting("player_trail_alpha", 35, true, 21)
 add_setting("player_trail_has_swap_color", true, true, 21)
 add_setting("show_swap_particles", true, true, 21)
+
+local function add_input(name, versions)
+    local bindings = {}
+    for scheme_name, scheme in pairs(input_schemes) do
+        bindings[#bindings + 1] = {
+            scheme = scheme_name,
+            ids = scheme.defaults[name] or {},
+        }
+    end
+    add_setting("input_" .. name, bindings, true, versions)
+end
+
+add_input("right", { 192, 20, 21 })
+add_input("left", { 192, 20, 21 })
+add_input("focus", { 192, 20, 21 })
+add_input("swap", { 20, 21 })
+add_input("ui_up")
+add_input("ui_down")
+add_input("ui_right")
+add_input("ui_left")
+add_input("ui_click")
 
 ---resets all settings
 function config.set_defaults()
