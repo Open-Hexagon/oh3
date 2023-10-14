@@ -61,10 +61,12 @@ add_setting("show_swap_particles", true, true, 21)
 local function add_input(name, versions)
     local bindings = {}
     for scheme_name, scheme in pairs(input_schemes) do
-        bindings[#bindings + 1] = {
-            scheme = scheme_name,
-            ids = scheme.defaults[name] or {},
-        }
+        if #(scheme.defaults[name] or {}) > 0 then
+            bindings[#bindings + 1] = {
+                scheme = scheme_name,
+                ids = scheme.defaults[name],
+            }
+        end
     end
     add_setting("input_" .. name, bindings, true, versions)
 end
