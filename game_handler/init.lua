@@ -224,7 +224,8 @@ function game_handler.process_event(name, ...)
         end
         -- recreate screen canvas to have the correct size
         width, height = love.graphics.getDimensions()
-        screen = love.graphics.newCanvas(width * scale[1], height * scale[2], {
+        local res_scale = game_config.get("game_resolution_scale")
+        screen = love.graphics.newCanvas(width * scale[1] / res_scale, height * scale[2] / res_scale, {
             -- TODO: make adjustable in settings
             msaa = 4,
         })
@@ -329,6 +330,8 @@ function game_handler.draw(frametime)
             -- render the canvas in the middle of the window
             love.graphics.origin()
             love.graphics.translate((width - width * scale[1]) / 2, (height - height * scale[2]) / 2)
+            local res_scale = game_config.get("game_resolution_scale")
+            love.graphics.scale(res_scale, res_scale)
             -- the color of the canvas' contents will look wrong if color isn't white
             love.graphics.setColor(1, 1, 1, 1)
             love.graphics.draw(screen)
