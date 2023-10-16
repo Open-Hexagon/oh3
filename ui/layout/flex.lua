@@ -376,7 +376,7 @@ function flex:calculate_layout(width, height)
         for i = 1, #self.elements do
             local elem = self.elements[i]
             local _, thick = wh2lt(elem.width, elem.height)
-            elem._transform:translate(lt2wh(0, final_thickness / 2 - thick / 2))
+            elem._transform:translate(lt2wh(0, final_thickness - thick))
         end
     elseif self.align_items ~= "start" then
         error(
