@@ -10,6 +10,20 @@ element.__newindex = function(t, key, value)
     end
     rawset(t, key, value)
 end
+-- element the user is currently clicking on (holding down)
+local hold_element
+
+---set which element the user is currently holding click on
+---@param elem table?
+local function set_hold_element(elem)
+    if hold_element and hold_element.hold_handler then
+        hold_element.hold_handler(hold_element, false)
+    end
+    hold_element = elem
+    if elem and elem.hold_handler then
+        elem.hold_handler(elem, true)
+    end
+end
 
 ---create a new element, implements base functionality for all other elements (does nothing on its own)
 ---@param options any
@@ -30,6 +44,7 @@ function element:new(options)
     self.selected = false
     self.selection_handler = options.selection_handler
     self.click_handler = options.click_handler
+    self.hold_handler = options.hold_handler
     self.last_available_width = 0
     self.last_available_height = 0
     self.width = 0
@@ -168,17 +183,30 @@ function element:process_event(name, ...)
                 end
             end
         end
+        if name == "mousepressed" and self.is_mouse_over then
+            set_hold_element(self)
+        end
+        if name == "mousereleased" and self == hold_element then
+            set_hold_element()
+        end
     end
     if name == "customkeydown" then
         local key = ...
         if key == "ui_click" then
             if self.selected then
+                set_hold_element(self)
                 if self.click_handler then
                     if self.click_handler(self) == true then
                         return true
                     end
                 end
             end
+        end
+    end
+    if name == "customkeyup" then
+        local key = ...
+        if key == "ui_click" and self == hold_element then
+            set_hold_element()
         end
     end
 end
