@@ -1,4 +1,25 @@
 local animated_transform = require("ui.anim.transform")
+
+---@class flex
+---@field direction string direction the flex container will position elements in
+---@field size_ratios table? size ratios of the elements, length has to be identical to elements list
+---@field align_items string aligns items on the container's thickness (values are "start", "stretch", "center" and "end")
+---@field align_relative_to string set if aligning happens relative to given "area" or to total "thickness"
+---@field elements table list of children
+---@field scale number ui scale
+---@field style table not used, passed to children
+---@field transform animated_transform transform the user can modify
+---@field _transform love.Transform transform used for internal layouting
+-- store last available width and height to respond to mutations
+---@field last_available_width number
+---@field last_available_height number
+-- last resulting width and height
+---@field width number
+---@field height number
+-- amount that children can expand (in pixels)
+---@field expandable_x number
+---@field expandable_y number
+---@field changed boolean something changed, requires layout recalculation
 local flex = {}
 flex.__index = flex
 -- ensure that changed is set to true when any property in the change_map is changed
@@ -12,7 +33,7 @@ end
 ---create a new flex container
 ---@param elements table
 ---@param options table?
----@return table
+---@return flex
 function flex:new(elements, options)
     options = options or {}
     local obj = setmetatable({

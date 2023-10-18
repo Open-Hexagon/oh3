@@ -1,4 +1,10 @@
 local signal = require("ui.anim.signal")
+---@class animated_transform
+---@field queue boolean
+---@field translation table
+---@field angle Queue
+---@field scaling table
+---@field transform love.Transform do not use this (use the :get method)
 local transform = {}
 transform.__index = transform
 
