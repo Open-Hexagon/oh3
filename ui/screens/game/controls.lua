@@ -5,6 +5,7 @@ local buttons = {}
 
 buttons.layout = flex:new({}, { align_items = "end" })
 buttons.name_map = {}
+buttons.holding = 0
 
 ---add a visual button for incomplete input schemes to use (e.g. touch)
 ---@param name string
@@ -14,6 +15,11 @@ function buttons.add(name)
         child_element = label:new(name),
         hold_handler = function(self, state)
             self.ui_pressing = state
+            if state then
+                buttons.holding = buttons.holding + 1
+            else
+                buttons.holding = buttons.holding - 1
+            end
         end,
     })
     table.insert(buttons.layout.elements, 1, button)
@@ -34,6 +40,18 @@ end
 ---@param state boolean
 function buttons.set_state(name, state)
     buttons.name_map[name].real_input_state = state
+end
+
+---check if a point is in one of the buttons
+---@param x any
+---@param y any
+function buttons.is_in(x, y)
+    for i = 1, #buttons.layout.elements do
+        local btn = buttons.layout.elements[i]
+        if x >= btn.x and y >= btn.y and x - btn.x <= btn.width and y - btn.y <= btn.height then
+            return true
+        end
+    end
 end
 
 ---update all buttons

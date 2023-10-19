@@ -1,3 +1,4 @@
+local controls = require("ui.screens.game.controls")
 local touch = {
     defaults = {
         right = { "right" },
@@ -10,9 +11,12 @@ function touch.is_down(side)
     local half_width = love.graphics.getWidth() / 2
     for i = 1, #touches do
         local id = touches[i]
-        local x = love.touch.getPosition(id)
+        local x, y = love.touch.getPosition(id)
         if (side == "left" and x <= half_width) or (side == "right" and x >= half_width) then
-            return true
+            -- prevent move on ui button press
+            if not controls.is_in(x, y) then
+                return true
+            end
         end
     end
     return false

@@ -8,7 +8,7 @@ local press_timer_repeat = {}
 
 function key_repeat.update(dt)
     for i = 1, #keys do
-        local state = input.get("input_" .. keys[i])
+        local state = input.get(keys[i], false)
         if state then
             press_timers[i] = (press_timers[i] or 0) + dt
             if press_timers[i] > (press_timer_repeat[i] or 0.4) then

@@ -55,6 +55,8 @@ function element:new(options)
     self.local_mouse_y = 0
     self.expandable_x = 0
     self.expandable_y = 0
+    self.x = 0
+    self.y = 0
     if options.style then
         self:set_style(options.style)
     end
@@ -216,6 +218,7 @@ function element:draw()
     love.graphics.push()
     love.graphics.applyTransform(self._transform)
     animated_transform.apply(self.transform)
+    self.x, self.y = love.graphics.transformPoint(0, 0)
     local padding = self.padding * self.scale
     love.graphics.translate(padding, padding)
     self:draw_element()

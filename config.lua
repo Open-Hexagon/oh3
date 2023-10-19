@@ -69,7 +69,7 @@ local function add_input(name, versions)
             }
         end
     end
-    add_setting("input_" .. name, bindings, true, versions)
+    add_setting(name, bindings, true, versions)
 end
 
 add_input("right", { 192, 20, 21 })

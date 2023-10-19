@@ -88,5 +88,5 @@ return flex:new({
     timer,
     flex:new({
         buttons.layout,
-    }, { direction = "column", align_items = "end" }),
+    }, { direction = "column", align_items = "end", size_ratios = { 1 } }),
 })

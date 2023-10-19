@@ -79,21 +79,34 @@ function input.update()
     end
 end
 
+-- common keys used to get player actions
+local mapping = {
+    lshift = "focus",
+}
+
 ---gets the down state of any input (checks config for bindings, uses key if it doesn't exist)
 ---records changes if recording
 ---gets input state from replay if replaying
 ---@param input_name string
+---@param add_ui_button boolean
 ---@return boolean
-function input.get(input_name)
+function input.get(input_name, add_ui_button)
+    input_name = mapping[input_name] or input_name
+    if add_ui_button == nil then
+        add_ui_button = input_name ~= "left" and input_name ~= "right"
+    end
     local inputs = config.get(input_name) or { {
         ids = { input_name },
         scheme = "keyboard",
     } }
-    local ui_button = buttons.get(input_name)
-    if not ui_button then
-        ui_button = buttons.add(input_name)
+    local ui_button
+    if add_ui_button then
+        ui_button = buttons.get(input_name)
+        if not ui_button then
+            ui_button = buttons.add(input_name)
+        end
+        ui_button.updated = true
     end
-    ui_button.updated = true
     local ret = false
     for i = 1, #inputs do
         local scheme = inputs[i]
@@ -101,7 +114,9 @@ function input.get(input_name)
             local key = scheme.scheme .. "_" .. scheme.ids[j]
             if replaying then
                 local state = input_state[key] or false
-                ui_button.real_input_state = state
+                if add_ui_button then
+                    ui_button.real_input_state = state
+                end
                 return state
             end
             local state = schemes[scheme.scheme].is_down(scheme.ids[j])
@@ -117,7 +132,10 @@ function input.get(input_name)
             ret = ret or state
         end
     end
-    ui_button.real_input_state = ret
+    if add_ui_button then
+        ret = ret or ui_button.ui_pressing
+        ui_button.real_input_state = ret
+    end
     return ret
 end
 
