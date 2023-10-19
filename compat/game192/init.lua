@@ -241,9 +241,9 @@ function public.update(frametime)
         end
     end
     if not status.has_died then
-        local focus = input.get(config.get("input_focus"))
-        local cw = input.get(config.get("input_right"))
-        local ccw = input.get(config.get("input_left"))
+        local focus = input.get("input_focus")
+        local cw = input.get("input_right")
+        local ccw = input.get("input_left")
         local move
         if cw and not ccw then
             move = 1

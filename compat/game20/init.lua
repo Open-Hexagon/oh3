@@ -172,10 +172,10 @@ function public.update(frametime)
     game.real_time = game.real_time + frametime
     frametime = frametime * 60
     input.update()
-    local focus = input.get(config.get("input_focus"))
-    local swap = input.get(config.get("input_swap"))
-    local cw = input.get(config.get("input_right"))
-    local ccw = input.get(config.get("input_left"))
+    local focus = input.get("input_focus")
+    local swap = input.get("input_swap")
+    local cw = input.get("input_right")
+    local ccw = input.get("input_left")
     if cw and not ccw then
         move = 1
         last_move = 1

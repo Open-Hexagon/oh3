@@ -201,10 +201,7 @@ return function(public, game)
             lua_runtime.error("Could not find key with sfml keycode '" .. key_code .. "'!")
             return false
         end
-        return input.get({ {
-            scheme = "keyboard",
-            ids = { key },
-        } })
+        return input.get(key)
     end
     env.u_haltTime = function(duration)
         status.pause_time(duration / 60)

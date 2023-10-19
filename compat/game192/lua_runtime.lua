@@ -311,10 +311,7 @@ function lua_runtime.init_env(game, public)
             end
             input.update()
         end
-        return input.get({ {
-            scheme = "keyboard",
-            ids = { key },
-        } })
+        return input.get(key)
     end
     env.isFastSpinning = function()
         return status.fast_spin > 0

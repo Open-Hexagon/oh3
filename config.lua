@@ -102,6 +102,9 @@ end
 function config.get(name)
     local value = settings[name]
     local property = properties[name]
+    if not property then
+        return
+    end
     if settings.official_mode and not property.can_change_in_offical and value ~= property.default then
         return properties[name].default
     else

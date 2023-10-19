@@ -1,9 +1,11 @@
 local label = require("ui.elements.label")
+local flex = require("ui.layout.flex")
 local quad = require("ui.elements.quad")
 local game_handler = require("game_handler")
 local get_death_overlay = require("ui.overlays.death")
 local keyboard_navigation = require("ui.keyboard_navigation")
 local overlays = require("ui.overlays")
+local buttons = require("ui.screens.game.controls")
 local args = require("args")
 
 local timer = quad:new({
@@ -82,4 +84,9 @@ game_handler.onupdate = function()
     end
 end
 
-return timer
+return flex:new({
+    timer,
+    flex:new({
+        buttons.layout,
+    }, { direction = "column", align_items = "end" }),
+})

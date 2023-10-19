@@ -1,6 +1,13 @@
 local schemes = require("input_schemes")
+local args = require("args")
+local config = require("config")
+local buttons
+if not args.headless then
+    buttons = require("ui.screens.game.controls")
+end
 -- wrapper for game inputs to automate replay recording
 local input = {
+    ---@type Replay?
     replay = nil,
     is_done_replaying = false,
 }
@@ -72,19 +79,30 @@ function input.update()
     end
 end
 
----gets the down state of any input in the table of inputs given
+---gets the down state of any input (checks config for bindings, uses key if it doesn't exist)
 ---records changes if recording
 ---gets input state from replay if replaying
----@param inputs table
+---@param input_name string
 ---@return boolean
-function input.get(inputs)
+function input.get(input_name)
+    local inputs = config.get(input_name) or { {
+        ids = { input_name },
+        scheme = "keyboard",
+    } }
+    local ui_button = buttons.get(input_name)
+    if not ui_button then
+        ui_button = buttons.add(input_name)
+    end
+    ui_button.updated = true
     local ret = false
     for i = 1, #inputs do
         local scheme = inputs[i]
         for j = 1, #scheme.ids do
             local key = scheme.scheme .. "_" .. scheme.ids[j]
             if replaying then
-                return input_state[key] or false
+                local state = input_state[key] or false
+                ui_button.real_input_state = state
+                return state
             end
             local state = schemes[scheme.scheme].is_down(scheme.ids[j])
             if recording then
@@ -99,6 +117,7 @@ function input.get(inputs)
             ret = ret or state
         end
     end
+    ui_button.real_input_state = ret
     return ret
 end
 

@@ -209,10 +209,7 @@ function lua_runtime.init_env(game, public, assets)
             lua_runtime.error("Could not find key with sfml keycode '" .. key_code .. "'!")
             return false
         end
-        return input.get({ {
-            scheme = "keyboard",
-            ids = { key },
-        } })
+        return input.get(key)
     end
     env.u_isFastSpinning = function()
         return status.fast_spin > 0

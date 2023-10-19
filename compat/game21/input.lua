@@ -21,10 +21,10 @@ function input.init(pass_game, particles)
 end
 
 function input.update(frametime)
-    local focus = game_input.get(config.get("input_focus"))
-    local swap = game_input.get(config.get("input_swap"))
-    local cw = game_input.get(config.get("input_right"))
-    local ccw = game_input.get(config.get("input_left"))
+    local focus = game_input.get("input_focus")
+    local swap = game_input.get("input_swap")
+    local cw = game_input.get("input_right")
+    local ccw = game_input.get("input_left")
     if cw and not ccw then
         input.move = 1
         game.last_move = 1
