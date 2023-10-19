@@ -61,6 +61,7 @@ game_handler.onupdate = function()
     timer.element.raw_text = score_str
     timer.element.changed = true
     timer:mutated()
+    buttons.update()
     local width, height = love.graphics.getDimensions()
     if last_width ~= width or last_height ~= height then
         last_width = width

@@ -55,7 +55,7 @@ function buttons.is_in(x, y)
 end
 
 ---update all buttons
-function buttons:update()
+function buttons.update()
     for i = #buttons.layout.elements, 1, -1 do
         local btn = buttons.layout.elements[i]
         if btn.updated then
@@ -68,6 +68,8 @@ function buttons:update()
             btn.updated = false
         else
             table.remove(buttons.layout.elements, i)
+            buttons.name_map[btn.element.raw_text] = nil
+            buttons.layout:mutated()
         end
     end
 end
