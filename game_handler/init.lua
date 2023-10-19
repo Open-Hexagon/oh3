@@ -238,7 +238,7 @@ function game_handler.process_event(name, ...)
     end
 end
 
----get the dimensions of the game canvas (returns 0, 0 if it was not created yet)
+---get the dimensions of the game (returns 0, 0 if it was not created yet)
 ---@return integer
 ---@return integer
 function game_handler.get_game_dimensions()
@@ -246,7 +246,9 @@ function game_handler.get_game_dimensions()
         return love.graphics.getDimensions()
     end
     if screen then
-        return screen:getDimensions()
+        local w, h = screen:getDimensions()
+        local res_scale = game_config.get("game_resolution_scale")
+        return w * res_scale, h * res_scale
     else
         return 0, 0
     end
