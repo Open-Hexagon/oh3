@@ -10,11 +10,15 @@ local assets = require("compat.game21.assets")
 local input = {
     move = 0,
 }
-local game, swap_particles, swap_blip_sound
+local game, swap_particles, swap_blip_sound, has_swap
 
 function input.init(pass_game, particles)
     game = pass_game
     swap_particles = particles
+    if lua_runtime.env.onInput then
+        print(debug.getinfo(lua_runtime.env.onInput).nparams)
+        has_swap = debug.getinfo(lua_runtime.env.onInput).nparams > 3
+    end
     if not args.headless then
         swap_blip_sound = assets.get_sound("swap_blip.ogg")
     end
@@ -22,7 +26,10 @@ end
 
 function input.update(frametime)
     local focus = game_input.get("focus")
-    local swap = game_input.get("swap")
+    local swap
+    if has_swap then
+        swap = game_input.get("swap")
+    end
     local cw = game_input.get("right")
     local ccw = game_input.get("left")
     if cw and not ccw then

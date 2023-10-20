@@ -149,6 +149,7 @@ public.start = async(function(pack_id, level_id, level_options)
         swap_particles.init()
         trail_particles.init()
     end
+    input.init(game, swap_particles)
     public.running = true
 end)
 
@@ -478,7 +479,6 @@ public.init = async(function(conf, audio)
     async.await(assets.init(audio, conf))
     game.audio = audio
     pseudo3d.init(game)
-    input.init(game, swap_particles)
     if not args.headless then
         -- TODO: config may change without the game restarting (may need to reload)
         message_font = assets.get_font("OpenSquare-Regular.ttf", 32 * config.get("text_scale"))
