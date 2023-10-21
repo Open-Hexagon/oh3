@@ -95,6 +95,9 @@ function input.get(input_name, add_ui_button)
     if add_ui_button == nil then
         add_ui_button = input_name ~= "left" and input_name ~= "right"
     end
+    if args.headless then
+        add_ui_button = false
+    end
     local inputs = config.get(input_name) or { {
         ids = { input_name },
         scheme = "keyboard",
