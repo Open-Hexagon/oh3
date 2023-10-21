@@ -57,7 +57,7 @@ return function(game)
         return style.get_color(index)
     end
     env.s_setStyle = function(style_id)
-        local style_data = pack.styles[style_id]
+        local style_data = pack.styles[tostring(style_id)]
         if style_data == nil then
             lua_runtime.error("Trying to load an invalid style '" .. style_id .. "'")
         else
