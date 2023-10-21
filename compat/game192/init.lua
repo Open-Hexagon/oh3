@@ -1,3 +1,4 @@
+local log = require("log")
 local args = require("args")
 local playsound = require("compat.game21.playsound")
 local assets = require("compat.game192.assets")
@@ -150,12 +151,13 @@ public.start = async(function(pack_folder, level_id, level_options)
     music.stop()
     local new_music = game.pack.music[level_data.music_id]
     if new_music == nil then
-        error("Music with id '" .. level_data.music_id .. "' not found")
+        log("Music with id '" .. level_data.music_id .. "' not found")
+    else
+        music.play(new_music, not public.first_play)
     end
     if not args.headless then
         go_sound:play()
     end
-    music.play(new_music, not public.first_play)
 
     -- virtual filesystem init
     vfs.clear()

@@ -214,7 +214,8 @@ function events.init(game, public)
         music_set = function(event)
             local new_music = game.pack.music[event.id]
             if new_music == nil then
-                error("Music with id '" .. event.id .. "' not found")
+                log("Music with id '" .. event.id .. "' not found")
+                return
             end
             music.stop()
             music.play(new_music, true)
@@ -222,7 +223,8 @@ function events.init(game, public)
         music_set_segment = function(event)
             local new_music = game.pack.music[event.id]
             if new_music == nil then
-                error("Music with id '" .. event.id .. "' not found")
+                log("Music with id '" .. event.id .. "' not found")
+                return
             end
             music.stop()
             music.play(new_music, (event.segment_index or 0) + 1)
@@ -230,7 +232,8 @@ function events.init(game, public)
         music_set_seconds = function(event)
             local new_music = game.pack.music[event.id]
             if new_music == nil then
-                error("Music with id '" .. event.id .. "' not found")
+                log("Music with id '" .. event.id .. "' not found")
+                return
             end
             music.stop()
             music.play(new_music, false, event.seconds or 0)
@@ -238,7 +241,8 @@ function events.init(game, public)
         style_set = function(event)
             local style_data = game.pack.styles[event.id]
             if style_data == nil then
-                error("Invalid style id '" .. event.id .. "'")
+                log("Invalid style id '" .. event.id .. "'")
+                return
             end
             style.select(style_data)
         end,
