@@ -8,12 +8,12 @@ local replay = {}
 ---@param offset number
 function replay.read(replay_obj, data, offset)
     replay_obj.game_version = 21
-    replay_obj.data.keys = { "left", "right", "space", "lshift" }
+    replay_obj.data.keys = { "keyboard_left", "keyboard_right", "keyboard_space", "keyboard_lshift" }
     replay_obj.data.config = {
-        key_left = "left",
-        key_right = "right",
-        key_swap = "space",
-        key_focus = "lshift",
+        left = { { scheme = "keyboard", ids = { "left" } } },
+        right = { { scheme = "keyboard", ids = { "right" } } },
+        swap = { { scheme = "keyboard", ids = { "space" } } },
+        focus = { { scheme = "keyboard", ids = { "lshift" } } },
     }
     -- the old format is platform specific, so let's make some assumptions to make it more consistent:
     -- sizeof(size_t) = 8
