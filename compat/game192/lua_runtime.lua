@@ -134,7 +134,12 @@ function lua_runtime.init_env(game, public)
     lua_runtime.env = {
         os = {
             time = function(...)
+                -- TODO: may break replays?
                 return os.time(...)
+            end,
+            date = function(...)
+                -- TODO: may break replays?
+                return os.date(...)
             end,
             clock = function()
                 clock_count = clock_count + 1
