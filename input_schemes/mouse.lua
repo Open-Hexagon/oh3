@@ -1,4 +1,8 @@
-local controls = require("ui.screens.game.controls")
+local args = require("args")
+local controls
+if not args.headless then
+    controls = require("ui.screens.game.controls")
+end
 local mouse = {
     defaults = {
         right = { 2 },
