@@ -3,7 +3,10 @@ local quad = require("ui.elements.quad")
 local label = require("ui.elements.label")
 local buttons = {}
 
-buttons.layout = flex:new({}, { align_items = "end" })
+local list = flex:new({}, { align_items = "end" })
+buttons.layout = flex:new({
+    list,
+}, { direction = "column", align_items = "end", size_ratios = { 1 } })
 buttons.name_map = {}
 buttons.holding = 0
 
@@ -22,7 +25,8 @@ function buttons.add(name)
             end
         end,
     })
-    table.insert(buttons.layout.elements, 1, button)
+    table.insert(list.elements, 1, button)
+    list.changed = true
     buttons.layout:mutated()
     buttons.name_map[name] = button
     return button
@@ -46,8 +50,8 @@ end
 ---@param x any
 ---@param y any
 function buttons.is_in(x, y)
-    for i = 1, #buttons.layout.elements do
-        local btn = buttons.layout.elements[i]
+    for i = 1, #list.elements do
+        local btn = list.elements[i]
         if x >= btn.x and y >= btn.y and x - btn.x <= btn.width and y - btn.y <= btn.height then
             return true
         end
@@ -56,8 +60,8 @@ end
 
 ---update all buttons
 function buttons.update()
-    for i = #buttons.layout.elements, 1, -1 do
-        local btn = buttons.layout.elements[i]
+    for i = #list.elements, 1, -1 do
+        local btn = list.elements[i]
         if btn.updated then
             btn.pressing = btn.ui_pressing or btn.real_input_state
             if btn.pressing then
@@ -67,7 +71,8 @@ function buttons.update()
             end
             btn.updated = false
         else
-            table.remove(buttons.layout.elements, i)
+            table.remove(list.elements, i)
+            list.changed = true
             buttons.name_map[btn.element.raw_text] = nil
             buttons.layout:mutated()
         end
@@ -76,7 +81,8 @@ end
 
 ---remove all visual buttons
 function buttons.clear()
-    buttons.layout.elements = {}
+    list.elements = {}
+    list.changed = true
     buttons.layout:mutated()
     buttons.name_map = {}
 end
