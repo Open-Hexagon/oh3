@@ -136,7 +136,7 @@ function input.get(input_name, add_ui_button)
         end
     end
     if add_ui_button then
-        ret = ret or ui_button.ui_pressing
+        ret = ui_button.ui_pressing or ret
         ui_button.real_input_state = ret
     end
     return ret
