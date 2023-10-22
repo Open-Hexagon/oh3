@@ -7,6 +7,7 @@ local overlays = {}
 ---@class overlay
 ---@field is_open boolean
 ---@field layout table
+---@field transition table
 local overlay = {}
 overlay.__index = overlay
 
@@ -16,11 +17,14 @@ function overlay:new()
     local obj = setmetatable({
         is_open = false,
         layout = flex:new({}),
+        transition = nil,
+        has_opened_before = false,
     }, overlay)
     overlays[#overlays + 1] = obj
     return obj
 end
 
+---calculate layout
 function overlay:update_layout()
     self.layout._transform:reset()
     if game_handler.is_running() then
@@ -33,11 +37,21 @@ end
 function overlay:open()
     self.is_open = true
     self:update_layout()
+    if self.transition then
+        if not self.has_opened_before then
+            self.has_opened_before = true
+            self.transition.reset(self.layout)
+        end
+        self.transition.open(self.layout)
+    end
 end
 
 ---close the overlay
 function overlay:close()
     self.is_open = false
+    if self.transition then
+        self.transition.close(self.layout)
+    end
 end
 
 ---set the gui scale of the overlay
@@ -68,7 +82,7 @@ end
 
 ---draw the overlay
 function overlay:draw()
-    if self.is_open then
+    if self.is_open or self.layout.transform:is_animating() then
         self.layout:draw()
     end
 end

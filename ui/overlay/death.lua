@@ -3,6 +3,7 @@ local quad = require("ui.elements.quad")
 local label = require("ui.elements.label")
 local overlay = require("ui.overlay")
 local game_handler = require("game_handler")
+local transitions = require("ui.anim.transitions")
 
 local death = overlay:new()
 
@@ -35,13 +36,15 @@ death.layout = flex:new({
                 end
             end,
             click_handler = function()
-                death:close()
                 local ui = require("ui")
                 game_handler.preview_start("", "", {}, false, true)
                 ui.open_screen("levelselect")
+                death:close()
             end,
         }),
     }, { align_items = "center" }),
 }, { direction = "column", align_items = "center" })
+
+death.transition = transitions.scale
 
 return death
