@@ -41,7 +41,7 @@ function walls.wall(
     max_speed = max_speed or 0
     local distance = _level_status.wall_spawn_distance
     local div = math.pi / _level_status.sides
-    local angle = div * 2 * side
+    local angle = utils.float_round(div * 2 * side)
     local sin, cos = math.sin, math.cos
     local vertices = {}
     local function set_vertex(vertex_angle, dist)
