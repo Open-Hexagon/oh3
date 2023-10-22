@@ -1,0 +1,89 @@
+local keyboard_navigation = require("ui.keyboard_navigation")
+local game_handler = require("game_handler")
+local flex = require("ui.layout.flex")
+
+local overlays = {}
+
+---@class overlay
+---@field is_open boolean
+---@field layout table
+local overlay = {}
+overlay.__index = overlay
+
+---create a new overlay
+---@return overlay
+function overlay:new()
+    local obj = setmetatable({
+        is_open = false,
+        layout = flex:new({}),
+    }, overlay)
+    overlays[#overlays + 1] = obj
+    return obj
+end
+
+function overlay:update_layout()
+    self.layout._transform:reset()
+    if game_handler.is_running() then
+        self.layout._transform:translate(game_handler.get_game_position())
+    end
+    self.layout:calculate_layout(require("ui").get_dimensions())
+end
+
+---open the overlay
+function overlay:open()
+    self.is_open = true
+    self:update_layout()
+end
+
+---close the overlay
+function overlay:close()
+    self.is_open = false
+end
+
+---set the gui scale of the overlay
+---@param scale number
+function overlay:set_scale(scale)
+    self.layout:set_scale(scale)
+end
+
+---let the overlay process an event
+---@param name string
+---@param ... unknown
+---@return boolean?
+function overlay:process_event(name, ...)
+    if self.is_open then
+        if self.layout:process_event(name, ...) then
+            return true
+        end
+        -- overlay closed during event processing, stop propagation
+        if not self.is_open then
+            return true
+        end
+        -- update keyboard navigation if overlay is focused
+        if keyboard_navigation.get_screen() == self.layout then
+            keyboard_navigation.process_event(name, ...)
+        end
+    end
+end
+
+---draw the overlay
+function overlay:draw()
+    if self.is_open then
+        self.layout:draw()
+    end
+end
+
+-- execute a function on all overlays with this metatable
+overlay.overlays = setmetatable({}, {
+    __index = function (_, fn)
+        return function(...)
+            local ret
+            for i = 1, #overlays do
+                ret = overlays[i][fn](overlays[i], ...) or ret
+            end
+            return ret
+        end
+    end
+})
+
+return overlay

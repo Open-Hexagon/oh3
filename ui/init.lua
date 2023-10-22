@@ -1,5 +1,6 @@
 local signal = require("ui.anim.signal")
-local overlays = require("ui.overlays")
+local overlay = require("ui.overlay")
+local overlays = overlay.overlays
 local game_handler = require("game_handler")
 local scroll = require("ui.layout.scroll")
 local config = require("config")
@@ -21,15 +22,22 @@ function ui.set_scale(scale)
     overlays.set_scale(scale)
 end
 
-local function calculate_layout(width, height)
+function ui.get_dimensions()
     local game_width, game_height
-    transform:reset()
     if game_handler.is_running() then
         game_width, game_height = game_handler.get_game_dimensions()
+    end
+    local width = game_width or love.graphics.getWidth()
+    local height = game_height or love.graphics.getHeight()
+    return width, height
+end
+
+local function calculate_layout()
+    transform:reset()
+    if game_handler.is_running() then
         transform:translate(game_handler.get_game_position())
     end
-    width = width or game_width or love.graphics.getWidth()
-    height = height or game_height or love.graphics.getHeight()
+    local width, height = ui.get_dimensions()
     local scale = gui_scale
     if config.get("area_based_gui_scale") then
         -- 1080p as reference for user setting in this scale mode
@@ -55,6 +63,7 @@ local function calculate_layout(width, height)
         current_screen:set_scale(new_scale)
         res_width, res_height = current_screen:calculate_layout(width, height)
     end
+    overlays.update_layout()
 end
 
 ---open a menu screen
@@ -101,7 +110,6 @@ end
 function ui.update(dt)
     key_repeat.update(dt)
     signal.update(dt)
-    overlays.update(dt)
 end
 
 ---draw the ui
@@ -109,7 +117,7 @@ function ui.draw()
     if current_screen then
         current_screen:draw()
     end
-    overlays:draw()
+    overlays.draw()
 end
 
 return ui
