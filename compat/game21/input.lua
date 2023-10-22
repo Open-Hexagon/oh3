@@ -27,7 +27,7 @@ end
 function input.update(frametime)
     local focus = game_input.get("focus")
     local swap
-    if has_swap then
+    if has_swap or level_status.swap_enabled then
         swap = game_input.get("swap")
     end
     local cw = game_input.get("right")
