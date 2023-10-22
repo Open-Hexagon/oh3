@@ -2,7 +2,7 @@ return function(modname)
     return function(...)
         -- don't print stuff when testing
         if love.filesystem.getIdentity() ~= "ohtest" then
-            print("[" .. modname .. "]", ...)
+            print("[" .. os.date() .. "] [" .. modname .. "]", ...)
         end
     end
 end
