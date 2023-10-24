@@ -17,7 +17,7 @@ for name, property in pairs(config.get_definitions()) do
     if type(property.default) == "boolean" then
         local setter = toggle:new()
         layout.elements[1] = setter
-        layout.elements[2] = label:new(name)
+        layout.elements[2] = label:new(property.display_name)
         if value then
             setter:click(false)
         end

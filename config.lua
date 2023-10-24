@@ -19,7 +19,10 @@ local function add_setting(name, default, options)
     if options.can_change_in_offical == nil then
         options.can_change_in_offical = true
     end
-    properties[name] = { default = default }
+    properties[name] = {
+        default = default,
+        display_name = name:gsub("_", " "):gsub("^%l", string.upper),
+    }
     for key, value in pairs(options) do
         properties[name][key] = value
     end
