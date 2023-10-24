@@ -23,6 +23,9 @@ function toggle:new(options)
         else
             elem.state_indicator_offset:keyframe(0.1, 0)
         end
+        if elem.change_handler then
+            elem.change_handler(elem.state)
+        end
     end
     if obj.state then
         obj.state_indicator_offset:set_immediate_value(obj.radius * 2)

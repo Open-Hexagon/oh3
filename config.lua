@@ -120,6 +120,12 @@ function config.get(name)
     end
 end
 
+---get the definition of all the settings (default values, type, game versions it affects, ...)
+---@return table
+function config.get_definitions()
+    return properties
+end
+
 ---gets a table of all settings or all settings for a certain game version
 ---@param game_version number|nil
 ---@return table
