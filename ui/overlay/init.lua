@@ -38,6 +38,8 @@ function overlay:open()
     if not self.is_open then
         self.is_open = true
         self:update_layout()
+        self.last_screen = keyboard_navigation.get_screen()
+        keyboard_navigation.set_screen(self.layout)
         if self.transition then
             if not self.has_opened_before then
                 self.has_opened_before = true
@@ -52,6 +54,7 @@ end
 function overlay:close()
     if self.is_open then
         self.is_open = false
+        keyboard_navigation.set_screen(self.last_screen)
         if self.transition then
             self.transition.close(self.layout)
         end
@@ -81,6 +84,8 @@ function overlay:process_event(name, ...)
         if keyboard_navigation.get_screen() == self.layout then
             keyboard_navigation.process_event(name, ...)
         end
+        -- don't update stuff below if overlay is open
+        return true
     end
 end
 

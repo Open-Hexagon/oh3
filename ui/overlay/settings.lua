@@ -8,16 +8,15 @@ local scroll = require("ui.layout.scroll")
 local toggle = require("ui.elements.toggle")
 
 local settings = overlay:new()
-
-local settings_column = flex:new({}, { direction = "column" })
+local setting_layouts = {}
 
 for name, property in pairs(config.get_definitions()) do
     local value = config.get(name)
-    local layout = flex:new({})
+    local row = {}
     if type(property.default) == "boolean" then
         local setter = toggle:new()
-        layout.elements[1] = setter
-        layout.elements[2] = label:new(property.display_name)
+        row[1] = setter
+        row[2] = label:new(property.display_name)
         if value then
             setter:click(false)
         end
@@ -25,8 +24,10 @@ for name, property in pairs(config.get_definitions()) do
             config.set(name, state)
         end
     end
-    settings_column.elements[#settings_column.elements+1] = layout
+    setting_layouts[#setting_layouts + 1] = flex:new(row)
 end
+
+local settings_column = flex:new(setting_layouts, { direction = "column" })
 
 settings.layout = quad:new({
     child_element = flex:new({
@@ -34,11 +35,18 @@ settings.layout = quad:new({
             quad:new({
                 child_element = label:new("X"),
                 selectable = true,
+                selection_handler = function(self)
+                    if self.selected then
+                        self.border_color = { 0, 0, 1, 1 }
+                    else
+                        self.border_color = { 1, 1, 1, 1 }
+                    end
+                end,
                 click_handler = function()
                     settings:close()
                 end,
             }),
-        }, { direction = "column"}),
+        }, { direction = "column" }),
         scroll:new(settings_column),
     }, { direction = "column" }),
 })
