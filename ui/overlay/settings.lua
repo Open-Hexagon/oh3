@@ -9,8 +9,16 @@ local toggle = require("ui.elements.toggle")
 
 local settings = overlay:new()
 local setting_layouts = {}
-
-for name, property in pairs(config.get_definitions()) do
+local definitions = config.get_definitions()
+local names = {}
+for name in pairs(definitions) do
+    names[#names + 1] = name
+end
+-- remove pairs randomness
+table.sort(names)
+for i = 1, #names do
+    local name = names[i]
+    local property = definitions[name]
     local value = config.get(name)
     local row = {}
     if type(property.default) == "boolean" then
