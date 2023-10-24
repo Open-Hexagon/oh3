@@ -170,13 +170,15 @@ function element:process_event(name, ...)
         local x, y = ...
         self.local_mouse_x, self.local_mouse_y = global_to_element_space(x, y)
         self.is_mouse_over = contains(x, y)
-        if name == "mousereleased" and self.selectable then
-            if self.selected ~= self.is_mouse_over then
-                self.selected = self.is_mouse_over
-                if self.selected then
-                    keyboard_navigation.select_element(self)
-                else
-                    keyboard_navigation.deselect_element(self)
+        if name == "mousereleased" then
+            if self.selectable then
+                if self.selected ~= self.is_mouse_over then
+                    self.selected = self.is_mouse_over
+                    if self.selected then
+                        keyboard_navigation.select_element(self)
+                    else
+                        keyboard_navigation.deselect_element(self)
+                    end
                 end
             end
             if self.click_handler and self.is_mouse_over then

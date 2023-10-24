@@ -1,5 +1,4 @@
 local input = require("input")
-local config = require("config")
 local key_repeat = {}
 local keys = { "ui_up", "ui_down", "ui_left", "ui_right", "ui_click" }
 local states = {}

@@ -20,11 +20,17 @@ for i = 1, #names do
     local name = names[i]
     local property = definitions[name]
     local value = config.get(name)
-    local row = {}
+    local layout
     if type(property.default) == "boolean" then
         local setter = toggle:new()
-        row[1] = setter
-        row[2] = label:new(property.display_name)
+        layout = flex:new({
+            setter,
+            label:new(property.display_name, {
+                click_handler = function()
+                    setter:click()
+                end,
+            }),
+        })
         if value then
             setter:click(false)
         end
@@ -32,7 +38,7 @@ for i = 1, #names do
             config.set(name, state)
         end
     end
-    setting_layouts[#setting_layouts + 1] = flex:new(row)
+    setting_layouts[#setting_layouts + 1] = layout
 end
 
 local settings_column = flex:new(setting_layouts, { direction = "column" })
