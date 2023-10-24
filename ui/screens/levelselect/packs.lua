@@ -45,10 +45,10 @@ return function(state)
                         levels = flex:new(level_elements, { direction = "column", align_items = "stretch" })
                         cache_folder_flex[pack.id] = levels
                     end
-                    local pack_changed = levels ~= state.root.elements[2].element
+                    local pack_changed = levels ~= state.levels.element
                     if pack_changed then
-                        state.root.elements[2].element = levels
-                        state.root.elements[2]:mutated()
+                        state.levels.element = levels
+                        state.levels:mutated()
                         levels.elements[1]:click(false)
                         -- reset scroll
                         levels.parent.scroll_pos:stop()

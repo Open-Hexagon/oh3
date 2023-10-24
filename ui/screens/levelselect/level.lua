@@ -77,8 +77,8 @@ return function(state, pack, level, extra_info)
                     make_localscore_element(pack.id, level.id, { difficulty_mult = 1 }),
                     make_options_element(state, pack, level),
                 }, { direction = "column", align_items = "stretch" })
-                state.root.elements[3] = score
-                state.root:mutated()
+                state.columns.elements[3] = score
+                state.columns:mutated()
                 level_element_selected = self
                 -- reset options (TODO: make options not be dm specific)
                 state.level_options_selected = { difficulty_mult = 1 }

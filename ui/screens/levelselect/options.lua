@@ -38,8 +38,8 @@ return function(state, pack, level)
             local score = flex:new({
                 make_localscore_element(pack.id, level.id, state.level_options_selected),
             }, { direction = "column", align_items = "stretch" })
-            state.root.elements[3].elements[1] = score
-            state.root.elements[3]:mutated()
+            state.leaderboards.elements[1] = score
+            state.leaderboards:mutated()
         end,
     })
     return flex:new({

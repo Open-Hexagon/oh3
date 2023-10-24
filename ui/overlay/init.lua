@@ -35,22 +35,26 @@ end
 
 ---open the overlay
 function overlay:open()
-    self.is_open = true
-    self:update_layout()
-    if self.transition then
-        if not self.has_opened_before then
-            self.has_opened_before = true
-            self.transition.reset(self.layout)
+    if not self.is_open then
+        self.is_open = true
+        self:update_layout()
+        if self.transition then
+            if not self.has_opened_before then
+                self.has_opened_before = true
+                self.transition.reset(self.layout)
+            end
+            self.transition.open(self.layout)
         end
-        self.transition.open(self.layout)
     end
 end
 
 ---close the overlay
 function overlay:close()
-    self.is_open = false
-    if self.transition then
-        self.transition.close(self.layout)
+    if self.is_open then
+        self.is_open = false
+        if self.transition then
+            self.transition.close(self.layout)
+        end
     end
 end
 
