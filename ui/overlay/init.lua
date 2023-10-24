@@ -93,7 +93,7 @@ end
 
 -- execute a function on all overlays with this metatable
 overlay.overlays = setmetatable({}, {
-    __index = function (_, fn)
+    __index = function(_, fn)
         return function(...)
             local ret
             for i = 1, #overlays do
@@ -101,7 +101,7 @@ overlay.overlays = setmetatable({}, {
             end
             return ret
         end
-    end
+    end,
 })
 
 return overlay

@@ -28,7 +28,15 @@ function transform:new(queue)
 end
 
 function transform:is_animating()
-    return (self.translation.x.processing or self.translation.y.processing or self.angle.processing or self.scaling.x.processing or self.scaling.y.processing) and true or false
+    return (
+        self.translation.x.processing
+        or self.translation.y.processing
+        or self.angle.processing
+        or self.scaling.x.processing
+        or self.scaling.y.processing
+    )
+            and true
+        or false
 end
 
 ---scale things

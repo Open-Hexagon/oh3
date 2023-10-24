@@ -13,51 +13,57 @@ end
 ---add a setting to the config
 ---@param name string
 ---@param default any
----@param can_change_in_offical boolean
----@param game_version any (nil means it's not a game option, can be a table of game versions)
-local function add_setting(name, default, can_change_in_offical, game_version)
-    properties[name] = { default = default, can_change_in_offical = can_change_in_offical, game = game_version }
+---@param options table?
+local function add_setting(name, default, options)
+    options = options or {}
+    if options.can_change_in_offical == nil then
+        options.can_change_in_offical = true
+    end
+    properties[name] = { default = default }
+    for key, value in pairs(options) do
+        properties[name][key] = value
+    end
 end
 
-add_setting("game_resolution_scale", 1, true)
-add_setting("area_based_gui_scale", false, true)
-add_setting("background_preview", true, true)
-add_setting("background_preview_has_text", false, true)
-add_setting("background_preview_music_volume", 0, true)
-add_setting("background_preview_sound_volume", 0, true)
-add_setting("preload_all_packs", false, true)
-add_setting("fps_limit", 200, true)
-add_setting("official_mode", true, false, { 192, 20, 21, 3 })
-add_setting("sound_volume", 1, true, { 192, 20, 21, 3 })
-add_setting("music_volume", 1, true, { 192, 20, 21, 3 })
-add_setting("beatpulse", true, false, { 192, 20, 21 })
-add_setting("pulse", true, false, { 192, 20, 21 })
-add_setting("player_size", 7.3, false, { 192, 20, 21 })
-add_setting("player_speed", 9.45, false, { 192, 20, 21 })
-add_setting("player_focus_speed", 4.625, false, { 192, 20, 21 })
-add_setting("black_and_white", false, false, { 192, 20, 21 })
-add_setting("3D_enabled", true, false, { 192, 20, 21 })
-add_setting("3D_multiplier", 1, false, { 192, 20, 21 })
-add_setting("3D_max_depth", 100, false, { 192, 20 })
-add_setting("background", true, false, { 192, 20, 21 })
-add_setting("invincible", false, false, { 192, 20, 21 })
-add_setting("rotation", true, false, { 192, 20, 21 })
-add_setting("messages", true, false, { 192, 20, 21 })
-add_setting("sync_music_to_dm", true, true, { 20, 21 })
-add_setting("music_speed_mult", 1, true, 21)
-add_setting("play_swap_sound", true, true, 21)
-add_setting("player_tilt_intensity", 1, true, 21)
-add_setting("swap_blinking_effect", true, true, 21)
-add_setting("flash", true, true, { 192, 20, 21 })
-add_setting("shaders", true, false, 21)
-add_setting("camera_shake_mult", 1, true, 21)
-add_setting("text_scale", 1, true, 21)
-add_setting("show_player_trail", false, true, 21)
-add_setting("player_trail_decay", 3, true, 21)
-add_setting("player_trail_scale", 0.9, true, 21)
-add_setting("player_trail_alpha", 35, true, 21)
-add_setting("player_trail_has_swap_color", true, true, 21)
-add_setting("show_swap_particles", true, true, 21)
+add_setting("game_resolution_scale", 1)
+add_setting("area_based_gui_scale", false)
+add_setting("background_preview", true)
+add_setting("background_preview_has_text", false)
+add_setting("background_preview_music_volume", 0)
+add_setting("background_preview_sound_volume", 0)
+add_setting("preload_all_packs", false)
+add_setting("fps_limit", 200)
+add_setting("official_mode", true, { can_change_in_offical = false, game_version = { 192, 20, 21, 3 } })
+add_setting("sound_volume", 1, { game_version = { 192, 20, 21, 3 } })
+add_setting("music_volume", 1, { game_version = { 192, 20, 21, 3 } })
+add_setting("beatpulse", true, { can_change_in_offical = false, game_version = { 192, 20, 21 } })
+add_setting("pulse", true, { can_change_in_offical = false, game_version = { 192, 20, 21 } })
+add_setting("player_size", 7.3, { can_change_in_offical = false, game_version = { 192, 20, 21 } })
+add_setting("player_speed", 9.45, { can_change_in_offical = false, game_version = { 192, 20, 21 } })
+add_setting("player_focus_speed", 4.625, { can_change_in_offical = false, game_version = { 192, 20, 21 } })
+add_setting("black_and_white", false, { can_change_in_offical = false, game_version = { 192, 20, 21 } })
+add_setting("3D_enabled", true, { can_change_in_offical = false, game_version = { 192, 20, 21 } })
+add_setting("3D_multiplier", 1, { can_change_in_offical = false, game_version = { 192, 20, 21 } })
+add_setting("3D_max_depth", 100, { can_change_in_offical = false, game_version = { 192, 20 } })
+add_setting("background", true, { can_change_in_offical = false, game_version = { 192, 20, 21 } })
+add_setting("invincible", false, { can_change_in_offical = false, game_version = { 192, 20, 21 } })
+add_setting("rotation", true, { can_change_in_offical = false, game_version = { 192, 20, 21 } })
+add_setting("messages", true, { can_change_in_offical = false, game_version = { 192, 20, 21 } })
+add_setting("sync_music_to_dm", true, { game_version = { 20, 21 } })
+add_setting("music_speed_mult", 1, { game_version = 21 })
+add_setting("play_swap_sound", true, { game_version = 21 })
+add_setting("player_tilt_intensity", 1, { game_version = 21 })
+add_setting("swap_blinking_effect", true, { game_version = 21 })
+add_setting("flash", true, { can_change_in_offical = false, game_version = { 192, 20, 21 } })
+add_setting("shaders", true, { can_change_in_offical = false, game_version = 21 })
+add_setting("camera_shake_mult", 1, { game_version = 21 })
+add_setting("text_scale", 1, { game_version = 21 })
+add_setting("show_player_trail", false, { game_version = 21 })
+add_setting("player_trail_decay", 3, { game_version = 21 })
+add_setting("player_trail_scale", 0.9, { game_version = 21 })
+add_setting("player_trail_alpha", 35, { game_version = 21 })
+add_setting("player_trail_has_swap_color", true, { game_version = 21 })
+add_setting("show_swap_particles", true, { game_version = 21 })
 
 local function add_input(name, versions)
     local bindings = {}
@@ -69,7 +75,9 @@ local function add_input(name, versions)
             }
         end
     end
-    add_setting(name, bindings, true, versions)
+    add_setting(name, bindings, {
+        game_version = versions,
+    })
 end
 
 add_input("right", { 192, 20, 21 })
