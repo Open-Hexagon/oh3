@@ -6,6 +6,7 @@ local label = require("ui.elements.label")
 local config = require("config")
 local scroll = require("ui.layout.scroll")
 local toggle = require("ui.elements.toggle")
+local slider = require("ui.elements.slider")
 
 local settings = overlay:new()
 local setting_layouts = {}
@@ -22,6 +23,7 @@ for i = 1, #names do
     local value = config.get(name)
     local layout
     if type(property.default) == "boolean" then
+        -- toggle with text
         local setter = toggle:new()
         layout = flex:new({
             setter,
@@ -36,6 +38,32 @@ for i = 1, #names do
         end
         setter.change_handler = function(state)
             config.set(name, state)
+        end
+    elseif type(property.default) == "number" then
+        if property.min and property.max and property.step then
+            -- slider with text
+            local steps = (property.max - property.min) / property.step + 1
+            local setter = slider:new({
+                step_size = 200 / steps,
+                steps = steps,
+                initial_state = (value - property.min) * (steps - 1) / (property.max - property.min),
+            })
+            local text = label:new(property.display_name .. ": " .. value, {
+                click_handler = function()
+                    setter:click()
+                end,
+            })
+            layout = flex:new({
+                setter,
+                text,
+            })
+            setter.change_handler = function(state)
+                state = state * (property.max - property.min) / (steps - 1) + property.min
+                config.set(name, state)
+                text.raw_text = property.display_name .. ": " .. state
+                text.changed = true
+                layout:mutated()
+            end
         end
     end
     setting_layouts[#setting_layouts + 1] = layout

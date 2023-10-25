@@ -75,6 +75,9 @@ function slider:process_event(name, ...)
     if self.state ~= last_state then
         self.position:stop()
         self.position:keyframe(0.1, self.state)
+        if self.change_handler then
+            self.change_handler(self.state)
+        end
         return true
     end
 end
