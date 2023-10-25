@@ -1,5 +1,6 @@
 local keyboard_navigation = require("ui.keyboard_navigation")
 local game_handler = require("game_handler")
+local signal = require("ui.anim.signal")
 local flex = require("ui.layout.flex")
 
 local overlays = {}
@@ -8,6 +9,8 @@ local overlays = {}
 ---@field is_open boolean
 ---@field layout table
 ---@field transition table
+---@field backdrop boolean
+---@field backdrop_alpha Queue
 local overlay = {}
 overlay.__index = overlay
 
@@ -19,12 +22,14 @@ function overlay:new()
         layout = flex:new({}),
         transition = nil,
         has_opened_before = false,
+        backdrop = true,
+        backdrop_alpha = signal.new_queue(0),
     }, overlay)
     overlays[#overlays + 1] = obj
     return obj
 end
 
----calculate layout
+---calculate layout (only used internally)
 function overlay:update_layout()
     self.layout._transform:reset()
     if game_handler.is_running() then
@@ -47,6 +52,13 @@ function overlay:open()
             end
             self.transition.open(self.layout)
         end
+        if self.backdrop then
+            if self.transition then
+                self.backdrop_alpha:keyframe(0.1, 0.7)
+            else
+                self.backdrop_alpha:set_immediate_value(0.7)
+            end
+        end
     end
 end
 
@@ -57,6 +69,13 @@ function overlay:close()
         keyboard_navigation.set_screen(self.last_screen)
         if self.transition then
             self.transition.close(self.layout)
+        end
+        if self.backdrop then
+            if self.transition then
+                self.backdrop_alpha:keyframe(0.1, 0)
+            else
+                self.backdrop_alpha:set_immediate_value(0)
+            end
         end
     end
 end
@@ -84,6 +103,9 @@ function overlay:process_event(name, ...)
         if keyboard_navigation.get_screen() == self.layout then
             keyboard_navigation.process_event(name, ...)
         end
+        if self.backdrop and not self.layout.is_mouse_over and name == "mousereleased" then
+            self:close()
+        end
         -- don't update stuff below if overlay is open
         return true
     end
@@ -92,6 +114,13 @@ end
 ---draw the overlay
 function overlay:draw()
     if self.is_open or self.layout.transform:is_animating() then
+        if self.backdrop and self.backdrop_alpha() ~= 0 then
+            love.graphics.push()
+            love.graphics.origin()
+            love.graphics.setColor(0, 0, 0, self.backdrop_alpha())
+            love.graphics.rectangle("fill", 0, 0, love.graphics.getDimensions())
+            love.graphics.pop()
+        end
         self.layout:draw()
     end
 end
