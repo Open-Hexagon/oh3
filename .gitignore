@@ -1,5 +1,8 @@
 .vscode/
 Packs/
+packs192/
+packs20/
+packs21/
 .luarc.json
 testrps/
 *.ohr.z
