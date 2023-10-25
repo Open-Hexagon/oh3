@@ -43,27 +43,30 @@ end
 
 local settings_column = flex:new(setting_layouts, { direction = "column" })
 
-settings.layout = quad:new({
-    child_element = flex:new({
-        flex:new({
-            quad:new({
-                child_element = label:new("X"),
-                selectable = true,
-                selection_handler = function(self)
-                    if self.selected then
-                        self.border_color = { 0, 0, 1, 1 }
-                    else
-                        self.border_color = { 1, 1, 1, 1 }
-                    end
-                end,
-                click_handler = function()
-                    settings:close()
-                end,
-            }),
-        }, { direction = "column" }),
-        scroll:new(settings_column),
+local content = flex:new({
+    flex:new({
+        quad:new({
+            child_element = label:new("X"),
+            selectable = true,
+            selection_handler = function(self)
+                if self.selected then
+                    self.border_color = { 0, 0, 1, 1 }
+                else
+                    self.border_color = { 1, 1, 1, 1 }
+                end
+            end,
+            click_handler = function()
+                settings:close()
+            end,
+        }),
     }, { direction = "column" }),
+    scroll:new(settings_column),
+}, { direction = "column" })
+settings.layout = quad:new({
+    child_element = content,
+    style = { padding = 0 },
 })
+content:set_style({ padding = 8 })
 
 settings.transition = transitions.slide
 
