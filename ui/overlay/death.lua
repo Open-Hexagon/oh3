@@ -45,6 +45,7 @@ death.layout = flex:new({
     }, { align_items = "center" }),
 }, { direction = "column", align_items = "center" })
 
+death.backdrop = false
 death.transition = transitions.scale
 
 return death
