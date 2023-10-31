@@ -66,7 +66,10 @@ end
 function overlay:close()
     if self.is_open then
         self.is_open = false
-        keyboard_navigation.set_screen(self.last_screen)
+        -- only reset screen if it hasn't changed in the meantime
+        if keyboard_navigation.get_screen() == self.layout then
+            keyboard_navigation.set_screen(self.last_screen)
+        end
         if self.transition then
             self.transition.close(self.layout)
         end
