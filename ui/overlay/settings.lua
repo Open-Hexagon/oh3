@@ -118,8 +118,6 @@ local content = flex:new({
                 -- show the results
                 local new_layouts = {}
                 for i = 1, #result_indices do
-                    local ind = result_indices[i]
-                    print(names[ind], setting_layouts[ind])
                     new_layouts[i] = setting_layouts[result_indices[i]]
                 end
                 settings_column.elements = new_layouts
