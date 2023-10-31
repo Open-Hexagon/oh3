@@ -45,6 +45,7 @@ function element:new(options)
     self.selection_handler = options.selection_handler
     self.click_handler = options.click_handler
     self.hold_handler = options.hold_handler
+    self.change_handler = options.change_handler
     self.last_available_width = 0
     self.last_available_height = 0
     self.width = 0

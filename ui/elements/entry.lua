@@ -23,7 +23,8 @@ function entry:new(options)
             else
                 elem.border_color = { 1, 1, 1, 1 }
             end
-        end
+        end,
+        change_handler = options.change_handler,
     })
     setmetatable(obj, entry)
     obj.cursor_pos = 0
@@ -36,7 +37,13 @@ function entry:new(options)
     obj.label.draw_element = function()
         old_draw(obj.label)
         if obj.selected then
-            love.graphics.rectangle("fill", obj.cursor_pixel_pos - obj.scale, 0, obj.scale * 2, obj.label.height - 2 * obj.label.padding * obj.scale)
+            love.graphics.rectangle(
+                "fill",
+                obj.cursor_pixel_pos - obj.scale,
+                0,
+                obj.scale * 2,
+                obj.label.height - 2 * obj.label.padding * obj.scale
+            )
         end
     end
     obj:set_text(text)
@@ -117,7 +124,12 @@ function entry:process_event(name, ...)
             elseif self.cursor_pos < 0 then
                 self.cursor_pos = 0
             end
-            self.element:scroll_into_view(self.label.padding * self.scale + self.cursor_pixel_pos - self.scale * 20, 0, self.scale * 40, 0)
+            self.element:scroll_into_view(
+                self.label.padding * self.scale + self.cursor_pixel_pos - self.scale * 20,
+                0,
+                self.scale * 40,
+                0
+            )
             self.cursor_pixel_pos = self.label.text:getFont():getWidth(text:sub(1, self.cursor_pos))
             stop_propagation = true
         end

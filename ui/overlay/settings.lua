@@ -7,6 +7,8 @@ local config = require("config")
 local scroll = require("ui.layout.scroll")
 local toggle = require("ui.elements.toggle")
 local slider = require("ui.elements.slider")
+local entry = require("ui.elements.entry")
+local fzy = require("extlibs.fzy_lua")
 
 local settings = overlay:new()
 local setting_layouts = {}
@@ -15,6 +17,7 @@ local names = {}
 for name in pairs(definitions) do
     names[#names + 1] = name
 end
+
 -- remove pairs randomness
 table.sort(names)
 for i = 1, #names do
@@ -64,7 +67,15 @@ for i = 1, #names do
                 text.changed = true
                 layout:mutated()
             end
+        else
+            -- TODO: implement all settings to remove need for placeholder
+            -- (need to populate setting_layouts list fully for search to work)
+            layout = flex:new({})
         end
+    else
+        -- TODO: implement all settings to remove need for placeholder
+        -- (need to populate setting_layouts list fully for search to work)
+        layout = flex:new({})
     end
     setting_layouts[#setting_layouts + 1] = layout
 end
@@ -73,6 +84,48 @@ local settings_column = flex:new(setting_layouts, { direction = "column" })
 
 local content = flex:new({
     flex:new({
+        entry:new({
+            no_text_text = "Search",
+            change_handler = function(text)
+                if text == "" then
+                    -- no search, show all settings
+                    settings_column.elements = setting_layouts
+                    settings_column:mutated()
+                    return
+                end
+                -- search settings by scoring the display name with fuzzy search
+                local result_indices = {}
+                local score_list = {}
+                for i = 1, #names do
+                    local score = fzy.score(text, names[i])
+                    if score ~= fzy.get_score_min() then
+                        local added = false
+                        for j = #score_list, 1, -1 do
+                            local next_score = score_list[j]
+                            if next_score > score then
+                                table.insert(score_list, j + 1, score)
+                                table.insert(result_indices, j + 1, i)
+                                added = true
+                                break
+                            end
+                        end
+                        if not added then
+                            table.insert(score_list, 1, score)
+                            table.insert(result_indices, 1, i)
+                        end
+                    end
+                end
+                -- show the results
+                local new_layouts = {}
+                for i = 1, #result_indices do
+                    local ind = result_indices[i]
+                    print(names[ind], setting_layouts[ind])
+                    new_layouts[i] = setting_layouts[result_indices[i]]
+                end
+                settings_column.elements = new_layouts
+                settings_column:mutated()
+            end,
+        }),
         quad:new({
             child_element = label:new("X"),
             selectable = true,
@@ -87,7 +140,7 @@ local content = flex:new({
                 settings:close()
             end,
         }),
-    }, { direction = "column" }),
+    }),
     scroll:new(settings_column),
 }, { direction = "column" })
 settings.layout = quad:new({
