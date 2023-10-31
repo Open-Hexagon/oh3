@@ -20,15 +20,17 @@ local env = lua_runtime.env
 
 function lua_runtime.error(msg)
     if not args.headless then
-        error_sound:play()
+        if not error_sound then
+            error_sound = assets.get_sound("error.ogg")
+        end
+        if error_sound then
+            error_sound:play()
+        end
     end
     log(debug.traceback("Error: " .. msg))
 end
 
 function lua_runtime.init_env(game, public)
-    if not args.headless then
-        error_sound = assets.get_sound("error.ogg")
-    end
     lua_runtime.env = {
         next = next,
         error = error,
@@ -124,9 +126,14 @@ function lua_runtime.run_lua_file(path)
     else
         if file_cache[path] == nil then
             local error_msg
-            file_cache[path], error_msg = love.filesystem.load(path)
+            _, file_cache[path], error_msg = xpcall(love.filesystem.load, log, path)
             if file_cache[path] == nil then
-                error("Failed to load '" .. path .. "': " .. error_msg)
+                if error_msg then
+                    lua_runtime.error("Failed to load '" .. path .. "': " .. error_msg)
+                else
+                    lua_runtime.error("Failed to load '" .. path .. "'")
+                end
+                return
             end
         end
         local lua_file = file_cache[path]

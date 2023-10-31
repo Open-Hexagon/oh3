@@ -486,9 +486,13 @@ function lua_runtime.run_lua_file(path)
         path = utils.get_real_path(path)
         if file_cache[path] == nil then
             local error_msg
-            file_cache[path], error_msg = love.filesystem.load(path)
+            _, file_cache[path], error_msg = xpcall(love.filesystem.load, log, path)
             if file_cache[path] == nil then
-                lua_runtime.error("Failed to load '" .. path .. "': " .. error_msg)
+                if error_msg then
+                    lua_runtime.error("Failed to load '" .. path .. "': " .. error_msg)
+                else
+                    lua_runtime.error("Failed to load '" .. path .. "'")
+                end
                 return
             end
         end
