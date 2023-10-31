@@ -92,6 +92,8 @@ add_input("ui_down")
 add_input("ui_right")
 add_input("ui_left")
 add_input("ui_click")
+add_input("ui_delete")
+add_input("ui_backspace")
 
 ---resets all settings
 function config.set_defaults()
