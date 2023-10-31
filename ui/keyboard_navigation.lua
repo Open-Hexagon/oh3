@@ -36,9 +36,9 @@ function keyboard_navigation.set_screen(screen)
     end
     current_screen = screen
     if current_screen then
-        keyboard_navigation.select_element(nil, false)
+        keyboard_navigation.select_element()
         if current_screen.last_selected_element then
-            keyboard_navigation.select_element(current_screen.last_selected_element, false)
+            keyboard_navigation.select_element(current_screen.last_selected_element)
         end
     end
 end
