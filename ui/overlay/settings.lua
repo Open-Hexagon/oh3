@@ -11,20 +11,12 @@ local entry = require("ui.elements.entry")
 local icon = require("ui.elements.icon")
 local fzy = require("extlibs.fzy_lua")
 
-local settings = overlay:new()
-local setting_layouts = {}
-local definitions = config.get_definitions()
-local names = {}
-for name in pairs(definitions) do
-    names[#names + 1] = name
-end
-
--- remove pairs randomness
-table.sort(names)
-for i = 1, #names do
-    local name = names[i]
-    local property = definitions[name]
-    local value = config.get(name)
+---create a setting element
+---@param name string
+---@param property table
+---@param value any
+---@return flex
+local function create_setting(name, property, value)
     local layout
     if type(property.default) == "boolean" then
         -- toggle with text
@@ -78,10 +70,59 @@ for i = 1, #names do
         -- (need to populate setting_layouts list fully for search to work)
         layout = flex:new({})
     end
-    setting_layouts[#setting_layouts + 1] = layout
+    return layout
 end
 
-local settings_column = flex:new(setting_layouts, { direction = "column" })
+local settings = overlay:new()
+local categories = config.get_definitions(true)
+local category_icons = {
+    Gameplay = "hexagon",
+    UI = "stack",
+    Audio = "volume-up",
+    General = "gear",
+    Display = "display",
+    Input = "controller",
+}
+local category_layouts = {}
+local category_indicators = {}
+
+-- custom category order
+local category_names = {
+    "General",
+    "UI",
+    --"Display",
+    "Audio",
+    "Gameplay",
+    --"Input",
+}
+
+for i = 1, #category_names do
+    local category = category_names[i]
+    local setting_definitions = categories[category]
+    local setting_layouts = {}
+    local setting_names = {}
+    for name in pairs(setting_definitions) do
+        setting_names[#setting_names + 1] = name
+    end
+    -- remove pairs randomness
+    table.sort(setting_names)
+    for j = 1, #setting_names do
+        local name = setting_names[j]
+        setting_layouts[#setting_layouts + 1] = create_setting(name, setting_definitions[name], config.get(name))
+    end
+    local category_settings = quad:new({
+        child_element = flex:new({
+            label:new(category, nil),
+            unpack(setting_layouts),
+        }, { direction = "column" }),
+    })
+    category_layouts[#category_layouts + 1] = category_settings
+    category_indicators[#category_indicators + 1] = quad:new({
+        child_element = icon:new(category_icons[category]),
+    })
+end
+
+local settings_column = flex:new(category_layouts, { direction = "column" })
 
 local content = flex:new({
     flex:new({
@@ -140,7 +181,10 @@ local content = flex:new({
             end,
         }),
     }),
-    scroll:new(settings_column),
+    flex:new({
+        flex:new(category_indicators, { direction = "column" }),
+        scroll:new(settings_column),
+    }),
 }, { direction = "column" })
 settings.layout = quad:new({
     child_element = content,
