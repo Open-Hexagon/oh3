@@ -124,14 +124,16 @@ function entry:process_event(name, ...)
             elseif self.cursor_pos < 0 then
                 self.cursor_pos = 0
             end
-            self.element:scroll_into_view(
-                self.label.padding * self.scale + self.cursor_pixel_pos - self.scale * 20,
-                0,
-                self.scale * 40,
-                0
-            )
-            self.cursor_pixel_pos = self.label.text:getFont():getWidth(text:sub(1, self.cursor_pos))
-            stop_propagation = true
+            if self.cursor_pos ~= last_cursor_pos then
+                self.element:scroll_into_view(
+                    self.label.padding * self.scale + self.cursor_pixel_pos - self.scale * 20,
+                    0,
+                    self.scale * 40,
+                    0
+                )
+                self.cursor_pixel_pos = self.label.text:getFont():getWidth(text:sub(1, self.cursor_pos))
+                stop_propagation = true
+            end
         end
         return stop_propagation
     end
