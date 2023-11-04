@@ -1,4 +1,5 @@
 local overlay = require("ui.overlay")
+local keyboard_navigation = require("ui.keyboard_navigation")
 local transitions = require("ui.anim.transitions")
 local quad = require("ui.elements.quad")
 local flex = require("ui.layout.flex")
@@ -119,6 +120,17 @@ for i = 1, #category_names do
     category_layouts[#category_layouts + 1] = category_settings
     category_indicators[#category_indicators + 1] = quad:new({
         child_element = icon:new(category_icons[category]),
+        selectable = true,
+        selection_handler = function(self)
+            if self.selected then
+                self.border_color = { 0, 0, 1, 1 }
+            else
+                self.border_color = { 1, 1, 1, 1 }
+            end
+            keyboard_navigation.scroll_into_view(category_settings)
+            -- make keyboard navigation go into the category and not wherever it was last when going into the settings column
+            category_settings.parent.last_selection = category_settings
+        end,
     })
 end
 

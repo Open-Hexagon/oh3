@@ -43,7 +43,12 @@ function keyboard_navigation.set_screen(screen)
     end
 end
 
-local function scroll_into_view(element, scroll_to_elem, x, y)
+---scroll an element into view
+---@param element any
+---@param scroll_to_elem any (used internally (recursion))
+---@param x any (used internally (recursion))
+---@param y any (used internally (recursion))
+function keyboard_navigation.scroll_into_view(element, scroll_to_elem, x, y)
     scroll_to_elem = scroll_to_elem or element
     if not x or not y then
         x, y = scroll_to_elem.transform:transformPoint(scroll_to_elem._transform:transformPoint(0, 0))
@@ -53,7 +58,7 @@ local function scroll_into_view(element, scroll_to_elem, x, y)
             element.parent:scroll_into_view(x, y, scroll_to_elem.width, scroll_to_elem.height)
         end
         x, y = element.parent.transform:transformPoint(element.parent._transform:transformPoint(x, y))
-        scroll_into_view(element.parent, scroll_to_elem, x, y)
+        keyboard_navigation.scroll_into_view(element.parent, scroll_to_elem, x, y)
     end
 end
 
@@ -82,7 +87,7 @@ function keyboard_navigation.select_element(element, call_handlers)
                 end
                 elem = parent
             end
-            scroll_into_view(element)
+            keyboard_navigation.scroll_into_view(element)
         end
     end
 end
