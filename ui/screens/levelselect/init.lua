@@ -1,5 +1,6 @@
 local flex = require("ui.layout.flex")
 local label = require("ui.elements.label")
+local icon = require("ui.elements.icon")
 local quad = require("ui.elements.quad")
 local scroll = require("ui.layout.scroll")
 local settings = require("ui.overlay.settings")
@@ -31,7 +32,7 @@ state.columns = flex:new({
 state.top_bar = quad:new({
     child_element = flex:new({
         quad:new({
-            child_element = label:new("Settings", { style = { padding = 8 } }),
+            child_element = icon:new("gear", { style = { padding = 8 } }),
             selectable = true,
             click_handler = function()
                 settings:open()

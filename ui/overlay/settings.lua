@@ -8,6 +8,7 @@ local scroll = require("ui.layout.scroll")
 local toggle = require("ui.elements.toggle")
 local slider = require("ui.elements.slider")
 local entry = require("ui.elements.entry")
+local icon = require("ui.elements.icon")
 local fzy = require("extlibs.fzy_lua")
 
 local settings = overlay:new()
@@ -125,7 +126,7 @@ local content = flex:new({
             end,
         }),
         quad:new({
-            child_element = label:new("X"),
+            child_element = icon:new("x-lg"),
             selectable = true,
             selection_handler = function(self)
                 if self.selected then
