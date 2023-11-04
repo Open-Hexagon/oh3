@@ -191,6 +191,8 @@ local content = flex:new({
                     new_layouts[#new_layouts + 1] = name_layout_map[result[i]]
                 end
                 settings_column.elements = new_layouts
+                -- still need mutated to update child indices
+                settings_column:mutated()
                 settings_column.changed = true
                 -- don't show categories in search result view
                 category_column.elements = {}
