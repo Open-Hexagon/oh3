@@ -12,6 +12,8 @@ local entry = require("ui.elements.entry")
 local icon = require("ui.elements.icon")
 local fzy = require("extlibs.fzy_lua")
 
+local name_layout_map = {}
+
 ---create a setting element
 ---@param name string
 ---@param property table
@@ -71,6 +73,7 @@ local function create_setting(name, property, value)
         -- (need to populate setting_layouts list fully for search to work)
         layout = flex:new({})
     end
+    name_layout_map[name] = layout
     return layout
 end
 
@@ -111,12 +114,16 @@ for i = 1, #category_names do
         local name = setting_names[j]
         setting_layouts[#setting_layouts + 1] = create_setting(name, setting_definitions[name], config.get(name))
     end
+    local elements = {
+        label:new(category),
+        unpack(setting_layouts),
+    }
     local category_settings = quad:new({
-        child_element = flex:new({
-            label:new(category, nil),
-            unpack(setting_layouts),
-        }, { direction = "column" }),
+        child_element = flex:new(elements, { direction = "column" }),
     })
+    -- save for usage in search
+    category_settings.elements = elements
+
     category_layouts[#category_layouts + 1] = category_settings
     category_indicators[#category_indicators + 1] = quad:new({
         child_element = icon:new(category_icons[category]),
@@ -135,6 +142,11 @@ for i = 1, #category_names do
 end
 
 local settings_column = flex:new(category_layouts, { direction = "column" })
+local category_column = flex:new(category_indicators, { direction = "column" })
+local settings_body = flex:new({
+    category_column,
+    scroll:new(settings_column),
+})
 
 local content = flex:new({
     flex:new({
@@ -142,40 +154,48 @@ local content = flex:new({
             no_text_text = "Search",
             change_handler = function(text)
                 if text == "" then
-                    -- no search, show all settings
-                    settings_column.elements = setting_layouts
-                    settings_column:mutated()
+                    -- no search, show all settings and show categories again
+                    settings_column.elements = category_layouts
+                    settings_column.changed = true
+                    category_column.elements = category_indicators
+                    category_column.changed = true
+                    settings_body:mutated()
                     return
                 end
                 -- search settings by scoring the display name with fuzzy search
-                local result_indices = {}
+                local result = {}
                 local score_list = {}
-                for i = 1, #names do
-                    local score = fzy.score(text, names[i])
+                for name in pairs(config.get_definitions(false)) do
+                    local score = fzy.score(text, name)
                     if score ~= fzy.get_score_min() then
                         local added = false
-                        for j = #score_list, 1, -1 do
-                            local next_score = score_list[j]
+                        for i = #score_list, 1, -1 do
+                            local next_score = score_list[i]
                             if next_score > score then
-                                table.insert(score_list, j + 1, score)
-                                table.insert(result_indices, j + 1, i)
+                                table.insert(score_list, i + 1, score)
+                                table.insert(result, i + 1, name)
                                 added = true
                                 break
                             end
                         end
                         if not added then
                             table.insert(score_list, 1, score)
-                            table.insert(result_indices, 1, i)
+                            table.insert(result, 1, name)
                         end
                     end
                 end
                 -- show the results
                 local new_layouts = {}
-                for i = 1, #result_indices do
-                    new_layouts[i] = setting_layouts[result_indices[i]]
+                for i = 1, #result do
+                    -- use `#new_layouts + 1` instead of `i` to prevent nil in list
+                    new_layouts[#new_layouts + 1] = name_layout_map[result[i]]
                 end
                 settings_column.elements = new_layouts
-                settings_column:mutated()
+                settings_column.changed = true
+                -- don't show categories in search result view
+                category_column.elements = {}
+                category_column.changed = true
+                settings_body:mutated()
             end,
         }),
         quad:new({
@@ -193,10 +213,7 @@ local content = flex:new({
             end,
         }),
     }),
-    flex:new({
-        flex:new(category_indicators, { direction = "column" }),
-        scroll:new(settings_column),
-    }),
+    settings_body,
 }, { direction = "column" })
 settings.layout = quad:new({
     child_element = content,
