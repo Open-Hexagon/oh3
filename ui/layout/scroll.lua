@@ -227,6 +227,18 @@ function scroll:process_event(name, ...)
             self.scrollbar_grabbed = true
         end
     end
+
+    -- stop propagating mouse presses if outside scroll container
+    if name == "mousepressed" or name == "mousereleased" then
+        local x, y = ...
+        x, y = love.graphics.inverseTransformPoint(x, y)
+        propagate = contains(x, y)
+    end
+    if name == "wheelmoved" then
+        local x, y = love.graphics.inverseTransformPoint(love.mouse.getPosition())
+        propagate = contains(x, y)
+    end
+
     if name == "mousereleased" then
         if self.last_finger then
             -- last finger that touched the screen is not nil -> was touch scrolling
