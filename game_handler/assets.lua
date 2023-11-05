@@ -117,8 +117,8 @@ end
 local initialized = false
 
 function assets.init(persistent_data, headless)
+    is_headless = headless
     if not initialized then
-        is_headless = headless
         local folders = love.filesystem.getDirectoryItems("")
         for i = 1, #folders do
             local version = folders[i]:match("packs(.*)")
