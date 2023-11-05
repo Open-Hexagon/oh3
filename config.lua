@@ -32,6 +32,7 @@ local function add_setting(category, name, default, options)
 end
 
 add_setting("Gameplay", "game_resolution_scale", 1, { min = 1, max = 10, step = 1 })
+add_setting("UI", "gui_scale", 1, { min = 0.5, max = 2, step = 0.1 })
 add_setting("UI", "area_based_gui_scale", false)
 add_setting("UI", "background_preview", true)
 add_setting("UI", "background_preview_has_text", false)

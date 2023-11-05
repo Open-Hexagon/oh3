@@ -9,7 +9,6 @@ local ui = {}
 local keyboard_navigation = require("ui.keyboard_navigation")
 local current_screen
 local transform = love.math.newTransform()
-local gui_scale = 1
 
 ---set gui scale
 ---@param scale number
@@ -38,10 +37,10 @@ local function calculate_layout()
         transform:translate(game_handler.get_game_position())
     end
     local width, height = ui.get_dimensions()
-    local scale = gui_scale
+    local scale = config.get("gui_scale")
     if config.get("area_based_gui_scale") then
         -- 1080p as reference for user setting in this scale mode
-        scale = gui_scale / math.max(1920 / width, 1080 / height)
+        scale = scale / math.max(1920 / width, 1080 / height)
     end
     ui.set_scale(scale)
     local res_width, res_height = current_screen:calculate_layout(width, height)
