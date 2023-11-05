@@ -89,9 +89,16 @@ local function create_setting(name, property, value)
             })
             setter.change_handler = function(state)
                 state = state * (property.max - property.min) / (steps - 1) + property.min
+                if property.name == "fps_limit" and state == 1001 then
+                    state = 0
+                end
                 config.set(name, state)
                 onchange()
-                text.raw_text = property.display_name .. ": " .. state
+                if property.name == "fps_limit" and state == 0 then
+                    text.raw_text = property.display_name .. ": Unlimited"
+                else
+                    text.raw_text = property.display_name .. ": " .. state
+                end
                 text.changed = true
                 layout:mutated()
                 if property.onchange then
@@ -123,7 +130,7 @@ local category_indicators = {}
 local category_names = {
     "General",
     "UI",
-    --"Display",
+    "Display",
     "Audio",
     "Gameplay",
     --"Input",

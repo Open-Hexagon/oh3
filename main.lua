@@ -198,6 +198,11 @@ local main = async(function()
 
     -- function is called every frame by love
     return function()
+        local new_fps_limit = config.get("fps_limit")
+        if fps_limit ~= new_fps_limit then
+            fps_limit = new_fps_limit
+            delta_target = 1 / fps_limit
+        end
         if fps_limit ~= 0 then
             love.timer.sleep(delta_target - (love.timer.getTime() - last_time))
             last_time = last_time + delta_target
