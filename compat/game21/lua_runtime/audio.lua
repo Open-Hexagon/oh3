@@ -5,6 +5,7 @@ local assets = require("compat.game21.assets")
 
 return function(game)
     local pack = game.pack_data
+    local public = require("compat.game21")
     local lua_runtime = require("compat.game21.lua_runtime")
     local env = lua_runtime.env
     env.a_setMusic = function(music_id)
@@ -16,7 +17,7 @@ return function(game)
             lua_runtime.error("Music with id '" .. music_id .. "' doesn't exist!")
         else
             music.stop()
-            music.play(new_music, segment + 1, nil, game.refresh_music_pitch())
+            music.play(new_music, segment + 1, nil, public.refresh_music_pitch())
         end
     end
     env.a_setMusicSeconds = function(music_id, seconds)
@@ -25,7 +26,7 @@ return function(game)
             lua_runtime.error("Music with id '" .. music_id .. "' doesn't exist!")
         else
             music.stop()
-            music.play(new_music, false, seconds, game.refresh_music_pitch())
+            music.play(new_music, false, seconds, public.refresh_music_pitch())
         end
     end
     env.a_playSound = function(sound_id)
@@ -61,7 +62,7 @@ return function(game)
     end
     env.a_setMusicPitch = function(pitch)
         level_status.music_pitch = pitch
-        game.refresh_music_pitch()
+        public.refresh_music_pitch()
     end
     env.a_overrideBeepSound = function(filename)
         level_status.beep_sound = get_pack_sound(filename) or level_status.beep_sound

@@ -105,7 +105,7 @@ public.start = async(function(pack_id, level_id, level_options)
     if new_music == nil then
         error("Music with id '" .. game.level_data.musicId .. "' doesn't exist!")
     end
-    music.play(new_music, not public.first_play, nil, game.refresh_music_pitch())
+    music.play(new_music, not public.first_play, nil, public.refresh_music_pitch())
     status.beat_pulse_delay = status.beat_pulse_delay + (music.segment.beat_pulse_delay_offset or 0)
 
     rng.set_seed(game_input.next_seed(seed))
@@ -202,7 +202,7 @@ local function get_music_dm_sync_factor()
     return math.pow(game.difficulty_mult, 0.12)
 end
 
-function game.refresh_music_pitch()
+function public.refresh_music_pitch()
     local pitch = level_status.music_pitch
         * config.get("music_speed_mult")
         * (level_status.sync_music_to_dm and get_music_dm_sync_factor() or 1)
