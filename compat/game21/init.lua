@@ -233,8 +233,10 @@ end
 ---update the game
 ---@param frametime number (in seconds)
 function public.update(frametime)
-    if message_font:getHeight() ~= 32 * config.get("text_scale") then
-        message_font = assets.get_font("OpenSquare-Regular.ttf", 32 * config.get("text_scale"))
+    if message_font then
+        if message_font:getHeight() ~= 32 * config.get("text_scale") then
+            message_font = assets.get_font("OpenSquare-Regular.ttf", 32 * config.get("text_scale"))
+        end
     end
     game_input.update()
     frametime = frametime * 60
