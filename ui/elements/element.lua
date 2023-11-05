@@ -58,6 +58,7 @@ function element:new(options)
     self.expandable_y = 0
     self.x = 0
     self.y = 0
+    self.disabled = false
     if options.style then
         self:set_style(options.style)
     end
@@ -147,6 +148,10 @@ end
 ---@param ... unknown
 ---@return boolean?
 function element:process_event(name, ...)
+    if self.disabled then
+        return
+    end
+
     ---converts a point to element space (top left corner of element = 0, 0)
     ---@param x number
     ---@param y number
@@ -223,8 +228,27 @@ function element:draw()
     animated_transform.apply(self.transform)
     self.x, self.y = love.graphics.transformPoint(0, 0)
     local padding = self.padding * self.scale
-    love.graphics.translate(padding, padding)
-    self:draw_element()
+    if self.disabled then
+        if not self.canvas or self.canvas:getWidth() ~= self.width or self.canvas:getHeight() ~= self.height then
+            self.canvas = love.graphics.newCanvas(self.width, self.height, {
+                -- TODO: make customizable
+                msaa = 4
+            })
+        end
+        love.graphics.push()
+        local last_canvas = love.graphics.getCanvas()
+        love.graphics.setCanvas(self.canvas)
+        love.graphics.origin()
+        love.graphics.translate(padding, padding)
+        self:draw_element()
+        love.graphics.setCanvas(last_canvas)
+        love.graphics.pop()
+        love.graphics.setColor(1, 1, 1, 0.5)
+        love.graphics.draw(self.canvas)
+    else
+        love.graphics.translate(padding, padding)
+        self:draw_element()
+    end
     love.graphics.pop()
 end
 
