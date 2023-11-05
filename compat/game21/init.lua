@@ -233,6 +233,9 @@ end
 ---update the game
 ---@param frametime number (in seconds)
 function public.update(frametime)
+    if message_font:getHeight() ~= 32 * config.get("text_scale") then
+        message_font = assets.get_font("OpenSquare-Regular.ttf", 32 * config.get("text_scale"))
+    end
     game_input.update()
     frametime = frametime * 60
     -- TODO: don't update if debug pause
@@ -480,7 +483,6 @@ public.init = async(function(conf, audio)
     game.audio = audio
     pseudo3d.init(game)
     if not args.headless then
-        -- TODO: config may change without the game restarting (may need to reload)
         message_font = assets.get_font("OpenSquare-Regular.ttf", 32 * config.get("text_scale"))
         go_sound = assets.get_sound("go.ogg")
         level_up_sound = assets.get_sound("level_up.ogg")
