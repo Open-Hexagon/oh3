@@ -1,4 +1,5 @@
 local log = require("log")(...)
+local disabled_shader = require("ui.disabled")
 local animated_transform = require("ui.anim.transform")
 local keyboard_navigation = require("ui.keyboard_navigation")
 local element = {}
@@ -74,6 +75,11 @@ function element:set_style(style)
     end
     self.padding = new_padding
     self.color = self.style.color or style.color or self.color
+    if style.disabled ~= nil then
+        self.disabled = style.disabled
+    elseif self.style.disabled ~= nil then
+        self.disabled = self.style.disabled
+    end
 end
 
 ---set the scale of the element
@@ -228,25 +234,13 @@ function element:draw()
     animated_transform.apply(self.transform)
     self.x, self.y = love.graphics.transformPoint(0, 0)
     local padding = self.padding * self.scale
+    love.graphics.translate(padding, padding)
     if self.disabled then
-        if not self.canvas or self.canvas:getWidth() ~= self.width or self.canvas:getHeight() ~= self.height then
-            self.canvas = love.graphics.newCanvas(self.width, self.height, {
-                -- TODO: make customizable
-                msaa = 4
-            })
-        end
-        love.graphics.push()
-        local last_canvas = love.graphics.getCanvas()
-        love.graphics.setCanvas(self.canvas)
-        love.graphics.origin()
-        love.graphics.translate(padding, padding)
+        local last_shader = love.graphics.getShader()
+        love.graphics.setShader(disabled_shader)
         self:draw_element()
-        love.graphics.setCanvas(last_canvas)
-        love.graphics.pop()
-        love.graphics.setColor(1, 1, 1, 0.5)
-        love.graphics.draw(self.canvas)
+        love.graphics.setShader(last_shader)
     else
-        love.graphics.translate(padding, padding)
         self:draw_element()
     end
     love.graphics.pop()

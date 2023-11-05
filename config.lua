@@ -20,7 +20,12 @@ local function add_setting(category, name, default, options)
     if options.can_change_in_offical == nil then
         options.can_change_in_offical = true
     end
+    if not options.can_change_in_offical then
+        options.dependencies = options.dependencies or {}
+        options.dependencies.official_mode = false
+    end
     properties[name] = {
+        name = name,
         default = default,
         display_name = name:gsub("_", " "):gsub("^%l", string.upper),
     }
@@ -48,10 +53,10 @@ add_setting("UI", "area_based_gui_scale", false, {
     onchange = function()
         require("ui").process_event("resize")
         return true
-    end
+    end,
 })
 add_setting("UI", "background_preview", true)
-add_setting("UI", "background_preview_has_text", false)
+add_setting("UI", "background_preview_has_text", false, { dependencies = { background_preview = true } })
 add_setting("Audio", "background_preview_music_volume", 0, {
     min = 0,
     max = 1,
@@ -59,6 +64,7 @@ add_setting("Audio", "background_preview_music_volume", 0, {
     onchange = function(value)
         require("game_handler").set_volume(value)
     end,
+    dependencies = { background_preview = true },
 })
 add_setting("Audio", "background_preview_sound_volume", 0, {
     min = 0,
@@ -67,10 +73,11 @@ add_setting("Audio", "background_preview_sound_volume", 0, {
     onchange = function(value)
         require("game_handler").set_volume(nil, value)
     end,
+    dependencies = { background_preview = true },
 })
 add_setting("General", "preload_all_packs", false)
 add_setting("Display", "fps_limit", 200)
-add_setting("Gameplay", "official_mode", true, { can_change_in_offical = false, game_version = { 192, 20, 21, 3 } })
+add_setting("Gameplay", "official_mode", true, { game_version = { 192, 20, 21, 3 } })
 add_setting("Audio", "sound_volume", 1, { game_version = { 192, 20, 21, 3 }, min = 0, max = 1, step = 0.05 })
 add_setting("Audio", "music_volume", 1, { game_version = { 192, 20, 21, 3 }, min = 0, max = 1, step = 0.05 })
 add_setting("Gameplay", "beatpulse", true, { can_change_in_offical = false, game_version = { 192, 20, 21 } })
@@ -96,10 +103,15 @@ add_setting("Gameplay", "shaders", true, { can_change_in_offical = false, game_v
 add_setting("Gameplay", "camera_shake_mult", 1, { game_version = 21 })
 add_setting("Gameplay", "text_scale", 1, { game_version = 21 })
 add_setting("Gameplay", "show_player_trail", false, { game_version = 21 })
-add_setting("Gameplay", "player_trail_decay", 3, { game_version = 21 })
-add_setting("Gameplay", "player_trail_scale", 0.9, { game_version = 21 })
-add_setting("Gameplay", "player_trail_alpha", 35, { game_version = 21 })
-add_setting("Gameplay", "player_trail_has_swap_color", true, { game_version = 21 })
+add_setting("Gameplay", "player_trail_decay", 3, { game_version = 21, dependencies = { show_player_trail = true } })
+add_setting("Gameplay", "player_trail_scale", 0.9, { game_version = 21, dependencies = { show_player_trail = true } })
+add_setting("Gameplay", "player_trail_alpha", 35, { game_version = 21, dependencies = { show_player_trail = true } })
+add_setting(
+    "Gameplay",
+    "player_trail_has_swap_color",
+    true,
+    { game_version = 21, dependencies = { show_player_trail = true } }
+)
 add_setting("Gameplay", "show_swap_particles", true, { game_version = 21 })
 
 local function add_input(name, versions)

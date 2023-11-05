@@ -13,6 +13,8 @@ local icon = require("ui.elements.icon")
 local fzy = require("extlibs.fzy_lua")
 
 local name_layout_map = {}
+local dependency_setting_map = {}
+local disabled_updaters = {}
 
 ---create a setting element
 ---@param name string
@@ -20,6 +22,29 @@ local name_layout_map = {}
 ---@param value any
 ---@return flex
 local function create_setting(name, property, value)
+    -- dependency disable management
+    for dependency in pairs(property.dependencies or {}) do
+        dependency_setting_map[dependency] = dependency_setting_map[dependency] or {}
+        dependency_setting_map[dependency][#dependency_setting_map[dependency] + 1] = property
+    end
+    local function onchange()
+        local props = dependency_setting_map[property.name] or {}
+        for i = 1, #props do
+            local disable = false
+            for dependency, val in pairs(props[i].dependencies) do
+                if config.get(dependency) ~= val then
+                    disable = true
+                    break
+                end
+            end
+            local elem = name_layout_map[props[i].name]
+            if elem then
+                elem:set_style({ disabled = disable })
+            end
+        end
+    end
+    disabled_updaters[#disabled_updaters + 1] = onchange
+
     local layout
     if type(property.default) == "boolean" then
         -- toggle with text
@@ -37,6 +62,7 @@ local function create_setting(name, property, value)
         end
         setter.change_handler = function(state)
             config.set(name, state)
+            onchange()
             if property.onchange then
                 if property.onchange(state) then
                     return true
@@ -64,6 +90,7 @@ local function create_setting(name, property, value)
             setter.change_handler = function(state)
                 state = state * (property.max - property.min) / (steps - 1) + property.min
                 config.set(name, state)
+                onchange()
                 text.raw_text = property.display_name .. ": " .. state
                 text.changed = true
                 layout:mutated()
@@ -73,15 +100,7 @@ local function create_setting(name, property, value)
                     end
                 end
             end
-        else
-            -- TODO: implement all settings to remove need for placeholder
-            -- (need to populate setting_layouts list fully for search to work)
-            layout = flex:new({})
         end
-    else
-        -- TODO: implement all settings to remove need for placeholder
-        -- (need to populate setting_layouts list fully for search to work)
-        layout = flex:new({})
     end
     name_layout_map[name] = layout
     return layout
@@ -124,6 +143,11 @@ for i = 1, #category_names do
         local name = setting_names[j]
         setting_layouts[#setting_layouts + 1] = create_setting(name, setting_definitions[name], config.get(name))
     end
+    -- call all disabled handlers once initially
+    for j = 1, #disabled_updaters do
+        disabled_updaters[j]()
+    end
+
     local elements = {
         label:new(category),
         unpack(setting_layouts),
