@@ -2,8 +2,7 @@ local game_handler = require("game_handler")
 local label = require("ui.elements.label")
 local quad = require("ui.elements.quad")
 local flex = require("ui.layout.flex")
-local scroll = require("ui.layout.scroll")
-local make_level_element = require("ui.screens.levelselect.level")
+local make_level_element = require("ui.screens.levelselect.level").create
 
 local cache_folder_flex = {}
 

@@ -63,7 +63,15 @@ add_setting("UI", "area_based_gui_scale", false, {
         return true
     end,
 })
-add_setting("UI", "background_preview", true)
+add_setting("UI", "background_preview", true, {
+    onchange = function(value)
+        if value then
+            require("ui.screens.levelselect.level").resume_preview()
+        else
+            require("game_handler").stop()
+        end
+    end,
+})
 add_setting("UI", "background_preview_has_text", false, { dependencies = { background_preview = true } })
 add_setting("Audio", "background_preview_music_volume", 0, {
     min = 0,

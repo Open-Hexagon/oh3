@@ -9,7 +9,10 @@ local make_options_element = require("ui.screens.levelselect.options")
 local make_localscore_element = require("ui.screens.levelselect.score")
 
 local pending_promise
+local last_pack, last_level
 local set_preview_level = async(function(pack, level)
+    last_pack = pack
+    last_level = level
     if config.get("background_preview") then
         if pending_promise then
             async.await(pending_promise)
@@ -33,7 +36,15 @@ end)
 
 local level_element_selected
 
-return function(state, pack, level, extra_info)
+local t = {}
+
+function t.resume_preview()
+    if last_pack and last_level then
+        set_preview_level(last_pack, last_level)
+    end
+end
+
+function t.create(state, pack, level, extra_info)
     extra_info = extra_info or {}
     extra_info.song = extra_info.song or "no song"
     extra_info.composer = extra_info.composer or "no composer"
@@ -89,3 +100,5 @@ return function(state, pack, level, extra_info)
         end,
     })
 end
+
+return t
