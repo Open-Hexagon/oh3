@@ -24,7 +24,9 @@ function toggle:new(options)
             elem.state_indicator_offset:keyframe(0.1, 0)
         end
         if elem.change_handler then
-            elem.change_handler(elem.state)
+            if elem.change_handler(elem.state) then
+                return true
+            end
         end
     end
     if obj.state then

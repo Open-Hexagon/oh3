@@ -80,6 +80,9 @@ function scroll:new(element, options)
         change_map = {
             scale = true,
         },
+        -- position on screen
+        x = 0,
+        y = 0,
     }, scroll)
     obj.element.parent = obj
     if options.style then
@@ -225,6 +228,7 @@ function scroll:process_event(name, ...)
         if point_in_scrollbar(self, x, y) then
             propagate = false
             self.scrollbar_grabbed = true
+            require("ui").set_grabbed(self)
         end
     end
 
@@ -397,6 +401,7 @@ end
 
 ---draw the scroll container with its child
 function scroll:draw()
+    self.x, self.y = love.graphics.transformPoint(0, 0)
     if math.floor(self.width) == 0 or math.floor(self.height) == 0 then
         -- don't draw anything without having any size
         return

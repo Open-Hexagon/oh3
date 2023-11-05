@@ -32,12 +32,42 @@ local function add_setting(category, name, default, options)
 end
 
 add_setting("Gameplay", "game_resolution_scale", 1, { min = 1, max = 10, step = 1 })
-add_setting("UI", "gui_scale", 1, { min = 0.5, max = 2, step = 0.1 })
-add_setting("UI", "area_based_gui_scale", false)
+add_setting("UI", "gui_scale", 1, {
+    min = 0.5,
+    max = 2,
+    step = 0.1,
+    onchange = function()
+        local ui = require("ui")
+        if not ui.get_grabbed() then
+            ui.process_event("resize")
+            return true
+        end
+    end,
+})
+add_setting("UI", "area_based_gui_scale", false, {
+    onchange = function()
+        require("ui").process_event("resize")
+        return true
+    end
+})
 add_setting("UI", "background_preview", true)
 add_setting("UI", "background_preview_has_text", false)
-add_setting("Audio", "background_preview_music_volume", 0, { min = 0, max = 1, step = 0.05 })
-add_setting("Audio", "background_preview_sound_volume", 0, { min = 0, max = 1, step = 0.05 })
+add_setting("Audio", "background_preview_music_volume", 0, {
+    min = 0,
+    max = 1,
+    step = 0.05,
+    onchange = function(value)
+        require("game_handler").set_volume(value)
+    end,
+})
+add_setting("Audio", "background_preview_sound_volume", 0, {
+    min = 0,
+    max = 1,
+    step = 0.05,
+    onchange = function(value)
+        require("game_handler").set_volume(nil, value)
+    end,
+})
 add_setting("General", "preload_all_packs", false)
 add_setting("Display", "fps_limit", 200)
 add_setting("Gameplay", "official_mode", true, { can_change_in_offical = false, game_version = { 192, 20, 21, 3 } })

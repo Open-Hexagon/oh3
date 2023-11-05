@@ -115,7 +115,9 @@ function entry:process_event(name, ...)
         if text ~= self.text then
             self:set_text(text)
             if self.change_handler then
-                self.change_handler(text)
+                if self.change_handler(text) then
+                    stop_propagation = true
+                end
             end
         end
         if self.cursor_pos ~= last_cursor_pos then

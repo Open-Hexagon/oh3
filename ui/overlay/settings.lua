@@ -37,6 +37,11 @@ local function create_setting(name, property, value)
         end
         setter.change_handler = function(state)
             config.set(name, state)
+            if property.onchange then
+                if property.onchange(state) then
+                    return true
+                end
+            end
         end
     elseif type(property.default) == "number" then
         if property.min and property.max and property.step then
@@ -62,6 +67,11 @@ local function create_setting(name, property, value)
                 text.raw_text = property.display_name .. ": " .. state
                 text.changed = true
                 layout:mutated()
+                if property.onchange then
+                    if property.onchange(state) then
+                        return true
+                    end
+                end
             end
         else
             -- TODO: implement all settings to remove need for placeholder

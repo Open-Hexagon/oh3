@@ -52,12 +52,16 @@ game_handler.init = async(function(config, audio)
 end)
 
 ---set music and sound volume (0..1)
----@param music_volume number
----@param sound_volume number
+---@param music_volume number?
+---@param sound_volume number?
 function game_handler.set_volume(music_volume, sound_volume)
-    music.update_volume(music_volume)
-    for _, game in pairs(games) do
-        game.set_volume(sound_volume)
+    if music_volume then
+        music.update_volume(music_volume)
+    end
+    if sound_volume then
+        for _, game in pairs(games) do
+            game.set_volume(sound_volume)
+        end
     end
 end
 

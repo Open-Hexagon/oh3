@@ -52,6 +52,7 @@ function slider:process_event(name, ...)
     end
     if name == "mousepressed" and self.is_mouse_over then
         self.grabbed = true
+        require("ui").set_grabbed(self)
         select_this_elem()
         move_state_to_mouse()
     end
@@ -61,6 +62,10 @@ function slider:process_event(name, ...)
     if name == "mousereleased" then
         if self.grabbed then
             self.grabbed = false
+            require("ui").set_grabbed(nil)
+            if self.change_handler then
+                self.change_handler(self.state)
+            end
             return true
         end
     end

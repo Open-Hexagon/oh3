@@ -8,7 +8,20 @@ local key_repeat = require("ui.key_repeat")
 local ui = {}
 local keyboard_navigation = require("ui.keyboard_navigation")
 local current_screen
+local grabbed_element
 local transform = love.math.newTransform()
+
+---set an element to be the only one to receive the next mousereleased event
+---@param elem any
+function ui.set_grabbed(elem)
+    grabbed_element = elem
+end
+
+---get the currently grabbed element
+---@return unknown
+function ui.get_grabbed()
+    return grabbed_element
+end
 
 ---set gui scale
 ---@param scale number
@@ -88,6 +101,12 @@ function ui.process_event(name, ...)
     -- reset scrolled_already value (determines if a container can still scroll, ensures child priority over parent with scrolling (children are processed before parents))
     scroll.scrolled_already = false
     love.graphics.origin()
+    if name == "mousereleased" and grabbed_element then
+        love.graphics.translate(grabbed_element.x, grabbed_element.y)
+        grabbed_element:process_event(name, ...)
+        grabbed_element = nil
+        return
+    end
     if current_screen then
         if name == "resize" then
             calculate_layout()
