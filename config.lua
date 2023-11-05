@@ -37,7 +37,14 @@ local function add_setting(category, name, default, options)
 end
 
 -- setting definitions, ones that were not visible in the menu of the old games (and still aren't) are marked as "missing"
-add_setting("Gameplay", "game_resolution_scale", 1, { min = 1, max = 10, step = 1 })
+add_setting("Gameplay", "game_resolution_scale", 1, {
+    min = 1,
+    max = 10,
+    step = 1,
+    onchange = function()
+        require("game_handler").process_event("resize", love.graphics.getDimensions())
+    end,
+})
 add_setting("UI", "gui_scale", 1, {
     min = 0.5,
     max = 2,
