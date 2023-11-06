@@ -307,7 +307,10 @@ function assets.get_dependency_pack_mapping21()
     return dependency_pack_mapping21
 end
 
-function assets.get_pack(version, id)
+function assets.get_pack(version, id, headless)
+    if headless == nil then
+        headless = is_headless
+    end
     local is_compat = version ~= 3
     local pack_data = packs[id] or dependency_pack_mapping21[id]
     if not pack_data then
@@ -357,7 +360,7 @@ function assets.get_pack(version, id)
         for contents, filename in file_iter("Music", ".json", pack_data) do
             local success, music_json = decode_json(contents, filename)
             if success then
-                if not is_headless then
+                if not headless then
                     local fallback_path = filename:gsub("%.json", ".ogg")
                     music_json.file_name = music_json.file_name or fallback_path
                     if music_json.file_name:sub(-4) ~= ".ogg" then
@@ -388,7 +391,7 @@ function assets.get_pack(version, id)
         end
 
         -- shaders in compat mode are only required for 21
-        if not is_headless and version == 21 then
+        if not headless and version == 21 then
             pack_data.shaders = {}
             for code, filename in file_iter("Shaders", ".frag", pack_data) do
                 -- only translating, can only compile in main thread
@@ -423,6 +426,7 @@ function assets.get_pack(version, id)
         end
 
         -- small preview data
+        -- use is_headless instead of headless to not load icon data just for server rendering
         if not is_headless then
             pack_data.preview_data = {}
             local style_module = require("compat.game" .. pack_data.game_version .. ".style")

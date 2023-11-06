@@ -47,7 +47,7 @@ assets.init = async(function(audio, config)
         local packs = game_handler.get_packs()
         for i = 1, #packs do
             if packs[i].game_version == 21 then
-                local pack = async.await(threaded_assets.get_pack(21, packs[i].id))
+                local pack = async.await(threaded_assets.get_pack(21, packs[i].id, args.headless))
                 compile_shaders(pack)
                 cached_packs[packs[i].id] = pack
             end
@@ -77,7 +77,7 @@ assets.get_pack = async(function(id)
         pending_packs[id] = async.promise:new(function(resolve)
             done_func = resolve
         end)
-        local pack = async.await(threaded_assets.get_pack(21, id))
+        local pack = async.await(threaded_assets.get_pack(21, id, args.headless))
         compile_shaders(pack)
         -- update pack in dependency_mapping now that shaders are compiled
         do
@@ -93,7 +93,7 @@ assets.get_pack = async(function(id)
                 if dependency_pack == nil then
                     log("can't find dependency '" .. index_pack_id .. "' of '" .. pack.id .. "'.")
                 elseif dependency_pack.id ~= pack.id then
-                    dependency_mapping[index_pack_id] = async.await(threaded_assets.get_pack(21, dependency_pack.id))
+                    dependency_mapping[index_pack_id] = async.await(threaded_assets.get_pack(21, dependency_pack.id, args.headless))
                     compile_shaders(dependency_mapping[index_pack_id])
                 end
             end
