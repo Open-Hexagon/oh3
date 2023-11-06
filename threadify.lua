@@ -73,7 +73,16 @@ else
         for i = 1, #thread_names do
             local require_string = thread_names[i]
             local thread = threads[require_string]
-            local result = love.thread.getChannel(require_string .. "_out"):pop()
+            local channel = love.thread.getChannel(require_string .. "_out")
+            local result
+            channel:performAtomic(function()
+                local check_result = channel:peek()
+                if check_result then
+                    if thread.resolvers[check_result[1]] and thread.rejecters[check_result[1]] then
+                        result = channel:pop()
+                    end
+                end
+            end)
             if result then
                 if result[2] then
                     thread.resolvers[result[1]](unpack(result, 3))
