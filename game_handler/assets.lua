@@ -319,10 +319,11 @@ function assets.get_pack(version, id, headless)
     id = pack_data.id
     asset_loading_text_channel:push("Loading pack '" .. id .. "' assets")
     asset_loading_progress_channel:push(0)
-    if pack_data.loaded then
+    if pack_data.loaded and (pack_data.was_loaded_headlessly == headless or not headless) then
         asset_loading_progress_channel:push(1)
         return pack_data
     end
+    pack_data.was_loaded_headlessly = headless
     if is_compat then
         if version == 21 then
             -- pack may have dependencies
