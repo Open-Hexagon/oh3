@@ -12,6 +12,7 @@ local input = require("ui.elements.input")
 local entry = require("ui.elements.entry")
 local icon = require("ui.elements.icon")
 local fzy = require("extlibs.fzy_lua")
+local async = require("async")
 
 local name_layout_map = {}
 local dependency_setting_map = {}
@@ -114,7 +115,27 @@ local function create_setting(name, property, value)
         local schemes = config.get(property.name)
         for i = 1, #schemes do
             for j = 1, #schemes[i].ids do
-                items[#items + 1] = input:new(schemes[i].scheme, schemes[i].ids[j])
+                items[#items + 1] = quad:new({
+                    child_element = input:new(schemes[i].scheme, schemes[i].ids[j], {
+                        change_handler = function(id)
+                            schemes[i].ids[j] = id
+                        end,
+                    }),
+                    selectable = true,
+                    selection_handler = function(self)
+                        if self.selected then
+                            self.border_color = { 0, 0, 1, 1 }
+                        else
+                            self.border_color = { 1, 1, 1, 1 }
+                        end
+                    end,
+                    click_handler = function(self)
+                        self.element:wait_for_input():done(function()
+                            self:mutated()
+                        end)
+                        return true
+                    end,
+                })
             end
         end
         layout = flex:new(items)

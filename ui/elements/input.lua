@@ -151,8 +151,6 @@ local icon_mappings = {
         [1] = "Mouse Button 1",
         [3] = "Mouse Button 3",
         [2] = "Mouse Button 2",
-        [6] = "Scroll Down",
-        [7] = "Scroll Up",
         [4] = "Mouse Button 4",
         [5] = "Mouse Button 5",
     },
@@ -186,6 +184,7 @@ end
 function input:calculate_layout(width, height)
     local w, h = icon.calculate_layout(self, width, height)
     if self.mirror then
+        self.transform:reset(0)
         self.transform:scale(-1, 1, 0)
         self.transform:translate(w, 0, 0)
     end
@@ -194,16 +193,16 @@ end
 
 function input:set_icon(id)
     local icon_id = icon_mappings[self.scheme][id]
-    if icon_id ~= "" then
-        self:set(icon_id)
-    else
-        self.raw_text = id
-        self.changed = true
+    if icon_id == "" then
+        icon_id = id
+    end
+    self:set(icon_id)
+    if self.change_handler then
+        self.change_handler(id)
     end
 end
 
 function input:process_event(name, ...)
-    icon.process_event(self, name, ...)
     if self.waiting and self.resolve then
         for id in pairs(icon_mappings[self.scheme]) do
             if input_schemes[self.scheme].is_down(id) then
@@ -213,6 +212,7 @@ function input:process_event(name, ...)
             end
         end
     else
+        icon.process_event(self, name, ...)
         require("ui").only_interactable_element = nil
     end
 end
@@ -220,8 +220,7 @@ end
 input.wait_for_input = async(function(self)
     self.waiting = true
     self.text:clear()
-    local ui = require("ui")
-    ui.only_interactable_element = self
+    require("ui").only_interactable_element = self
     local id = async.await(async.promise:new(function(resolve)
         self.resolve = resolve
     end))

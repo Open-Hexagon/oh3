@@ -34,14 +34,12 @@ function icon:set(id)
     local hex_str, font = map_with_font(id)
     -- set text
     if hex_str then
-        self.font_file = font
         self.raw_text = love.data.decode("string", "hex", hex_str)
+        self:set_font(font)
     else
-        self.font_file = "assets/font/OpenSquare-Regular.ttf"
+        self:set_font(label.default_font_file)
         self.raw_text = id
     end
-    -- reloads font if necessary
-    self:set_scale(self.scale)
     self.changed = true
 end
 

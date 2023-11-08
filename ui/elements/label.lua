@@ -6,6 +6,7 @@ label.__index = setmetatable(label, {
 })
 local default_font_size = 32
 local default_font_file = "assets/font/OpenSquare-Regular.ttf"
+label.default_font_file = default_font_file
 local cached_fonts = {}
 cached_fonts[default_font_file] = {}
 cached_fonts[default_font_file][default_font_size] = love.graphics.newFont(default_font_file, default_font_size)
@@ -46,6 +47,24 @@ function label:new(text, options)
     obj.change_map.font_size = true
     obj.change_map.cutoff_suffix = true
     return obj
+end
+
+---set the label's font
+---@param font_file string
+function label:set_font(font_file)
+    local last_font = self.font
+    self.font_file = font_file
+    if not cached_fonts[font_file] then
+        cached_fonts[font_file] = {}
+    end
+    self.font = cached_fonts[font_file]
+    if not self.font[self.font_size] then
+        self.font[self.font_size] = love.graphics.newFont(self.font_file, self.font_size)
+    end
+    self.text:setFont(self.font[self.font_size])
+    if self.font ~= last_font then
+        self.changed = true
+    end
 end
 
 ---set the gui scale for the label
