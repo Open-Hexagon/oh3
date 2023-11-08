@@ -203,6 +203,9 @@ local function get_music_dm_sync_factor()
 end
 
 function public.refresh_music_pitch()
+    if not level_status.music_pitch then
+        return
+    end
     local pitch = level_status.music_pitch
         * config.get("music_speed_mult")
         * (level_status.sync_music_to_dm and get_music_dm_sync_factor() or 1)
