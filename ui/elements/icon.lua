@@ -21,18 +21,27 @@ icon.__index = setmetatable(icon, {
 function icon:new(id, options)
     local hex_str, font = map_with_font(id)
     options = options or {}
-    options.font_file = font
-    local utf8_encoded_char = love.data.decode("string", "hex", hex_str)
-    return setmetatable(label:new(utf8_encoded_char, options), icon)
+    if hex_str then
+        options.font_file = font
+        local utf8_encoded_char = love.data.decode("string", "hex", hex_str)
+        return setmetatable(label:new(utf8_encoded_char, options), icon)
+    else
+        return setmetatable(label:new(id, options), icon)
+    end
 end
 
 function icon:set(id)
     local hex_str, font = map_with_font(id)
-    self.font_file = font
+    -- set text
+    if hex_str then
+        self.font_file = font
+        self.raw_text = love.data.decode("string", "hex", hex_str)
+    else
+        self.font_file = "assets/font/OpenSquare-Regular.ttf"
+        self.raw_text = id
+    end
     -- reloads font if necessary
     self:set_scale(self.scale)
-    -- set text
-    self.raw_text = love.data.decode("string", "hex", hex_str)
     self.changed = true
 end
 

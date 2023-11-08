@@ -171,18 +171,13 @@ input.__index = setmetatable(input, icon)
 function input:new(scheme, id, options)
     local icon_id = icon_mappings[scheme][id]
     if icon_id == "" then
-        -- set it to something known for now to change later
-        icon_id = "circle" -- no input has this icon
+        icon_id = id
     end
     local mirror
     icon_id, mirror = icon_id:gsub(":mirror", "")
     local obj = icon:new(icon_id, options)
     obj.mirror = mirror == 1
     setmetatable(obj, input)
-    if icon_id == "circle" then
-        -- no icon found for input, display text instead
-        obj.raw_text = id
-    end
     obj.scheme = scheme
     obj.waiting = false
     return obj
@@ -224,7 +219,7 @@ end
 
 input.wait_for_input = async(function(self)
     self.waiting = true
-    self.text:set("")
+    self.text:clear()
     local ui = require("ui")
     ui.only_interactable_element = self
     local id = async.await(async.promise:new(function(resolve)
