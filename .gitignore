@@ -13,3 +13,5 @@ lib/
 *.ps1
 todo
 stylua.exe
+promptfont-gh-pages
+*.so
