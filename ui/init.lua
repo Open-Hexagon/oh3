@@ -98,6 +98,10 @@ end
 ---@param name string
 ---@param ... unknown
 function ui.process_event(name, ...)
+    if ui.only_interactable_element then
+        ui.only_interactable_element:process_event(name, ...)
+        return
+    end
     -- reset scrolled_already value (determines if a container can still scroll, ensures child priority over parent with scrolling (children are processed before parents))
     scroll.scrolled_already = false
     love.graphics.origin()
