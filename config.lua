@@ -27,6 +27,7 @@ local function add_setting(category, name, default, options)
     properties[name] = {
         name = name,
         default = default,
+        category = category,
         display_name = name:gsub("_", " "):gsub("^%l", string.upper),
     }
     categories[category] = categories[category] or {}

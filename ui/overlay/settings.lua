@@ -8,6 +8,7 @@ local config = require("config")
 local scroll = require("ui.layout.scroll")
 local toggle = require("ui.elements.toggle")
 local slider = require("ui.elements.slider")
+local input = require("ui.elements.input")
 local entry = require("ui.elements.entry")
 local icon = require("ui.elements.icon")
 local fzy = require("extlibs.fzy_lua")
@@ -108,6 +109,15 @@ local function create_setting(name, property, value)
                 end
             end
         end
+    elseif property.category == "Input" then
+        local items = { label:new(property.display_name) }
+        local schemes = config.get(property.name)
+        for i = 1, #schemes do
+            for j = 1, #schemes[i].ids do
+                items[#items + 1] = input:new(schemes[i].scheme, schemes[i].ids[j])
+            end
+        end
+        layout = flex:new(items)
     end
     name_layout_map[name] = layout
     return layout
@@ -133,7 +143,7 @@ local category_names = {
     "Display",
     "Audio",
     "Gameplay",
-    --"Input",
+    "Input",
 }
 
 for i = 1, #category_names do

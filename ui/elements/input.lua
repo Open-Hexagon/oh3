@@ -148,13 +148,13 @@ local icon_mappings = {
         undo = "",
     },
     mouse = {
-        l = "Mouse Button 1",
-        m = "Mouse Button 3",
-        r = "Mouse Button 2",
-        wd = "Scroll Down",
-        wu = "Scroll Up",
-        x1 = "Mouse Button 4",
-        x2 = "Mouse Button 5",
+        [1] = "Mouse Button 1",
+        [3] = "Mouse Button 3",
+        [2] = "Mouse Button 2",
+        [6] = "Scroll Down",
+        [7] = "Scroll Up",
+        [4] = "Mouse Button 4",
+        [5] = "Mouse Button 5",
     },
     touch = {
         left = "square-half",
@@ -174,7 +174,10 @@ function input:new(scheme, id, options)
         -- set it to something known for now to change later
         icon_id = "circle" -- no input has this icon
     end
+    local mirror
+    icon_id, mirror = icon_id:gsub(":mirror", "")
     local obj = icon:new(icon_id, options)
+    obj.mirror = mirror == 1
     setmetatable(obj, input)
     if icon_id == "circle" then
         -- no icon found for input, display text instead
@@ -183,6 +186,15 @@ function input:new(scheme, id, options)
     obj.scheme = scheme
     obj.waiting = false
     return obj
+end
+
+function input:calculate_layout(width, height)
+    local w, h = icon.calculate_layout(self, width, height)
+    if self.mirror then
+        self.transform:scale(-1, 1, 0)
+        self.transform:translate(w, 0, 0)
+    end
+    return w, h
 end
 
 function input:set_icon(id)
