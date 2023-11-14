@@ -2,6 +2,7 @@ local animated_transform = require("ui.anim.transform")
 local signal = require("ui.anim.signal")
 local ease = require("ui.anim.ease")
 local extmath = require("ui.extmath")
+local update_expand = require("ui.elements.element")._update_child_expand
 
 -- how much has to be moved on touchscreen until scrolling starts (if 0 clicking in a scrollable container becomes impossible as it's always registered as scroll since touch is analog input which will always have small fluctuations)
 local SCROLL_THRESHOLD = 10
@@ -83,6 +84,7 @@ function scroll:new(element, options)
         -- position on screen
         x = 0,
         y = 0,
+        prevent_child_expand = "all",
     }, scroll)
     obj.element.parent = obj
     if options.style then
@@ -394,6 +396,11 @@ function scroll:calculate_layout(width, height)
         self.scroll_pos:set_immediate_value(self.scroll_target)
     end
     self.expandable_x, self.expandable_y = self.lt2wh(math.huge, avail_thick - thick)
+    self.expandable_x = math.max(self.expandable_x, 0)
+    self.expandable_y = math.max(self.expandable_y, 0)
+    update_expand(self)
+    local _, expand_thick = self.wh2lt(self.expandable_x, self.expandable_y)
+    self.expandable_x, self.expandable_y = self.lt2wh(math.huge, expand_thick)
     self.width, self.height = self.lt2wh(math.min(self.content_length, avail_len), thick)
     self.changed = false
     return self.width, self.height

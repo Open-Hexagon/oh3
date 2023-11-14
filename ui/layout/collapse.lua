@@ -1,6 +1,7 @@
 local log = require("log")(...)
 local animated_transform = require("ui.anim.transform")
 local signal = require("ui.anim.signal")
+local update_expand = require("ui.elements.element")._update_child_expand
 
 local collapse = {}
 collapse.__index = collapse
@@ -60,6 +61,7 @@ function collapse:new(element, options)
             scale = true,
             pos = true,
         },
+        prevent_child_expand = "all",
     }, collapse)
     obj.element.parent = obj
     if options.style then
@@ -178,8 +180,9 @@ function collapse:calculate_layout(width, height)
     end
     self.content_length, self.content_thickness = self.wh2lt(content_width, content_height)
     self.width, self.height = self.lt2wh(self.pos(), self.content_thickness)
-    self.expandable_x = width - self.width
-    self.expandable_y = height - self.height
+    self.expandable_x = math.max(width - self.width, 0)
+    self.expandable_y = math.max(height - self.height, 0)
+    update_expand(self)
     self.changed = false
     return self.width, self.height
 end

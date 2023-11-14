@@ -1,4 +1,5 @@
 local animated_transform = require("ui.anim.transform")
+local element = require("ui.elements.element")
 
 ---@class flex
 ---@field direction string direction the flex container will position elements in
@@ -19,6 +20,7 @@ local animated_transform = require("ui.anim.transform")
 -- amount that children can expand (in pixels)
 ---@field expandable_x number
 ---@field expandable_y number
+---@field prevent_child_expand string
 ---@field changed boolean something changed, requires layout recalculation
 local flex = {}
 flex.__index = flex
@@ -71,6 +73,10 @@ function flex:new(elements, options)
             scale = true,
         },
     }, flex)
+    obj.prevent_child_expand = "horizontal"
+    if options.direction == "column" then
+        obj.prevent_child_expand = "vertical"
+    end
     for i = 1, #elements do
         elements[i].parent = obj
         elements[i].parent_index = i
@@ -408,8 +414,9 @@ function flex:calculate_layout(width, height)
     end
 
     self.width, self.height = lt2wh(final_length, final_thickness)
-    self.expandable_x = width - self.width
-    self.expandable_y = height - self.height
+    self.expandable_x = math.max(width - self.width, 0)
+    self.expandable_y = math.max(height - self.height, 0)
+    element._update_child_expand(self)
     self.changed = false
     return self.width, self.height
 end

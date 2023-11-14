@@ -18,6 +18,7 @@ function quad:new(options)
             border_color = { 1, 1, 1, 1 },
             background_color = { 0, 0, 0, 1 },
             vertices = {},
+            prevent_child_expand = "all",
         }, quad),
         options
     )

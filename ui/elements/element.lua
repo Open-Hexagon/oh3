@@ -26,6 +26,35 @@ local function set_hold_element(elem)
     end
 end
 
+---get outermost parent of element
+---@param elem any
+---@return unknown
+local function get_parent(elem)
+    if elem.parent then
+        return get_parent(elem.parent)
+    end
+    return elem
+end
+
+---find a sufficiently expandable parent
+---@param elem any
+---@param amount_x number
+---@param amount_y number
+---@return any
+local function find_expandable_parent(elem, amount_x, amount_y)
+    elem.changed = true
+    if elem.expandable_x >= amount_x and elem.expandable_y >= amount_y then
+        return elem
+    else
+        if elem.parent then
+            return find_expandable_parent(elem.parent, amount_x, amount_y)
+        else
+            log("no have sufficiently expandable parent!")
+            return elem
+        end
+    end
+end
+
 ---create a new element, implements base functionality for all other elements (does nothing on its own)
 ---@param options any
 ---@return table
@@ -64,6 +93,42 @@ function element:new(options)
         self:set_style(options.style)
     end
     return self
+end
+
+---call after modifying element
+function element:update_size()
+    self.changed = true
+    local old_width, old_height = self.width, self.height
+    self:calculate_layout(self.last_available_width, self.last_available_height)
+    local x = self.width - old_width
+    local y = self.height - old_height
+    if x == 0 and y == 0 then
+        return
+    end
+    if x > 0 or y > 0 then
+        self.last_space_maker = find_expandable_parent(self, x, y)
+        if not self.last_space_maker.mutated then
+            self.last_space_maker = nil
+            return
+        end
+        self.last_space_maker:mutated()
+    elseif self.last_space_maker then
+        local parent = self.parent
+        while parent ~= self.last_space_maker do
+            parent.changed = true
+            parent = parent.parent
+        end
+        self.last_space_maker:mutated()
+    end
+end
+
+function element:_update_child_expand()
+    if self.parent and self.parent.prevent_child_expand then
+        if self.parent.prevent_child_expand then
+            self.expandable_x = 0
+            self.expandable_y = 0
+        end
+    end
 end
 
 ---set the style of the element
@@ -112,20 +177,15 @@ function element:calculate_layout(width, height)
     else
         log("Element has no calculate_element_layout function?")
     end
-    self.expandable_x = width - self.width
-    self.expandable_y = height - self.height
+    self.expandable_x = math.max(width - self.width, 0)
+    self.expandable_y = math.max(height - self.height, 0)
+    self:_update_child_expand()
     return self.width, self.height
 end
 
 ---follows the references to element's parent until an element has no parent, this element is returned
 ---@return table
 function element:get_root()
-    local function get_parent(elem)
-        if elem.parent then
-            return get_parent(elem.parent)
-        end
-        return elem
-    end
     return get_parent(self)
 end
 

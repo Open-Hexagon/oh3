@@ -101,8 +101,7 @@ local function create_setting(name, property, value)
                 else
                     text.raw_text = property.display_name .. ": " .. state
                 end
-                text.changed = true
-                layout:mutated()
+                text:update_size()
                 if property.onchange then
                     if property.onchange(state) then
                         return true
@@ -131,7 +130,7 @@ local function create_setting(name, property, value)
                     end,
                     click_handler = function(self)
                         self.element:wait_for_input():done(function()
-                            self:mutated()
+                            self:update_size()
                         end)
                         return true
                     end,
