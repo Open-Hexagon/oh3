@@ -1,2 +1,2 @@
 cd /D "%~dp0"
-love.exe .
+love.exe --fused .
