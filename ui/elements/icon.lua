@@ -7,7 +7,7 @@ local prompt_mapping = json.decode(love.filesystem.read("assets/font/promptfont.
 local function map_with_font(id)
     local hex_str = bs_mapping[id]
     if hex_str then
-        return hex_str, "assets/font/bootstrap-icons.woff2"
+        return hex_str, "assets/font/bootstrap-icons.ttf"
     else
         return prompt_mapping[id], "assets/font/promptfont.ttf"
     end
