@@ -5,6 +5,7 @@ local element = require("ui.elements.element")
 ---@field direction string direction the flex container will position elements in
 ---@field size_ratios table? size ratios of the elements, length has to be identical to elements list
 ---@field align_items string aligns items on the container's thickness (values are "start", "stretch", "center" and "end")
+---@field justify_content string justify content on the container's length (values are "start", "center", "between", "evenly" and "end")
 ---@field align_relative_to string set if aligning happens relative to given "area" or to total "thickness"
 ---@field elements table list of children
 ---@field scale number ui scale
@@ -45,6 +46,8 @@ function flex:new(elements, options)
         size_ratios = options.size_ratios,
         -- aligns items on the container's thickness (values are "start", "stretch", "center" and "end")
         align_items = options.align_items or "start",
+        -- justify content on the container's length (values are "start", "center", "between", "evenly" and "end")
+        justify_content = options.justify_content or "start",
         -- set if aligning happens relative to given "area" or to total "thickness"
         align_relative_to = options.align_relative_to or "area",
         elements = elements,
@@ -410,6 +413,42 @@ function flex:calculate_layout(width, height)
                 "Invalid value for align option '"
                     .. align
                     .. "' possible values are: 'start', 'center', 'end' and 'stretch'"
+            )
+        end
+    end
+    if self.justify_content ~= "start" then
+        local final_length_before_adjust = final_length
+        final_length = math.max(final_length, available_length)
+        local free_space = final_length - final_length_before_adjust
+        if self.justify_content == "center" then
+            local move = free_space / 2
+            for i = 1, #self.elements do
+                self.elements[i]._transform:translate(lt2wh(move, 0))
+            end
+        elseif self.justify_content == "between" then
+            local gap_size = free_space / (#self.elements - 1)
+            local move = gap_size
+            -- first element stays, start at 2
+            for i = 2, #self.elements do
+                self.elements[i]._transform:translate(lt2wh(move, 0))
+                move = move + gap_size
+            end
+        elseif self.justify_content == "evenly" then
+            local gap_size = free_space / (#self.elements + 1)
+            local move = gap_size
+            for i = 1, #self.elements do
+                self.elements[i]._transform:translate(lt2wh(move, 0))
+                move = move + gap_size
+            end
+        elseif self.justify_content == "end" then
+            for i = 1, #self.elements do
+                self.elements[i]._transform:translate(lt2wh(free_space, 0))
+            end
+        else
+            error(
+                "Invalid value for justify_content option '"
+                    .. self.justify_content
+                    .. "' possible values are: 'start', 'center', 'between', 'evenly' and 'end'"
             )
         end
     end

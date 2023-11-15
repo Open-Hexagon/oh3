@@ -3,10 +3,8 @@ local quad = require("ui.elements.quad")
 local label = require("ui.elements.label")
 local buttons = {}
 
-local list = flex:new({}, { align_items = "end" })
-buttons.layout = flex:new({
-    list,
-}, { direction = "column", align_items = "end", size_ratios = { 1 } })
+local list = flex:new({}, { align_items = "end", justify_content = "end" })
+buttons.layout = list
 buttons.name_map = {}
 buttons.holding = 0
 
