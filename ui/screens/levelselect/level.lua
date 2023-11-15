@@ -59,10 +59,8 @@ function t.create(state, pack, level, extra_info)
         child_element = flex:new({
             preview,
             flex:new({
-                flex:new({
-                    label:new(level.name, { font_size = 40, wrap = true }),
-                    label:new(level.author, { font_size = 26, wrap = true }),
-                }, { direction = "column", style = { padding = 5 } }),
+                label:new(level.name, { font_size = 40, wrap = true, style = { padding = 5 } }),
+                label:new(level.author, { font_size = 26, wrap = true, style = { padding = 5 } }),
                 label:new(level.description, { font_size = 16, wrap = true }),
             }, { direction = "column" }),
             --flex:new({label:new(music, { font_size = 30, wrap = true })}, { align_items = "end", direction = "column" }),

@@ -49,7 +49,7 @@ local function find_expandable_parent(elem, amount_x, amount_y)
         if elem.parent then
             return find_expandable_parent(elem.parent, amount_x, amount_y)
         else
-            log("no have sufficiently expandable parent!")
+            log("no sufficiently expandable parent!")
             return elem
         end
     end
@@ -69,6 +69,7 @@ function element:new(options)
     self.scale = 1
     self.padding = 8
     self.color = { 1, 1, 1, 1 }
+    self.align = options.align
     self.selectable = options.selectable or false
     self.is_mouse_over = false
     self.selected = false

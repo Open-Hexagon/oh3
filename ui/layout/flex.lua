@@ -209,11 +209,18 @@ function flex:calculate_layout(width, height)
             return h, w
         end
     end
-    if self.align_items == "stretch" then
-        for i = 1, #self.elements do
-            self.elements[i].flex_expand = self.direction == "row" and 2 or 1
+    -- set alignement options
+    local has_non_start_align = false -- used later
+    for i = 1, #self.elements do
+        local elem = self.elements[i]
+        local align = elem.align or self.align_items
+        if align == "stretch" then
+            elem.flex_expand = self.direction == "row" and 2 or 1
+        elseif align == "center" or align == "end" then
+            has_non_start_align = true
         end
     end
+    -- main layout calculation
     local final_thickness = 0
     local final_length = 0
     if self.size_ratios then
@@ -383,34 +390,28 @@ function flex:calculate_layout(width, height)
     if self.align_relative_to ~= "area" and self.align_relative_to ~= "thickness" then
         error("Invalid value for align_relative_to: '" .. self.align_relative_to .. "'.")
     end
-    -- no need to do anything on "start" it's the default
-    if self.align_items ~= "start" then
-        if self.align_relative_to == "area" then
-            final_thickness = math.max(final_thickness, available_thickness)
-        end
+    if self.align_relative_to == "area" and has_non_start_align then
+        final_thickness = math.max(final_thickness, available_thickness)
     end
-    if self.align_items == "stretch" then
-        for i = 1, #self.elements do
-            self.elements[i].flex_expand = nil
-        end
-    elseif self.align_items == "center" then
-        for i = 1, #self.elements do
-            local elem = self.elements[i]
+    for i = 1, #self.elements do
+        local elem = self.elements[i]
+        local align = elem.align or self.align_items
+        -- no need to do anything on "start" it's the default
+        if align == "stretch" then
+            elem.flex_expand = nil
+        elseif align == "center" then
             local _, thick = wh2lt(elem.width, elem.height)
             elem._transform:translate(lt2wh(0, final_thickness / 2 - thick / 2))
-        end
-    elseif self.align_items == "end" then
-        for i = 1, #self.elements do
-            local elem = self.elements[i]
+        elseif align == "end" then
             local _, thick = wh2lt(elem.width, elem.height)
             elem._transform:translate(lt2wh(0, final_thickness - thick))
+        elseif align ~= "start" then
+            error(
+                "Invalid value for align option '"
+                    .. align
+                    .. "' possible values are: 'start', 'center', 'end' and 'stretch'"
+            )
         end
-    elseif self.align_items ~= "start" then
-        error(
-            "Invalid value for align_items option '"
-                .. self.align_items
-                .. "' possible values are: 'start', 'center', 'end' and 'stretch'"
-        )
     end
 
     self.width, self.height = lt2wh(final_length, final_thickness)
