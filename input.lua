@@ -108,7 +108,9 @@ function input.get(input_name, add_ui_button)
         if not ui_button then
             ui_button = buttons.add(input_name)
         end
-        ui_button.updated = true
+        if not buttons.hidden then
+            ui_button.updated = true
+        end
     end
     local ret = false
     for i = 1, #inputs do

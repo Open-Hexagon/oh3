@@ -78,9 +78,6 @@ function buttons.update()
             buttons.layout:mutated()
         end
     end
-    if buttons.hidden then
-        buttons.clear()
-    end
 end
 
 ---remove all visual buttons
