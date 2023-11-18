@@ -9,6 +9,7 @@ buttons.layout = flex:new({
 }, { direction = "column", align_items = "end", size_ratios = { 1 } })
 buttons.name_map = {}
 buttons.holding = 0
+buttons.hidden = false
 
 ---add a visual button for incomplete input schemes to use (e.g. touch)
 ---@param name string
@@ -76,6 +77,9 @@ function buttons.update()
             buttons.name_map[btn.element.raw_text] = nil
             buttons.layout:mutated()
         end
+    end
+    if buttons.hidden then
+        buttons.clear()
     end
 end
 
