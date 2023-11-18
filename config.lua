@@ -76,8 +76,7 @@ add_setting("UI", "background_preview", true, {
 add_setting("UI", "background_preview_has_text", false, { dependencies = { background_preview = true } })
 add_setting("UI", "in-game_buttons", true, {
     onchange = function()
-        local buttons = require("ui.screens.game.controls")
-        buttons.hidden = not buttons.hidden
+        return not config.get("in-game_buttons")
     end
 })
 add_setting("Audio", "background_preview_music_volume", 0, {
