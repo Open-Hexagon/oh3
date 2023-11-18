@@ -95,21 +95,26 @@ function input.get(input_name, add_ui_button)
     if add_ui_button == nil then
         add_ui_button = input_name ~= "left" and input_name ~= "right"
     end
-    if args.headless then
+    if args.headless or not config.get("in-game_buttons") then
         add_ui_button = false
     end
+
     local inputs = config.get(input_name) or { {
         ids = { input_name },
         scheme = "keyboard",
     } }
     local ui_button
+
     if add_ui_button then
+
         ui_button = buttons.get(input_name)
         if not ui_button then
             ui_button = buttons.add(input_name)
         end
         ui_button.updated = true
+
     end
+
     local ret = false
     for i = 1, #inputs do
         local scheme = inputs[i]
