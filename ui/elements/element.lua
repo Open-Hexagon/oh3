@@ -120,6 +120,19 @@ function element:update_size()
             parent = parent.parent
         end
         self.last_space_maker:mutated()
+    else
+        local parent = self
+        local last_parent_width, last_parent_height
+        repeat
+            parent = parent.parent
+            if not parent then
+                break
+            end
+            last_parent_width = parent.width
+            last_parent_height = parent.height
+            parent.changed = true
+            parent:calculate_layout(parent.last_available_width, parent.last_available_height)
+        until parent.width == last_parent_width and parent.height == last_parent_height
     end
 end
 
