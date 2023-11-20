@@ -384,7 +384,7 @@ function lua_runtime.run_lua_file(path)
         end
         local lua_file = file_cache[path]
         setfenv(lua_file, env)
-        limit_function_calls(lua_file)
+        xpcall(limit_function_calls, log, lua_file)
     end
 end
 
