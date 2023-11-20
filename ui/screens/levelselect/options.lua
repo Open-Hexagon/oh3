@@ -37,12 +37,12 @@ return function(state, pack, level)
             state.level_options_selected = { difficulty_mult = selections[selections_index] }
             local score = flex:new({
                 make_localscore_element(pack.id, level.id, state.level_options_selected),
-            }, { direction = "column", align_items = "stretch" })
+            }, { direction = "column", align_items = "stretch", align_relative_to = "area"  })
             state.leaderboards.elements[1] = score
             state.leaderboards:mutated()
         end,
     })
     return flex:new({
         selection_element,
-    }, { direction = "column", align_items = "stretch" })
+    }, { direction = "column", align_items = "stretch", align_relative_to = "area"  })
 end

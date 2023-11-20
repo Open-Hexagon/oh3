@@ -12,7 +12,7 @@ state.level_options_selected = { difficulty_mult = 1 }
 local pack_elems = make_pack_elements(state)
 
 state.packs = flex:new({
-    scroll:new(flex:new(pack_elems, { direction = "column", align_items = "stretch" })),
+    scroll:new(flex:new(pack_elems, { direction = "column", align_items = "stretch", align_relative_to = "area" })),
 }, { direction = "column", align_items = "stretch" })
 
 state.levels = scroll:new(flex:new({}, { direction = "column", align_items = "center" }))
@@ -45,7 +45,7 @@ state.top_bar = quad:new({
 state.root = flex:new({
     state.top_bar,
     state.columns,
-}, { direction = "column", align_items = "stretch" })
+}, { direction = "column", align_items = "stretch", align_relative_to = "area" })
 
 if #pack_elems > 0 then
     pack_elems[1]:click(false)

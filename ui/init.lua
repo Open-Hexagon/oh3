@@ -5,6 +5,7 @@ local game_handler = require("game_handler")
 local scroll = require("ui.layout.scroll")
 local config = require("config")
 local key_repeat = require("ui.key_repeat")
+local flex = require("ui.layout.flex")
 local ui = {}
 local keyboard_navigation = require("ui.keyboard_navigation")
 local current_screen
@@ -130,6 +131,10 @@ end
 ---update animations
 ---@param dt number
 function ui.update(dt)
+    if flex.must_calculate_alignement then
+        flex.must_calculate_alignement = false
+        flex.process_alignement()
+    end
     key_repeat.update(dt)
     signal.update(dt)
 end

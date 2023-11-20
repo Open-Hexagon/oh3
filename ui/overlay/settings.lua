@@ -110,7 +110,7 @@ local function create_setting(name, property, value)
             end
         end
     elseif property.category == "Input" then
-        local items = { label:new(property.display_name) }
+        local items = { }
         local schemes = config.get(property.name)
         for i = 1, #schemes do
             for j = 1, #schemes[i].ids do
@@ -137,7 +137,7 @@ local function create_setting(name, property, value)
                 })
             end
         end
-        layout = flex:new(items)
+        layout = flex:new({ label:new(property.display_name), flex:new(items) }, { justify_content = "between" })
     end
     name_layout_map[name] = layout
     return layout
@@ -285,7 +285,7 @@ local content = flex:new({
                 settings:close()
             end,
         }),
-    }),
+    }, { justify_content = "between" }),
     settings_body,
 }, { direction = "column" })
 settings.layout = quad:new({

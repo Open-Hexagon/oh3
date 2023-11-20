@@ -6,7 +6,7 @@ local element = require("ui.elements.element")
 ---@field size_ratios table? size ratios of the elements, length has to be identical to elements list
 ---@field align_items string aligns items on the container's thickness (values are "start", "stretch", "center" and "end")
 ---@field justify_content string justify content on the container's length (values are "start", "center", "between", "evenly" and "end")
----@field align_relative_to string set if aligning happens relative to given "area" or to total "thickness"
+---@field align_relative_to string set if aligning happens relative to given "area" or to "parent" size or to total "thickness"
 ---@field elements table list of children
 ---@field scale number ui scale
 ---@field style table not used, passed to children
@@ -33,6 +33,8 @@ flex.__newindex = function(t, key, value)
     rawset(t, key, value)
 end
 
+local process_alignement_later = {}
+
 ---create a new flex container
 ---@param elements table
 ---@param options table?
@@ -48,8 +50,8 @@ function flex:new(elements, options)
         align_items = options.align_items or "start",
         -- justify content on the container's length (values are "start", "center", "between", "evenly" and "end")
         justify_content = options.justify_content or "start",
-        -- set if aligning happens relative to given "area" or to total "thickness"
-        align_relative_to = options.align_relative_to or "area",
+        -- set if aligning happens relative to given "area" or to "parent" size or to total "thickness"
+        align_relative_to = options.align_relative_to or "parent",
         elements = elements,
         scale = 1,
         style = {},
@@ -129,11 +131,11 @@ end
 ---update the container when a child element changed size or when elements were added or removed
 function flex:mutated()
     for i = 1, #self.elements do
-        local element = self.elements[i]
-        element.parent = self
-        element.parent_index = i
-        element:set_scale(self.scale)
-        element:set_style(self.style)
+        local elem = self.elements[i]
+        elem.parent = self
+        elem.parent_index = i
+        elem:set_scale(self.scale)
+        elem:set_style(self.style)
     end
     self.changed = true
     self:calculate_layout(self.last_available_width, self.last_available_height)
@@ -212,14 +214,17 @@ function flex:calculate_layout(width, height)
             return h, w
         end
     end
+    -- for use in other functions
+    self.lt2wh = lt2wh
+    self.wh2lt = wh2lt
     -- set alignement options
     local has_non_start_align = false -- used later
     for i = 1, #self.elements do
         local elem = self.elements[i]
         local align = elem.align or self.align_items
-        if align == "stretch" then
+        if align == "stretch" and self.align_relative_to == "area" then
             elem.flex_expand = self.direction == "row" and 2 or 1
-        elseif align == "center" or align == "end" then
+        elseif align == "center" or align == "end" or align == "stretch" then
             has_non_start_align = true
         end
     end
@@ -364,50 +369,62 @@ function flex:calculate_layout(width, height)
         final_length = length
         final_thickness = thickness
     end
-
-    -- align_relative_to example:
-    -- available area:
-    -- +-----------+
-    -- |           |
-    -- |           |
-    -- |           |
-    -- +-----------+
-    -- without align:
-    -- +---+---+---+
-    -- |   +---+   |
-    -- +---+   |   |
-    -- |       +---+
-    -- +-----------+
-    -- align end relative to area
-    -- +-----------+ ^
-    -- |       +---+ |
-    -- +---+   |   | | area height
-    -- |   +---+   | |
-    -- +---+---+---+ v
-    -- align end relative to thickness
-    -- +-------+---+ ^
-    -- +---+   |   | |
-    -- |   +---+   | | thickness
-    -- +---+---+---+ v
-    -- +-----------+
-    if self.align_relative_to ~= "area" and self.align_relative_to ~= "thickness" then
+    -- cannot align relative to parent without parent, area has desired effect in this case
+    if not self.parent and self.align_relative_to == "parent" then
+        self.align_relative_to = "area"
+    end
+    if self.align_relative_to ~= "area" and self.align_relative_to ~= "thickness" and self.align_relative_to ~= "parent" then
         error("Invalid value for align_relative_to: '" .. self.align_relative_to .. "'.")
     end
     if self.align_relative_to == "area" and has_non_start_align then
         final_thickness = math.max(final_thickness, available_thickness)
     end
+    if self.align_relative_to == "parent" and (has_non_start_align or self.justify_content ~= "start") then
+        process_alignement_later[#process_alignement_later + 1] = self
+        self.must_calculate_alignement = true
+        flex.must_calculate_alignement = true
+    else
+        if self.justify_content ~= "start" then
+            self.final_length_before_adjust = final_length
+            final_length = math.max(final_length, available_length)
+        end
+        self:align_and_justify()
+    end
+    self.width, self.height = lt2wh(final_length, final_thickness)
+    self.expandable_x = math.max(width - self.width, 0)
+    self.expandable_y = math.max(height - self.height, 0)
+    element._update_child_expand(self)
+    self.changed = false
+    return self.width, self.height
+end
+
+---modifies child transforms to respect align_items and justify_content options
+function flex:align_and_justify()
+    -- ensure that elements aren't moved more than once (they are moved relatively)
+    if not self.must_calculate_alignement then
+        return
+    end
+    self.must_calculate_alignement = false
+    local final_length, final_thickness = self.wh2lt(self.width, self.height)
     for i = 1, #self.elements do
         local elem = self.elements[i]
         local align = elem.align or self.align_items
         -- no need to do anything on "start" it's the default
-        if align == "stretch" then
+        if align == "stretch" and self.align_relative_to ~= "area" then
+            -- TODO: recalculating layout here causes a lot of issues, need to find a better way
+            local len, thick = self.wh2lt(elem.width, elem.height)
+            thick = final_thickness
+            elem.flex_expand = self.direction == "row" and 2 or 1
+            elem:calculate_layout(self.lt2wh(len, thick))
+            elem.flex_expand = nil
+        elseif align == "stretch" then
             elem.flex_expand = nil
         elseif align == "center" then
-            local _, thick = wh2lt(elem.width, elem.height)
-            elem._transform:translate(lt2wh(0, final_thickness / 2 - thick / 2))
+            local _, thick = self.wh2lt(elem.width, elem.height)
+            elem._transform:translate(self.lt2wh(0, final_thickness / 2 - thick / 2))
         elseif align == "end" then
-            local _, thick = wh2lt(elem.width, elem.height)
-            elem._transform:translate(lt2wh(0, final_thickness - thick))
+            local _, thick = self.wh2lt(elem.width, elem.height)
+            elem._transform:translate(self.lt2wh(0, final_thickness - thick))
         elseif align ~= "start" then
             error(
                 "Invalid value for align option '"
@@ -417,32 +434,31 @@ function flex:calculate_layout(width, height)
         end
     end
     if self.justify_content ~= "start" then
-        local final_length_before_adjust = final_length
-        final_length = math.max(final_length, available_length)
-        local free_space = final_length - final_length_before_adjust
+        local free_space = final_length - self.final_length_before_adjust
+        self.final_length_before_adjust = nil
         if self.justify_content == "center" then
             local move = free_space / 2
             for i = 1, #self.elements do
-                self.elements[i]._transform:translate(lt2wh(move, 0))
+                self.elements[i]._transform:translate(self.lt2wh(move, 0))
             end
         elseif self.justify_content == "between" then
             local gap_size = free_space / (#self.elements - 1)
             local move = gap_size
             -- first element stays, start at 2
             for i = 2, #self.elements do
-                self.elements[i]._transform:translate(lt2wh(move, 0))
+                self.elements[i]._transform:translate(self.lt2wh(move, 0))
                 move = move + gap_size
             end
         elseif self.justify_content == "evenly" then
             local gap_size = free_space / (#self.elements + 1)
             local move = gap_size
             for i = 1, #self.elements do
-                self.elements[i]._transform:translate(lt2wh(move, 0))
+                self.elements[i]._transform:translate(self.lt2wh(move, 0))
                 move = move + gap_size
             end
         elseif self.justify_content == "end" then
             for i = 1, #self.elements do
-                self.elements[i]._transform:translate(lt2wh(free_space, 0))
+                self.elements[i]._transform:translate(self.lt2wh(free_space, 0))
             end
         else
             error(
@@ -452,14 +468,8 @@ function flex:calculate_layout(width, height)
             )
         end
     end
-
-    self.width, self.height = lt2wh(final_length, final_thickness)
-    self.expandable_x = math.max(width - self.width, 0)
-    self.expandable_y = math.max(height - self.height, 0)
-    element._update_child_expand(self)
-    self.changed = false
-    return self.width, self.height
 end
+
 
 ---draw all the elements in the container
 function flex:draw()
@@ -470,6 +480,21 @@ function flex:draw()
         self.elements[i]:draw()
     end
     love.graphics.pop()
+end
+
+function flex.process_alignement()
+    for i = 1, #process_alignement_later do
+        local elem = process_alignement_later[i]
+        local parent = elem.parent
+        elem.final_length_before_adjust = elem.wh2lt(elem.width, elem.height)
+        if parent.direction == "row" then
+            elem.height = parent.height
+        elseif parent.direction == "column" then
+            elem.width = parent.width
+        end
+        elem:align_and_justify()
+    end
+    process_alignement_later = {}
 end
 
 return flex

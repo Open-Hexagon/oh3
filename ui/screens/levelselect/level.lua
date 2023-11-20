@@ -85,7 +85,7 @@ function t.create(state, pack, level, extra_info)
                 local score = flex:new({
                     make_localscore_element(pack.id, level.id, { difficulty_mult = 1 }),
                     make_options_element(state, pack, level),
-                }, { direction = "column", align_items = "stretch" })
+                }, { direction = "column", align_items = "stretch", align_relative_to = "area"  })
                 state.columns.elements[3] = score
                 state.columns:mutated()
                 level_element_selected = self
