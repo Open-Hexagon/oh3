@@ -388,6 +388,8 @@ function flex:calculate_layout(width, height)
             self.final_length_before_adjust = final_length
             final_length = math.max(final_length, available_length)
         end
+        self.width, self.height = lt2wh(final_length, final_thickness)
+        self.must_calculate_alignement = true
         self:align_and_justify()
     end
     self.width, self.height = lt2wh(final_length, final_thickness)
@@ -411,7 +413,6 @@ function flex:align_and_justify()
         local align = elem.align or self.align_items
         -- no need to do anything on "start" it's the default
         if align == "stretch" and self.align_relative_to ~= "area" then
-            -- TODO: recalculating layout here causes a lot of issues, need to find a better way
             local len, thick = self.wh2lt(elem.width, elem.height)
             thick = final_thickness
             elem.flex_expand = self.direction == "row" and 2 or 1
@@ -483,17 +484,22 @@ function flex:draw()
 end
 
 function flex.process_alignement()
-    for i = 1, #process_alignement_later do
-        local elem = process_alignement_later[i]
-        local parent = elem.parent
-        elem.final_length_before_adjust = elem.wh2lt(elem.width, elem.height)
-        if parent.direction == "row" then
-            elem.height = parent.height
-        elseif parent.direction == "column" then
-            elem.width = parent.width
+    local start_amount, end_amount
+    repeat
+        start_amount = #process_alignement_later
+        for i = 1, #process_alignement_later do
+            local elem = process_alignement_later[i]
+            local parent = elem.parent
+            elem.final_length_before_adjust = elem.wh2lt(elem.width, elem.height)
+            if parent.direction == "row" then
+                elem.height = parent.height
+            elseif parent.direction == "column" then
+                elem.width = parent.width
+            end
+            elem:align_and_justify()
         end
-        elem:align_and_justify()
-    end
+        end_amount = #process_alignement_later
+    until start_amount == end_amount
     process_alignement_later = {}
 end
 

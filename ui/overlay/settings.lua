@@ -137,7 +137,7 @@ local function create_setting(name, property, value)
                 })
             end
         end
-        layout = flex:new({ label:new(property.display_name), flex:new(items) }, { justify_content = "between" })
+        layout = flex:new({ label:new(property.display_name), flex:new(items, { align_items = "center" }) }, { justify_content = "between", align_items = "center" })
     end
     name_layout_map[name] = layout
     return layout
@@ -212,7 +212,7 @@ for i = 1, #category_names do
     })
 end
 
-local settings_column = flex:new(category_layouts, { direction = "column" })
+local settings_column = flex:new(category_layouts, { direction = "column", align_items = "stretch" })
 local category_column = flex:new(category_indicators, { direction = "column" })
 local settings_body = flex:new({
     category_column,
