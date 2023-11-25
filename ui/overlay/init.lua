@@ -41,6 +41,15 @@ end
 ---open the overlay
 function overlay:open()
     if not self.is_open then
+        -- make sure that the most recently opened overlay is updated first
+        for i = 1, #overlays do
+            if overlays[i] == self then
+                table.remove(overlays, i)
+                break
+            end
+        end
+        table.insert(overlays, 1, self)
+
         self.is_open = true
         self:update_layout()
         self.last_screen = keyboard_navigation.get_screen()
@@ -131,12 +140,24 @@ end
 -- execute a function on all overlays with this metatable
 overlay.overlays = setmetatable({}, {
     __index = function(_, fn)
-        return function(...)
-            local ret
-            for i = 1, #overlays do
-                ret = overlays[i][fn](overlays[i], ...) or ret
+        if fn == "draw" then
+            return function(...)
+                for i = #overlays, 1, -1 do
+                    if overlays[i][fn](overlays[i], ...) then
+                        return true
+                    end
+                end
+                return false
             end
-            return ret
+        else
+            return function(...)
+                for i = 1, #overlays do
+                    if overlays[i][fn](overlays[i], ...) then
+                        return true
+                    end
+                end
+                return false
+            end
         end
     end,
 })
