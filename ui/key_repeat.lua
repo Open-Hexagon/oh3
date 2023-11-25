@@ -12,7 +12,7 @@ function key_repeat.update(dt)
             press_timers[i] = (press_timers[i] or 0) + dt
             if press_timers[i] > (press_timer_repeat[i] or 0.4) then
                 press_timers[i] = 0
-                press_timer_repeat[i] = math.max(press_timer_repeat[i] - 0.05, 0.1)
+                press_timer_repeat[i] = math.max((press_timer_repeat[i] or 0.4) - 0.05, 0.1)
                 require("ui").process_event("customkeyrepeat", keys[i])
             end
         else
