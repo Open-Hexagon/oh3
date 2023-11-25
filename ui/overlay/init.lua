@@ -11,6 +11,7 @@ local overlays = {}
 ---@field transition table
 ---@field backdrop boolean
 ---@field backdrop_alpha Queue
+---@field closable_by_outside_click boolean
 local overlay = {}
 overlay.__index = overlay
 
@@ -24,6 +25,7 @@ function overlay:new()
         has_opened_before = false,
         backdrop = true,
         backdrop_alpha = signal.new_queue(0),
+        closable_by_outside_click = true,
     }, overlay)
     overlays[#overlays + 1] = obj
     return obj
@@ -115,7 +117,7 @@ function overlay:process_event(name, ...)
         if keyboard_navigation.get_screen() == self.layout then
             keyboard_navigation.process_event(name, ...)
         end
-        if self.backdrop and not self.layout.is_mouse_over and name == "mousereleased" then
+        if self.closable_by_outside_click and self.backdrop and not self.layout.is_mouse_over and name == "mousereleased" then
             self:close()
         end
         -- don't update stuff below if overlay is open

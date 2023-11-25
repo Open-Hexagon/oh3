@@ -213,17 +213,21 @@ function input:set_icon(id)
 end
 
 function input:process_event(name, ...)
-    if self.waiting and self.resolve then
+    if self.waiting_for_release and self.resolve then
+        if not input_schemes[self.scheme].is_down(self.waiting_for_release) then
+            self.resolve()
+            return true
+        end
+    elseif self.waiting and self.resolve then
         for id in pairs(icon_mappings[self.scheme]) do
             if input_schemes[self.scheme].is_down(id) then
                 self.resolve(id)
-                self.resolve = nil
-                break
+                return true
             end
         end
     else
         icon.process_event(self, name, ...)
-        require("ui").only_interactable_element = nil
+        require("ui").extra_element = nil
     end
 end
 
@@ -232,6 +236,7 @@ local input_overlay = overlay:new()
 local prompt_text = label:new("", { wrap = true })
 input_overlay.layout = flex:new({ prompt_text }, { justify_content = "center", align_items = "center" })
 input_overlay.transition = require("ui.anim.transitions").scale
+input_overlay.closable_by_outside_click = false
 
 input.wait_for_input = async(function(self)
     self.waiting = true
@@ -239,11 +244,18 @@ input.wait_for_input = async(function(self)
     prompt_text:update_size()
     input_overlay:open()
     self.text:clear()
-    require("ui").only_interactable_element = self
+    require("ui").extra_element = self
     local id = async.await(async.promise:new(function(resolve)
         self.resolve = resolve
     end))
+    self.resolve = nil
     self.waiting = false
+    self.waiting_for_release = id
+    async.await(async.promise:new(function(resolve)
+        self.resolve = resolve
+    end))
+    self.resolve = nil
+    self.waiting_for_release = nil
     input_overlay:close()
     self:set_icon(id)
 end)

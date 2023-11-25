@@ -107,9 +107,10 @@ function ui.process_event(name, ...)
             calculate_layout()
         end
     end
-    if ui.only_interactable_element then
-        ui.only_interactable_element:process_event(name, ...)
-        return
+    if ui.extra_element then
+        if ui.extra_element:process_event(name, ...) then
+            return
+        end
     end
     if name == "mousereleased" and grabbed_element then
         love.graphics.translate(grabbed_element.x, grabbed_element.y)
