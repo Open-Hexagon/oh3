@@ -99,23 +99,23 @@ end
 ---@param name string
 ---@param ... unknown
 function ui.process_event(name, ...)
+    -- reset scrolled_already value (determines if a container can still scroll, ensures child priority over parent with scrolling (children are processed before parents))
+    scroll.scrolled_already = false
+    love.graphics.origin()
+    if current_screen then
+        if name == "resize" then
+            calculate_layout()
+        end
+    end
     if ui.only_interactable_element then
         ui.only_interactable_element:process_event(name, ...)
         return
     end
-    -- reset scrolled_already value (determines if a container can still scroll, ensures child priority over parent with scrolling (children are processed before parents))
-    scroll.scrolled_already = false
-    love.graphics.origin()
     if name == "mousereleased" and grabbed_element then
         love.graphics.translate(grabbed_element.x, grabbed_element.y)
         grabbed_element:process_event(name, ...)
         grabbed_element = nil
         return
-    end
-    if current_screen then
-        if name == "resize" then
-            calculate_layout()
-        end
     end
     local stop_propagation = overlays.process_event(name, ...)
     if current_screen then

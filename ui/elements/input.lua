@@ -159,6 +159,16 @@ local icon_mappings = {
         right = "square-half:mirror",
     },
 }
+
+local prompt_labels = {
+    keyboard = "Press a key",
+    mouse = "Press a mouse button",
+    touch = "Touch either the left or the right side of the screen",
+}
+
+local overlay = require("ui.overlay")
+local flex = require("ui.layout.flex")
+local label = require("ui.elements.label")
 local icon = require("ui.elements.icon")
 local input_schemes = require("input_schemes")
 local async = require("async")
@@ -217,14 +227,24 @@ function input:process_event(name, ...)
     end
 end
 
+-- show overlay while waiting for input
+local input_overlay = overlay:new()
+local prompt_text = label:new("", { wrap = true })
+input_overlay.layout = flex:new({ prompt_text }, { justify_content = "center", align_items = "center" })
+input_overlay.transition = require("ui.anim.transitions").scale
+
 input.wait_for_input = async(function(self)
     self.waiting = true
+    prompt_text.raw_text = prompt_labels[self.scheme]
+    prompt_text:update_size()
+    input_overlay:open()
     self.text:clear()
     require("ui").only_interactable_element = self
     local id = async.await(async.promise:new(function(resolve)
         self.resolve = resolve
     end))
     self.waiting = false
+    input_overlay:close()
     self:set_icon(id)
 end)
 
