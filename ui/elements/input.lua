@@ -166,6 +166,7 @@ local prompt_labels = {
     touch = "Touch either the left or the right side of the screen",
 }
 
+local quad = require("ui.elements.quad")
 local overlay = require("ui.overlay")
 local flex = require("ui.layout.flex")
 local label = require("ui.elements.label")
@@ -234,7 +235,21 @@ end
 -- show overlay while waiting for input
 local input_overlay = overlay:new()
 local prompt_text = label:new("", { wrap = true })
-input_overlay.layout = flex:new({ prompt_text }, { justify_content = "center", align_items = "center" })
+local cancel_button = quad:new({
+    child_element = label:new("Cancel"),
+    selectable = true,
+    selection_handler = function(self)
+        if self.selected then
+            self.border_color = { 0, 0, 1, 1 }
+        else
+            self.border_color = { 1, 1, 1, 1 }
+        end
+    end,
+})
+input_overlay.layout = flex:new({
+    prompt_text,
+    cancel_button,
+}, { justify_content = "evenly", align_items = "center", direction = "column" })
 input_overlay.transition = require("ui.anim.transitions").scale
 input_overlay.closable_by_outside_click = false
 
@@ -247,9 +262,16 @@ input.wait_for_input = async(function(self)
     require("ui").extra_element = self
     local id = async.await(async.promise:new(function(resolve)
         self.resolve = resolve
+        cancel_button.click_handler = resolve
     end))
     self.resolve = nil
     self.waiting = false
+    if type(id) == "table" then
+        -- click handler returned quad element of cancel button
+        input_overlay:close()
+        self.changed = true
+        return
+    end
     self.waiting_for_release = id
     async.await(async.promise:new(function(resolve)
         self.resolve = resolve
