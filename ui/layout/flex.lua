@@ -129,7 +129,8 @@ function flex:set_scale(scale)
 end
 
 ---update the container when a child element changed size or when elements were added or removed
-function flex:mutated()
+---@param calculate_layout boolean?
+function flex:mutated(calculate_layout)
     for i = 1, #self.elements do
         local elem = self.elements[i]
         elem.parent = self
@@ -138,7 +139,9 @@ function flex:mutated()
         elem:set_style(self.style)
     end
     self.changed = true
-    self:calculate_layout(self.last_available_width, self.last_available_height)
+    if calculate_layout == nil or calculate_layout then
+        self:calculate_layout(self.last_available_width, self.last_available_height)
+    end
 end
 
 ---send an event for the children to process (returns true if propagation should be stopped)

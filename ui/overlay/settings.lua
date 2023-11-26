@@ -110,14 +110,32 @@ local function create_setting(name, property, value)
             end
         end
     elseif property.category == "Input" then
-        local items = { }
         local schemes = config.get(property.name)
-        for i = 1, #schemes do
-            for j = 1, #schemes[i].ids do
-                items[#items + 1] = quad:new({
-                    child_element = input:new(schemes[i].scheme, schemes[i].ids[j], {
+        local item_layout
+        local function new_binding(scheme_name, input_id)
+            local function search_indices()
+                local scheme_index, id_index
+                for k = 1, #schemes do
+                    if schemes[k].scheme == scheme_name then
+                        scheme_index = k
+                        break
+                    end
+                end
+                for k = 1, #schemes[scheme_index].ids do
+                    if schemes[scheme_index].ids[k] == input_id then
+                        id_index = k
+                        break
+                    end
+                end
+                return scheme_index, id_index
+            end
+            return quad:new({
+                    child_element = input:new(scheme_name, input_id, {
                         change_handler = function(id)
-                            schemes[i].ids[j] = id
+                            -- search scheme and id index as it may have change
+                            local scheme_index, id_index = search_indices()
+                            input_id = id
+                            schemes[scheme_index].ids[id_index] = id
                         end,
                     }),
                     selectable = true,
@@ -129,15 +147,82 @@ local function create_setting(name, property, value)
                         end
                     end,
                     click_handler = function(self)
-                        self.element:wait_for_input():done(function()
-                            self:update_size()
+                        self.element:wait_for_input():done(function(btn)
+                            local is_in = false
+                            for i = 1, #item_layout.elements do
+                                if item_layout.elements[i] == self then
+                                    is_in = true
+                                    break
+                                end
+                            end
+                            if not is_in then
+                                if btn then
+                                    return
+                                end
+                                table.insert(item_layout.elements, #item_layout.elements, self)
+                                item_layout:mutated(false)
+                            end
+                            if btn == "remove" then
+                                -- search scheme and id index as it may have change
+                                local scheme_index, id_index = search_indices()
+                                table.remove(schemes[scheme_index].ids, id_index)
+                                -- remove quad from parent
+                                table.remove(self.parent.elements, self.parent_index)
+                                item_layout:mutated(false)
+                                layout.changed = true
+                                require("ui.elements.element").update_size(item_layout)
+                            else
+                                self:update_size()
+                            end
                         end)
                         return true
                     end,
                 })
+        end
+        local items = { }
+        for i = 1, #schemes do
+            for j = 1, #schemes[i].ids do
+                local scheme_name = schemes[i].scheme
+                local input_id = schemes[i].ids[j]
+                items[#items + 1] = new_binding(scheme_name, input_id)
             end
         end
-        layout = flex:new({ label:new(property.display_name), flex:new(items, { align_items = "center" }) }, { justify_content = "between", align_items = "center" })
+        items[#items + 1] = quad:new({
+            child_element = label:new("+"),
+            selectable = true,
+            selection_handler = function(self)
+                if self.selected then
+                    self.border_color = { 0, 0, 1, 1 }
+                else
+                    self.border_color = { 1, 1, 1, 1 }
+                end
+            end,
+            click_handler = function()
+                local scheme = "keyboard"
+                local input_id = "a"
+                local scheme_index
+                for i = 1, #schemes do
+                    if schemes[i].scheme == scheme then
+                        scheme_index = i
+                        break
+                    end
+                end
+                if not scheme_index then
+                    scheme_index = #schemes + 1
+                    schemes[#schemes + 1] = {
+                        scheme = scheme,
+                        ids = { input_id }
+                    }
+                else
+                    schemes[scheme_index].ids[#schemes[scheme_index].ids+1] = input_id
+                end
+                local elem = new_binding(scheme, input_id)
+                elem:click()
+                return true
+            end
+        })
+        item_layout = flex:new(items, { align_items = "center" })
+        layout = flex:new({ label:new(property.display_name), item_layout }, { justify_content = "between", align_items = "center" })
     end
     name_layout_map[name] = layout
     return layout

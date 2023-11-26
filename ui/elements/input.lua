@@ -246,9 +246,20 @@ local cancel_button = quad:new({
         end
     end,
 })
+local remove_button = quad:new({
+    child_element = label:new("Remove"),
+    selectable = true,
+    selection_handler = function(self)
+        if self.selected then
+            self.border_color = { 0, 0, 1, 1 }
+        else
+            self.border_color = { 1, 1, 1, 1 }
+        end
+    end,
+})
 input_overlay.layout = flex:new({
     prompt_text,
-    cancel_button,
+    flex:new({cancel_button, remove_button}),
 }, { justify_content = "evenly", align_items = "center", direction = "column" })
 input_overlay.transition = require("ui.anim.transitions").scale
 input_overlay.closable_by_outside_click = false
@@ -263,14 +274,19 @@ input.wait_for_input = async(function(self)
     local id = async.await(async.promise:new(function(resolve)
         self.resolve = resolve
         cancel_button.click_handler = resolve
+        remove_button.click_handler = resolve
     end))
     self.resolve = nil
     self.waiting = false
     if type(id) == "table" then
-        -- click handler returned quad element of cancel button
+        -- click handler returned quad element of button
         input_overlay:close()
         self.changed = true
-        return
+        if id == remove_button then
+            -- remove element
+            return "remove"
+        end
+        return "cancel"
     end
     self.waiting_for_release = id
     async.await(async.promise:new(function(resolve)
