@@ -130,56 +130,56 @@ local function create_setting(name, property, value)
                 return scheme_index, id_index
             end
             return quad:new({
-                    child_element = input:new(scheme_name, input_id, {
-                        change_handler = function(id)
+                child_element = input:new(scheme_name, input_id, {
+                    change_handler = function(id)
+                        -- search scheme and id index as it may have change
+                        local scheme_index, id_index = search_indices()
+                        input_id = id
+                        schemes[scheme_index].ids[id_index] = id
+                    end,
+                }),
+                selectable = true,
+                selection_handler = function(self)
+                    if self.selected then
+                        self.border_color = { 0, 0, 1, 1 }
+                    else
+                        self.border_color = { 1, 1, 1, 1 }
+                    end
+                end,
+                click_handler = function(self)
+                    self.element:wait_for_input():done(function(btn)
+                        local is_in = false
+                        for i = 1, #item_layout.elements do
+                            if item_layout.elements[i] == self then
+                                is_in = true
+                                break
+                            end
+                        end
+                        if not is_in then
+                            if btn then
+                                return
+                            end
+                            table.insert(item_layout.elements, #item_layout.elements, self)
+                            item_layout:mutated(false)
+                        end
+                        if btn == "remove" then
                             -- search scheme and id index as it may have change
                             local scheme_index, id_index = search_indices()
-                            input_id = id
-                            schemes[scheme_index].ids[id_index] = id
-                        end,
-                    }),
-                    selectable = true,
-                    selection_handler = function(self)
-                        if self.selected then
-                            self.border_color = { 0, 0, 1, 1 }
+                            table.remove(schemes[scheme_index].ids, id_index)
+                            -- remove quad from parent
+                            table.remove(self.parent.elements, self.parent_index)
+                            item_layout:mutated(false)
+                            layout.changed = true
+                            require("ui.elements.element").update_size(item_layout)
                         else
-                            self.border_color = { 1, 1, 1, 1 }
+                            self:update_size()
                         end
-                    end,
-                    click_handler = function(self)
-                        self.element:wait_for_input():done(function(btn)
-                            local is_in = false
-                            for i = 1, #item_layout.elements do
-                                if item_layout.elements[i] == self then
-                                    is_in = true
-                                    break
-                                end
-                            end
-                            if not is_in then
-                                if btn then
-                                    return
-                                end
-                                table.insert(item_layout.elements, #item_layout.elements, self)
-                                item_layout:mutated(false)
-                            end
-                            if btn == "remove" then
-                                -- search scheme and id index as it may have change
-                                local scheme_index, id_index = search_indices()
-                                table.remove(schemes[scheme_index].ids, id_index)
-                                -- remove quad from parent
-                                table.remove(self.parent.elements, self.parent_index)
-                                item_layout:mutated(false)
-                                layout.changed = true
-                                require("ui.elements.element").update_size(item_layout)
-                            else
-                                self:update_size()
-                            end
-                        end)
-                        return true
-                    end,
-                })
+                    end)
+                    return true
+                end,
+            })
         end
-        local items = { }
+        local items = {}
         for i = 1, #schemes do
             for j = 1, #schemes[i].ids do
                 local scheme_name = schemes[i].scheme
@@ -211,18 +211,21 @@ local function create_setting(name, property, value)
                     scheme_index = #schemes + 1
                     schemes[#schemes + 1] = {
                         scheme = scheme,
-                        ids = { input_id }
+                        ids = { input_id },
                     }
                 else
-                    schemes[scheme_index].ids[#schemes[scheme_index].ids+1] = input_id
+                    schemes[scheme_index].ids[#schemes[scheme_index].ids + 1] = input_id
                 end
                 local elem = new_binding(scheme, input_id)
                 elem:click()
                 return true
-            end
+            end,
         })
         item_layout = flex:new(items, { align_items = "center" })
-        layout = flex:new({ label:new(property.display_name), item_layout }, { justify_content = "between", align_items = "center" })
+        layout = flex:new(
+            { label:new(property.display_name), item_layout },
+            { justify_content = "between", align_items = "center" }
+        )
     end
     name_layout_map[name] = layout
     return layout

@@ -376,7 +376,11 @@ function flex:calculate_layout(width, height)
     if not self.parent and self.align_relative_to == "parent" then
         self.align_relative_to = "area"
     end
-    if self.align_relative_to ~= "area" and self.align_relative_to ~= "thickness" and self.align_relative_to ~= "parent" then
+    if
+        self.align_relative_to ~= "area"
+        and self.align_relative_to ~= "thickness"
+        and self.align_relative_to ~= "parent"
+    then
         error("Invalid value for align_relative_to: '" .. self.align_relative_to .. "'.")
     end
     if self.align_relative_to == "area" and has_non_start_align then
@@ -473,7 +477,6 @@ function flex:align_and_justify()
         end
     end
 end
-
 
 ---draw all the elements in the container
 function flex:draw()

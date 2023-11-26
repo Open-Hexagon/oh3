@@ -16,8 +16,8 @@ return function(pack, level, level_options)
             child_element = flex:new({
                 label:new("Your Score:", { font_size = 16, wrap = true }),
                 label:new(tostring(math.floor(score * 1000) / 1000), { font_size = 60, cutoff_suffix = "..." }),
-            }, { direction = "column", align_items = "stretch", align_relative_to = "area"  }),
+            }, { direction = "column", align_items = "stretch", align_relative_to = "area" }),
             style = { background_color = { 0, 0, 0, 0.7 }, border_color = { 0, 0, 0, 0.7 }, border_thickness = 5 },
         }),
-    }, { direction = "column", align_items = "stretch", align_relative_to = "area"  })
+    }, { direction = "column", align_items = "stretch", align_relative_to = "area" })
 end

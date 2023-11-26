@@ -259,7 +259,7 @@ local remove_button = quad:new({
 })
 input_overlay.layout = flex:new({
     prompt_text,
-    flex:new({cancel_button, remove_button}),
+    flex:new({ cancel_button, remove_button }),
 }, { justify_content = "evenly", align_items = "center", direction = "column" })
 input_overlay.transition = require("ui.anim.transitions").scale
 input_overlay.closable_by_outside_click = false

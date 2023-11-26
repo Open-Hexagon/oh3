@@ -117,7 +117,12 @@ function overlay:process_event(name, ...)
         if keyboard_navigation.get_screen() == self.layout then
             keyboard_navigation.process_event(name, ...)
         end
-        if self.closable_by_outside_click and self.backdrop and not self.layout.is_mouse_over and name == "mousereleased" then
+        if
+            self.closable_by_outside_click
+            and self.backdrop
+            and not self.layout.is_mouse_over
+            and name == "mousereleased"
+        then
             self:close()
         end
         -- don't update stuff below if overlay is open
