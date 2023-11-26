@@ -22,7 +22,7 @@ local function get_first_element(element)
                 return first_elem
             end
         end
-    elseif element.element then
+    elseif element.element and (element.is_open == nil or element.is_open) then
         local first_elem = get_first_element(element.element)
         if first_elem then
             return first_elem

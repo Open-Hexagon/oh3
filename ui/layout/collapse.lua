@@ -2,6 +2,7 @@ local log = require("log")(...)
 local animated_transform = require("ui.anim.transform")
 local signal = require("ui.anim.signal")
 local update_expand = require("ui.elements.element")._update_child_expand
+local flex = require("ui.layout.flex")
 
 local collapse = {}
 collapse.__index = collapse
@@ -136,12 +137,14 @@ end
 ---@param ... unknown
 ---@return boolean?
 function collapse:process_event(name, ...)
-    love.graphics.push()
-    love.graphics.applyTransform(self._transform)
-    animated_transform.apply(self.transform)
-    local res = self.element:process_event(name, ...)
-    love.graphics.pop()
-    return res
+    if self.pos() == self.content_length then
+        love.graphics.push()
+        love.graphics.applyTransform(self._transform)
+        animated_transform.apply(self.transform)
+        local res = self.element:process_event(name, ...)
+        love.graphics.pop()
+        return res
+    end
 end
 
 ---open or close the collapse
@@ -176,7 +179,10 @@ function collapse:calculate_layout(width, height)
     self.last_available_height = height
     local content_width, content_height = self.element:calculate_layout(width, height)
     if not self.canvas or self.canvas:getWidth() ~= content_width or self.canvas:getHeight() ~= content_height then
-        self.canvas = love.graphics.newCanvas(math.floor(content_width + 0.5), math.floor(content_height + 0.5))
+        local w, h = math.floor(content_width + 0.5), math.floor(content_height + 0.5)
+        if w ~= 0 and h ~= 0 then
+            self.canvas = love.graphics.newCanvas(w, h)
+        end
     end
     self.content_length, self.content_thickness = self.wh2lt(content_width, content_height)
     self.width, self.height = self.lt2wh(self.pos(), self.content_thickness)
@@ -211,6 +217,7 @@ function collapse:draw()
         self.last_pos = self.pos()
         self.changed = true
         find_expandable_parent(self, self.parent):mutated()
+        flex.process_alignement()
     end
     if math.floor(self.width) == 0 or math.floor(self.height) == 0 or self.canvas == nil then
         -- don't draw anything without having any size or canvas
@@ -218,6 +225,7 @@ function collapse:draw()
     end
     -- draw child onto canvas
     love.graphics.push()
+    local last_canvas = love.graphics.getCanvas()
     love.graphics.setCanvas(self.canvas)
     love.graphics.origin()
     love.graphics.clear(0, 0, 0, 0)
@@ -231,7 +239,7 @@ function collapse:draw()
     -- (thickness stays the same, it's different here for better understanding)
     love.graphics.translate(self.lt2wh(self.content_length - self.pos(), 0))
     self.element:draw()
-    love.graphics.setCanvas()
+    love.graphics.setCanvas(last_canvas)
     love.graphics.pop()
 
     -- draw the canvas
@@ -240,6 +248,7 @@ function collapse:draw()
     animated_transform.apply(self.transform)
     -- negate the translation of the child, this way the child position is constant and just the cutoff from the canvas is moving
     love.graphics.translate(self.lt2wh(self.pos() - self.content_length, 0))
+    love.graphics.setColor(1, 1, 1, 1)
     love.graphics.draw(self.canvas)
     love.graphics.pop()
 end
