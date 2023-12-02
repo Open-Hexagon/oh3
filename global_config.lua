@@ -1,7 +1,8 @@
 local json = require("extlibs.json.json-beautify")
 local global_config = {}
 local settings = {}
-local g_config, g_profile
+local profile = require("game_handler.profile")
+local config = require("config")
 local path = "config.json"
 
 local function save()
@@ -12,10 +13,7 @@ local function save()
 end
 
 ---open the config file
----@param config any
----@param profile any
-function global_config.init(config, profile)
-    g_config, g_profile = config, profile
+function global_config.init()
     if not love.filesystem.getInfo(path) then
         global_config.set_game_profile("default")
         global_config.set_settings_profile("default")
@@ -33,7 +31,7 @@ end
 ---set the current settings profile (creates it if it doesn't exist)
 ---@param name string
 function global_config.set_settings_profile(name)
-    local profiles = g_config.list_profiles()
+    local profiles = config.list_profiles()
     local has_profile = false
     for i = 1, #profiles do
         if profiles[i] == name then
@@ -42,9 +40,9 @@ function global_config.set_settings_profile(name)
         end
     end
     if not has_profile then
-        g_config.create_profile(name)
+        config.create_profile(name)
     end
-    g_config.open_profile(name)
+    config.open_profile(name)
     settings.settings_profile = name
     save()
 end
@@ -52,7 +50,7 @@ end
 ---sets the current game profile (creates it if it doesn't exist)
 ---@param name string
 function global_config.set_game_profile(name)
-    g_profile.open_or_new(name)
+    profile.open_or_new(name)
     settings.game_profile = name
     save()
 end

@@ -5,6 +5,7 @@ local pack_level_data = require("game_handler.data")
 local async = require("async")
 local music = require("compat.music")
 local threadify = require("threadify")
+local config = require("config")
 local threaded_assets = threadify.require("game_handler.assets")
 local game_handler = {}
 local games = {
@@ -27,13 +28,11 @@ if not args.headless then
     -- correct aspect ratio initially (before the user resizes the window)
     love.event.push("resize", love.graphics.getDimensions())
 end
-local game_config
 game_handler.profile = require("game_handler.profile")
 
 ---initialize all games (has to be called before doing anything)
----@param config any
-game_handler.init = async(function(config, audio)
-    game_config = config
+---@param audio any
+game_handler.init = async(function(audio)
     audio = audio or require("audio")
     -- 1.92 needs persistent data for asset loading as it can overwrite any file
     local persistent_data
@@ -87,8 +86,8 @@ game_handler.preview_start = async(function(pack, level, level_settings, is_retr
         error("cannot resume game as preview if no game is running")
     end
     game_handler.set_volume(
-        game_config.get("background_preview_music_volume"),
-        game_config.get("background_preview_sound_volume")
+        config.get("background_preview_music_volume"),
+        config.get("background_preview_sound_volume")
     )
     was_replaying = false
     current_game.preview_mode = true
@@ -112,7 +111,7 @@ end)
 game_handler.record_start = async(function(pack, level, level_settings, is_retry)
     is_resumed = false
     was_replaying = false
-    game_handler.set_volume(game_config.get("music_volume"), game_config.get("sound_volume"))
+    game_handler.set_volume(config.get("music_volume"), config.get("sound_volume"))
     current_game.preview_mode = false
     current_game.death_callback = function()
         input.record_stop()
@@ -132,7 +131,7 @@ game_handler.record_start = async(function(pack, level, level_settings, is_retry
     input.replay = Replay:new()
     input.replay:set_game_data(
         current_game_version,
-        game_config.get_all(current_game_version),
+        config.get_all(current_game_version),
         first_play,
         game_handler.profile.get_current_profile(),
         pack,
@@ -161,7 +160,7 @@ end)
 game_handler.replay_start = async(function(file_or_replay_obj)
     is_resumed = false
     was_replaying = true
-    game_handler.set_volume(game_config.get("music_volume"), game_config.get("sound_volume"))
+    game_handler.set_volume(config.get("music_volume"), config.get("sound_volume"))
     local replay
     if type(file_or_replay_obj) == "table" then
         replay = file_or_replay_obj
@@ -181,15 +180,15 @@ game_handler.replay_start = async(function(file_or_replay_obj)
     first_play = replay.first_play
     current_game.first_play = first_play
     local old_config_values = {}
-    local current_values = game_config.get_all()
+    local current_values = config.get_all()
     for name, value in pairs(replay.data.config) do
         old_config_values[name] = current_values[name]
-        game_config.set(name, value)
+        config.set(name, value)
     end
     current_game.death_callback = function()
         input.replay_stop()
         for name, value in pairs(old_config_values) do
-            game_config.set(name, value)
+            config.set(name, value)
         end
     end
     input.replay_start()
@@ -228,7 +227,7 @@ function game_handler.process_event(name, ...)
         end
         -- recreate screen canvas to have the correct size
         width, height = love.graphics.getDimensions()
-        local res_scale = game_config.get("game_resolution_scale")
+        local res_scale = config.get("game_resolution_scale")
         screen = love.graphics.newCanvas(width * scale[1] / res_scale, height * scale[2] / res_scale, {
             -- TODO: make adjustable in settings
             msaa = 4,
@@ -251,7 +250,7 @@ function game_handler.get_game_dimensions()
     end
     if screen then
         local w, h = screen:getDimensions()
-        local res_scale = game_config.get("game_resolution_scale")
+        local res_scale = config.get("game_resolution_scale")
         return w * res_scale, h * res_scale
     else
         return 0, 0
@@ -336,7 +335,7 @@ function game_handler.draw(frametime)
             -- render the canvas in the middle of the window
             love.graphics.origin()
             love.graphics.translate((width - width * scale[1]) / 2, (height - height * scale[2]) / 2)
-            local res_scale = game_config.get("game_resolution_scale")
+            local res_scale = config.get("game_resolution_scale")
             love.graphics.scale(res_scale, res_scale)
             -- the color of the canvas' contents will look wrong if color isn't white
             love.graphics.setColor(1, 1, 1, 1)
