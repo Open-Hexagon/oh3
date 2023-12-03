@@ -87,6 +87,18 @@ function slider:process_event(name, ...)
     end
 end
 
+function slider:set(state)
+    if state == self.state then
+        return
+    end
+    self.state = state
+    self.position:stop()
+    self.position:keyframe(0.1, self.state)
+    if self.change_handler then
+        self.change_handler(self.state)
+    end
+end
+
 function slider:set_style(style)
     self.background_color = self.style.background_color or style.background_color or self.background_color
     element.set_style(self, style)

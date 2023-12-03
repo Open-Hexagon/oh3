@@ -17,23 +17,34 @@ function toggle:new(options)
     obj.selectable = true
     obj.click_handler = function(elem)
         elem.state = not elem.state
-        elem.state_indicator_offset:stop()
-        if elem.state then
-            elem.state_indicator_offset:keyframe(0.1, elem.radius * 2)
-        else
-            elem.state_indicator_offset:keyframe(0.1, 0)
-        end
-        if elem.change_handler then
-            if elem.change_handler(elem.state) then
-                return true
-            end
-        end
+        return elem:set(elem.state)
     end
     if obj.state then
         obj.state_indicator_offset:set_immediate_value(obj.radius * 2)
     end
     obj.change_map.radius = true
     return obj
+end
+
+---set the toggle's state
+---@param state boolean
+---@return boolean?
+function toggle:set(state)
+    if self.state == state then
+        return
+    end
+    self.state = state
+    self.state_indicator_offset:stop()
+    if self.state then
+        self.state_indicator_offset:keyframe(0.1, self.radius * 2)
+    else
+        self.state_indicator_offset:keyframe(0.1, 0)
+    end
+    if self.change_handler then
+        if self.change_handler(self.state) then
+            return true
+        end
+    end
 end
 
 function toggle:set_style(style)

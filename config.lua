@@ -305,6 +305,12 @@ function config.open_profile(name)
     current_profile = name
 end
 
+---gets the current profile name
+---@return string?
+function config.get_profile()
+    return current_profile
+end
+
 ---deletes a profile
 ---@param name string
 function config.delete_profile(name)

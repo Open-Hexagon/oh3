@@ -1,3 +1,4 @@
+local log = require("log")(...)
 local overlay = require("ui.overlay")
 local keyboard_navigation = require("ui.keyboard_navigation")
 local transitions = require("ui.anim.transitions")
@@ -12,10 +13,12 @@ local entry = require("ui.elements.entry")
 local icon = require("ui.elements.icon")
 local fzy = require("extlibs.fzy_lua")
 local input_setting = require("ui.overlay.settings.input")
+local settings_profile_selection = require("ui.overlay.settings.settings_profile_selection")
 
 local name_layout_map = {}
 local dependency_setting_map = {}
 local disabled_updaters = {}
+local gui_setters = {}
 
 ---create a setting element
 ---@param name string
@@ -70,6 +73,9 @@ local function create_setting(name, property, value)
                 end
             end
         end
+        gui_setters[name] = function(state)
+            setter:set(state)
+        end
     elseif type(property.default) == "number" then
         if property.min and property.max and property.step then
             -- slider with text
@@ -107,6 +113,13 @@ local function create_setting(name, property, value)
                     end
                 end
             end
+            gui_setters[name] = function(state)
+                if name == "fps_limit" and state == 0 then
+                    state = 1001
+                end
+                state = (state - property.min) * (steps - 1) / (property.max - property.min)
+                setter:set(state)
+            end
         end
     elseif property.category == "Input" then
         layout = input_setting(property)
@@ -116,6 +129,15 @@ local function create_setting(name, property, value)
 end
 
 local settings = overlay:new()
+
+function settings.set(name, value)
+    if gui_setters[name] then
+        gui_setters[name](value)
+    else
+        log("Missing setter for setting: '" .. name .. "'")
+    end
+end
+
 local categories = config.get_definitions(true)
 local category_icons = {
     Gameplay = "hexagon",
@@ -243,6 +265,7 @@ local content = flex:new({
                 settings_body:mutated()
             end,
         }),
+        settings_profile_selection.layout,
         quad:new({
             child_element = icon:new("x-lg"),
             selectable = true,
