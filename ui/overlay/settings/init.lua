@@ -123,6 +123,9 @@ local function create_setting(name, property, value)
         end
     elseif property.category == "Input" then
         layout = input_setting:new(property)
+        gui_setters[name] = function()
+            layout:init_bindings()
+        end
     end
     name_layout_map[name] = layout
     return layout
