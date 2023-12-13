@@ -32,7 +32,6 @@ function ui.set_scale(scale)
         current_screen._transform:reset()
         current_screen._transform:apply(transform)
     end
-    overlays.set_scale(scale)
 end
 
 function ui.get_dimensions()
@@ -45,10 +44,10 @@ function ui.get_dimensions()
     return width, height
 end
 
-local function calculate_layout()
-    transform:reset()
+function ui.calculate_full_layout(layout_transform, layout)
+    layout_transform:reset()
     if game_handler.is_running() then
-        transform:translate(game_handler.get_game_position())
+        layout_transform:translate(game_handler.get_game_position())
     end
     local width, height = ui.get_dimensions()
     local scale = config.get("gui_scale")
@@ -56,26 +55,34 @@ local function calculate_layout()
         -- 1080p as reference for user setting in this scale mode
         scale = scale / math.max(1920 / width, 1080 / height)
     end
-    ui.set_scale(scale)
-    local res_width, res_height = current_screen:calculate_layout(width, height)
+    if layout == current_screen then
+        ui.set_scale(scale)
+    else
+        layout:set_scale(scale)
+    end
+    local res_width, res_height = layout:calculate_layout(width, height)
     -- as long as the resulting layout is smaller than the window, up gui scale (until user setting is reached)
     while res_width < width and res_height < height do
-        local new_scale = current_screen.scale + 0.1
+        local new_scale = layout.scale + 0.1
         if new_scale > scale then
             break
         end
-        current_screen:set_scale(new_scale)
-        res_width, res_height = current_screen:calculate_layout(width, height)
+        layout:set_scale(new_scale)
+        res_width, res_height = layout:calculate_layout(width, height)
     end
     -- as long as the resulting layout is too big for the window, lower gui scale
     while res_width > width or res_height > height do
-        local new_scale = current_screen.scale - 0.1
+        local new_scale = layout.scale - 0.1
         if new_scale <= 0.1 then
             return
         end
-        current_screen:set_scale(new_scale)
-        res_width, res_height = current_screen:calculate_layout(width, height)
+        layout:set_scale(new_scale)
+        res_width, res_height = layout:calculate_layout(width, height)
     end
+end
+
+local function calculate_layout()
+    ui.calculate_full_layout(transform, current_screen)
     overlays.update_layout()
 end
 

@@ -2,6 +2,7 @@ local keyboard_navigation = require("ui.keyboard_navigation")
 local game_handler = require("game_handler")
 local signal = require("ui.anim.signal")
 local flex = require("ui.layout.flex")
+local config = require("config")
 
 local overlays = {}
 
@@ -33,11 +34,7 @@ end
 
 ---calculate layout (only used internally)
 function overlay:update_layout()
-    self.layout._transform:reset()
-    if game_handler.is_running() then
-        self.layout._transform:translate(game_handler.get_game_position())
-    end
-    self.layout:calculate_layout(require("ui").get_dimensions())
+    require("ui").calculate_full_layout(self.layout._transform, self.layout)
 end
 
 ---open the overlay
