@@ -122,7 +122,7 @@ local function create_setting(name, property, value)
             end
         end
     elseif property.category == "Input" then
-        layout = input_setting(property)
+        layout = input_setting:new(property)
     end
     name_layout_map[name] = layout
     return layout

@@ -24,7 +24,7 @@ local button = quad:new({
     end,
     click_handler = function()
         dropdown:toggle()
-    end
+    end,
 })
 
 local function refresh_list()
@@ -52,7 +52,7 @@ local function refresh_list()
                 end
                 button.element.raw_text = config.get_profile()
                 button.element:update_size()
-            end
+            end,
         })
     end
     profile_list:mutated(false)

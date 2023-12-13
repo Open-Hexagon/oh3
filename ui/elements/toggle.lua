@@ -16,8 +16,7 @@ function toggle:new(options)
     )
     obj.selectable = true
     obj.click_handler = function(elem)
-        elem.state = not elem.state
-        return elem:set(elem.state)
+        return elem:set(not elem.state)
     end
     if obj.state then
         obj.state_indicator_offset:set_immediate_value(obj.radius * 2)

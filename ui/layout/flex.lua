@@ -27,10 +27,12 @@ local flex = {}
 flex.__index = flex
 -- ensure that changed is set to true when any property in the change_map is changed
 flex.__newindex = function(t, key, value)
-    if t.change_map[key] and t[key] ~= value then
-        t.changed = true
+    if t.change_map then
+        if t.change_map[key] and t[key] ~= value then
+            t.changed = true
+        end
+        rawset(t, key, value)
     end
-    rawset(t, key, value)
 end
 
 local process_alignement_later = {}
