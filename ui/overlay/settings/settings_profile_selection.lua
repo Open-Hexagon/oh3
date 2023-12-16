@@ -88,6 +88,9 @@ local function refresh_list()
                                 profile_name_label.changed = true
                                 profile_name_label:update_size()
                                 refresh_list()
+                                for name, value in pairs(config.get_all()) do
+                                    require("ui.overlay.settings").set(name, value)
+                                end
                             end
                         end)
                         return true
@@ -155,6 +158,9 @@ local function refresh_list()
                 config.set_defaults()
                 config.create_profile(name)
                 refresh_list()
+                for setting_name, value in pairs(config.get_all()) do
+                    require("ui.overlay.settings").set(setting_name, value)
+                end
             end,
         }),
     })

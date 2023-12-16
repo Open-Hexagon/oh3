@@ -212,9 +212,11 @@ local main = async(function()
         love.event.pump()
         for name, a, b, c, d, e, f in love.event.poll() do
             if name == "quit" then
+                config.save()
                 threadify.stop()
                 return a or 0
             elseif name == "threaderror" then
+                config.save()
                 error("Error in thread: " .. b)
             end
             game_handler.process_event(name, a, b, c, d, e, f)

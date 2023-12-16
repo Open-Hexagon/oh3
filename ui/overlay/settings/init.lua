@@ -281,6 +281,7 @@ local content = flex:new({
             end,
             click_handler = function()
                 settings:close()
+                config.save()
             end,
         }),
     }, { justify_content = "between" }),
