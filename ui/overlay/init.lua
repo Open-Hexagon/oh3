@@ -88,6 +88,9 @@ function overlay:close()
                 self.backdrop_alpha:set_immediate_value(0)
             end
         end
+        if self.onclose then
+            self.onclose()
+        end
     end
 end
 

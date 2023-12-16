@@ -7,7 +7,9 @@ local entry = require("ui.elements.entry")
 local keyboard_navigation = require("ui.keyboard_navigation")
 local overlay = require("ui.overlay")
 local transitions = require("ui.anim.transitions")
+local dialogs = require("ui.overlay.dialog")
 
+-- might put this in a different file if it's required from multiple places in the future
 local alert = overlay:new()
 alert.transition = transitions.scale
 local alert_label = label:new("")
@@ -33,6 +35,7 @@ alert.layout = flex:new({
     }),
 }, { justify_content = "center", align_items = "center" })
 
+
 local settings_profile_selection = {}
 
 local profile_list = flex:new({}, { direction = "column", align_items = "stretch", align_relative_to = "thickness" })
@@ -40,8 +43,9 @@ local dropdown = collapse:new(quad:new({
     child_element = profile_list,
 }))
 
+local profile_name_label = label:new(config.get_profile() or "")
 local button = quad:new({
-    child_element = label:new(config.get_profile() or ""),
+    child_element = profile_name_label,
     selectable = true,
     selection_handler = function(self)
         if self.selected then
@@ -59,7 +63,37 @@ local function refresh_list()
     local names = config.list_profiles()
     for i = 1, #names do
         profile_list.elements[i] = quad:new({
-            child_element = label:new(names[i]),
+            child_element = flex:new({
+                label:new(names[i]),
+                quad:new({
+                    child_element = label:new("-"),
+                    click_handler = function()
+                        dialogs.yes_no("Do you really want to delete '" .. names[i] .. "'?"):done(function(confirmed)
+                            if confirmed then
+                                local open_later
+                                if i == 1 and names[2] then
+                                    open_later = names[2]
+                                elseif i ~= 1 and names[1] then
+                                    open_later = names[1]
+                                else
+                                    alert_label.raw_text = "Cannot have no profiles."
+                                    alert_label.changed = true
+                                    alert_label:update_size()
+                                    alert:open()
+                                    return
+                                end
+                                config.delete_profile(names[i])
+                                config.open_profile(open_later)
+                                profile_name_label.raw_text = config.get_profile()
+                                profile_name_label.changed = true
+                                profile_name_label:update_size()
+                                refresh_list()
+                            end
+                        end)
+                        return true
+                    end,
+                }),
+            }, { justify_content = "between", align_relative_to = "thickness" }),
             selectable = true,
             style = { border_thickness = 0, padding = 0 },
             selection_handler = function(self)
@@ -124,6 +158,10 @@ local function refresh_list()
             end,
         }),
     })
+    -- remove leftovers
+    while profile_list.elements[#names + 2] ~= nil do
+        table.remove(profile_list.elements, #names + 2)
+    end
     profile_list:mutated(false)
     require("ui.elements.element").update_size(profile_list)
 end
