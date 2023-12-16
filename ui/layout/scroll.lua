@@ -409,7 +409,7 @@ end
 ---draw the scroll container with its child
 function scroll:draw()
     self.x, self.y = love.graphics.transformPoint(0, 0)
-    if math.floor(self.width) == 0 or math.floor(self.height) == 0 then
+    if self.width <= 0 or self.height <= 0 then
         -- don't draw anything without having any size
         return
     end
@@ -453,7 +453,9 @@ function scroll:draw()
         self.scrollbar_area.width, self.scrollbar_area.height = self.lt2wh(bar_length, bar_thick)
     end
     love.graphics.push()
+    local last_canvas
     if self.scrollable then
+        last_canvas = love.graphics.getCanvas()
         love.graphics.setCanvas(self.canvas)
         love.graphics.clear(0, 0, 0, 0)
         -- when drawing on canvas 0, 0 (origin) will always be the top left corner
@@ -466,7 +468,7 @@ function scroll:draw()
     end
     self.element:draw()
     if self.scrollable then
-        love.graphics.setCanvas()
+        love.graphics.setCanvas(last_canvas)
         love.graphics.pop()
         love.graphics.push()
         -- canvas is drawn with transformations now (elements in canvas are not)

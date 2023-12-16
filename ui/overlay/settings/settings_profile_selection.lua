@@ -3,7 +3,35 @@ local label = require("ui.elements.label")
 local quad = require("ui.elements.quad")
 local collapse = require("ui.layout.collapse")
 local flex = require("ui.layout.flex")
+local entry = require("ui.elements.entry")
 local keyboard_navigation = require("ui.keyboard_navigation")
+local overlay = require("ui.overlay")
+local transitions = require("ui.anim.transitions")
+
+local alert = overlay:new()
+alert.transition = transitions.scale
+local alert_label = label:new("")
+alert.layout = flex:new({
+    quad:new({
+        child_element = flex:new({
+            alert_label,
+            quad:new({
+                child_element = label:new("Ok"),
+                selectable = true,
+                selection_handler = function(self)
+                    if self.selected then
+                        self.border_color = { 0, 0, 1, 1 }
+                    else
+                        self.border_color = { 1, 1, 1, 1 }
+                    end
+                end,
+                click_handler = function()
+                    alert:close()
+                end,
+            }),
+        }, { direction = "column", align_items = "center" }),
+    }),
+}, { justify_content = "center", align_items = "center" })
 
 local settings_profile_selection = {}
 
@@ -55,8 +83,49 @@ local function refresh_list()
             end,
         })
     end
+    local profile_name_entry = entry:new({
+        no_text_text = "Profile name",
+    })
+    profile_list.elements[#names + 1] = flex:new({
+        profile_name_entry,
+        quad:new({
+            child_element = label:new("+"),
+            selectable = true,
+            selection_handler = function(self)
+                if self.selected then
+                    self.border_color = { 0, 0, 1, 1 }
+                else
+                    self.border_color = { 1, 1, 1, 1 }
+                end
+            end,
+            click_handler = function()
+                local name = profile_name_entry.text
+                if name == "" then
+                    alert_label.raw_text = "Settings profile name can't be empty."
+                    alert_label.changed = true
+                    alert_label:update_size()
+                    alert:open()
+                    return
+                end
+                local profile_names = config.list_profiles()
+                for i = 1, #profile_names do
+                    if name == profile_names[i] then
+                        alert_label.raw_text = 'Settings profile with name "' .. name .. '" already exists.'
+                        alert_label.changed = true
+                        alert_label:update_size()
+                        alert:open()
+                        return
+                    end
+                end
+                config.save()
+                config.set_defaults()
+                config.create_profile(name)
+                refresh_list()
+            end,
+        }),
+    })
     profile_list:mutated(false)
-    dropdown:mutated()
+    require("ui.elements.element").update_size(profile_list)
 end
 
 refresh_list()

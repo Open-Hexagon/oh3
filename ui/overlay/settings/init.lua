@@ -212,7 +212,7 @@ end
 local settings_column = flex:new(category_layouts, { direction = "column", align_items = "stretch" })
 local category_column = flex:new(category_indicators, { direction = "column" })
 local settings_body = flex:new({
-    category_column,
+    scroll:new(category_column),
     scroll:new(settings_column),
 })
 

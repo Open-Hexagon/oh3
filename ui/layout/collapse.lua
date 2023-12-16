@@ -184,7 +184,12 @@ function collapse:calculate_layout(width, height)
             self.canvas = love.graphics.newCanvas(w, h)
         end
     end
+    local fully_open = self.pos() == self.content_length
+    local last_len = self.content_length
     self.content_length, self.content_thickness = self.wh2lt(content_width, content_height)
+    if fully_open and self.content_length ~= last_len then
+        self.pos:set_immediate_value(self.content_length)
+    end
     self.width, self.height = self.lt2wh(self.pos(), self.content_thickness)
     self.expandable_x = math.max(width - self.width, 0)
     self.expandable_y = math.max(height - self.height, 0)
@@ -193,30 +198,12 @@ function collapse:calculate_layout(width, height)
     return self.width, self.height
 end
 
----find a sufficiently expandable parent
----@param self any
-local function find_expandable_parent(self, elem)
-    local expand_amount = self.content_length - self.pos()
-    local elem_amount = self.wh2lt(elem.expandable_x, elem.expandable_y)
-    elem.changed = true
-    if elem_amount >= expand_amount then
-        return elem
-    else
-        if elem.parent then
-            return find_expandable_parent(self, elem.parent)
-        else
-            log("collapse does not have sufficiently expandable parent!")
-            return elem
-        end
-    end
-end
-
 ---draw the collapse container with its child
 function collapse:draw()
     if self.pos() ~= self.last_pos then
         self.last_pos = self.pos()
         self.changed = true
-        find_expandable_parent(self, self.parent):mutated()
+        require("ui.elements.element").update_size(self)
         flex.process_alignement()
     end
     if math.floor(self.width) == 0 or math.floor(self.height) == 0 or self.canvas == nil then
