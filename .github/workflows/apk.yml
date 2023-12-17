@@ -2,9 +2,9 @@ name: Build and package for android
 
 on:
   push:
-    branches: [ "newui" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "newui" ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:

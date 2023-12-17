@@ -2,9 +2,9 @@ name: Build and package for osx
 
 on:
   push:
-    branches: [ "newui" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "newui" ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 env:
