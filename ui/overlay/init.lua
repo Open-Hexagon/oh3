@@ -67,6 +67,9 @@ function overlay:open()
                 self.backdrop_alpha:set_immediate_value(0.7)
             end
         end
+        if self.onopen then
+            self.onopen()
+        end
     end
 end
 

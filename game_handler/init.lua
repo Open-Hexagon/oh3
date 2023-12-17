@@ -13,6 +13,13 @@ local games = {
     [20] = require("compat.game20"),
     [21] = require("compat.game21"),
 }
+-- create pack directories if they don't exist
+for version in pairs(games) do
+    local path = "packs" .. version
+    if not love.filesystem.getInfo(path) then
+        love.filesystem.createDirectory(path)
+    end
+end
 local last_pack, last_level, last_level_settings, last_version
 local current_game
 local current_game_version

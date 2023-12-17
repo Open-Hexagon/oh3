@@ -35,7 +35,6 @@ alert.layout = flex:new({
     }),
 }, { justify_content = "center", align_items = "center" })
 
-
 local settings_profile_selection = {}
 
 local profile_list = flex:new({}, { direction = "column", align_items = "stretch", align_relative_to = "thickness" })

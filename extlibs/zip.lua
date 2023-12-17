@@ -80,7 +80,7 @@ function zip:unzip(path)
         path = path .. "/"
     end
     for _, name, offset, size, packed, crc in self:list_files() do
-        name = name .. path
+        name = path .. name
         if name:sub(-1, -1) == "/" then
             love.filesystem.createDirectory(name)
         else

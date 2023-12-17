@@ -4,6 +4,7 @@ local icon = require("ui.elements.icon")
 local quad = require("ui.elements.quad")
 local scroll = require("ui.layout.scroll")
 local settings = require("ui.overlay.settings")
+local pack_overlay = require("ui.overlay.packs")
 local make_pack_elements = require("ui.screens.levelselect.packs")
 
 local state = {}
@@ -36,6 +37,13 @@ state.top_bar = quad:new({
             selectable = true,
             click_handler = function()
                 settings:open()
+            end,
+        }),
+        quad:new({
+            child_element = icon:new("download", { style = { padding = 8 } }),
+            selectable = true,
+            click_handler = function()
+                pack_overlay:open()
             end,
         }),
     }),
