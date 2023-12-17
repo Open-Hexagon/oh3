@@ -96,7 +96,7 @@ local function refresh_list()
                         return true
                     end,
                 }),
-            }, { justify_content = "between", align_relative_to = "thickness" }),
+            }, { justify_content = "between" }),
             selectable = true,
             style = { border_thickness = 0, padding = 0 },
             selection_handler = function(self)
