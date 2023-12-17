@@ -23,7 +23,12 @@ local create_pack_list = async(function()
     pack_list.elements = { label:new("Loading...") }
     pack_list:mutated(false)
     pack_list.elements[1]:update_size()
+    local old_version = selected_version
     local packs = async.await(download.get_pack_list(selected_version))
+    if old_version ~= selected_version then
+        -- user clicked on other version while loading
+        return
+    end
     pack_list.elements = {}
     for i = 1, #packs do
         pack_list.elements[i] = quad:new({
