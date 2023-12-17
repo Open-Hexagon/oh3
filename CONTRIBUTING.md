@@ -27,4 +27,4 @@ The codebase is large and will only continue to grow. For this reason it is impo
 - **Performance**. While micro-optimizations are to be avoided, structural decisions that have a great impact on performance should be made with it in mind.
 
 ## Target branch
-At the moment most of the work is done in the [newui branch](https://github.com/Open-Hexagon/oh3/tree/newui), so it is the target for pull requests. However this should change soon once the branch is merged into main.
+All pull requests should target the main branch.
