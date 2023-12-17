@@ -55,6 +55,7 @@ local render_replay = async(function(game_handler, video_encoder, audio, replay,
             love.graphics.origin()
             love.graphics.clear(0, 0, 0, 1)
             game_handler.draw(1 / fps)
+            ui.update(1 / fps)
             ui.draw()
             love.graphics.captureScreenshot(video_encoder.supply_video_data)
             love.graphics.present()
