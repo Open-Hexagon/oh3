@@ -1,7 +1,7 @@
 local search_names = {
-    "liblove-11.4.so",
+    "liblove-11.5.so",
     "liblove.so",
-    "liblove-11.4.dll",
+    "liblove-11.5.dll",
     "liblove.dll",
 }
 local found = false

@@ -44,9 +44,9 @@ jobs:
         cp -r *.lua assets compat extlibs game game_handler server ui input_schemes extra/linux/squashfs-root/share/games/oh3
         # extract love over everything
         cd extra/linux
-        wget https://github.com/love2d/love/releases/download/11.4/love-11.4-x86_64.AppImage
-        chmod +x love-11.4-x86_64.AppImage
-        ./love-11.4-x86_64.AppImage --appimage-extract
+        wget https://github.com/love2d/love/releases/download/11.5/love-11.5-x86_64.AppImage
+        chmod +x love-11.5-x86_64.AppImage
+        ./love-11.5-x86_64.AppImage --appimage-extract
         # put libs in their place
         cp ../../lib/luv.so squashfs-root/share/games/oh3
         cp ../../lib/libsqlite3.so squashfs-root/lib
