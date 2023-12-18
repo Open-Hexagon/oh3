@@ -57,6 +57,21 @@ game_handler.init = async(function(audio)
     music.init(audio)
 end)
 
+---import a pack
+---@param folder_name string
+---@param version number
+---@return table
+game_handler.import_pack = async(function(folder_name, version)
+    -- 1.92 needs persistent data for asset loading as it can overwrite any file
+    local persistent_data
+    if not args.server and not args.migrate then
+        persistent_data = game_handler.profile.get_all_data()
+    end
+    local pack = async.await(threaded_assets.preload_pack(folder_name, version, persistent_data))
+    pack_level_data.import_packs({ pack })
+    return pack
+end)
+
 ---set music and sound volume (0..1)
 ---@param music_volume number?
 ---@param sound_volume number?

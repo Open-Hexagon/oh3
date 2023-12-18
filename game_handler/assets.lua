@@ -116,8 +116,9 @@ end
 
 local initialized = false
 
-function assets.preload_pack(pack_folder, pack_folder_name, is_compat, version, persistent_data, pack_list)
-    local folder = pack_folder .. pack_folder_name .. "/"
+local function preload_pack(pack_folder_name, version, persistent_data)
+    local is_compat = version ~= 3
+    local folder = "packs" .. version .. "/" .. pack_folder_name .. "/"
     -- check if valid pack
     local files = love.filesystem.getDirectoryItems(folder)
     local function check_file(file)
@@ -221,7 +222,7 @@ function assets.preload_pack(pack_folder, pack_folder_name, is_compat, version, 
                     log("Id conflict: ", pack_data.id)
                 end
                 packs[pack_data.id] = pack_data
-                pack_list[#pack_list + 1] = pack_data
+                return pack_data
             else
                 log("Failed to decode", folder .. "pack.json")
             end
@@ -229,7 +230,7 @@ function assets.preload_pack(pack_folder, pack_folder_name, is_compat, version, 
     end
 end
 
-function assets.register_pack(version, pack_data)
+local function register_pack(version, pack_data)
     if pack_data.game_version ~= 3 then
         -- only register pack if dependencies are satisfied
         local has_all_deps = true
@@ -291,23 +292,29 @@ function assets.init(persistent_data, headless)
                 log("Loading pack information for game" .. version)
                 asset_loading_text_channel:push("Loading pack information for game" .. version)
                 local pack_list = {}
-                local is_compat = version ~= 3
                 local pack_folder = "packs" .. version .. "/"
                 local pack_folders = love.filesystem.getDirectoryItems(pack_folder)
                 for j = 1, #pack_folders do
-                    assets.preload_pack(pack_folder, pack_folders[j], is_compat, version, persistent_data, pack_list)
+                    pack_list[#pack_list + 1] = preload_pack(pack_folders[j], version, persistent_data)
                     asset_loading_progress_channel:push(j / #pack_folders)
                 end
 
                 -- register pack and levels
                 for j = 1, #pack_list do
-                    assets.register_pack(version, pack_list[j])
+                    register_pack(version, pack_list[j])
                 end
             end
         end
         initialized = true
     end
     return data.get_packs()
+end
+
+function assets.preload_pack(pack_folder_name, version, persistent_data)
+    local pack_data = preload_pack(pack_folder_name, version, persistent_data)
+    register_pack(version, pack_data)
+    local pack_datas = data.get_packs()
+    return pack_datas[#pack_datas]
 end
 
 function assets.get_dependency_pack_mapping21()

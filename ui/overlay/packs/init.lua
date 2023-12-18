@@ -8,6 +8,8 @@ local label = require("ui.elements.label")
 local threadify = require("threadify")
 local download = threadify.require("ui.overlay.packs.download_thread")
 local channel_callbacks = require("channel_callbacks")
+local pack_elements = require("ui.screens.levelselect.packs")
+local game_handler = require("game_handler")
 local async = require("async")
 local config = require("config")
 
@@ -41,9 +43,16 @@ local create_pack_list = async(function()
                     self.border_color = { 1, 1, 1, 1 }
                 end
             end,
-            click_handler = function()
-                download.get(selected_version, packs[i])
-            end,
+            click_handler = async(function()
+                async.await(download.get(selected_version, packs[i]))
+                local pack = async.await(game_handler.import_pack(packs[i], selected_version))
+                local elem = pack_elements.make_pack_element(pack, true)
+                -- element may not be created if an element for the pack already exists
+                if elem then
+                    require("ui.screens.levelselect").state.packs:mutated()
+                    elem:click()
+                end
+            end),
         })
     end
     pack_list:mutated(false)

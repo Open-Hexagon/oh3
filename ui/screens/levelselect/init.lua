@@ -5,16 +5,14 @@ local quad = require("ui.elements.quad")
 local scroll = require("ui.layout.scroll")
 local settings = require("ui.overlay.settings")
 local pack_overlay = require("ui.overlay.packs")
-local make_pack_elements = require("ui.screens.levelselect.packs")
+local pack_elements = require("ui.screens.levelselect.packs")
 
 local state = {}
 state.level_options_selected = { difficulty_mult = 1 }
 
-local pack_elems = make_pack_elements(state)
+local pack_elems = pack_elements.init(state)
 
-state.packs = flex:new({
-    scroll:new(flex:new(pack_elems, { direction = "column", align_items = "stretch", align_relative_to = "area" })),
-}, { direction = "column", align_items = "stretch" })
+state.packs = flex:new(pack_elems, { direction = "column", align_items = "stretch", align_relative_to = "area" })
 
 state.levels = scroll:new(flex:new({}, { direction = "column", align_items = "center" }))
 
@@ -25,7 +23,7 @@ state.leaderboards = flex:new({
 --todo: "score" element similar to those other two, holds the score data like time, player, place, etc.
 
 state.columns = flex:new({
-    state.packs,
+    scroll:new(state.packs),
     state.levels,
     state.leaderboards,
 }, { size_ratios = { 1, 2, 1 } })
@@ -58,5 +56,7 @@ state.root = flex:new({
 if #pack_elems > 0 then
     pack_elems[1]:click(false)
 end
+
+state.root.state = state
 
 return state.root
