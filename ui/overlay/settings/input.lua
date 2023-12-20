@@ -41,6 +41,10 @@ function input_setting:new(property)
             obj.set_scheme("touch")
             return true
         end),
+        make_button("controller", function()
+            obj.set_scheme("controller")
+            return true
+        end),
         make_button("cancel", function()
             obj.scheme_select_collapse:toggle(false)
             return true

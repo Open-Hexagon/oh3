@@ -158,12 +158,25 @@ local icon_mappings = {
         left = "square-half",
         right = "square-half:mirror",
     },
+    controller = {
+        y = "Button Y",
+        x = "Button X",
+        b = "Button B",
+        a = "Button A",
+        leftshoulder = "Left Shoulder (LB)",
+        rightshoulder = "Right Shoulder (RB)",
+        dpup = "Dpad Up",
+        dpleft = "Dpad Left",
+        dpright = "Dpad Right",
+        dpdown = "Dpad Down",
+    },
 }
 
 local prompt_labels = {
     keyboard = "Press a key",
     mouse = "Press a mouse button",
     touch = "Touch either the left or the right side of the screen",
+    controller = "Press a controller button",
 }
 
 local quad = require("ui.elements.quad")
