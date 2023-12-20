@@ -8,6 +8,7 @@ local keyboard_navigation = require("ui.keyboard_navigation")
 local overlay = require("ui.overlay")
 local transitions = require("ui.anim.transitions")
 local dialogs = require("ui.overlay.dialog")
+local global_config = require("global_config")
 
 -- might put this in a different file if it's required from multiple places in the future
 local alert = overlay:new()
@@ -82,7 +83,7 @@ local function refresh_list()
                                     return
                                 end
                                 config.delete_profile(names[i])
-                                config.open_profile(open_later)
+                                global_config.set_settings_profile(open_later)
                                 profile_name_label.raw_text = config.get_profile()
                                 profile_name_label.changed = true
                                 profile_name_label:update_size()
@@ -109,13 +110,13 @@ local function refresh_list()
                 dropdown:toggle(false)
                 keyboard_navigation.select_element(button)
                 if config.get_profile() ~= names[i] then
-                    config.open_profile(names[i])
+                    global_config.set_settings_profile(names[i])
                     for name, value in pairs(config.get_all()) do
                         require("ui.overlay.settings").set(name, value)
                     end
+                    button.element.raw_text = config.get_profile()
+                    button.element:update_size()
                 end
-                button.element.raw_text = config.get_profile()
-                button.element:update_size()
             end,
         })
     end
