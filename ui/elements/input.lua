@@ -174,12 +174,14 @@ local icon_mappings = {
         dpdown = "Dpad Down",
         dpleft = "Dpad Left",
         dpright = "Dpad Right",
+        --[[
         misc1 = "Share/Capture",
         paddle1 = "",
         paddle2 = "",
         paddle3 = "",
         paddle4 = "",
         touchpad = "DualSense Touchpad"
+        ]]
     },
 }
 
