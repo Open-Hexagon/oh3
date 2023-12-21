@@ -33,8 +33,9 @@ local create_pack_list = async(function()
     end
     pack_list.elements = {}
     for i = 1, #packs do
+        local pack_label = label:new(packs[i])
         pack_list.elements[i] = quad:new({
-            child_element = label:new(packs[i]),
+            child_element = pack_label,
             selectable = true,
             selection_handler = function(self)
                 if self.selected then
@@ -44,12 +45,22 @@ local create_pack_list = async(function()
                 end
             end,
             click_handler = async(function()
+                channel_callbacks.register("pack_download_progress", function(progress)
+                    pack_label.raw_text = packs[i] .. " (Progress: " .. progress .. "%)"
+                    pack_label.changed = true
+                    pack_label:update_size()
+                end)
                 async.await(download.get(selected_version, packs[i]))
+                channel_callbacks.unregister("pack_download_progress")
+                pack_label.raw_text = packs[i]
+                pack_label.changed = true
+                pack_label:update_size()
                 local pack = async.await(game_handler.import_pack(packs[i], selected_version))
                 local elem = pack_elements.make_pack_element(pack, true)
                 -- element may not be created if an element for the pack already exists
                 if elem then
-                    require("ui.screens.levelselect").state.packs:mutated()
+                    require("ui.screens.levelselect").state.packs:mutated(false)
+                    elem:update_size()
                     elem:click()
                 end
             end),

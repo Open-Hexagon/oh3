@@ -35,7 +35,7 @@ end
 ---@param pack_name string
 function download.get(version, pack_name)
     local file = love.filesystem.newFile("tmp.zip")
-    local download_size = 0
+    local download_size, last_progress = 0
     file:open("w")
     log("Downloading", pack_name)
     http.request({
@@ -46,8 +46,11 @@ function download.get(version, pack_name)
             elseif chunk then
                 file:write(chunk)
                 download_size = download_size + #chunk
-                log("Downloading", pack_name, "progress:", download_size, "of:", pack_sizes[version][pack_name])
-                love.thread.getChannel("pack_download_progress"):push(download_size / pack_sizes[version][pack_name])
+                local progress = math.floor(download_size / pack_sizes[version][pack_name] * 100)
+                if progress ~= last_progress then
+                    love.thread.getChannel("pack_download_progress"):push(progress)
+                    last_progress = progress
+                end
                 return 1
             end
         end,
