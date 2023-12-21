@@ -93,7 +93,8 @@ assets.get_pack = async(function(id)
                 if dependency_pack == nil then
                     log("can't find dependency '" .. index_pack_id .. "' of '" .. pack.id .. "'.")
                 elseif dependency_pack.id ~= pack.id then
-                    dependency_mapping[index_pack_id] = async.await(threaded_assets.get_pack(21, dependency_pack.id, args.headless))
+                    dependency_mapping[index_pack_id] =
+                        async.await(threaded_assets.get_pack(21, dependency_pack.id, args.headless))
                     compile_shaders(dependency_mapping[index_pack_id])
                 end
             end

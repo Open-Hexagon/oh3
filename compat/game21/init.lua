@@ -77,8 +77,8 @@ local message_font, go_sound, level_up_sound, restart_sound, select_sound
 public.start = async(function(pack_id, level_id, level_options)
     -- update inital window dimensions when starting as well (for onInit/onLoad)
     if not args.headless then
-        game.width = love.graphics.getWidth()
-        game.height = love.graphics.getHeight()
+        local game_handler = require("game_handler")
+        game.width, game.height = game_handler.get_game_dimensions()
     end
     level_options.difficulty_mult = level_options.difficulty_mult or 1
     local difficulty_mult = level_options.difficulty_mult
