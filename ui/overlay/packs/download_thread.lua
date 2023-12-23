@@ -39,7 +39,7 @@ function download.get(version, pack_name)
     file:open("w")
     log("Downloading", pack_name)
     http.request({
-        url = server_url .. "packs" .. version .. "/" .. pack_name .. ".zip",
+        url = server_url .. "packs" .. version .. "/" .. url.escape(pack_name) .. ".zip",
         sink = function(chunk, err)
             if err then
                 log(err)
