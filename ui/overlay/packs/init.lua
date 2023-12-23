@@ -53,6 +53,10 @@ local create_pack_list = async(function()
                 end
             end,
             click_handler = async(function()
+                if progress_bar.percentage ~= 0 then
+                    -- download already in progress
+                    return
+                end
                 channel_callbacks.register("pack_download_progress", function(percent)
                     progress_bar.percentage = percent
                 end)
