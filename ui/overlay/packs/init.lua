@@ -6,6 +6,7 @@ local scroll = require("ui.layout.scroll")
 local icon = require("ui.elements.icon")
 local label = require("ui.elements.label")
 local progress = require("ui.elements.progress")
+local collapse = require("ui.layout.collapse")
 local threadify = require("threadify")
 local download = threadify.require("ui.overlay.packs.download_thread")
 local channel_callbacks = require("channel_callbacks")
@@ -37,10 +38,11 @@ local create_pack_list = async(function()
         local progress_bar = progress:new({
             style = { background_color = { 0, 0, 0, 0 } },
         })
+        local progress_collapse = collapse:new(progress_bar)
         pack_list.elements[i] = quad:new({
             child_element = flex:new({
                 label:new(packs[i]),
-                progress_bar,
+                progress_collapse,
             }, { direction = "column", align_items = "stretch", align_relative_to = "parentparent" }),
             selectable = true,
             selection_handler = function(self)
@@ -51,11 +53,13 @@ local create_pack_list = async(function()
                 end
             end,
             click_handler = async(function()
-                channel_callbacks.register("pack_download_progress", function(progress)
-                    progress_bar.percentage = progress
+                channel_callbacks.register("pack_download_progress", function(percent)
+                    progress_bar.percentage = percent
                 end)
+                progress_collapse:toggle(true)
                 async.await(download.get(selected_version, packs[i]))
                 channel_callbacks.unregister("pack_download_progress")
+                progress_collapse:toggle(false)
                 progress_bar.percentage = 0
                 local pack = async.await(game_handler.import_pack(packs[i], selected_version))
                 local elem = pack_elements.make_pack_element(pack, true)

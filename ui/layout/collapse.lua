@@ -177,7 +177,9 @@ function collapse:calculate_layout(width, height)
     end
     self.last_available_width = width
     self.last_available_height = height
+    self.element.flex_expand = self.flex_expand
     local content_width, content_height = self.element:calculate_layout(width, height)
+    self.element.flex_expand = nil
     if not self.canvas or self.canvas:getWidth() ~= content_width or self.canvas:getHeight() ~= content_height then
         local w, h = math.floor(content_width + 0.5), math.floor(content_height + 0.5)
         if w ~= 0 and h ~= 0 then
