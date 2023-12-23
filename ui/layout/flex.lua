@@ -382,13 +382,17 @@ function flex:calculate_layout(width, height)
         self.align_relative_to ~= "area"
         and self.align_relative_to ~= "thickness"
         and self.align_relative_to ~= "parent"
+        and self.align_relative_to ~= "parentparent"
     then
         error("Invalid value for align_relative_to: '" .. self.align_relative_to .. "'.")
     end
     if self.align_relative_to == "area" and has_non_start_align then
         final_thickness = math.max(final_thickness, available_thickness)
     end
-    if self.align_relative_to == "parent" and (has_non_start_align or self.justify_content ~= "start") then
+    if
+        (self.align_relative_to == "parent" or self.align_relative_to == "parentparent")
+        and (has_non_start_align or self.justify_content ~= "start")
+    then
         process_alignement_later[#process_alignement_later + 1] = self
         self.must_calculate_alignement = true
         flex.must_calculate_alignement = true
@@ -417,6 +421,12 @@ function flex:align_and_justify()
     end
     self.must_calculate_alignement = false
     local final_length, final_thickness = self.wh2lt(self.width, self.height)
+    if self.align_relative_to == "parentparent" then
+        _, final_thickness = self.wh2lt(self.parent.width, self.parent.height)
+        if self.parent.padding then
+            final_thickness = final_thickness - 2 * self.parent.padding * self.scale
+        end
+    end
     for i = 1, #self.elements do
         local elem = self.elements[i]
         local align = elem.align or self.align_items

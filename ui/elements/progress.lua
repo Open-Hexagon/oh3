@@ -10,9 +10,9 @@ progress.__index = setmetatable(progress, {
 function progress:new(options)
     local obj = element.new(
         setmetatable({
-		percentage = 0,
-		background_color = { 0, 0, 0, 1 },
-		border_color = { 1, 1, 1, 1 },
+            percentage = 0,
+            background_color = { 0, 0, 0, 1 },
+            border_color = { 1, 1, 1, 1 },
         }, progress),
         options
     )
@@ -34,17 +34,17 @@ end
 ---@return number
 ---@return number
 function progress:calculate_element_layout(available_width, available_height)
-	width = 100 * self.scale
-	height = 10 * self.scale
-	if self.flex_expand then
-	    if self.flex_expand == 1 then
-		-- only expand in width
-		width = available_width
-	    elseif self.flex_expand == 2 then
-		-- only expand in height
-		height = available_height
-	    end
-	end
+    width = 100 * self.scale
+    height = 10 * self.scale
+    if self.flex_expand then
+        if self.flex_expand == 1 then
+            -- only expand in width
+            width = available_width
+        elseif self.flex_expand == 2 then
+            -- only expand in height
+            height = available_height
+        end
+    end
     return width, height
 end
 

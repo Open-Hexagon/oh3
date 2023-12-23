@@ -34,39 +34,39 @@ local create_pack_list = async(function()
     end
     pack_list.elements = {}
     for i = 1, #packs do
-	local progress_bar = progress:new({
-		style = { background_color = { 0, 0, 0, 0 } }
-	})
+        local progress_bar = progress:new({
+            style = { background_color = { 0, 0, 0, 0 } },
+        })
         pack_list.elements[i] = quad:new({
-	    child_element = flex:new({
-		    label:new(packs[i]),
-		    progress_bar,
-	    }, { direction = "column", align_items = "stretch" }),
-	    selectable = true,
-	    selection_handler = function(self)
-		if self.selected then
-		    self.border_color = { 0, 0, 1, 1 }
-		else
-		    self.border_color = { 1, 1, 1, 1 }
-		end
-	    end,
-	    click_handler = async(function()
-		channel_callbacks.register("pack_download_progress", function(progress)
-			progress_bar.percentage = progress
-		end)
-		async.await(download.get(selected_version, packs[i]))
-		channel_callbacks.unregister("pack_download_progress")
-		progress_bar.percentage = 0
-		local pack = async.await(game_handler.import_pack(packs[i], selected_version))
-		local elem = pack_elements.make_pack_element(pack, true)
-		-- element may not be created if an element for the pack already exists
-		if elem then
-		    require("ui.screens.levelselect").state.packs:mutated(false)
-		    elem:update_size()
-		    elem:click()
-		end
-	    end),
-	})
+            child_element = flex:new({
+                label:new(packs[i]),
+                progress_bar,
+            }, { direction = "column", align_items = "stretch", align_relative_to = "parentparent" }),
+            selectable = true,
+            selection_handler = function(self)
+                if self.selected then
+                    self.border_color = { 0, 0, 1, 1 }
+                else
+                    self.border_color = { 1, 1, 1, 1 }
+                end
+            end,
+            click_handler = async(function()
+                channel_callbacks.register("pack_download_progress", function(progress)
+                    progress_bar.percentage = progress
+                end)
+                async.await(download.get(selected_version, packs[i]))
+                channel_callbacks.unregister("pack_download_progress")
+                progress_bar.percentage = 0
+                local pack = async.await(game_handler.import_pack(packs[i], selected_version))
+                local elem = pack_elements.make_pack_element(pack, true)
+                -- element may not be created if an element for the pack already exists
+                if elem then
+                    require("ui.screens.levelselect").state.packs:mutated(false)
+                    elem:update_size()
+                    elem:click()
+                end
+            end),
+        })
     end
     pack_list:mutated(false)
     pack_list.elements[1]:update_size()
