@@ -3,11 +3,12 @@ local packs = {}
 local pack_id_map = {}
 local pack_count = 0
 
-function data.register_pack(id, name, game_version)
+function data.register_pack(id, name, folder_name, game_version)
     pack_count = pack_count + 1
     packs[pack_count] = {
         id = id,
         name = name,
+        folder_name = folder_name,
         game_version = game_version,
         levels = {},
         level_count = 0,
@@ -37,7 +38,7 @@ end
 function data.import_packs(new_packs)
     for i = 1, #new_packs do
         local pack = new_packs[i]
-        data.register_pack(pack.id, pack.name, pack.game_version)
+        data.register_pack(pack.id, pack.name, pack.folder_name, pack.game_version)
         for j = 1, pack.level_count do
             local level = pack.levels[j]
             data.register_level(pack.id, level.id, level.name, level.author, level.description, level.options)

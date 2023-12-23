@@ -142,6 +142,7 @@ local function preload_pack(pack_folder_name, version, persistent_data)
             if decode_success then
                 pack_data.game_version = version
                 pack_data.path = folder
+                pack_data.folder_name = pack_folder_name
                 pack_data.loaded = false
                 if version == 21 then
                     pack_data.id = build_pack_id21(
@@ -246,7 +247,7 @@ local function register_pack(version, pack_data)
             end
         end
         if has_all_deps then
-            data.register_pack(pack_data.id, pack_data.name, version)
+            data.register_pack(pack_data.id, pack_data.name, pack_data.folder_name, version)
 
             -- register levels in menu priority order
             table.sort(pack_data.level_list, function(a, b)
