@@ -327,7 +327,7 @@ function assets.get_pack(version, id, headless)
         headless = is_headless
     end
     local is_compat = version ~= 3
-    local pack_data = packs[id] or dependency_pack_mapping21[id]
+    local pack_data = (packs[version] or {})[id] or dependency_pack_mapping21[id]
     if not pack_data then
         error("pack with id '" .. id .. "' does not exist.")
     end
