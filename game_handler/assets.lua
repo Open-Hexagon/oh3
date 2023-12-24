@@ -219,10 +219,11 @@ local function preload_pack(pack_folder_name, version, persistent_data)
                     end
                 end
 
-                if packs[pack_data.id] then
+                packs[version] = packs[version] or {}
+                if packs[version][pack_data.id] then
                     log("Id conflict: ", pack_data.id)
                 end
-                packs[pack_data.id] = pack_data
+                packs[version][pack_data.id] = pack_data
                 return pack_data
             else
                 log("Failed to decode", folder .. "pack.json")
