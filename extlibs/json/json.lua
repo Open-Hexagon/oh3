@@ -144,6 +144,9 @@ function encode_map.number(v)
     if v ~= v or v <= tiny then
         error("unexpected number value '" .. tostring(v) .. "'")
     end
+    if v >= huge and json.encode_inf_as_1e500 then
+        v = 1e500
+    end
     if math_type(v) == "integer" then
         return string_format("%d", v)
     end

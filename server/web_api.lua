@@ -6,6 +6,8 @@ local msgpack = require("extlibs.msgpack.msgpack")
 local threadify = require("threadify")
 local uv = require("luv")
 
+json.encode_inf_as_1e500 = true
+
 local packs
 -- garbage collect everything when done
 do
@@ -93,10 +95,7 @@ app.add_handler("GET", "/get_video/...", function(captures)
 end)
 
 app.add_handler("GET", "/get_packs", function()
-    local str = json.encode(packs)
-    str = str:gsub(": inf", ": 1e500")
-    str = str:gsub("inf,", "1e500,")
-    return str, { ["content-type"] = "application/json" }
+    return json.encode(packs), { ["content-type"] = "application/json" }
 end)
 
 app.start({
