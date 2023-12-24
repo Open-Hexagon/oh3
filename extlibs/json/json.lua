@@ -141,7 +141,7 @@ if string_match(tostring(1 / 2), "%p") == "," then
 end
 
 function encode_map.number(v)
-    if v ~= v or v <= tiny or v >= huge then
+    if v ~= v or v <= tiny then
         error("unexpected number value '" .. tostring(v) .. "'")
     end
     if math_type(v) == "integer" then
@@ -388,6 +388,10 @@ local function decode_number()
     if
         not num or string_byte(num, -1) == 0x2E --[[ "." ]]
     then
+        if get_word() == "inf" then
+            statusPos = statusPos + 3
+            return math.huge
+        end
         decode_error("invalid number '" .. get_word() .. "'")
     end
     if c ~= "" then
@@ -493,6 +497,7 @@ local decode_uncompleted_map = {
     [string_byte("8")] = decode_number,
     [string_byte("9")] = decode_number,
     [string_byte("-")] = decode_number_negative,
+    [string_byte("i")] = decode_number,
     [string_byte("t")] = decode_true,
     [string_byte("f")] = decode_false,
     [string_byte("n")] = decode_null,
