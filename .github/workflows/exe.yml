@@ -32,9 +32,9 @@ jobs:
 
     - name: Create App bundle
       run: |
-        wget https://github.com/love2d/love/releases/download/11.5/love-11.5-win64.zip
-        7z x love-11.5-win64.zip
-        mv love-11.5-win64 oh3
+        curl -L -H "Accept: application/vnd.github+json" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" --output love12.zip --url "https://api.github.com/repos/love2d/love/actions/artifacts/1142100892/zip"
+        7z x love12.zip
+        mv love-* oh3
         mkdir oh3/lib
         cp /mingw64/bin/libsqlite3-0.dll oh3/lib/libsqlite3.dll
         cp /mingw64/bin/libluv.dll oh3/lib/luv.dll

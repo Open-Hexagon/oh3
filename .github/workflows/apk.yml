@@ -51,6 +51,7 @@ jobs:
       run: |
         git clone https://github.com/love2d/love-android --recursive
         cd love-android
+        git checkout 12.x
         patch gradle.properties ../extra/android/app-data.patch
         mkdir -p app/src/main/jniLibs
         mkdir -p app/src/main/jniLibs/arm64-v8a
