@@ -64,4 +64,36 @@ function dialogs.yes_no(text)
     end)
 end
 
+local alert = overlay:new()
+alert.transition = transitions.scale
+local alert_label = label:new("")
+alert.layout = flex:new({
+    quad:new({
+        child_element = flex:new({
+            alert_label,
+            quad:new({
+                child_element = label:new("Ok"),
+                selectable = true,
+                selection_handler = function(self)
+                    if self.selected then
+                        self.border_color = { 0, 0, 1, 1 }
+                    else
+                        self.border_color = { 1, 1, 1, 1 }
+                    end
+                end,
+                click_handler = function()
+                    alert:close()
+                end,
+            }),
+        }, { direction = "column", align_items = "center" }),
+    }),
+}, { justify_content = "center", align_items = "center" })
+
+function dialogs.alert(text)
+    alert_label.raw_text = text
+    alert_label.changed = true
+    alert_label:update_size()
+    alert:open()
+end
+
 return dialogs

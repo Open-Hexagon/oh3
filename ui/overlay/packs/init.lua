@@ -14,6 +14,7 @@ local pack_elements = require("ui.screens.levelselect.packs")
 local game_handler = require("game_handler")
 local async = require("async")
 local config = require("config")
+local dialogs = require("ui.overlay.dialog")
 
 download.set_server_url(config.get("server_api_url"))
 
@@ -22,6 +23,7 @@ local pack_overlay = overlay:new()
 local pack_list = flex:new({}, { direction = "column", align_items = "stretch" })
 local selected_version = 21
 local version_buttons
+local downloading = false
 
 local create_pack_list = async(function()
     pack_list.elements = { label:new("Loading...") }
@@ -54,6 +56,11 @@ local create_pack_list = async(function()
                 end
             end,
             click_handler = async(function(self)
+                if downloading then
+                    dialogs.alert("Cannot download multiple packs at the same time yet :(")
+                    return
+                end
+                downloading = true
                 if progress_bar.percentage ~= 0 then
                     -- download already in progress
                     return
@@ -76,6 +83,7 @@ local create_pack_list = async(function()
                     elem:update_size()
                     elem:click()
                 end
+                downloading = false
             end),
         })
     end

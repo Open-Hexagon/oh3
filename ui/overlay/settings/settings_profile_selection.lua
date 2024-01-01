@@ -5,36 +5,8 @@ local collapse = require("ui.layout.collapse")
 local flex = require("ui.layout.flex")
 local entry = require("ui.elements.entry")
 local keyboard_navigation = require("ui.keyboard_navigation")
-local overlay = require("ui.overlay")
-local transitions = require("ui.anim.transitions")
 local dialogs = require("ui.overlay.dialog")
 local global_config = require("global_config")
-
--- might put this in a different file if it's required from multiple places in the future
-local alert = overlay:new()
-alert.transition = transitions.scale
-local alert_label = label:new("")
-alert.layout = flex:new({
-    quad:new({
-        child_element = flex:new({
-            alert_label,
-            quad:new({
-                child_element = label:new("Ok"),
-                selectable = true,
-                selection_handler = function(self)
-                    if self.selected then
-                        self.border_color = { 0, 0, 1, 1 }
-                    else
-                        self.border_color = { 1, 1, 1, 1 }
-                    end
-                end,
-                click_handler = function()
-                    alert:close()
-                end,
-            }),
-        }, { direction = "column", align_items = "center" }),
-    }),
-}, { justify_content = "center", align_items = "center" })
 
 local settings_profile_selection = {}
 
@@ -76,10 +48,7 @@ local function refresh_list()
                                 elseif i ~= 1 and names[1] then
                                     open_later = names[1]
                                 else
-                                    alert_label.raw_text = "Cannot have no profiles."
-                                    alert_label.changed = true
-                                    alert_label:update_size()
-                                    alert:open()
+                                    dialogs.alert("Cannot have no profiles.")
                                     return
                                 end
                                 config.delete_profile(names[i])
@@ -138,19 +107,13 @@ local function refresh_list()
             click_handler = function()
                 local name = profile_name_entry.text
                 if name == "" then
-                    alert_label.raw_text = "Settings profile name can't be empty."
-                    alert_label.changed = true
-                    alert_label:update_size()
-                    alert:open()
+                    dialogs.alert("Settings profile name can't be empty.")
                     return
                 end
                 local profile_names = config.list_profiles()
                 for i = 1, #profile_names do
                     if name == profile_names[i] then
-                        alert_label.raw_text = 'Settings profile with name "' .. name .. '" already exists.'
-                        alert_label.changed = true
-                        alert_label:update_size()
-                        alert:open()
+                        dialogs.alert('Settings profile with name "' .. name .. '" already exists.')
                         return
                     end
                 end
