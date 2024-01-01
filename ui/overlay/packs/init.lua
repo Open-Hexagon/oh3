@@ -53,7 +53,7 @@ local create_pack_list = async(function()
                     self.border_color = { 1, 1, 1, 1 }
                 end
             end,
-            click_handler = async(function()
+            click_handler = async(function(self)
                 if progress_bar.percentage ~= 0 then
                     -- download already in progress
                     return
@@ -65,7 +65,9 @@ local create_pack_list = async(function()
                 async.await(download.get(selected_version, pack.folder_name))
                 channel_callbacks.unregister("pack_download_progress")
                 progress_collapse:toggle(false)
-                progress_bar.percentage = 0
+                table.remove(pack_list.elements, self.parent_index)
+                pack_list:mutated(false)
+                require("ui.elements.element").update_size(pack_list)
                 local pack_data = async.await(game_handler.import_pack(pack.folder_name, selected_version))
                 local elem = pack_elements.make_pack_element(pack_data, true)
                 -- element may not be created if an element for the pack already exists

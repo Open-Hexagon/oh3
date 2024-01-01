@@ -4,6 +4,9 @@ local http = require("socket.http")
 local url = require("socket.url")
 local zip = require("extlibs.zip")
 local https = require("https")
+local threadify = require("threadify")
+local assets = threadify.require("game_handler.assets")
+local uv = require("luv")
 
 local server_api_url = ""
 
@@ -47,7 +50,34 @@ function download.get_pack_list(version)
         pack_sizes[version][packs[index]] = tonumber(size)
         index = index + 1
     end
-    pack_data_list = pack_data_list or api("get_packs")
+    if not pack_data_list then
+        pack_data_list = api("get_packs")
+        -- remove packs the player already has
+        local promise = assets.init({}, true)
+        local result
+        promise:done(function(res)
+            result = res
+        end)
+        while not promise.executed do
+            threadify.update()
+            uv.sleep(10)
+        end
+        if not result then
+            error("could not get current pack list")
+        end
+        local map = {}
+        for i = 1, #result do
+            local pack = result[i]
+            map[pack.game_version] = map[pack.game_version] or {}
+            map[pack.game_version][pack.id] = true
+        end
+        for i = #pack_data_list, 1, -1 do
+            local pack = pack_data_list[i]
+            if map[pack.game_version] and map[pack.game_version][pack.id] then
+                table.remove(pack_data_list, i)
+            end
+        end
+    end
     local list = {}
     for i = 1, #pack_data_list do
         local pack = pack_data_list[i]
@@ -89,6 +119,13 @@ function download.get(version, pack_name)
     zip_file:unzip("packs" .. version)
     zip_file:close()
     love.filesystem.remove("tmp.zip")
+    for i = #pack_data_list, 1, -1 do
+        local pack = pack_data_list[i]
+        if pack.game_version == version and pack.folder_name == pack_name then
+            table.remove(pack_data_list, i)
+            break
+        end
+    end
     log("Done")
 end
 
