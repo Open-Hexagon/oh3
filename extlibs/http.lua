@@ -327,8 +327,7 @@ end
 function HTTP.file(path, headers)
     local ext = path:match(".*%.(.*)")
     headers["content-type"] = ext and mimes[ext:lower()] or mimes.default
-    local file = love.filesystem.newFile(path)
-    file:open("r")
+    local file = love.filesystem.openFile(path, "r")
     headers["content-length"] = file:getSize()
     headers["transfer-encoding"] = "chunked"
     return coroutine.wrap(function()

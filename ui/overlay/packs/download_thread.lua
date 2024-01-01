@@ -96,9 +96,8 @@ function download.get(version, pack_name)
     if pack_sizes[version][pack_name] == nil then
         return "Pack has not been compressed on server yet."
     end
-    local file = love.filesystem.newFile("tmp.zip")
+    local file = love.filesystem.openFile("tmp.zip", "w")
     local download_size, last_progress = 0, nil
-    file:open("w")
     log("Downloading", pack_name)
     http.request({
         url = "http://openhexagon.fun/packs" .. version .. "/" .. url.escape(pack_name) .. ".zip",

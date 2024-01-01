@@ -31,7 +31,7 @@ function label:new(text, options)
     local obj = element.new(
         setmetatable({
             raw_text = text,
-            text = love.graphics.newText(font[font_size], text),
+            text = love.graphics.newTextBatch(font[font_size], text),
             wrap = options.wrap or false,
             font = font,
             font_file = options.font_file or default_font_file,

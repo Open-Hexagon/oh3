@@ -262,8 +262,7 @@ end
 local function load_from_json(path)
     -- reset the settings before loading in case some settings didn't exist yet in the config file
     config.set_defaults()
-    local file = love.filesystem.newFile(path)
-    file:open("r")
+    local file = love.filesystem.openFile(path, "r")
     local contents = file:read()
     file:close()
     for name, value in pairs(json.decode(contents)) do
@@ -274,8 +273,7 @@ end
 ---saves the config into a json file
 ---@param path string
 local function save_to_json(path)
-    local file = love.filesystem.newFile(path)
-    file:open("w")
+    local file = love.filesystem.openFile(path, "w")
     file:write(json.beautify(config.get_all()))
     file:close()
 end

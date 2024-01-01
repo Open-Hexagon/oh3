@@ -34,8 +34,7 @@ function replay:new(path)
         if not love.filesystem.getInfo(path) then
             error("Could not find replay at '" .. path .. "'")
         end
-        local file = love.filesystem.newFile(path)
-        file:open("r")
+        local file = love.filesystem.openFile(path, "r")
         obj:_read(file:read("data"))
         file:close()
     end
@@ -152,8 +151,7 @@ end
 ---@param path string
 ---@param data string|love.CompressedData|nil
 function replay:save(path, data)
-    local file = love.filesystem.newFile(path)
-    file:open("w")
+    local file = love.filesystem.openFile(path, "w")
     file:write(data or self:_get_compressed())
     file:close()
 end

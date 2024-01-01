@@ -6,8 +6,7 @@ local config = require("config")
 local path = "config.json"
 
 local function save()
-    local file = love.filesystem.newFile(path)
-    file:open("w")
+    local file = love.filesystem.openFile(path, "w")
     file:write(json.beautify(settings))
     file:close()
 end
@@ -19,8 +18,7 @@ function global_config.init()
         global_config.set_settings_profile("default")
         save()
     else
-        local file = love.filesystem.newFile(path)
-        file:open("r")
+        local file = love.filesystem.openFile(path, "r")
         settings = json.decode(file:read())
         file:close()
         config.open_profile(settings.settings_profile)

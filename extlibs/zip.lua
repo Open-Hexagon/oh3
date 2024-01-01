@@ -8,7 +8,7 @@ zip.__index = zip
 function zip:new(path)
     return setmetatable({
         path = path,
-        file = love.filesystem.newFile(path, "r"),
+        file = love.filesystem.openFile(path, "r"),
     }, zip)
 end
 
@@ -93,8 +93,7 @@ function zip:unzip(path)
                     error("checksum verification failed")
                 end
             end
-            local file = love.filesystem.newFile(name)
-            file:open("w")
+            local file = love.filesystem.openFile(name, "w")
             file:write(data)
             file:close()
         end
