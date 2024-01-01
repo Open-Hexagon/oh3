@@ -60,18 +60,23 @@ local create_pack_list = async(function()
                     dialogs.alert("Cannot download multiple packs at the same time yet :(")
                     return
                 end
-                downloading = true
                 if progress_bar.percentage ~= 0 then
                     -- download already in progress
                     return
                 end
+                downloading = true
                 channel_callbacks.register("pack_download_progress", function(percent)
                     progress_bar.percentage = percent
                 end)
                 progress_collapse:toggle(true)
-                async.await(download.get(selected_version, pack.folder_name))
+                local ret = async.await(download.get(selected_version, pack.folder_name))
                 channel_callbacks.unregister("pack_download_progress")
                 progress_collapse:toggle(false)
+                if ret then
+                    dialogs.alert(ret)
+                    downloading = false
+                    return
+                end
                 table.remove(pack_list.elements, self.parent_index)
                 pack_list:mutated(false)
                 require("ui.elements.element").update_size(pack_list)

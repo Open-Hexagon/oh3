@@ -91,7 +91,11 @@ end
 ---downloads and extracts a pack in the right location
 ---@param version number
 ---@param pack_name string
+---@return string?
 function download.get(version, pack_name)
+    if pack_sizes[version][pack_name] == nil then
+        return "Pack has not been compressed on server yet."
+    end
     local file = love.filesystem.newFile("tmp.zip")
     local download_size, last_progress = 0, nil
     file:open("w")
