@@ -35,7 +35,9 @@ else
             else
                 thread_table.thread = love.thread.newThread("threadify.lua")
             end
-            thread_table.thread:start(require_string, true)
+            if not thread_table.thread:isRunning() then
+                thread_table.thread:start(require_string, true)
+            end
             threads[require_string] = thread_table
             thread_names[#thread_names + 1] = require_string
             threads_channel:performAtomic(function(channel, thread_object, module_name)

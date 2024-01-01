@@ -1,24 +1,42 @@
 local utils = require("compat.game192.utils")
 local database = require("server.database")
-local app = require("extlibs.milua.milua")
 local json = require("extlibs.json.json")
 local msgpack = require("extlibs.msgpack.msgpack")
 local threadify = require("threadify")
+local threaded_assets = threadify.require("game_handler.assets")
+local http = require("extlibs.http")
+local url = require("socket.url")
+local log = require("log")("server.web_api")
 local uv = require("luv")
+
+local args = {
+    block = false,
+    allow_cors = true,
+    keyfile = os.getenv("TLS_KEY"),
+    certfile = os.getenv("TLS_CERT"),
+}
+if args.keyfile and args.certfile then
+    args.sslport = 8001
+else
+    log("WARNING: Falling back to http as no certificate or key were specified")
+    args.port = 8001
+end
+
+local app = http:new(args)
 
 json.encode_inf_as_1e500 = true
 
 local packs
--- garbage collect everything when done
-do
-    local game_handler = require("game_handler")
-    local config = require("config")
-    local promise = game_handler.init(config)
-    while not promise.executed do
-        threadify.update()
-        uv.sleep(10)
-    end
-    packs = game_handler.get_packs()
+local promise = threaded_assets.init({}, true)
+promise:done(function(pack_list)
+    packs = pack_list
+end)
+while not promise.executed do
+    threadify.update()
+    uv.sleep(10)
+end
+if not packs then
+    error("getting pack list failed")
 end
 
 database.set_identity(3)
@@ -32,18 +50,10 @@ local function replay_get_video_path(hash)
     end
 end
 
-local hex_to_char = function(x)
-    return string.char(tonumber(x, 16))
-end
-
-local unescape = function(url)
-    return url:gsub("%%(%x%x)", hex_to_char)
-end
-
 local newest_scores = database.get_newest_scores(3 * 10 ^ 6)
 
-app.add_handler("GET", "/get_newest_scores/...", function(captures)
-    local seconds = math.min(tonumber(captures[1]), 3 * 10 ^ 6)
+app.handlers["/get_newest_scores/..."] = function(captures, headers)
+    local seconds = math.min(tonumber(captures[1]) or 0, 3 * 10 ^ 6)
     local channel = love.thread.getChannel("new_scores")
     for _ = 1, channel:getCount() do
         newest_scores[#newest_scores + 1] = channel:pop()
@@ -58,15 +68,16 @@ app.add_handler("GET", "/get_newest_scores/...", function(captures)
             scores[#scores + 1] = newest_scores[i]
         end
     end
-    return json.encode(scores), { ["content-type"] = "application/json" }
-end)
+    headers["content-type"] = "application/json"
+    return json.encode(scores)
+end
 
-app.add_handler("GET", "/get_leaderboard/.../.../...", function(captures)
+app.handlers["/get_leaderboard/.../.../..."] = function(captures, headers)
     local pack, level, level_options = unpack(captures)
     if pack and level and level_options then
-        pack = unescape(pack)
-        level = unescape(level)
-        level_options = json.decode(unescape(level_options))
+        pack = url.unescape(pack)
+        level = url.unescape(level)
+        level_options = json.decode(url.unescape(level_options))
         -- only difficulty_mult needs this as it's the only legacy option
         level_options.difficulty_mult = utils.float_round(level_options.difficulty_mult)
         local lb = database.get_leaderboard(pack, level, msgpack.pack(level_options))
@@ -74,34 +85,26 @@ app.add_handler("GET", "/get_leaderboard/.../.../...", function(captures)
             local score = lb[i]
             score.has_video = score.replay_hash and replay_get_video_path(score.replay_hash) and true or false
         end
-        return json.encode(lb), { ["content-type"] = "application/json" }
+        headers["content-type"] = "application/json"
+        return json.encode(lb)
     else
         return "invalid options"
     end
-end)
+end
 
-app.add_handler("GET", "/get_video/...", function(captures)
+app.handlers["/get_video/..."] = function(captures, headers)
     local replay_hash = captures[1]
     local path = replay_get_video_path(replay_hash)
     if path then
-        local file = love.filesystem.newFile(path)
-        file:open("r")
-        local contents = file:read()
-        file:close()
-        return contents, { ["content-type"] = "video/mp4" }
+        return http.file(path, headers)
     else
         return "no video for this replay"
     end
-end)
+end
 
-app.add_handler("GET", "/get_packs", function()
-    return json.encode(packs), { ["content-type"] = "application/json" }
-end)
+app.handlers["/get_packs"] = function(_, headers)
+    headers["content-type"] = "application/json"
+    return json.encode(packs)
+end
 
-app.start({
-    HOST = "0.0.0.0",
-    PORT = 8001,
-    key = os.getenv("TLS_KEY"),
-    cert = os.getenv("TLS_CERT"),
-    cors_url = os.getenv("CORS_URL"),
-})
+app:run()
