@@ -12,7 +12,7 @@
 -app.application_id=org.love2d.android
 +app.application_id=fun.openhexagon.oh3
  app.orientation=landscape
- app.version_code=31
+ app.version_code=32
 -app.version_name=12.0
 +app.version_name=1.0
 
