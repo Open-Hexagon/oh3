@@ -35,8 +35,7 @@ jobs:
         curl -L -H "Accept: application/vnd.github+json" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" --output love12.zip --url "https://api.github.com/repos/love2d/love/actions/artifacts/1142100892/zip"
         7z x love12.zip
         7z x love-*.zip
-        ls
-        mv love-* oh3
+        mv love-*-win64 oh3
         mkdir oh3/lib
         cp /mingw64/bin/libsqlite3-0.dll oh3/lib/libsqlite3.dll
         cp /mingw64/bin/libluv.dll oh3/lib/luv.dll

@@ -61,6 +61,7 @@ jobs:
 
     - name: Copy embedded App
       run: |
+        mkdir -p love-android/app/src/embed/assets
         cp -r *.lua assets compat extlibs game game_handler server ui input_schemes love-android/app/src/embed/assets
         tree love-android/app/src/embed/assets
 
