@@ -15,7 +15,7 @@ local game_handler = require("game_handler")
 local async = require("async")
 local config = require("config")
 
-download.set_server_url(config.get("server_url"))
+download.set_server_url(config.get("server_api_url"))
 
 local pack_overlay = overlay:new()
 
@@ -35,13 +35,14 @@ local create_pack_list = async(function()
     end
     pack_list.elements = {}
     for i = 1, #packs do
+        local pack = packs[i]
         local progress_bar = progress:new({
             style = { background_color = { 0, 0, 0, 0 } },
         })
         local progress_collapse = collapse:new(progress_bar)
         pack_list.elements[i] = quad:new({
             child_element = flex:new({
-                label:new(packs[i]),
+                label:new(pack.name, { wrap = true }),
                 progress_collapse,
             }, { direction = "column", align_items = "stretch", align_relative_to = "parentparent" }),
             selectable = true,
@@ -61,12 +62,12 @@ local create_pack_list = async(function()
                     progress_bar.percentage = percent
                 end)
                 progress_collapse:toggle(true)
-                async.await(download.get(selected_version, packs[i]))
+                async.await(download.get(selected_version, pack.folder_name))
                 channel_callbacks.unregister("pack_download_progress")
                 progress_collapse:toggle(false)
                 progress_bar.percentage = 0
-                local pack = async.await(game_handler.import_pack(packs[i], selected_version))
-                local elem = pack_elements.make_pack_element(pack, true)
+                local pack_data = async.await(game_handler.import_pack(pack.folder_name, selected_version))
+                local elem = pack_elements.make_pack_element(pack_data, true)
                 -- element may not be created if an element for the pack already exists
                 if elem then
                     require("ui.screens.levelselect").state.packs:mutated(false)
@@ -77,7 +78,9 @@ local create_pack_list = async(function()
         })
     end
     pack_list:mutated(false)
-    pack_list.elements[1]:update_size()
+    if pack_list.elements[1] then
+        pack_list.elements[1]:update_size()
+    end
 end)
 
 local function make_version_button(version)

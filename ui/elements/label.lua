@@ -94,7 +94,7 @@ function label:calculate_element_layout(available_width)
     local function get_dimensions()
         width, height = self.text:getDimensions()
     end
-    local text = self.raw_text
+    local text = self.raw_text or ""
     if self.cutoff_suffix then
         local amount = #self.raw_text
         while self.text:getFont():getWidth(text) > available_width do
