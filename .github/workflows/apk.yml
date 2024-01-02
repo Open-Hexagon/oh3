@@ -58,7 +58,7 @@ jobs:
         mkdir -p app/src/main/jniLibs/armeabi-v7a
         mkdir -p app/src/main/jniLibs/x86
         mkdir -p app/src/main/jniLibs/x86_64
-        mkdir -p love-android/app/src/embed/assets
+        mkdir -p app/src/embed/assets
         cd ..
 
     - name: Copy embedded App
