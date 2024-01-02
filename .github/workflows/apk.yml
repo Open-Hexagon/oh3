@@ -51,17 +51,18 @@ jobs:
       run: |
         git clone https://github.com/love2d/love-android --recursive -b 12.x
         cd love-android
+        patch gradlew ../extra/android/gradlew.patch
         patch gradle.properties ../extra/android/app-data.patch
         mkdir -p app/src/main/jniLibs
         mkdir -p app/src/main/jniLibs/arm64-v8a
         mkdir -p app/src/main/jniLibs/armeabi-v7a
         mkdir -p app/src/main/jniLibs/x86
         mkdir -p app/src/main/jniLibs/x86_64
+        mkdir -p love-android/app/src/embed/assets
         cd ..
 
     - name: Copy embedded App
       run: |
-        mkdir -p love-android/app/src/embed/assets
         cp -r *.lua assets compat extlibs game game_handler server ui input_schemes love-android/app/src/embed/assets
         tree love-android/app/src/embed/assets
 
