@@ -1,7 +1,5 @@
-if love.system.getOS() == "Android" then
-    -- require can't find it on android
-    package.preload.luv = package.loadlib("libluv.so", "luaopen_luv")
-end
+-- require can't find it on android (other platforms will just silently fail and put in nil (the love.system module is not available))
+package.preload.luv = package.loadlib("libluv.so", "luaopen_luv")
 local log = require("log")("ui.overlay.packs.download_thread")
 local json = require("extlibs.json.json")
 local http = require("socket.http")

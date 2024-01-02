@@ -106,13 +106,11 @@ function input.get(input_name, add_ui_button)
     local ui_button
 
     if add_ui_button then
-
         ui_button = buttons.get(input_name)
         if not ui_button then
             ui_button = buttons.add(input_name)
         end
         ui_button.updated = true
-
     end
 
     local ret = false
