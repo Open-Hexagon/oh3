@@ -1,5 +1,6 @@
 local log = require("log")
 local utils = require("compat.game192.utils")
+local tmpfile = require("compat.game192.tmpfile")
 local vfs = {
     pack_path = "",
     pack_folder_name = "",
@@ -45,6 +46,7 @@ vfs.clear = function()
         file.file:close()
         virtual_filesystem[path] = nil
     end
+    tmpfile.clear()
 end
 
 ---remove a file
@@ -88,7 +90,7 @@ end
 
 local function new_file()
     return setmetatable({
-        file = io.tmpfile(),
+        file = tmpfile.create(),
         close = function(self)
             self.file:seek("set", 0)
             return true
