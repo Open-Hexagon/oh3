@@ -1,4 +1,0 @@
-89c89
-< DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
----
-> DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m" "-XX:MaxPermSize=64m"'
