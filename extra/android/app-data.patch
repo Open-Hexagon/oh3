@@ -1,6 +1,4 @@
---- a/gradle.properties
-+++ b/gradle.properties
-@@ -3,13 +3,13 @@
+@@ -3,13 +3,15 @@
  # * Use `app.name` if your app name doesn't contain any non-ANSI characters.
  # * Otherwise, convert your app name to UTF-8 byte array, comma delimited, and put
  #   it in `app.name_byte_array`
