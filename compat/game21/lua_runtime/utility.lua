@@ -219,6 +219,7 @@ return function(public, game)
         return player.get_player_angle()
     end
     env.u_setPlayerAngle = function(angle)
+        angle = angle or 0
         return player.set_player_angle(angle)
     end
     env.u_isMouseButtonPressed = function(button)
