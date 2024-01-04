@@ -3,17 +3,52 @@ local modname, is_thread = ...
 
 if is_thread then
     local api = require(modname)
+    local in_channel = love.thread.getChannel(modname .. "_cmd")
+    local out_channel = love.thread.getChannel(modname .. "_out")
     local run = true
+    local running_coroutines = {}
     while run do
-        local cmd = love.thread.getChannel(modname .. "_cmd"):demand()
-        local call_id = cmd[1]
-        local out_channel = love.thread.getChannel(modname .. "_out")
-        xpcall(function()
-            local fn = api[cmd[2]]
-            out_channel:push({ call_id, true, fn(unpack(cmd, 3)) })
-        end, function(err)
-            out_channel:push({ call_id, false, "Failed to call '" .. modname .. "." .. cmd[2] .. "'", err })
-        end)
+        local cmd
+        if #running_coroutines > 0 then
+            cmd = in_channel:pop()
+        else
+            cmd = in_channel:demand()
+        end
+        if cmd then
+            local call_id = cmd[1]
+            xpcall(function()
+                local fn = api[cmd[2]]
+                if api[cmd[2] .. "_co"] then
+                    -- coroutine
+                    local co = coroutine.create(fn)
+                    local _, ret = coroutine.resume(co, unpack(cmd, 3))
+                    if coroutine.status(co) == "dead" then
+                        out_channel:push({ call_id, true, ret })
+                    else
+                        running_coroutines[#running_coroutines + 1] = { call_id, cmd[2], co }
+                    end
+                else
+                    -- normal function
+                    out_channel:push({ call_id, true, fn(unpack(cmd, 3)) })
+                end
+            end, function(err)
+                out_channel:push({ call_id, false, "Failed to call '" .. modname .. "." .. cmd[2] .. "'", err })
+            end)
+        else
+            for i = #running_coroutines, 1, -1 do
+                local call_id, name, co = unpack(running_coroutines[i])
+                xpcall(function()
+                    local _, ret = coroutine.resume(co)
+                    if coroutine.status(co) == "dead" then
+                        table.remove(running_coroutines, i)
+                        out_channel:push({ call_id, true, ret })
+                    end
+                end, function(err)
+                    table.remove(running_coroutines, i)
+                    out_channel:push({ call_id, false, "Failed to call '" .. modname .. "." .. name .. "'", err })
+                end)
+            end
+        end
     end
 else
     local async = require("async")

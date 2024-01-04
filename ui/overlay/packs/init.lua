@@ -23,7 +23,6 @@ local pack_overlay = overlay:new()
 local pack_list = flex:new({}, { direction = "column", align_items = "stretch" })
 local selected_version = 21
 local version_buttons
-local downloading = false
 
 local create_pack_list = async(function()
     pack_list.elements = { label:new("Loading...") }
@@ -56,25 +55,21 @@ local create_pack_list = async(function()
                 end
             end,
             click_handler = async(function(self)
-                if downloading then
-                    dialogs.alert("Cannot download multiple packs at the same time yet :(")
-                    return
-                end
                 if progress_bar.percentage ~= 0 then
                     -- download already in progress
                     return
                 end
-                downloading = true
-                channel_callbacks.register("pack_download_progress", function(percent)
+                local channel_name = string.format("pack_download_progress_%s_%s", selected_version, pack.folder_name)
+                channel_callbacks.register(channel_name, function(percent)
                     progress_bar.percentage = percent
                 end)
                 progress_collapse:toggle(true)
                 local ret = async.await(download.get(selected_version, pack.folder_name))
-                channel_callbacks.unregister("pack_download_progress")
+                channel_callbacks.unregister(channel_name)
                 progress_collapse:toggle(false)
                 if ret then
+                    progress_bar.percentage = 0
                     dialogs.alert(ret)
-                    downloading = false
                     return
                 end
                 table.remove(pack_list.elements, self.parent_index)
@@ -88,7 +83,6 @@ local create_pack_list = async(function()
                     elem:update_size()
                     elem:click()
                 end
-                downloading = false
             end),
         })
     end

@@ -2,7 +2,7 @@
 package.preload.luv = package.loadlib("libluv.so", "luaopen_luv")
 local log = require("log")("ui.overlay.packs.download_thread")
 local json = require("extlibs.json.json")
-local http = require("socket.http")
+local http = require("extlibs.http_client")
 local url = require("socket.url")
 local zip = require("extlibs.zip")
 local https = require("https")
@@ -11,6 +11,10 @@ local assets = threadify.require("game_handler.assets")
 local uv = require("luv")
 
 local server_api_url = ""
+local tmp_folder = "download_cache/"
+if not love.filesystem.getInfo(tmp_folder) then
+    love.filesystem.createDirectory(tmp_folder)
+end
 
 local pack_data_list
 local pack_sizes = {}
@@ -98,32 +102,43 @@ function download.get(version, pack_name)
     if pack_sizes[version][pack_name] == nil then
         return "Pack has not been compressed on server yet."
     end
-    local file = love.filesystem.openFile("tmp.zip", "w")
+    local filename = string.format("%s%s_%s.zip", tmp_folder, version, pack_name)
+    local file = love.filesystem.openFile(filename, "w")
     local download_size, last_progress = 0, nil
     log("Downloading", pack_name)
-    http.request({
+    local channel = love.thread.getChannel(string.format("pack_download_progress_%s_%s", version, pack_name))
+    channel:clear()
+    channel:push(0)
+    local success, err = http.request({
         url = "http://openhexagon.fun/packs" .. version .. "/" .. url.escape(pack_name) .. ".zip",
         sink = function(chunk, err)
             if err then
                 log(err)
+                file:close()
+                love.filesystem.remove(filename)
             elseif chunk then
                 file:write(chunk)
                 download_size = download_size + #chunk
                 local progress = math.floor(download_size / pack_sizes[version][pack_name] * 100)
                 if progress ~= last_progress then
-                    love.thread.getChannel("pack_download_progress"):push(progress)
+                    channel:push(progress)
                     last_progress = progress
                 end
                 return 1
             end
         end,
     })
+    if not success then
+        file:close()
+        love.filesystem.remove(filename)
+        return "Failed http request: " .. err
+    end
     file:close()
-    log("Extracting", "tmp.zip")
-    local zip_file = zip:new("tmp.zip")
+    log("Extracting", filename)
+    local zip_file = zip:new(filename)
     zip_file:unzip("packs" .. version)
     zip_file:close()
-    love.filesystem.remove("tmp.zip")
+    love.filesystem.remove(filename)
     for i = #pack_data_list, 1, -1 do
         local pack = pack_data_list[i]
         if pack.game_version == version and pack.folder_name == pack_name then
@@ -133,5 +148,6 @@ function download.get(version, pack_name)
     end
     log("Done")
 end
+download.get_co = true
 
 return download
