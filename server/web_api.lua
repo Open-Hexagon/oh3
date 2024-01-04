@@ -8,6 +8,12 @@ local http = require("extlibs.http")
 local url = require("socket.url")
 local log = require("log")("server.web_api")
 local uv = require("luv")
+local zip = require("extlibs.love-zip")
+
+local zip_path = "zip_cache/"
+if not love.filesystem.getInfo(zip_path) then
+    love.filesystem.createDirectory(zip_path)
+end
 
 local args = {
     block = false,
@@ -17,6 +23,8 @@ local args = {
 }
 if args.keyfile and args.certfile then
     args.sslport = 8001
+    -- ideally this wouldn't be a thing, but we'll need http support for downloading in chunks, lua-https can only output strings
+    args.port = 8003
 else
     log("WARNING: Falling back to http as no certificate or key were specified")
     args.port = 8001
@@ -106,5 +114,38 @@ app.handlers["/get_packs"] = function(_, headers)
     headers["content-type"] = "application/json"
     return json.encode(packs)
 end
+
+app.handlers["/get_pack/.../..."] = function(captures, headers)
+    local version, name = unpack(captures)
+    local filename = string.format("%s%s_%s.zip", zip_path, version, name)
+    if not love.filesystem.getInfo(filename) then
+        local pack_path = string.format("packs%s/%s", version, name)
+        if love.filesystem.getInfo(pack_path) then
+            if not zip.writeZip(pack_path, filename, true) then
+                return "Failed to compress pack"
+            end
+        else
+            return string.format("Could not find pack at '%s'!", pack_path)
+        end
+    end
+    return http.file(filename, headers)
+end
+
+log("Compressing all packs")
+for i = 1, #packs do
+    local pack = packs[i]
+    local filename = string.format("%s%s_%s.zip", zip_path, pack.game_version, pack.folder_name)
+    local info = love.filesystem.getInfo(filename)
+    if not info then
+        local pack_path = string.format("packs%s/%s", pack.game_version, pack.folder_name)
+        log("Compressing " .. pack_path)
+        if not zip.writeZip(pack_path, filename) then
+            error("Failed to compress pack")
+        end
+        info = love.filesystem.getInfo(filename)
+    end
+    packs[i].file_size = info.size
+end
+log("Done compressing all packs")
 
 app:run()
