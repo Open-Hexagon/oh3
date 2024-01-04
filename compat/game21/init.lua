@@ -453,7 +453,7 @@ end
 function public.get_score()
     if level_status.score_overwritten then
         -- custom score may change after death, get it again
-        return lua_runtime.env[level_status.score_overwrite], true
+        return tonumber(lua_runtime.env[level_status.score_overwrite]) or 0, true
     end
     return status.get_played_accumulated_frametime_in_seconds(), false
 end
@@ -466,7 +466,7 @@ end
 ---21 specific function that gets the custom score right before death (which is used for replay verification instead of the actual one)
 ---@return number?
 function public.get_compat_custom_score()
-    return status.get_custom_score()
+    return tonumber(status.get_custom_score())
 end
 
 ---returns true if the player has died
