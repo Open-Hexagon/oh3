@@ -2,9 +2,6 @@
 package.preload.luv = package.loadlib("libluv.so", "luaopen_luv")
 local log = require("log")("ui.overlay.packs.download_thread")
 local json = require("extlibs.json.json")
-local http = require("extlibs.http_client")
-local url = require("socket.url")
-local zip = require("extlibs.zip")
 local https = require("https")
 local threadify = require("threadify")
 local assets = threadify.require("game_handler.assets")
@@ -24,11 +21,11 @@ local function api(suffix)
     local code, json_data = https.request(server_api_url .. suffix)
     if code ~= 200 then
         log("'" .. suffix .. "' api request failed")
-        return {}
+        return
     end
     if not json_data or (json_data:sub(1, 1) ~= "{" and json_data:sub(1, 1) ~= "[") then
         -- something went wrong
-        return {}
+        return
     end
     return json.decode(json_data)
 end
@@ -38,26 +35,13 @@ function download.set_server_url(serv_api_url)
 end
 
 ---gets a list of pack names for the specified game version
----@param version number
 ---@return table
-function download.get_pack_list(version)
-    local code, html = https.request("https://openhexagon.fun/packs" .. tostring(version) .. "/")
-    if code ~= 200 then
-        log("get pack list request failed")
-        return {}
-    end
-    local packs = {}
-    for pack in html:gmatch('\n<a href="(.-).zip"') do
-        packs[#packs + 1] = url.unescape(pack)
-    end
-    local index = 1
-    pack_sizes[version] = pack_sizes[version] or {}
-    for size in html:gmatch('<a href=".-.zip".-..\\-...\\-.... ..:.. (.-)\n') do
-        pack_sizes[version][packs[index]] = tonumber(size)
-        index = index + 1
-    end
+function download.get_pack_list()
     if not pack_data_list then
         pack_data_list = api("get_packs")
+        if not pack_data_list then
+            return {}
+        end
         -- remove packs the player already has
         local promise = assets.init({}, true)
         local result
@@ -79,19 +63,14 @@ function download.get_pack_list(version)
         end
         for i = #pack_data_list, 1, -1 do
             local pack = pack_data_list[i]
+            pack_sizes[pack.game_version] = pack_sizes[pack.game_version] or {}
+            pack_sizes[pack.game_version][pack.folder_name] = pack.file_size
             if map[pack.game_version] and map[pack.game_version][pack.id] then
                 table.remove(pack_data_list, i)
             end
         end
     end
-    local list = {}
-    for i = 1, #pack_data_list do
-        local pack = pack_data_list[i]
-        if pack.game_version == version then
-            list[#list + 1] = pack
-        end
-    end
-    return list
+    return pack_data_list
 end
 
 ---downloads and extracts a pack in the right location
@@ -99,46 +78,15 @@ end
 ---@param pack_name string
 ---@return string?
 function download.get(version, pack_name)
-    if pack_sizes[version][pack_name] == nil then
-        return "Pack has not been compressed on server yet."
+    local thread = love.thread.newThread("ui/overlay/packs/download.lua")
+    thread:start(version, pack_name, tmp_folder, server_api_url, pack_sizes[version][pack_name])
+    while thread:isRunning() do
+        coroutine.yield()
     end
-    local filename = string.format("%s%s_%s.zip", tmp_folder, version, pack_name)
-    local file = love.filesystem.openFile(filename, "w")
-    local download_size, last_progress = 0, nil
-    log("Downloading", pack_name)
-    local channel = love.thread.getChannel(string.format("pack_download_progress_%s_%s", version, pack_name))
-    channel:clear()
-    channel:push(0)
-    local success, err = http.request({
-        url = "http://openhexagon.fun/packs" .. version .. "/" .. url.escape(pack_name) .. ".zip",
-        sink = function(chunk, err)
-            if err then
-                log(err)
-                file:close()
-                love.filesystem.remove(filename)
-            elseif chunk then
-                file:write(chunk)
-                download_size = download_size + #chunk
-                local progress = math.floor(download_size / pack_sizes[version][pack_name] * 100)
-                if progress ~= last_progress then
-                    channel:push(progress)
-                    last_progress = progress
-                end
-                return 1
-            end
-        end,
-    })
-    if not success then
-        file:close()
-        love.filesystem.remove(filename)
-        return "Failed http request: " .. err
+    local err = thread:getError() or love.thread.getChannel(string.format("pack_download_error_%d_%s", version, pack_name)):pop()
+    if err then
+        return err
     end
-    file:close()
-    log("Extracting", filename)
-    local zip_file = zip:new(filename)
-    zip_file:unzip("packs" .. version)
-    zip_file:close()
-    love.filesystem.remove(filename)
     for i = #pack_data_list, 1, -1 do
         local pack = pack_data_list[i]
         if pack.game_version == version and pack.folder_name == pack_name then

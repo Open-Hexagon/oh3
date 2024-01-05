@@ -7,7 +7,7 @@ local transitions = require("ui.anim.transitions")
 
 local resolve = function(_) end
 local dialog = overlay:new()
-local dialog_label = label:new("")
+local dialog_label = label:new("", { wrap = true })
 dialog.layout = flex:new({
     quad:new({
         child_element = flex:new({
@@ -66,7 +66,7 @@ end
 
 local alert = overlay:new()
 alert.transition = transitions.scale
-local alert_label = label:new("")
+local alert_label = label:new("", { wrap = true })
 alert.layout = flex:new({
     quad:new({
         child_element = flex:new({

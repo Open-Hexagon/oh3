@@ -29,7 +29,7 @@ local create_pack_list = async(function()
     pack_list:mutated(false)
     pack_list.elements[1]:update_size()
     local old_version = selected_version
-    local packs = async.await(download.get_pack_list(selected_version))
+    local packs = async.await(download.get_pack_list())
     if old_version ~= selected_version then
         -- user clicked on other version while loading
         return
@@ -37,54 +37,56 @@ local create_pack_list = async(function()
     pack_list.elements = {}
     for i = 1, #packs do
         local pack = packs[i]
-        local progress_bar = progress:new({
-            style = { background_color = { 0, 0, 0, 0 } },
-        })
-        local progress_collapse = collapse:new(progress_bar)
-        pack_list.elements[i] = quad:new({
-            child_element = flex:new({
-                label:new(pack.name, { wrap = true }),
-                progress_collapse,
-            }, { direction = "column", align_items = "stretch", align_relative_to = "parentparent" }),
-            selectable = true,
-            selection_handler = function(self)
-                if self.selected then
-                    self.border_color = { 0, 0, 1, 1 }
-                else
-                    self.border_color = { 1, 1, 1, 1 }
-                end
-            end,
-            click_handler = async(function(self)
-                if progress_bar.percentage ~= 0 then
-                    -- download already in progress
-                    return
-                end
-                local channel_name = string.format("pack_download_progress_%s_%s", selected_version, pack.folder_name)
-                channel_callbacks.register(channel_name, function(percent)
-                    progress_bar.percentage = percent
-                end)
-                progress_collapse:toggle(true)
-                local ret = async.await(download.get(selected_version, pack.folder_name))
-                channel_callbacks.unregister(channel_name)
-                progress_collapse:toggle(false)
-                if ret then
-                    progress_bar.percentage = 0
-                    dialogs.alert(ret)
-                    return
-                end
-                table.remove(pack_list.elements, self.parent_index)
-                pack_list:mutated(false)
-                require("ui.elements.element").update_size(pack_list)
-                local pack_data = async.await(game_handler.import_pack(pack.folder_name, selected_version))
-                local elem = pack_elements.make_pack_element(pack_data, true)
-                -- element may not be created if an element for the pack already exists
-                if elem then
-                    require("ui.screens.levelselect").state.packs:mutated(false)
-                    elem:update_size()
-                    elem:click()
-                end
-            end),
-        })
+        if pack.game_version == selected_version then
+            local progress_bar = progress:new({
+                style = { background_color = { 0, 0, 0, 0 } },
+            })
+            local progress_collapse = collapse:new(progress_bar)
+            pack_list.elements[#pack_list.elements + 1] = quad:new({
+                child_element = flex:new({
+                    label:new(pack.name, { wrap = true }),
+                    progress_collapse,
+                }, { direction = "column", align_items = "stretch", align_relative_to = "parentparent" }),
+                selectable = true,
+                selection_handler = function(self)
+                    if self.selected then
+                        self.border_color = { 0, 0, 1, 1 }
+                    else
+                        self.border_color = { 1, 1, 1, 1 }
+                    end
+                end,
+                click_handler = async(function(self)
+                    if progress_bar.percentage ~= 0 then
+                        -- download already in progress
+                        return
+                    end
+                    local channel_name = string.format("pack_download_progress_%d_%s", selected_version, pack.folder_name)
+                    channel_callbacks.register(channel_name, function(percent)
+                        progress_bar.percentage = percent
+                    end)
+                    progress_collapse:toggle(true)
+                    local ret = async.await(download.get(selected_version, pack.folder_name))
+                    channel_callbacks.unregister(channel_name)
+                    progress_collapse:toggle(false)
+                    if ret then
+                        progress_bar.percentage = 0
+                        dialogs.alert(ret)
+                        return
+                    end
+                    table.remove(pack_list.elements, self.parent_index)
+                    pack_list:mutated(false)
+                    require("ui.elements.element").update_size(pack_list)
+                    local pack_data = async.await(game_handler.import_pack(pack.folder_name, selected_version))
+                    local elem = pack_elements.make_pack_element(pack_data, true)
+                    -- element may not be created if an element for the pack already exists
+                    if elem then
+                        require("ui.screens.levelselect").state.packs:mutated(false)
+                        elem:update_size()
+                        elem:click()
+                    end
+                end),
+            })
+        end
     end
     pack_list:mutated(false)
     if pack_list.elements[1] then

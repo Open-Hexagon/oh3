@@ -93,7 +93,25 @@ function zip:unzip(path)
                     error("checksum verification failed")
                 end
             end
-            local file = love.filesystem.openFile(name, "w")
+            local dir = name:match(".*/"):sub(1, -2)
+            local count = 0
+            while dir and not love.filesystem.getInfo(dir) do
+                local new_dir = dir
+                while not love.filesystem.createDirectory(new_dir) do
+                    new_dir = new_dir:match(".*/"):sub(1, -2)
+                    if not new_dir then
+                        count = count + 1
+                        if count > 10 then
+                            error("Could not create directory: '" .. dir .. "'")
+                        end
+                        break
+                    end
+                end
+            end
+            local file, err = love.filesystem.openFile(name, "w")
+            if err then
+                error("Could not write file '" .. name .. "': " .. err)
+            end
             file:write(data)
             file:close()
         end

@@ -10,7 +10,7 @@ if is_thread then
     while run do
         local cmd
         if #running_coroutines > 0 then
-            cmd = in_channel:pop()
+            cmd = in_channel:demand(0.01)
         else
             cmd = in_channel:demand()
         end
