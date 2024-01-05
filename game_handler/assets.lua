@@ -140,6 +140,7 @@ local function preload_pack(pack_folder_name, version, persistent_data)
         else
             local decode_success, pack_data = decode_json(pack_json_contents)
             if decode_success then
+                pack_data.name = pack_data.name or ""
                 pack_data.game_version = version
                 pack_data.path = folder
                 pack_data.folder_name = pack_folder_name
