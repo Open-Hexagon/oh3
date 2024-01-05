@@ -5,13 +5,6 @@ xpcall(function()
     local http = require("socket.http")
     local url = require("socket.url")
 
-    local oldopen = http.open
-    http.open = function(host, port, create)
-        local h = oldopen(host, port, create)
-        assert(h.c:setoption("tcp-nodelay", true))
-        return h
-    end
-
     local filename = string.format("%s%s_%s.zip", tmp_folder, version, pack_name)
     local file = love.filesystem.openFile(filename, "w")
     local download_size, last_progress = 0, nil

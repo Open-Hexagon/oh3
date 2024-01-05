@@ -759,6 +759,8 @@ function HTTP:connectCoroutine(client, server)
 
     self:handleClient(client)
     self:log(1, "closing client...")
+    client:shutdown("send")
+    self:receive(client, 1)
     client:close()
     self.clients:removeObject(client)
     self:log(2, "# clients remaining: " .. #self.clients)
