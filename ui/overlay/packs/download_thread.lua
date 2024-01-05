@@ -14,7 +14,7 @@ if not love.filesystem.getInfo(tmp_folder) then
 end
 
 local pack_data_list
-local pack_sizes = {}
+local pack_map = {}
 local download = {}
 
 local function api(suffix)
@@ -63,8 +63,8 @@ function download.get_pack_list()
         end
         for i = #pack_data_list, 1, -1 do
             local pack = pack_data_list[i]
-            pack_sizes[pack.game_version] = pack_sizes[pack.game_version] or {}
-            pack_sizes[pack.game_version][pack.folder_name] = pack.file_size
+            pack_map[pack.game_version] = pack_map[pack.game_version] or {}
+            pack_map[pack.game_version][pack.folder_name] = pack
             if map[pack.game_version] and map[pack.game_version][pack.id] then
                 table.remove(pack_data_list, i)
             end
@@ -79,7 +79,7 @@ end
 ---@return string?
 function download.get(version, pack_name)
     local thread = love.thread.newThread("ui/overlay/packs/download.lua")
-    thread:start(version, pack_name, tmp_folder, server_api_url, pack_sizes[version][pack_name])
+    thread:start(version, pack_name, tmp_folder, server_api_url, pack_map[version][pack_name].file_size)
     while thread:isRunning() do
         coroutine.yield()
     end

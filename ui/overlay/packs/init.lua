@@ -15,6 +15,7 @@ local game_handler = require("game_handler")
 local async = require("async")
 local config = require("config")
 local dialogs = require("ui.overlay.dialog")
+local log = require("log")(...)
 
 download.set_server_url(config.get("server_api_url"))
 
@@ -34,15 +35,17 @@ local create_pack_list = async(function()
         -- user clicked on other version while loading
         return
     end
+    local pack_id_elem_map = {}
     pack_list.elements = {}
     for i = 1, #packs do
         local pack = packs[i]
         if pack.game_version == selected_version then
+            local downloading = false
             local progress_bar = progress:new({
                 style = { background_color = { 0, 0, 0, 0 } },
             })
             local progress_collapse = collapse:new(progress_bar)
-            pack_list.elements[#pack_list.elements + 1] = quad:new({
+            local elem = quad:new({
                 child_element = flex:new({
                     label:new(pack.name, { wrap = true }),
                     progress_collapse,
@@ -55,37 +58,63 @@ local create_pack_list = async(function()
                         self.border_color = { 1, 1, 1, 1 }
                     end
                 end,
-                click_handler = async(function(self)
-                    if progress_bar.percentage ~= 0 then
-                        -- download already in progress
-                        return
-                    end
-                    local channel_name = string.format("pack_download_progress_%d_%s", selected_version, pack.folder_name)
-                    channel_callbacks.register(channel_name, function(percent)
-                        progress_bar.percentage = percent
-                    end)
-                    progress_collapse:toggle(true)
-                    local ret = async.await(download.get(selected_version, pack.folder_name))
-                    channel_callbacks.unregister(channel_name)
-                    progress_collapse:toggle(false)
-                    if ret then
-                        progress_bar.percentage = 0
-                        dialogs.alert(ret)
-                        return
-                    end
-                    table.remove(pack_list.elements, self.parent_index)
-                    pack_list:mutated(false)
-                    require("ui.elements.element").update_size(pack_list)
-                    local pack_data = async.await(game_handler.import_pack(pack.folder_name, selected_version))
-                    local elem = pack_elements.make_pack_element(pack_data, true)
-                    -- element may not be created if an element for the pack already exists
-                    if elem then
-                        require("ui.screens.levelselect").state.packs:mutated(false)
-                        elem:update_size()
-                        elem:click()
-                    end
-                end),
+                click_handler = function(self)
+                    self.download_promise = async(function()
+                        if downloading then
+                            -- download already in progress
+                            return
+                        end
+                        downloading = true
+                        local promises = {}
+                        for j = 1, #pack.dependency_ids do
+                            local elem = pack_id_elem_map[pack.dependency_ids[j]]
+                            -- element may not exist if pack is already downloaded
+                            if elem then
+                                if elem.download_promise then
+                                    -- download is in progress
+                                    promises[#promises + 1] = elem.download_promise
+                                else
+                                    -- download is started
+                                    promises[#promises + 1] = elem.click_handler(elem)
+                                end
+                            end
+                        end
+                        local channel_name = string.format("pack_download_progress_%d_%s", selected_version, pack.folder_name)
+                        channel_callbacks.register(channel_name, function(percent)
+                            progress_bar.percentage = percent
+                        end)
+                        progress_collapse:toggle(true)
+                        local ret = async.await(download.get(selected_version, pack.folder_name))
+                        channel_callbacks.unregister(channel_name)
+                        progress_collapse:toggle(false)
+                        if ret then
+                            downloading = false
+                            progress_bar.percentage = 0
+                            dialogs.alert(ret)
+                            return
+                        end
+                        log("Waiting for dependency packs...")
+                        for j = 1, #promises do
+                            async.await(promises[j])
+                        end
+                        local pack_data = async.await(game_handler.import_pack(pack.folder_name, selected_version))
+                        local elem = pack_elements.make_pack_element(pack_data, true)
+                        -- element may not be created if an element for the pack already exists
+                        if elem then
+                            require("ui.screens.levelselect").state.packs:mutated(false)
+                            elem:update_size()
+                            elem:click()
+                        end
+                        table.remove(pack_list.elements, self.parent_index)
+                        pack_list:mutated(false)
+                        require("ui.elements.element").update_size(pack_list)
+                        downloading = false
+                    end)()
+                    return self.download_promise
+                end,
             })
+            pack_list.elements[#pack_list.elements + 1] = elem
+            pack_id_elem_map[pack.id] = elem
         end
     end
     pack_list:mutated(false)

@@ -91,6 +91,12 @@ assets.get_pack = async(function(id)
                 local index_pack_id = build_pack_id(dependency.disambiguator, dependency.author, dependency.name)
                 local dependency_pack = dependency_mapping[index_pack_id]
                 if dependency_pack == nil then
+                    -- try refreshing dependency mapping in case pack was newly imported
+                    dependency_mapping = async.await(threaded_assets.get_dependency_pack_mapping21())
+                    -- then try again
+                    dependency_pack = dependency_mapping[index_pack_id]
+                end
+                if dependency_pack == nil then
                     log("can't find dependency '" .. index_pack_id .. "' of '" .. pack.id .. "'.")
                 elseif dependency_pack.id ~= pack.id then
                     dependency_mapping[index_pack_id] =

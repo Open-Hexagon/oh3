@@ -6,9 +6,13 @@ zip.__index = zip
 ---@param path string
 ---@return table
 function zip:new(path)
+    local file, err = love.filesystem.openFile(path, "r")
+    if err then
+        error("Error opening zip file: " .. err)
+    end
     return setmetatable({
         path = path,
-        file = love.filesystem.openFile(path, "r"),
+        file = file,
     }, zip)
 end
 

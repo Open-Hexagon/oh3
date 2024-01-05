@@ -236,6 +236,7 @@ local function register_pack(version, pack_data)
     if pack_data.game_version ~= 3 then
         -- only register pack if dependencies are satisfied
         local has_all_deps = true
+        local dependency_ids = {}
         if version == 21 and pack_data.dependencies ~= nil then
             for k = 1, #pack_data.dependencies do
                 local dependency = pack_data.dependencies[k]
@@ -244,11 +245,13 @@ local function register_pack(version, pack_data)
                 local dependency_pack_data = dependency_pack_mapping21[index_pack_id]
                 if dependency_pack_data == nil then
                     has_all_deps = false
+                else
+                    dependency_ids[#dependency_ids + 1] = dependency_pack_data.id
                 end
             end
         end
         if has_all_deps then
-            data.register_pack(pack_data.id, pack_data.name, pack_data.folder_name, version)
+            data.register_pack(pack_data.id, pack_data.name, pack_data.folder_name, version, dependency_ids)
 
             -- register levels in menu priority order
             table.sort(pack_data.level_list, function(a, b)
