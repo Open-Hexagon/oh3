@@ -309,7 +309,7 @@ function HTTP:send(conn, data)
         end
         if reason == "timeout" then
             timeout_count = timeout_count + 1
-            if timeout_count > 10 then
+            if timeout_count > 100000 then
                 return nil, reason, faillen, time
             end
         elseif reason ~= "wantwrite" then
