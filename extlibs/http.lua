@@ -293,6 +293,7 @@ end
 
 function HTTP:send(conn, data)
     self:log(10, conn, "<<", data)
+    local timeout_count = 0
     local i = 1
     while true do
         -- conn:send() successful response will be numberBytesSent, nil, nil, time
@@ -306,7 +307,12 @@ function HTTP:send(conn, data)
             self:log(10, conn, "...done sending")
             return successlen, reason, faillen, time
         end
-        if reason ~= "wantwrite" then
+        if reason == "timeout" then
+            timeout_count = timeout_count + 1
+            if timeout_count > 10 then
+                return nil, reason, faillen, time
+            end
+        elseif reason ~= "wantwrite" then
             return nil, reason, faillen, time
         end
         --socket.select({conn}, nil)	-- not good?

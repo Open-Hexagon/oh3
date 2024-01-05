@@ -154,7 +154,9 @@ add_setting(
     { game_version = 21, dependencies = { show_player_trail = true } }
 )
 add_setting("Gameplay", "show_swap_particles", true, { game_version = 21 })
-add_setting("", "server_api_url", "https://openhexagon.fun:8001/")
+add_setting("", "server_url", "openhexagon.fun")
+add_setting("", "server_http_api_port", 8003)
+add_setting("", "server_https_api_port", 8001)
 
 local function add_input(name, versions)
     local bindings = {}

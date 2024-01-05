@@ -7,7 +7,7 @@ local threadify = require("threadify")
 local assets = threadify.require("game_handler.assets")
 local uv = require("luv")
 
-local server_api_url = ""
+local server_http_url, server_https_url
 local tmp_folder = "download_cache/"
 if not love.filesystem.getInfo(tmp_folder) then
     love.filesystem.createDirectory(tmp_folder)
@@ -18,7 +18,7 @@ local pack_map = {}
 local download = {}
 
 local function api(suffix)
-    local code, json_data = https.request(server_api_url .. suffix)
+    local code, json_data = https.request(server_https_url .. suffix)
     if code ~= 200 then
         log("'" .. suffix .. "' api request failed")
         return
@@ -30,8 +30,9 @@ local function api(suffix)
     return json.decode(json_data)
 end
 
-function download.set_server_url(serv_api_url)
-    server_api_url = serv_api_url
+function download.set_server(serv_url, http_port, https_port)
+    server_http_url = "http://" .. serv_url .. ":" .. http_port .. "/"
+    server_https_url = "https://" .. serv_url .. ":" .. https_port .. "/"
 end
 
 ---gets a list of pack names for the specified game version
@@ -79,7 +80,7 @@ end
 ---@return string?
 function download.get(version, pack_name)
     local thread = love.thread.newThread("ui/overlay/packs/download.lua")
-    thread:start(version, pack_name, tmp_folder, server_api_url, pack_map[version][pack_name].file_size)
+    thread:start(version, pack_name, tmp_folder, server_http_url, pack_map[version][pack_name].file_size)
     while thread:isRunning() do
         coroutine.yield()
     end

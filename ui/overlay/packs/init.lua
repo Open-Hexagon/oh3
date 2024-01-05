@@ -17,7 +17,7 @@ local config = require("config")
 local dialogs = require("ui.overlay.dialog")
 local log = require("log")(...)
 
-download.set_server_url(config.get("server_api_url"))
+download.set_server(config.get("server_url"), config.get("server_http_api_port"), config.get("server_https_api_port"))
 
 local pack_overlay = overlay:new()
 
