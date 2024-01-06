@@ -7,6 +7,7 @@ local player = require("compat.game21.player")
 local walls = require("compat.game21.walls")
 local rng = require("compat.game21.random")
 local assets = require("compat.game21.assets")
+local utils = require("compat.game192.utils")
 
 local keycode_conversion = {
     [0] = "a",
@@ -219,7 +220,7 @@ return function(public, game)
         return player.get_player_angle()
     end
     env.u_setPlayerAngle = function(angle)
-        angle = angle or 0
+        angle = utils.float_round(angle or 0)
         return player.set_player_angle(angle)
     end
     env.u_isMouseButtonPressed = function(button)
