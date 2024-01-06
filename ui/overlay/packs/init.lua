@@ -24,6 +24,7 @@ local pack_overlay = overlay:new()
 local pack_list = flex:new({}, { direction = "column", align_items = "stretch" })
 local selected_version = 21
 local version_buttons
+local ongoing_downloads = {}
 
 local create_pack_list = async(function()
     pack_list.elements = { label:new("Loading...") }
@@ -40,11 +41,15 @@ local create_pack_list = async(function()
     for i = 1, #packs do
         local pack = packs[i]
         if pack.game_version == selected_version then
-            local downloading = false
             local progress_bar = progress:new({
                 style = { background_color = { 0, 0, 0, 0 } },
             })
             local progress_collapse = collapse:new(progress_bar)
+            local channel_name = string.format("pack_download_progress_%d_%s", pack.game_version, pack.folder_name)
+            channel_callbacks.register(channel_name, function(percent)
+                progress_bar.percentage = percent
+                progress_collapse:toggle(true)
+            end)
             local elem = quad:new({
                 child_element = flex:new({
                     label:new(pack.name, { wrap = true }),
@@ -60,11 +65,12 @@ local create_pack_list = async(function()
                 end,
                 click_handler = function(self)
                     self.download_promise = async(function()
-                        if downloading then
+                        ongoing_downloads[pack.game_version] = ongoing_downloads[pack.game_version] or {}
+                        if ongoing_downloads[pack.game_version][pack.folder_name] then
                             -- download already in progress
                             return
                         end
-                        downloading = true
+                        ongoing_downloads[pack.game_version][pack.folder_name] = true
                         local promises = {}
                         for j = 1, #pack.dependency_ids do
                             local elem = pack_id_elem_map[pack.dependency_ids[j]]
@@ -79,16 +85,10 @@ local create_pack_list = async(function()
                                 end
                             end
                         end
-                        local channel_name = string.format("pack_download_progress_%d_%s", pack.game_version, pack.folder_name)
-                        channel_callbacks.register(channel_name, function(percent)
-                            progress_bar.percentage = percent
-                        end)
-                        progress_collapse:toggle(true)
                         local ret = async.await(download.get(pack.game_version, pack.folder_name))
-                        channel_callbacks.unregister(channel_name)
                         progress_collapse:toggle(false)
                         if ret then
-                            downloading = false
+                            ongoing_downloads[pack.game_version][pack.folder_name] = nil
                             progress_bar.percentage = 0
                             dialogs.alert(ret)
                             return
@@ -108,7 +108,7 @@ local create_pack_list = async(function()
                         table.remove(pack_list.elements, self.parent_index)
                         pack_list:mutated(false)
                         require("ui.elements.element").update_size(pack_list)
-                        downloading = false
+                        ongoing_downloads[pack.game_version][pack.folder_name] = nil
                     end)()
                     return self.download_promise
                 end,
