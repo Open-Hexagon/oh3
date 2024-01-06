@@ -79,12 +79,12 @@ local create_pack_list = async(function()
                                 end
                             end
                         end
-                        local channel_name = string.format("pack_download_progress_%d_%s", selected_version, pack.folder_name)
+                        local channel_name = string.format("pack_download_progress_%d_%s", pack.game_version, pack.folder_name)
                         channel_callbacks.register(channel_name, function(percent)
                             progress_bar.percentage = percent
                         end)
                         progress_collapse:toggle(true)
-                        local ret = async.await(download.get(selected_version, pack.folder_name))
+                        local ret = async.await(download.get(pack.game_version, pack.folder_name))
                         channel_callbacks.unregister(channel_name)
                         progress_collapse:toggle(false)
                         if ret then
@@ -97,7 +97,7 @@ local create_pack_list = async(function()
                         for j = 1, #promises do
                             async.await(promises[j])
                         end
-                        local pack_data = async.await(game_handler.import_pack(pack.folder_name, selected_version))
+                        local pack_data = async.await(game_handler.import_pack(pack.folder_name, pack.game_version))
                         local elem = pack_elements.make_pack_element(pack_data, true)
                         -- element may not be created if an element for the pack already exists
                         if elem then
