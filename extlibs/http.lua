@@ -669,6 +669,7 @@ function HTTP:handleClient(client)
             self:log(1, "couldn't find filename in request " .. ("%q"):format(request))
         else
             local headers = {}
+            headers["Connection"] = "close"
             if self.allow_cors then
                 headers["Access-Control-Allow-Origin"] = "*"
             end
@@ -759,10 +760,14 @@ function HTTP:connectCoroutine(client, server)
 
     self:handleClient(client)
     self:log(1, "closing client...")
-    client:shutdown("send")
     self:receive(client, 1)
     client:close()
-    self.clients:removeObject(client)
+    for i = 1, #self.clients do
+        if self.clients[i] == client then
+            table.remove(self.clients, i)
+            break
+        end
+    end
     self:log(2, "# clients remaining: " .. #self.clients)
 end
 

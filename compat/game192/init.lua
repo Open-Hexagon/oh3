@@ -363,7 +363,7 @@ function public.update(frametime)
         end
         current_rotation = current_rotation + next_rotation * get_sign(game.level_data.rotation_speed)
     end
-    -- only for level change, real restarts will happen externally
+    -- only for level change, real restarts happen externally
     if status.must_restart then
         public.running = false
         public.first_play = game.restart_first_time
