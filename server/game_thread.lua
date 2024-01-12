@@ -8,7 +8,7 @@ local threadify = require("threadify")
 
 -- avoid local redefinition
 do
-    local promise = game_handler.init(config)
+    local promise = game_handler.init()
     while not promise.executed do
         threadify.update()
         uv.sleep(10)

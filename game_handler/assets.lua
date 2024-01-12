@@ -438,67 +438,64 @@ function assets.get_pack(version, id, headless)
         end
 
         -- small preview data
-        -- use is_headless instead of headless to not load icon data just for server rendering
-        if not is_headless then
-            pack_data.preview_data = {}
-            local style_module = require("compat.game" .. pack_data.game_version .. ".style")
-            local set_function = style_module.select or style_module.set
-            for level_id, level in pairs(pack_data.levels) do
-                -- get side count
-                local sides = 6
-                if version == 192 then
-                    sides = level.sides or 6
-                else
-                    local lua_path = pack_data.path .. "/" .. level.lua_file
-                    if love.filesystem.getInfo(lua_path) then
-                        local code = love.filesystem.read(lua_path)
-                        -- match set sides calls in the lua file to get the number of sides
-                        for match in code:gmatch("function.-onInit.-l_setSides%((.-)%).-end") do
-                            sides = tonumber(match) or sides
-                        end
+        pack_data.preview_data = {}
+        local style_module = require("compat.game" .. pack_data.game_version .. ".style")
+        local set_function = style_module.select or style_module.set
+        for level_id, level in pairs(pack_data.levels) do
+            -- get side count
+            local sides = 6
+            if version == 192 then
+                sides = level.sides or 6
+            else
+                local lua_path = pack_data.path .. "/" .. level.lua_file
+                if love.filesystem.getInfo(lua_path) then
+                    local code = love.filesystem.read(lua_path)
+                    -- match set sides calls in the lua file to get the number of sides
+                    for match in code:gmatch("function.-onInit.-l_setSides%((.-)%).-end") do
+                        sides = tonumber(match) or sides
                     end
                 end
-                sides = math.max(sides, 3)
-
-                -- get colors
-                set_function(pack_data.styles[level.style_id])
-                style_module.compute_colors()
-                local main_color = { style_module.get_main_color() }
-                for i = 1, 4 do
-                    main_color[i] = main_color[i] / 255
-                end
-
-                -- generate vertex color data
-                local colors = {}
-                for i = 1, sides do
-                    local r, g, b, a = style_module.get_color(i - (pack_data.game_version == 20 and 0 or 1))
-                    local must_darken = i % 2 == 0 and i == sides - 1
-                    if must_darken then
-                        r = r / 1.4
-                        g = g / 1.4
-                        b = b / 1.4
-                    end
-                    r = r / 255
-                    g = g / 255
-                    b = b / 255
-                    a = a / 255
-                    colors[#colors + 1] = { r * a, g * a, b * a, 1 }
-                end
-                local r, g, b, a
-                if pack_data.game_version == 21 then
-                    r, g, b, a = style_module.get_cap_color_result()
-                elseif pack_data.game_version == 20 then
-                    r, g, b, a = style_module.get_color(2)
-                elseif pack_data.game_version == 192 then
-                    r, g, b, a = style_module.get_second_color()
-                end
-                pack_data.preview_data[level_id] = {
-                    sides = sides,
-                    background_colors = colors,
-                    pivot_color = main_color,
-                    cap_color = { r / 255, g / 255, b / 255, a / 255 },
-                }
             end
+            sides = math.max(sides, 3)
+
+            -- get colors
+            set_function(pack_data.styles[level.style_id])
+            style_module.compute_colors()
+            local main_color = { style_module.get_main_color() }
+            for i = 1, 4 do
+                main_color[i] = main_color[i] / 255
+            end
+
+            -- generate vertex color data
+            local colors = {}
+            for i = 1, sides do
+                local r, g, b, a = style_module.get_color(i - (pack_data.game_version == 20 and 0 or 1))
+                local must_darken = i % 2 == 0 and i == sides - 1
+                if must_darken then
+                    r = r / 1.4
+                    g = g / 1.4
+                    b = b / 1.4
+                end
+                r = r / 255
+                g = g / 255
+                b = b / 255
+                a = a / 255
+                colors[#colors + 1] = { r * a, g * a, b * a, 1 }
+            end
+            local r, g, b, a
+            if pack_data.game_version == 21 then
+                r, g, b, a = style_module.get_cap_color_result()
+            elseif pack_data.game_version == 20 then
+                r, g, b, a = style_module.get_color(2)
+            elseif pack_data.game_version == 192 then
+                r, g, b, a = style_module.get_second_color()
+            end
+            pack_data.preview_data[level_id] = {
+                sides = sides,
+                background_colors = colors,
+                pivot_color = main_color,
+                cap_color = { r / 255, g / 255, b / 255, a / 255 },
+            }
         end
     end
 

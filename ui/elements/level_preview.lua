@@ -19,10 +19,10 @@ function level_preview:new(game_version, pack, level, options)
         }, level_preview),
         options
     )
-    local promise = game_handler.get_preview_data(game_version, pack, level)
+    local promise = game_handler.get_preview_data(game_version, pack)
     if promise then
         promise:done(function(data)
-            obj.data = data
+            obj.data = data[level]
         end)
     end
     return obj

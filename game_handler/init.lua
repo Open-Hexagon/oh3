@@ -444,9 +444,8 @@ end
 ---gets vertices and colors for a minimal level preview
 ---@param game_version number
 ---@param pack_id string
----@param level_id string
 ---@return table?
-game_handler.get_preview_data = async(function(game_version, pack_id, level_id)
+game_handler.get_preview_data = async(function(game_version, pack_id)
     local assets
     if game_version == 3 then
         assets = require("game.assets")
@@ -454,7 +453,7 @@ game_handler.get_preview_data = async(function(game_version, pack_id, level_id)
         assets = require("compat.game" .. game_version .. ".assets")
     end
     local pack = async.await(assets.get_pack(pack_id))
-    return pack.preview_data[level_id]
+    return pack.preview_data
 end)
 
 return game_handler

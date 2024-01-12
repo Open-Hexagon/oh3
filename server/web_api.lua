@@ -2,13 +2,20 @@ local utils = require("compat.game192.utils")
 local database = require("server.database")
 local json = require("extlibs.json.json")
 local msgpack = require("extlibs.msgpack.msgpack")
-local threadify = require("threadify")
-local threaded_assets = threadify.require("game_handler.assets")
 local http = require("extlibs.http")
 local url = require("socket.url")
 local log = require("log")("server.web_api")
 local uv = require("luv")
 local zip = require("extlibs.love-zip")
+local threadify = require("threadify")
+local game_handler = require("game_handler")
+
+local promise = game_handler.init()
+while not promise.executed do
+    threadify.update()
+    uv.sleep(10)
+end
+local packs = game_handler.get_packs()
 
 local zip_path = "zip_cache/"
 if not love.filesystem.getInfo(zip_path) then
@@ -33,19 +40,6 @@ end
 local app = http:new(args)
 
 json.encode_inf_as_1e500 = true
-
-local packs
-local promise = threaded_assets.init({}, true)
-promise:done(function(pack_list)
-    packs = pack_list
-end)
-while not promise.executed do
-    threadify.update()
-    uv.sleep(10)
-end
-if not packs then
-    error("getting pack list failed")
-end
 
 database.set_identity(3)
 
@@ -108,6 +102,20 @@ app.handlers["/get_video/..."] = function(captures, headers)
     else
         return "no video for this replay"
     end
+end
+
+app.handlers["/get_pack_preview_data/.../..."] = function(captures, headers)
+    headers["content-type"] = "application/json"
+    local promise = game_handler.get_preview_data(tonumber(captures[1]), captures[2])
+    local result
+    promise:done(function(data)
+        result = data
+    end)
+    while not promise.executed do
+        coroutine.yield()
+        threadify.update()
+    end
+    return json.encode(result)
 end
 
 app.handlers["/get_packs"] = function(_, headers)

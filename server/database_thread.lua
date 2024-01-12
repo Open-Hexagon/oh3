@@ -8,12 +8,8 @@ local api = {}
 local server_path = "server/"
 local db_path = love.filesystem.getSaveDirectory() .. "/" .. server_path .. "server.db"
 local replay_path = server_path .. "replays/"
-if not love.filesystem.getInfo(server_path) then
-    love.filesystem.createDirectory(server_path)
-end
-if not love.filesystem.getInfo(replay_path) then
-    love.filesystem.createDirectory(replay_path)
-end
+love.filesystem.createDirectory(server_path)
+love.filesystem.createDirectory(replay_path)
 local database = sqlite({
     uri = db_path,
     users = {
