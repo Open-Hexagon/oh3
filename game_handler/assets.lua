@@ -146,17 +146,9 @@ local function preload_pack(pack_folder_name, version, persistent_data)
                 pack_data.folder_name = pack_folder_name
                 pack_data.loaded = false
                 if version == 21 then
-                    pack_data.id = build_pack_id21(
-                        pack_data.disambiguator,
-                        pack_data.author,
-                        pack_data.name,
-                        pack_data.version
-                    )
-                    dependency_pack_mapping21[build_pack_id21(
-                        pack_data.disambiguator,
-                        pack_data.author,
-                        pack_data.name
-                    )] =
+                    pack_data.id =
+                        build_pack_id21(pack_data.disambiguator, pack_data.author, pack_data.name, pack_data.version)
+                    dependency_pack_mapping21[build_pack_id21(pack_data.disambiguator, pack_data.author, pack_data.name)] =
                         pack_data
                 else
                     pack_data.id = pack_folder_name
@@ -241,8 +233,7 @@ local function register_pack(version, pack_data)
         if version == 21 and pack_data.dependencies ~= nil then
             for k = 1, #pack_data.dependencies do
                 local dependency = pack_data.dependencies[k]
-                local index_pack_id =
-                    build_pack_id21(dependency.disambiguator, dependency.author, dependency.name)
+                local index_pack_id = build_pack_id21(dependency.disambiguator, dependency.author, dependency.name)
                 local dependency_pack_data = dependency_pack_mapping21[index_pack_id]
                 if dependency_pack_data == nil then
                     has_all_deps = false
@@ -477,14 +468,8 @@ function assets.get_pack(version, id, headless)
                     main_color[i] = main_color[i] / 255
                 end
 
-                -- generate vertex and color data
-                local polygons = {}
+                -- generate vertex color data
                 local colors = {}
-                local distance = 48
-                local radius = distance / 3
-                local cap_poly = {}
-                local outline = {}
-                local pivot_thickness = 2
                 for i = 1, sides do
                     local r, g, b, a = style_module.get_color(i - (pack_data.game_version == 20 and 0 or 1))
                     local must_darken = i % 2 == 0 and i == sides - 1
@@ -497,40 +482,8 @@ function assets.get_pack(version, id, headless)
                     g = g / 255
                     b = b / 255
                     a = a / 255
-                    local angle1 = i * 2 * math.pi / sides - math.pi / 2
-                    local cos1 = math.cos(angle1)
-                    local sin1 = math.sin(angle1)
-                    local angle2 = angle1 + 2 * math.pi / sides
-                    local cos2 = math.cos(angle2)
-                    local sin2 = math.sin(angle2)
-                    local polygon = {
-                        0,
-                        0,
-                        cos1 * distance,
-                        sin1 * distance,
-                        cos2 * distance,
-                        sin2 * distance,
-                    }
-                    polygons[#polygons + 1] = polygon
                     colors[#colors + 1] = { r * a, g * a, b * a, 1 }
-                    local pivot_poly = {
-                        cos2 * radius,
-                        sin2 * radius,
-                        cos1 * radius,
-                        sin1 * radius,
-                        cos1 * (radius + pivot_thickness),
-                        sin1 * (radius + pivot_thickness),
-                        cos2 * (radius + pivot_thickness),
-                        sin2 * (radius + pivot_thickness),
-                    }
-                    polygons[#polygons + 1] = pivot_poly
-                    colors[#colors + 1] = main_color
-                    cap_poly[#cap_poly + 1] = cos1 * radius
-                    cap_poly[#cap_poly + 1] = sin1 * radius
-                    outline[#outline + 1] = cos1 * distance
-                    outline[#outline + 1] = sin1 * distance
                 end
-                polygons[#polygons + 1] = cap_poly
                 local r, g, b, a
                 if pack_data.game_version == 21 then
                     r, g, b, a = style_module.get_cap_color_result()
@@ -539,11 +492,11 @@ function assets.get_pack(version, id, headless)
                 elseif pack_data.game_version == 192 then
                     r, g, b, a = style_module.get_second_color()
                 end
-                colors[#colors + 1] = { r / 255, g / 255, b / 255, a / 255 }
                 pack_data.preview_data[level_id] = {
-                    polygons = polygons,
-                    colors = colors,
-                    outline = outline,
+                    sides = sides,
+                    background_colors = colors,
+                    pivot_color = main_color,
+                    cap_color = { r / 255, g / 255, b / 255, a / 255 },
                 }
             end
         end

@@ -43,13 +43,39 @@ function level_preview:draw_element()
     if self.data then
         love.graphics.translate(half_size, half_size)
         love.graphics.scale(self.scale, self.scale)
-        for i = 1, #self.data.polygons do
-            love.graphics.setColor(self.data.colors[i])
-            love.graphics.polygon("fill", self.data.polygons[i])
+        self.vertices = self.vertices or {}
+        local distance = 48
+        local pivot_thickness = 2
+        for i = 1, self.data.sides do
+            local angle1 = i * 2 * math.pi / self.data.sides - math.pi / 2
+            local cos1 = math.cos(angle1)
+            local sin1 = math.sin(angle1)
+            local angle2 = angle1 + 2 * math.pi / self.data.sides
+            local cos2 = math.cos(angle2)
+            local sin2 = math.sin(angle2)
+            -- background
+            love.graphics.setColor(self.data.background_colors[i])
+            love.graphics.polygon("fill", 0, 0, cos1 * distance, sin1 * distance, cos2 * distance, sin2 * distance)
+            self.vertices[(i - 1) * 2 + 1] = cos1 * distance
+            self.vertices[i * 2] = sin1 * distance
         end
+        -- pivot
+        love.graphics.setColor(self.data.pivot_color)
+        local pivot_mult = 1 / 3 + 1 / distance
+        love.graphics.scale(pivot_mult, pivot_mult)
+        love.graphics.setLineWidth(pivot_thickness / pivot_mult)
+        love.graphics.polygon("line", self.vertices)
+        love.graphics.scale(1 / pivot_mult, 1 / pivot_mult)
+        -- cap
+        local cap_mult = 1 / 3
+        love.graphics.scale(cap_mult, cap_mult)
+        love.graphics.setColor(self.data.cap_color)
+        love.graphics.polygon("fill", self.vertices)
+        love.graphics.scale(1 / cap_mult, 1 / cap_mult)
+        -- border
         love.graphics.setColor(self.border_color)
-        love.graphics.setLineWidth(self.scale * self.border_thickness)
-        love.graphics.polygon("line", self.data.outline)
+        love.graphics.setLineWidth(self.border_thickness)
+        love.graphics.polygon("line", self.vertices)
     else
         -- loading circle (TODO: replace hardcoded colors and line width maybe)
         love.graphics.setColor(1, 1, 1, 1)

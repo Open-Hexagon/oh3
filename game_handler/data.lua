@@ -12,7 +12,7 @@ function data.register_pack(id, name, folder_name, game_version, dependency_ids)
         game_version = game_version,
         levels = {},
         level_count = 0,
-        dependency_ids = dependency_ids or {}
+        dependency_ids = dependency_ids or {},
     }
     pack_id_map[id] = packs[pack_count]
 end

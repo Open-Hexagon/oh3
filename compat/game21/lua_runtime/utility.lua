@@ -168,7 +168,7 @@ return function(public, game)
         return "2.1.7"
     end
     env.u_execScript = function(path)
-        lua_runtime.run_lua_file(pack.path .. "/Scripts/" .. path)
+        lua_runtime.run_lua_file(pack.path .. "Scripts/" .. path)
     end
     env.u_execDependencyScript = function(disambiguator, name, author, script)
         local dependency_pack = assets.get_pack_from_metadata(disambiguator, author, name)

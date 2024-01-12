@@ -84,7 +84,8 @@ function download.get(version, pack_name)
     while thread:isRunning() do
         coroutine.yield()
     end
-    local err = thread:getError() or love.thread.getChannel(string.format("pack_download_error_%d_%s", version, pack_name)):pop()
+    local err = thread:getError()
+        or love.thread.getChannel(string.format("pack_download_error_%d_%s", version, pack_name)):pop()
     if err then
         return err
     end
