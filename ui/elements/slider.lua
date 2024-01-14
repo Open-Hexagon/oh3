@@ -2,6 +2,7 @@ local keyboard_navigation = require("ui.keyboard_navigation")
 local element = require("ui.elements.element")
 local signal = require("ui.anim.signal")
 local extmath = require("ui.extmath")
+local theme = require("ui.theme")
 local slider = {}
 slider.__index = setmetatable(slider, { __index = element })
 
@@ -14,6 +15,8 @@ function slider:new(options)
             state = options.initial_state or 0,
             radius = options.radius or 16,
             background_color = { 0.5, 0.5, 0.5, 1 },
+            selection_color = theme.get("selection_color"),
+            border_thickness = 1,
             position = signal.new_queue(0),
             grabbed = false,
         }, slider),
@@ -101,6 +104,8 @@ end
 
 function slider:set_style(style)
     self.background_color = self.style.background_color or style.background_color or self.background_color
+    self.border_thickness = self.style.border_thickness or style.border_thickness or self.border_thickness
+    self.selection_color = self.style.selection_color or style.selection_color or self.selection_color
     element.set_style(self, style)
 end
 
@@ -127,10 +132,8 @@ function slider:draw_element()
     local indicator_x = x + self.position() * self.step_size * self.scale
     love.graphics.circle("fill", indicator_x, y, radius, segments)
     if self.selected then
-        -- TODO: add select border width option
-        love.graphics.setLineWidth(self.scale)
-        -- TODO: replace temporary selection color
-        love.graphics.setColor(0, 0, 1, 1)
+        love.graphics.setLineWidth(self.scale * self.border_thickness)
+        love.graphics.setColor(self.selection_color)
         love.graphics.circle("line", indicator_x, y, radius, segments)
     end
 end

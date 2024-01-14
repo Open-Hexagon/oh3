@@ -116,12 +116,7 @@ end
 
 ---draw the label
 function label:draw_element()
-    -- TODO: replace temporary visual selection state
-    if self.selected then
-        love.graphics.setColor(0, 0, 1, 1)
-    else
-        love.graphics.setColor(self.color)
-    end
+    love.graphics.setColor(self.color)
     love.graphics.draw(self.text)
 end
 

@@ -1,5 +1,6 @@
 local element = require("ui.elements.element")
 local signal = require("ui.anim.signal")
+local theme = require("ui.theme")
 local toggle = {}
 toggle.__index = setmetatable(toggle, { __index = element })
 
@@ -10,7 +11,10 @@ function toggle:new(options)
             state = options.initial_state or false,
             state_indicator_offset = signal.new_queue(0),
             radius = options.radius or 16,
-            background_color = { 0.5, 0.5, 0.5, 1 },
+            border_thickness = 1,
+            selection_color = theme.get("selection_color"),
+            light_selection_color = theme.get("light_selection_color"),
+            background_color = theme.get("light_background_color"),
         }, toggle),
         options
     )
@@ -48,6 +52,11 @@ end
 
 function toggle:set_style(style)
     self.background_color = self.style.background_color or style.background_color or self.background_color
+    self.border_thickness = self.style.border_thickness or style.border_thickness or self.border_thickness
+    self.selection_color = self.style.selection_color or style.selection_color or self.selection_color
+    self.light_selection_color = self.style.light_selection_color
+        or style.light_selection_color
+        or self.light_selection_color
     element.set_style(self, style)
 end
 
@@ -60,8 +69,7 @@ end
 function toggle:draw_element()
     local radius = self.radius * self.scale
     if self.state then
-        -- TODO: replace temporary indicator color
-        love.graphics.setColor(0.5, 0.5, 1, 1)
+        love.graphics.setColor(self.light_selection_color)
     else
         love.graphics.setColor(self.background_color)
     end
@@ -72,10 +80,8 @@ function toggle:draw_element()
     love.graphics.setColor(self.color)
     love.graphics.circle("fill", radius + self.state_indicator_offset() * self.scale, radius, radius, segments)
     if self.selected then
-        -- TODO: add select border width option
-        love.graphics.setLineWidth(self.scale)
-        -- TODO: replace temporary selection color
-        love.graphics.setColor(0, 0, 1, 1)
+        love.graphics.setLineWidth(self.scale * self.border_thickness)
+        love.graphics.setColor(self.selection_color)
         love.graphics.circle("line", radius + self.state_indicator_offset() * self.scale, radius, radius, segments)
     end
 end

@@ -11,13 +11,6 @@ death.layout = flex:new({
     quad:new({
         child_element = label:new("Retry"),
         selectable = true,
-        selection_handler = function(self)
-            if self.selected then
-                self.border_color = { 0, 0, 1, 1 }
-            else
-                self.border_color = { 1, 1, 1, 1 }
-            end
-        end,
         click_handler = function()
             game_handler.stop()
             death:close()
@@ -27,13 +20,6 @@ death.layout = flex:new({
     quad:new({
         child_element = label:new("Back"),
         selectable = true,
-        selection_handler = function(self)
-            if self.selected then
-                self.border_color = { 0, 0, 1, 1 }
-            else
-                self.border_color = { 1, 1, 1, 1 }
-            end
-        end,
         click_handler = function()
             local ui = require("ui")
             game_handler.preview_start("", "", {}, false, true)

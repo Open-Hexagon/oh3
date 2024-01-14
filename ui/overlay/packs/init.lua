@@ -56,13 +56,6 @@ local create_pack_list = async(function()
                     progress_collapse,
                 }, { direction = "column", align_items = "stretch", align_relative_to = "parentparent" }),
                 selectable = true,
-                selection_handler = function(self)
-                    if self.selected then
-                        self.border_color = { 0, 0, 1, 1 }
-                    else
-                        self.border_color = { 1, 1, 1, 1 }
-                    end
-                end,
                 click_handler = function(self)
                     self.download_promise = async(function()
                         ongoing_downloads[pack.game_version] = ongoing_downloads[pack.game_version] or {}
@@ -131,13 +124,6 @@ local function make_version_button(version)
     return quad:new({
         child_element = label:new(tostring(version)),
         selectable = true,
-        selection_handler = function(self)
-            if self.selected then
-                self.border_color = { 0, 0, 1, 1 }
-            else
-                self.border_color = { 1, 1, 1, 1 }
-            end
-        end,
         click_handler = function(self)
             for i = 1, #version_buttons do
                 version_buttons[i].background_color = { 0, 0, 0, 1 }
@@ -163,13 +149,6 @@ pack_overlay.layout = quad:new({
             quad:new({
                 child_element = icon:new("x-lg"),
                 selectable = true,
-                selection_handler = function(self)
-                    if self.selected then
-                        self.border_color = { 0, 0, 1, 1 }
-                    else
-                        self.border_color = { 1, 1, 1, 1 }
-                    end
-                end,
                 click_handler = function()
                     pack_overlay:close()
                 end,

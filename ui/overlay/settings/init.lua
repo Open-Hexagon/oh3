@@ -14,6 +14,7 @@ local icon = require("ui.elements.icon")
 local fzy = require("extlibs.fzy_lua")
 local input_setting = require("ui.overlay.settings.input")
 local settings_profile_selection = require("ui.overlay.settings.settings_profile_selection")
+local theme = require("ui.theme")
 
 local name_layout_map = {}
 local dependency_setting_map = {}
@@ -197,11 +198,7 @@ for i = 1, #category_names do
         child_element = icon:new(category_icons[category]),
         selectable = true,
         selection_handler = function(self)
-            if self.selected then
-                self.border_color = { 0, 0, 1, 1 }
-            else
-                self.border_color = { 1, 1, 1, 1 }
-            end
+            theme.get_selection_handler()(self)
             keyboard_navigation.scroll_into_view(category_settings)
             -- make keyboard navigation go into the category and not wherever it was last when going into the settings column
             category_settings.parent.last_selection = category_settings
@@ -272,13 +269,6 @@ local content = flex:new({
         quad:new({
             child_element = icon:new("x-lg"),
             selectable = true,
-            selection_handler = function(self)
-                if self.selected then
-                    self.border_color = { 0, 0, 1, 1 }
-                else
-                    self.border_color = { 1, 1, 1, 1 }
-                end
-            end,
             click_handler = function()
                 settings:close()
                 config.save()

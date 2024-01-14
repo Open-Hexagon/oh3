@@ -2,6 +2,7 @@ local log = require("log")(...)
 local disabled_shader = require("ui.disabled")
 local animated_transform = require("ui.anim.transform")
 local keyboard_navigation = require("ui.keyboard_navigation")
+local theme = require("ui.theme")
 local element = {}
 element.__index = element
 -- ensure that changed is set to true when any property in the change_map is changed
@@ -73,7 +74,7 @@ function element:new(options)
     self.selectable = options.selectable or false
     self.is_mouse_over = false
     self.selected = false
-    self.selection_handler = options.selection_handler
+    self.selection_handler = options.selection_handler or theme.get_selection_handler()
     self.click_handler = options.click_handler
     self.hold_handler = options.hold_handler
     self.change_handler = options.change_handler
@@ -158,6 +159,14 @@ function element:set_style(style)
         self.disabled = style.disabled
     elseif self.style.disabled ~= nil then
         self.disabled = self.style.disabled
+    end
+    if self.disabled and self.selectable then
+        self.was_selectable = true
+        self.selectable = false
+    end
+    if not self.disabled and self.was_selectable then
+        self.was_selectable = nil
+        self.selectable = true
     end
 end
 

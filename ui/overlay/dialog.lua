@@ -16,13 +16,6 @@ dialog.layout = flex:new({
                 quad:new({
                     child_element = label:new("Yes"),
                     selectable = true,
-                    selection_handler = function(self)
-                        if self.selected then
-                            self.border_color = { 0, 0, 1, 1 }
-                        else
-                            self.border_color = { 1, 1, 1, 1 }
-                        end
-                    end,
                     click_handler = function()
                         dialog.onclose = nil
                         dialog:close()
@@ -32,13 +25,6 @@ dialog.layout = flex:new({
                 quad:new({
                     child_element = label:new("No"),
                     selectable = true,
-                    selection_handler = function(self)
-                        if self.selected then
-                            self.border_color = { 0, 0, 1, 1 }
-                        else
-                            self.border_color = { 1, 1, 1, 1 }
-                        end
-                    end,
                     click_handler = function()
                         dialog:close()
                     end,

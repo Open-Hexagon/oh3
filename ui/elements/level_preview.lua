@@ -1,6 +1,7 @@
 local element = require("ui.elements.element")
 local game_handler = require("game_handler")
 local signal = require("ui.anim.signal")
+local theme = require("ui.theme")
 local level_preview = {}
 level_preview.__index = setmetatable(level_preview, {
     __index = element,
@@ -13,6 +14,9 @@ function level_preview:new(game_version, pack, level, options)
             game_version = game_version,
             pack = pack,
             level = level,
+            background_color = theme.get("background_color"),
+            border_color = theme.get("border_color"),
+            border_thickness = 1,
             angle = signal.new_waveform(1, function(x)
                 return x * 2 * math.pi
             end),
@@ -29,6 +33,7 @@ function level_preview:new(game_version, pack, level, options)
 end
 
 function level_preview:set_style(style)
+    self.background_color = self.style.background_color or style.background_color or self.background_color
     self.border_thickness = self.style.border_thickness or style.border_thickness or self.border_thickness
     self.border_color = self.style.border_color or style.border_color or self.border_color
     element.set_style(self, style)
@@ -77,13 +82,12 @@ function level_preview:draw_element()
         love.graphics.setLineWidth(self.border_thickness)
         love.graphics.polygon("line", self.vertices)
     else
-        -- loading circle (TODO: replace hardcoded colors and line width maybe)
-        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.setColor(self.border_color)
         love.graphics.setLineWidth(self.scale * 5)
         love.graphics.circle("line", half_size, half_size, half_size / 2, 100)
         local half_sector_size = math.pi / 4
         local radius = half_size
-        love.graphics.setColor(0, 0, 0, 1)
+        love.graphics.setColor(self.background_color)
         love.graphics.polygon(
             "fill",
             half_size,

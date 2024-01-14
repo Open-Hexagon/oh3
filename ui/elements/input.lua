@@ -238,24 +238,10 @@ local prompt_text = label:new("", { wrap = true })
 local cancel_button = quad:new({
     child_element = label:new("Cancel"),
     selectable = true,
-    selection_handler = function(self)
-        if self.selected then
-            self.border_color = { 0, 0, 1, 1 }
-        else
-            self.border_color = { 1, 1, 1, 1 }
-        end
-    end,
 })
 local remove_button = quad:new({
     child_element = label:new("Remove"),
     selectable = true,
-    selection_handler = function(self)
-        if self.selected then
-            self.border_color = { 0, 0, 1, 1 }
-        else
-            self.border_color = { 1, 1, 1, 1 }
-        end
-    end,
 })
 input_overlay.layout = flex:new({
     prompt_text,

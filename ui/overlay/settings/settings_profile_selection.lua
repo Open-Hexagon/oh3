@@ -19,13 +19,6 @@ local profile_name_label = label:new(config.get_profile() or "")
 local button = quad:new({
     child_element = profile_name_label,
     selectable = true,
-    selection_handler = function(self)
-        if self.selected then
-            self.border_color = { 0, 0, 1, 1 }
-        else
-            self.border_color = { 1, 1, 1, 1 }
-        end
-    end,
     click_handler = function()
         dropdown:toggle()
     end,
@@ -68,13 +61,6 @@ local function refresh_list()
             }, { justify_content = "between" }),
             selectable = true,
             style = { border_thickness = 0, padding = 0 },
-            selection_handler = function(self)
-                if self.selected then
-                    self.background_color = { 0.5, 0.5, 1, 1 }
-                else
-                    self.background_color = { 0, 0, 0, 1 }
-                end
-            end,
             click_handler = function()
                 dropdown:toggle(false)
                 keyboard_navigation.select_element(button)
@@ -97,13 +83,6 @@ local function refresh_list()
         quad:new({
             child_element = label:new("+"),
             selectable = true,
-            selection_handler = function(self)
-                if self.selected then
-                    self.border_color = { 0, 0, 1, 1 }
-                else
-                    self.border_color = { 1, 1, 1, 1 }
-                end
-            end,
             click_handler = function()
                 local name = profile_name_entry.text
                 if name == "" then

@@ -11,13 +11,6 @@ local function make_button(name, callback)
     return quad:new({
         child_element = label:new(name),
         selectable = true,
-        selection_handler = function(self)
-            if self.selected then
-                self.border_color = { 0, 0, 1, 1 }
-            else
-                self.border_color = { 1, 1, 1, 1 }
-            end
-        end,
         click_handler = callback,
     })
 end
