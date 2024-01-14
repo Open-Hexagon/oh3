@@ -44,11 +44,25 @@ function profile.open_or_new(name)
     current_profile = name
 end
 
+local function escape(str)
+    if str:match("%(") or str:match("%)") then
+        return string.format("\"%s\"", str)
+    end
+    return str
+end
+
+local function unescape(str)
+    if str:match("%(") or str:match("%)") then
+        return str:sub(2, -2)
+    end
+    return str
+end
+
 ---get all persistent data stored in the database for a pack
 ---@param pack_id string
 ---@return table?
 function profile.get_data(pack_id)
-    local matches = database.custom_data:get({ where = { pack = pack_id } })
+    local matches = database.custom_data:get({ where = { pack = escape(pack_id) } })
     if #matches == 0 then
         return nil
     elseif #matches == 1 then
@@ -65,7 +79,7 @@ function profile.get_all_data()
     local result = {}
     for i = 1, #rows do
         local row = rows[i]
-        result[row.pack] = row.data
+        result[unescape(row.pack)] = row.data
     end
     return result
 end
@@ -76,7 +90,7 @@ end
 function profile.store_data(pack_id, data)
     database:open()
     database:update("custom_data", {
-        where = { pack = pack_id },
+        where = { pack = escape(pack_id) },
         set = { data = data },
     })
     database:close()
@@ -105,8 +119,8 @@ function profile.save_score(time, replay)
     end
     database:open()
     database:insert("scores", {
-        pack = replay.pack_id,
-        level = replay.level_id,
+        pack = escape(replay.pack_id),
+        level = escape(replay.level_id),
         level_options = replay.data.level_settings,
         time = time,
         score = replay.score,
@@ -125,7 +139,7 @@ function profile.get_scores(pack, level, level_options)
     database:open()
     local results = database:select("scores", {
         where = {
-            pack = pack,
+            pack = escape(pack),
             level = level,
         },
     })
