@@ -281,7 +281,7 @@ settings.layout = quad:new({
     child_element = content,
     style = { padding = 0 },
 })
-content:set_style({ padding = 8 })
+content:set_style({ padding = 6 })
 
 settings.transition = transitions.slide
 

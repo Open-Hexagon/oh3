@@ -56,13 +56,6 @@ function input_setting:init_bindings()
     items[#items + 1] = quad:new({
         child_element = label:new("+"),
         selectable = true,
-        selection_handler = function(elem)
-            if elem.selected then
-                elem.border_color = { 0, 0, 1, 1 }
-            else
-                elem.border_color = { 1, 1, 1, 1 }
-            end
-        end,
         click_handler = function()
             async.promise
                 :new(function(resolve)
@@ -133,13 +126,6 @@ function input_setting:new_binding(scheme_name, input_id)
             end,
         }),
         selectable = true,
-        selection_handler = function(elem)
-            if elem.selected then
-                elem.border_color = { 0, 0, 1, 1 }
-            else
-                elem.border_color = { 1, 1, 1, 1 }
-            end
-        end,
         click_handler = function(elem)
             elem.element:wait_for_input():done(function(btn)
                 local is_in = false

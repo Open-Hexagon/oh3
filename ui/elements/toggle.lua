@@ -11,7 +11,7 @@ function toggle:new(options)
             state = options.initial_state or false,
             state_indicator_offset = signal.new_queue(0),
             radius = options.radius or 16,
-            border_thickness = 1,
+            border_thickness = theme.get("border_thickness"),
             selection_color = theme.get("selection_color"),
             light_selection_color = theme.get("light_selection_color"),
             background_color = theme.get("light_background_color"),

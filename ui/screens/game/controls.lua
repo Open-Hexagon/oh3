@@ -1,6 +1,7 @@
 local flex = require("ui.layout.flex")
 local quad = require("ui.elements.quad")
 local label = require("ui.elements.label")
+local theme = require("ui.theme")
 local buttons = {}
 
 local list = flex:new({}, { align_items = "end", justify_content = "end" })
@@ -63,9 +64,9 @@ function buttons.update()
         if btn.updated then
             btn.pressing = btn.ui_pressing or btn.real_input_state
             if btn.pressing then
-                btn.border_color = { 0, 0, 1, 1 }
+                btn.border_color = theme.get("selection_color")
             else
-                btn.border_color = { 1, 1, 1, 1 }
+                btn.border_color = theme.get("border_color")
             end
             btn.updated = false
         else

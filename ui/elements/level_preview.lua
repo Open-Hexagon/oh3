@@ -16,7 +16,7 @@ function level_preview:new(game_version, pack, level, options)
             level = level,
             background_color = theme.get("background_color"),
             border_color = theme.get("border_color"),
-            border_thickness = 1,
+            border_thickness = theme.get("border_thickness"),
             angle = signal.new_waveform(1, function(x)
                 return x * 2 * math.pi
             end),

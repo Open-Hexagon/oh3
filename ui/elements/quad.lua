@@ -1,5 +1,6 @@
 local animated_transform = require("ui.anim.transform")
 local element = require("ui.elements.element")
+local theme = require("ui.theme")
 local quad = {}
 quad.__index = setmetatable(quad, {
     __index = element,
@@ -14,9 +15,9 @@ function quad:new(options)
         setmetatable({
             vertex_offsets = options.vertex_offsets or { 0, 0, 0, 0, 0, 0, 0, 0 },
             element = options.child_element,
-            border_thickness = 1,
-            border_color = { 1, 1, 1, 1 },
-            background_color = { 0, 0, 0, 1 },
+            border_thickness = theme.get("border_thickness"),
+            border_color = theme.get("border_color"),
+            background_color = theme.get("background_color"),
             vertices = {},
             prevent_child_expand = "all",
         }, quad),

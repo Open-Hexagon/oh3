@@ -4,7 +4,6 @@ local icon = require("ui.elements.icon")
 local flex = require("ui.layout.flex")
 local theme = require("ui.theme")
 local score = require("ui.screens.levelselect.score")
-local keyboard_navigation = require("ui.keyboard_navigation")
 
 local options = {}
 
@@ -97,15 +96,12 @@ function options.change(amount)
     options.set_profile(profile_index)
 end
 
-options.layout = quad:new({
-    child_element = flex:new({
-        left_button,
-        flex:new({
-            difficulty_profile_label,
-        }, { align_items = "center" }),
-        right_button,
-    }, { justify_content = "between", align_relative_to = "area" }),
-    style = { background_color = { 0, 0, 0, 0.7 }, border_color = { 0, 0, 0, 0.7 }, border_thickness = 5 },
-})
+options.layout = flex:new({
+    left_button,
+    flex:new({
+        difficulty_profile_label,
+    }, { align_items = "center" }),
+    right_button,
+}, { justify_content = "between", align_relative_to = "area" })
 
 return options

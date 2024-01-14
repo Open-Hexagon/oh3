@@ -69,7 +69,7 @@ function element:new(options)
     self.style = options.style or {}
     self.scale = 1
     self.padding = 8
-    self.color = { 1, 1, 1, 1 }
+    self.color = theme.get("text_color")
     self.align = options.align
     self.selectable = options.selectable or false
     self.is_mouse_over = false

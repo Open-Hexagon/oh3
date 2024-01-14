@@ -46,14 +46,20 @@ end
 
 local function escape(str)
     if str:match("%(") or str:match("%)") then
-        return string.format("\"%s\"", str)
+        str = string.format("'%s'", str)
+    end
+    if str:match("'") then
+        str = str:gsub("'", "''")
     end
     return str
 end
 
 local function unescape(str)
     if str:match("%(") or str:match("%)") then
-        return str:sub(2, -2)
+        str = str:sub(2, -2)
+    end
+    if str:match("''") then
+        str = str:gsub("''", "'")
     end
     return str
 end

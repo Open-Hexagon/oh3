@@ -3,6 +3,7 @@ local label = require("ui.elements.label")
 local quad = require("ui.elements.quad")
 local flex = require("ui.layout.flex")
 local make_level_element = require("ui.screens.levelselect.level").create
+local theme = require("ui.theme")
 
 local cache_folder_flex = {}
 
@@ -12,22 +13,15 @@ local pack_elements = {}
 function pack_elements.make_pack_element(pack, sort)
     if #pack.levels > 0 then
         pack_elements.elements[#pack_elements.elements + 1] = quad:new({
-            child_element = label:new(pack.name, { font_size = 30, style = { color = { 0, 0, 0, 1 } }, wrap = true }),
-            style = { background_color = { 1, 1, 1, 1 }, border_color = { 0, 0, 0, 1 }, border_thickness = 4 },
+            child_element = label:new(pack.name, { font_size = 30, wrap = true, style = { color = theme.get("contrast_text_color") } }),
             selectable = true,
-            selection_handler = function(self)
-                if self.selected then
-                    self.style.border_color = { 0, 0, 1, 0.7 }
-                else
-                    self.style.border_color = { 0, 0, 0, 0.7 }
-                end
-                self:set_style(self.style)
-            end,
             click_handler = function(self)
                 for j = 1, #pack_elements.elements do
-                    pack_elements.elements[j].style.background_color = { 1, 1, 1, 1 }
+                    pack_elements.elements[j].style.background_color = theme.get("contrast_background_color")
+                    pack_elements.elements[j].element.style.color = theme.get("contrast_text_color")
                 end
-                self.style.background_color = { 1, 1, 0, 1 }
+                self.style.background_color = theme.get("transparent_light_selection_color")
+                self.element.style.color = theme.get("text_color")
                 local levels = cache_folder_flex[pack.id]
                 if not levels then
                     -- element does not exist in cache, create it
@@ -72,7 +66,6 @@ end
 
 function pack_elements.init(pass_state)
     state = pass_state
-    -- table structure is the same as https://openhexagon.fun:8001/get_packs
     local packs = game_handler.get_packs()
     pack_elements.elements = {}
     for i = 1, #packs do

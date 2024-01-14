@@ -7,6 +7,7 @@ local pack_overlay = require("ui.overlay.packs")
 local pack_elements = require("ui.screens.levelselect.packs")
 local score = require("ui.screens.levelselect.score")
 local options = require("ui.screens.levelselect.options")
+local theme = require("ui.theme")
 
 local state = {}
 
@@ -16,13 +17,21 @@ state.packs = flex:new(pack_elems, { direction = "column", align_items = "stretc
 
 state.levels = scroll:new(flex:new({}, { direction = "column", align_items = "center" }))
 
+
+local packs = quad:new({
+    child_element = scroll:new(state.packs),
+})
+packs.padding = 0
+
 state.columns = flex:new({
-    scroll:new(state.packs),
+    packs,
     state.levels,
-    flex:new({
-        score.layout,
-        options.layout,
-    }, { direction = "column", align_items = "stretch", align_relative_to = "area" }),
+    quad:new({
+        child_element = flex:new({
+            score.layout,
+            options.layout,
+        }, { direction = "column", align_items = "stretch", align_relative_to = "area" }),
+    }),
 }, { size_ratios = { 1, 2, 1 } })
 
 state.top_bar = quad:new({

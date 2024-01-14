@@ -7,13 +7,10 @@ local score = {}
 
 local score_label = label:new("", { font_size = 60, cutoff_suffix = "..." })
 
-score.layout = quad:new({
-    child_element = flex:new({
-        label:new("Your Score:", { font_size = 16, wrap = true }),
-        score_label,
-    }, { direction = "column", align_items = "stretch", align_relative_to = "area" }),
-    style = { background_color = { 0, 0, 0, 0.7 }, border_color = { 0, 0, 0, 0.7 }, border_thickness = 5 },
-})
+score.layout = flex:new({
+    label:new("Your Score:", { font_size = 16, wrap = true }),
+    score_label,
+}, { direction = "column", align_items = "stretch", align_relative_to = "area" })
 
 local last_pack, last_level
 

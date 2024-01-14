@@ -6,6 +6,7 @@ local label = require("ui.elements.label")
 local quad = require("ui.elements.quad")
 local flex = require("ui.layout.flex")
 local options = require("ui.screens.levelselect.options")
+local theme = require("ui.theme")
 
 local pending_promise
 local last_pack, last_level
@@ -52,7 +53,7 @@ function t.create(state, pack, level, extra_info)
         pack.game_version,
         pack.id,
         level.id,
-        { style = { padding = 4, border_color = { 1, 1, 1, 1 }, border_thickness = 2 } }
+        { style = { padding = 4 } }
     )
     return quad:new({
         child_element = flex:new({
@@ -64,26 +65,17 @@ function t.create(state, pack, level, extra_info)
                     label:new(level.description, { font_size = 16, wrap = true }),
                 }, { direction = "column" }),
             }),
-            --label:new(music, { font_size = 30, wrap = true })
+            --label:new(music, { font_size = 30 })
         }, { direction = "row", justify_content = "between", align_relative_to = "area" }),
-        style = { background_color = { 0, 0, 0, 0.7 }, border_color = { 0, 0, 0, 0.7 }, border_thickness = 5 },
         selectable = true,
-        selection_handler = function(self)
-            if self.selected then
-                self.style.border_color = { 0, 0, 1, 0.7 }
-            else
-                self.style.border_color = { 0, 0, 0, 0.7 }
-            end
-            self:set_style(self.style)
-        end,
         click_handler = function(self)
             if level_element_selected ~= self then
                 local elems = self.parent.elements
                 for i = 1, #elems do
-                    elems[i].style.background_color = { 0, 0, 0, 0.7 }
+                    elems[i].style.background_color = theme.get("background_color")
                 end
                 options.set_level(pack, level)
-                self.style.background_color = { 0.5, 0.5, 0, 0.7 }
+                self.style.background_color = theme.get("transparent_light_selection_color")
                 state.columns:mutated()
                 level_element_selected = self
                 set_preview_level(pack, level)

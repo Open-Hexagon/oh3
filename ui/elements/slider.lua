@@ -16,7 +16,7 @@ function slider:new(options)
             radius = options.radius or 16,
             background_color = { 0.5, 0.5, 0.5, 1 },
             selection_color = theme.get("selection_color"),
-            border_thickness = 1,
+            border_thickness = theme.get("border_thickness"),
             position = signal.new_queue(0),
             grabbed = false,
         }, slider),
