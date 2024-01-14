@@ -91,6 +91,10 @@ function element:new(options)
     self.x = 0
     self.y = 0
     self.disabled = false
+    self.deselect_on_disable = options.deselect_on_disable
+    if self.deselect_on_disable == nil then
+        self.deselect_on_disable = true
+    end
     if options.style then
         self:set_style(options.style)
     end
@@ -160,13 +164,15 @@ function element:set_style(style)
     elseif self.style.disabled ~= nil then
         self.disabled = self.style.disabled
     end
-    if self.disabled and self.selectable then
-        self.was_selectable = true
-        self.selectable = false
-    end
-    if not self.disabled and self.was_selectable then
-        self.was_selectable = nil
-        self.selectable = true
+    if self.deselect_on_disable then
+        if self.disabled and self.selectable then
+            self.was_selectable = true
+            self.selectable = false
+        end
+        if not self.disabled and self.was_selectable then
+            self.was_selectable = nil
+            self.selectable = true
+        end
     end
 end
 

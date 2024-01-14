@@ -3,21 +3,36 @@ local flex = require("ui.layout.flex")
 local label = require("ui.elements.label")
 local profile = require("game_handler.profile")
 
-return function(pack, level, level_options)
-    local data = profile.get_scores(pack, level, level_options)
-    local score = 0
+local score = {}
+
+local score_label = label:new("", { font_size = 60, cutoff_suffix = "..." })
+
+score.layout = quad:new({
+    child_element = flex:new({
+        label:new("Your Score:", { font_size = 16, wrap = true }),
+        score_label,
+    }, { direction = "column", align_items = "stretch", align_relative_to = "area" }),
+    style = { background_color = { 0, 0, 0, 0.7 }, border_color = { 0, 0, 0, 0.7 }, border_thickness = 5 },
+})
+
+local last_pack, last_level
+
+function score.refresh(pack, level)
+    local options = require("ui.screens.levelselect.options")
+    pack = pack or last_pack
+    level = level or last_level
+    local data = profile.get_scores(pack, level, options.current)
+    local number = 0
     for i = 1, #data do
-        if data[i].score > score then
-            score = data[i].score
+        if data[i].score > number then
+            number = data[i].score
         end
     end
-    return flex:new({
-        quad:new({
-            child_element = flex:new({
-                label:new("Your Score:", { font_size = 16, wrap = true }),
-                label:new(tostring(math.floor(score * 1000) / 1000), { font_size = 60, cutoff_suffix = "..." }),
-            }, { direction = "column", align_items = "stretch", align_relative_to = "area" }),
-            style = { background_color = { 0, 0, 0, 0.7 }, border_color = { 0, 0, 0, 0.7 }, border_thickness = 5 },
-        }),
-    }, { direction = "column", align_items = "stretch", align_relative_to = "area" })
+    score_label.raw_text = tostring(math.floor(number * 1000) / 1000)
+    score_label.changed = true
+    score_label:update_size()
+    last_pack = pack
+    last_level = level
 end
+
+return score

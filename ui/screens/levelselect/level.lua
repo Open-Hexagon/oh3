@@ -5,8 +5,7 @@ local async = require("async")
 local label = require("ui.elements.label")
 local quad = require("ui.elements.quad")
 local flex = require("ui.layout.flex")
-local make_options_element = require("ui.screens.levelselect.options")
-local make_localscore_element = require("ui.screens.levelselect.score")
+local options = require("ui.screens.levelselect.options")
 
 local pending_promise
 local last_pack, last_level
@@ -23,14 +22,14 @@ local set_preview_level = async(function(pack, level)
     end
 end)
 
-local start_game = async(function(pack, level, state)
+local start_game = async(function(pack, level)
     local ui = require("ui")
     ui.open_screen("loading")
     if pending_promise then
         async.await(pending_promise)
     end
     game_handler.set_version(pack.game_version)
-    async.await(game_handler.record_start(pack.id, level.id, state.level_options_selected))
+    async.await(game_handler.record_start(pack.id, level.id, options.current))
     ui.open_screen("game")
 end)
 
@@ -57,14 +56,16 @@ function t.create(state, pack, level, extra_info)
     )
     return quad:new({
         child_element = flex:new({
-            preview,
             flex:new({
-                label:new(level.name, { font_size = 40, wrap = true, style = { padding = 5 } }),
-                label:new(level.author, { font_size = 26, wrap = true, style = { padding = 5 } }),
-                label:new(level.description, { font_size = 16, wrap = true }),
-            }, { direction = "column" }),
-            --flex:new({label:new(music, { font_size = 30, wrap = true })}, { align_items = "end", direction = "column" }),
-        }, { direction = "row" }),
+                preview,
+                flex:new({
+                    label:new(level.name, { font_size = 40, wrap = true, style = { padding = 5 } }),
+                    label:new(level.author, { font_size = 26, wrap = true, style = { padding = 5 } }),
+                    label:new(level.description, { font_size = 16, wrap = true }),
+                }, { direction = "column" }),
+            }),
+            --label:new(music, { font_size = 30, wrap = true })
+        }, { direction = "row", justify_content = "between", align_relative_to = "area" }),
         style = { background_color = { 0, 0, 0, 0.7 }, border_color = { 0, 0, 0, 0.7 }, border_thickness = 5 },
         selectable = true,
         selection_handler = function(self)
@@ -81,16 +82,10 @@ function t.create(state, pack, level, extra_info)
                 for i = 1, #elems do
                     elems[i].style.background_color = { 0, 0, 0, 0.7 }
                 end
+                options.set_level(pack, level)
                 self.style.background_color = { 0.5, 0.5, 0, 0.7 }
-                local score = flex:new({
-                    make_localscore_element(pack.id, level.id, { difficulty_mult = 1 }),
-                    make_options_element(state, pack, level),
-                }, { direction = "column", align_items = "stretch", align_relative_to = "area" })
-                state.columns.elements[3] = score
                 state.columns:mutated()
                 level_element_selected = self
-                -- reset options (TODO: make options not be dm specific)
-                state.level_options_selected = { difficulty_mult = 1 }
                 set_preview_level(pack, level)
             else
                 start_game(pack, level, state)

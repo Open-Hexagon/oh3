@@ -4,6 +4,7 @@ local label = require("ui.elements.label")
 local overlay = require("ui.overlay")
 local game_handler = require("game_handler")
 local transitions = require("ui.anim.transitions")
+local score = require("ui.screens.levelselect.score")
 
 local death = overlay:new()
 
@@ -23,6 +24,7 @@ death.layout = flex:new({
         click_handler = function()
             local ui = require("ui")
             game_handler.preview_start("", "", {}, false, true)
+            score.refresh()
             ui.open_screen("levelselect")
             death:close()
         end,

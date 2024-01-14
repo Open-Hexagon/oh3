@@ -1,48 +1,111 @@
 local quad = require("ui.elements.quad")
 local label = require("ui.elements.label")
+local icon = require("ui.elements.icon")
 local flex = require("ui.layout.flex")
-local make_localscore_element = require("ui.screens.levelselect.score")
+local theme = require("ui.theme")
+local score = require("ui.screens.levelselect.score")
+local keyboard_navigation = require("ui.keyboard_navigation")
 
-return function(state, pack, level)
-    local selections = {}
-    local selections_index = 1
-    --this has a weird forumla because: the last diff is always 1, but it should be the first diff.
-    selections[1] = level.options.difficulty_mult[#level.options.difficulty_mult]
-    for i = 1, #level.options.difficulty_mult - 1 do
-        selections[i + 1] = level.options.difficulty_mult[i]
-    end
-    --this is for the level selection presets! the proper level settings need their own button and menu (see prototype)
-    local selection_element = quad:new({
-        child_element = label:new(
-            selections[selections_index],
-            { font_size = 30, style = { color = { 0, 0, 0, 1 } }, wrap = true }
-        ),
-        style = { background_color = { 1, 1, 1, 1 }, border_color = { 0, 0, 0, 1 }, border_thickness = 5 },
-        selectable = true,
-        selection_handler = function(self)
-            if self.selected then
-                self.border_color = { 0, 0, 1, 1 }
-            else
-                self.border_color = { 0, 0, 0, 1 }
-            end
-        end,
-        click_handler = function(self)
-            selections_index = (selections_index % #selections) + 1
-            local selections_element = label:new(
-                selections[selections_index],
-                { font_size = 30, style = { color = { 0, 0, 0, 1 }, padding = 8 }, wrap = true }
-            )
-            self.background_color = { 1, 1, 0, 1 }
-            self.element = selections_element -- later mutated call on root will handle this
-            state.level_options_selected = { difficulty_mult = selections[selections_index] }
-            local score = flex:new({
-                make_localscore_element(pack.id, level.id, state.level_options_selected),
-            }, { direction = "column", align_items = "stretch", align_relative_to = "area" })
-            state.leaderboards.elements[1] = score
-            state.leaderboards:mutated()
-        end,
-    })
-    return flex:new({
-        selection_element,
-    }, { direction = "column", align_items = "stretch", align_relative_to = "area" })
+local options = {}
+
+options.current = {}
+local current_pack
+local current_level
+local profiles = {}
+local profile_index = 1
+
+local left_button = quad:new({
+    child_element = icon:new("chevron-left"),
+    selectable = true,
+    deselect_on_disable = false,
+    style = { background_color = theme.get("background_color"), border_color = theme.get("border_color"), border_thickness = 1 },
+    selection_handler = function(self)
+        theme.get_selection_handler()(self)
+        self.style.border_color = self.border_color
+    end,
+    click_handler = function()
+        options.change(-1)
+    end,
+})
+local right_button = quad:new({
+    child_element = icon:new("chevron-right"),
+    selectable = true,
+    deselect_on_disable = false,
+    style = { background_color = theme.get("background_color"), border_color = theme.get("border_color"), border_thickness = 1 },
+    selection_handler = function(self)
+        theme.get_selection_handler()(self)
+        self.style.border_color = self.border_color
+    end,
+    click_handler = function()
+        options.change(1)
+    end,
+})
+
+local function update_disabled_state()
+    left_button.style.disabled = profile_index == 1
+    left_button.disabled = profile_index == 1
+    right_button.style.disabled = profile_index == #profiles
+    right_button.disabled = profile_index == #profiles
 end
+
+local difficulty_profile_label = label:new("")
+
+function options.set_profile(index)
+    profile_index = index
+    if current_pack.game_version ~= 3 then
+        difficulty_profile_label.raw_text = tostring(current_level.options.difficulty_mult[index])
+        difficulty_profile_label.changed = true
+        difficulty_profile_label:update_size()
+    end
+    for key, value in pairs(current_level.options) do
+        options.current[key] = value[index]
+    end
+    score.refresh(current_pack.id, current_level.id)
+    update_disabled_state()
+end
+
+function options.set_level(pack, level)
+    if pack.game_version ~= 3 then
+        options.current = { difficulty_mult = 1 }
+        profiles = level.options.difficulty_mult
+        local found = false
+        for i = 1, #profiles do
+            if profiles[i] == options.current.difficulty_mult then
+                profile_index = i
+                found = true
+                break
+            end
+        end
+        if not found then
+            error("difficulty mult 1 not in compat level's options!")
+        end
+    else
+        -- TODO: set default profile_index
+    end
+    current_pack = pack
+    current_level = level
+    options.set_profile(profile_index)
+end
+
+function options.change(amount)
+    profile_index = profile_index + amount
+    if profile_index > #profiles then
+        profile_index = #profiles
+    elseif profile_index < 1 then
+        profile_index = 1
+    end
+    options.set_profile(profile_index)
+end
+
+options.layout = quad:new({
+    child_element = flex:new({
+        left_button,
+        flex:new({
+            difficulty_profile_label,
+        }, { align_items = "center" }),
+        right_button,
+    }, { justify_content = "between", align_relative_to = "area" }),
+    style = { background_color = { 0, 0, 0, 0.7 }, border_color = { 0, 0, 0, 0.7 }, border_thickness = 5 },
+})
+
+return options
