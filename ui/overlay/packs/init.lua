@@ -96,7 +96,7 @@ local create_pack_list = async(function()
                         if elem then
                             require("ui.screens.levelselect").state.packs:mutated(false)
                             elem:update_size()
-                            elem:click()
+                            elem:click(false)
                         end
                         table.remove(pack_list.elements, self.parent_index)
                         pack_list:mutated(false)
