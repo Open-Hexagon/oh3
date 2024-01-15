@@ -13,7 +13,10 @@ local pack_elements = {}
 function pack_elements.make_pack_element(pack, sort)
     if #pack.levels > 0 then
         pack_elements.elements[#pack_elements.elements + 1] = quad:new({
-            child_element = label:new(pack.name, { font_size = 30, wrap = true, style = { color = theme.get("contrast_text_color") } }),
+            child_element = label:new(
+                pack.name,
+                { font_size = 30, wrap = true, style = { color = theme.get("contrast_text_color") } }
+            ),
             selectable = true,
             click_handler = function(self)
                 for j = 1, #pack_elements.elements do

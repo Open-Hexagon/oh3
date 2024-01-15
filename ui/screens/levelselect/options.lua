@@ -17,7 +17,11 @@ local left_button = quad:new({
     child_element = icon:new("chevron-left"),
     selectable = true,
     deselect_on_disable = false,
-    style = { background_color = theme.get("background_color"), border_color = theme.get("border_color"), border_thickness = 1 },
+    style = {
+        background_color = theme.get("background_color"),
+        border_color = theme.get("border_color"),
+        border_thickness = 1,
+    },
     selection_handler = function(self)
         theme.get_selection_handler()(self)
         self.style.border_color = self.border_color
@@ -30,7 +34,11 @@ local right_button = quad:new({
     child_element = icon:new("chevron-right"),
     selectable = true,
     deselect_on_disable = false,
-    style = { background_color = theme.get("background_color"), border_color = theme.get("border_color"), border_thickness = 1 },
+    style = {
+        background_color = theme.get("background_color"),
+        border_color = theme.get("border_color"),
+        border_thickness = 1,
+    },
     selection_handler = function(self)
         theme.get_selection_handler()(self)
         self.style.border_color = self.border_color

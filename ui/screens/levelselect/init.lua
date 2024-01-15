@@ -17,42 +17,63 @@ state.packs = flex:new(pack_elems, { direction = "column", align_items = "stretc
 
 state.levels = scroll:new(flex:new({}, { direction = "column", align_items = "center" }))
 
-
 local packs = quad:new({
     child_element = scroll:new(state.packs),
 })
 packs.padding = 0
 
+local info_column = quad:new({
+    child_element = flex:new({
+        score.layout,
+        options.layout,
+    }, { direction = "column", align_items = "stretch", align_relative_to = "area" }),
+})
+info_column.padding = 0
+
 state.columns = flex:new({
     packs,
     state.levels,
-    quad:new({
-        child_element = flex:new({
-            score.layout,
-            options.layout,
-        }, { direction = "column", align_items = "stretch", align_relative_to = "area" }),
-    }),
+    info_column,
 }, { size_ratios = { 1, 2, 1 } })
 
-state.top_bar = quad:new({
-    child_element = flex:new({
-        hexagon:new({
-            child_element = icon:new("gear"),
-            selectable = true,
-            click_handler = function()
-                settings:open()
-            end,
+local slope_width = 80
+
+state.top_bar = flex:new({
+    quad:new({
+        child_element = flex:new({
+            hexagon:new({
+                child_element = icon:new("gear"),
+                selectable = true,
+                click_handler = function()
+                    settings:open()
+                end,
+            }),
         }),
-        hexagon:new({
-            child_element = icon:new("download"),
-            selectable = true,
-            click_handler = function()
-                pack_overlay:open()
-            end,
-        }),
+        vertex_offsets = { 0, 0, slope_width, 0, 0, 0, 0, 0 },
+        limit_area = function(_, height)
+            return packs.width + slope_width, height
+        end,
     }),
-})
-state.top_bar.padding = 0
+    quad:new({
+        child_element = flex:new({
+            hexagon:new({
+                child_element = icon:new("download"),
+                selectable = true,
+                click_handler = function()
+                    pack_overlay:open()
+                end,
+            }),
+        }, { justify_content = "end", align_relative_to = "area" }),
+        vertex_offsets = { slope_width, 0, 0, 0, 0, 0, 0, 0 },
+        limit_area = function(_, height)
+            return info_column.width + slope_width, height
+        end,
+    }),
+}, { justify_content = "between", align_relative_to = "area" })
+state.top_bar.elements[1].padding = 0
+state.top_bar.elements[2].padding = 0
+state.top_bar.elements[1].flex_expand = 1
+state.top_bar.elements[2].flex_expand = 1
 
 state.root = flex:new({
     state.top_bar,

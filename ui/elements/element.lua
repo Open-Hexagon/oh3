@@ -78,6 +78,7 @@ function element:new(options)
     self.click_handler = options.click_handler
     self.hold_handler = options.hold_handler
     self.change_handler = options.change_handler
+    self.limit_area = options.limit_area
     self.last_available_width = 0
     self.last_available_height = 0
     self.width = 0
@@ -191,6 +192,9 @@ end
 ---@return number
 ---@return number
 function element:calculate_layout(width, height)
+    if self.limit_area then
+        width, height = self.limit_area(width, height)
+    end
     if self.last_available_width == width and self.last_available_height == height and not self.changed then
         return self.width, self.height
     end
