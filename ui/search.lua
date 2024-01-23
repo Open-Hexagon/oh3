@@ -121,6 +121,7 @@ function search.create_result_layout(pattern, elements, flex_container)
         element.update_size(flex_container)
         flex_container.search_pattern = pattern
     end
+    flex_container.last_selection = nil
 end
 
 return search
