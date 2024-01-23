@@ -3,6 +3,7 @@ local theme = {}
 theme.themes = {
     old_default = {
         text_color = { 1, 1, 1, 1 },
+        greyed_out_text_color = { 1, 1, 1, 0.5 },
         contrast_text_color = { 0, 0, 0, 1 },
         background_color = { 0, 0, 0, 1 },
         contrast_background_color = { 1, 1, 1, 1 },
@@ -15,6 +16,7 @@ theme.themes = {
     },
     default = {
         text_color = { 1, 1, 1, 1 },
+        greyed_out_text_color = { 1, 1, 1, 0.5 },
         contrast_text_color = { 0, 0, 0, 1 },
         background_color = { 0.1, 0.1, 0.1, 0.7 },
         contrast_background_color = { 1, 1, 1, 1 },

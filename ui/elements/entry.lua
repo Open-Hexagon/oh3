@@ -1,6 +1,7 @@
 local label = require("ui.elements.label")
 local quad = require("ui.elements.quad")
 local scroll = require("ui.layout.scroll")
+local theme = require("ui.theme")
 local entry = {}
 entry.__index = setmetatable(entry, {
     __index = quad,
@@ -19,9 +20,9 @@ function entry:new(options)
         selection_handler = function(elem)
             love.keyboard.setTextInput(elem.selected)
             if elem.selected then
-                elem.border_color = { 0, 0, 1, 1 }
+                elem.border_color = theme.get("selection_color")
             else
-                elem.border_color = { 1, 1, 1, 1 }
+                elem.border_color = theme.get("border_color")
             end
         end,
         change_handler = options.change_handler,
@@ -56,14 +57,17 @@ function entry:set_text(text)
     self.text = text
     if text == "" and self.options.no_text_text then
         self.label.raw_text = self.options.no_text_text
-        self.label:set_style({ color = { 1, 1, 1, 0.5 } })
+        self.label:set_style({ color = theme.get("greyed_out_text_color") })
     else
         self.label.raw_text = text
-        self.label:set_style({ color = { 1, 1, 1, 1 } })
+        self.label:set_style({ color = theme.get("text_color") })
     end
     self.label.changed = true
-    self.element.changed = true
-    self.element:mutated()
+    if self.parent then
+        self:update_size()
+    else
+        self:calculate_layout(self.last_available_width, self.last_available_height)
+    end
 end
 
 ---calculate layout
