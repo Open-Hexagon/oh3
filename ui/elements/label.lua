@@ -1,4 +1,5 @@
 local element = require("ui.elements.element")
+local theme = require("ui.theme")
 local log = require("log")
 local label = {}
 label.__index = setmetatable(label, {
@@ -37,6 +38,7 @@ function label:new(text, options)
             font_file = options.font_file or default_font_file,
             font_size = font_size,
             cutoff_suffix = options.cutoff_suffix,
+            highlights = {},
         }, label),
         options
     )
@@ -105,10 +107,37 @@ function label:calculate_element_layout(available_width)
             text = self.raw_text:sub(1, amount) .. self.cutoff_suffix
         end
     end
+    if #self.highlights > 0 then
+        local colored_text = {}
+        local was_highlighted
+        for i = 1, #text do
+            local character = text:sub(i, i)
+            local highlighted = false
+            for j = 1, #self.highlights do
+                local sub = self.highlights[j]
+                if sub[1] <= i and sub[2] >= i then
+                    highlighted = true
+                    break
+                end
+            end
+            if highlighted and not was_highlighted then
+                was_highlighted = true
+                colored_text[#colored_text + 1] = theme.get("highlight_text_color")
+                colored_text[#colored_text + 1] = ""
+            end
+            if not highlighted and (was_highlighted or was_highlighted == nil) then
+                was_highlighted = false
+                colored_text[#colored_text + 1] = self.color
+                colored_text[#colored_text + 1] = ""
+            end
+            colored_text[#colored_text] = colored_text[#colored_text] .. character
+        end
+        text = colored_text
+    end
     self.text:set(text)
     get_dimensions()
     if self.wrap and available_width < width then
-        self.text:setf(self.raw_text, available_width, "left")
+        self.text:setf(text, available_width, "left")
         get_dimensions()
     end
     return width, height

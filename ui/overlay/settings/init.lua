@@ -11,13 +11,14 @@ local toggle = require("ui.elements.toggle")
 local slider = require("ui.elements.slider")
 local entry = require("ui.elements.entry")
 local icon = require("ui.elements.icon")
-local fzy = require("extlibs.fzy_lua")
+local search = require("ui.search")
 local input_setting = require("ui.overlay.settings.input")
 local settings_profile_selection = require("ui.overlay.settings.settings_profile_selection")
 local theme = require("ui.theme")
 local element = require("ui.elements.element")
 
 local name_layout_map = {}
+local all_setting_layouts = {}
 local dependency_setting_map = {}
 local disabled_updaters = {}
 local gui_setters = {}
@@ -130,6 +131,7 @@ local function create_setting(name, property, value)
         end
     end
     name_layout_map[name] = layout
+    all_setting_layouts[#all_setting_layouts + 1] = layout
     return layout
 end
 
@@ -220,56 +222,13 @@ local content = flex:new({
             no_text_text = "Search",
             change_handler = function(text)
                 if text == "" then
-                    -- no search, show all settings and show categories again
-                    settings_column.elements = category_layouts
-                    settings_column:mutated(false)
-                    settings_column.changed = true
                     category_column.elements = category_indicators
-                    category_column.changed = true
-                    for i = 1, #category_layouts do
-                        category_layouts[i].element:mutated(false)
-                    end
-                    element.update_size(settings_column)
-                    element.update_size(category_column)
-                    return
+                else
+                    category_column.elements = {}
                 end
-                -- search settings by scoring the display name with fuzzy search
-                local result = {}
-                local score_list = {}
-                for name in pairs(config.get_definitions(false)) do
-                    local score = fzy.score(text, name)
-                    if score ~= fzy.get_score_min() then
-                        local added = false
-                        for i = #score_list, 1, -1 do
-                            local next_score = score_list[i]
-                            if next_score > score then
-                                table.insert(score_list, i + 1, score)
-                                table.insert(result, i + 1, name)
-                                added = true
-                                break
-                            end
-                        end
-                        if not added then
-                            table.insert(score_list, 1, score)
-                            table.insert(result, 1, name)
-                        end
-                    end
-                end
-                -- show the results
-                local new_layouts = {}
-                for i = 1, #result do
-                    -- use `#new_layouts + 1` instead of `i` to prevent nil in list
-                    new_layouts[#new_layouts + 1] = name_layout_map[result[i]]
-                end
-                settings_column.elements = new_layouts
-                -- still need mutated to update child indices
-                settings_column:mutated(false)
-                settings_column.changed = true
-                -- don't show categories in search result view
-                category_column.elements = {}
-                category_column.changed = true
-                element.update_size(settings_column)
+                category_column:mutated(false)
                 element.update_size(category_column)
+                search.create_result_layout(text, all_setting_layouts, settings_column)
             end,
         }),
         settings_profile_selection.layout,
