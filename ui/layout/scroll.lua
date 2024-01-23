@@ -395,12 +395,13 @@ function scroll:calculate_layout(width, height)
         self.scroll_pos:stop()
         self.scroll_pos:set_immediate_value(self.scroll_target)
     end
-    self.expandable_x, self.expandable_y = self.lt2wh(math.huge, avail_thick - thick)
+    local expandable_len = self.scrollable and math.huge or 0
+    self.expandable_x, self.expandable_y = self.lt2wh(expandable_len, avail_thick - thick)
     self.expandable_x = math.max(self.expandable_x, 0)
     self.expandable_y = math.max(self.expandable_y, 0)
     update_expand(self)
     local _, expand_thick = self.wh2lt(self.expandable_x, self.expandable_y)
-    self.expandable_x, self.expandable_y = self.lt2wh(math.huge, expand_thick)
+    self.expandable_x, self.expandable_y = self.lt2wh(expandable_len, expand_thick)
     self.width, self.height = self.lt2wh(math.min(self.content_length, avail_len), thick)
     self.changed = false
     return self.width, self.height
