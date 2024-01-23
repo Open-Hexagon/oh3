@@ -15,6 +15,7 @@ local fzy = require("extlibs.fzy_lua")
 local input_setting = require("ui.overlay.settings.input")
 local settings_profile_selection = require("ui.overlay.settings.settings_profile_selection")
 local theme = require("ui.theme")
+local element = require("ui.elements.element")
 
 local name_layout_map = {}
 local dependency_setting_map = {}
@@ -221,10 +222,15 @@ local content = flex:new({
                 if text == "" then
                     -- no search, show all settings and show categories again
                     settings_column.elements = category_layouts
+                    settings_column:mutated(false)
                     settings_column.changed = true
                     category_column.elements = category_indicators
                     category_column.changed = true
-                    settings_body:mutated()
+                    for i = 1, #category_layouts do
+                        category_layouts[i].element:mutated(false)
+                    end
+                    element.update_size(settings_column)
+                    element.update_size(category_column)
                     return
                 end
                 -- search settings by scoring the display name with fuzzy search
@@ -257,12 +263,13 @@ local content = flex:new({
                 end
                 settings_column.elements = new_layouts
                 -- still need mutated to update child indices
-                settings_column:mutated()
+                settings_column:mutated(false)
                 settings_column.changed = true
                 -- don't show categories in search result view
                 category_column.elements = {}
                 category_column.changed = true
-                settings_body:mutated()
+                element.update_size(settings_column)
+                element.update_size(category_column)
             end,
         }),
         settings_profile_selection.layout,
