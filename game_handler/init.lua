@@ -361,7 +361,9 @@ function game_handler.draw(frametime)
             love.graphics.scale(res_scale, res_scale)
             -- the color of the canvas' contents will look wrong if color isn't white
             love.graphics.setColor(1, 1, 1, 1)
+            love.graphics.setBlendMode("alpha", "premultiplied")
             love.graphics.draw(screen)
+            love.graphics.setBlendMode("alpha", "alphamultiply")
         end
         love.graphics.origin()
     end

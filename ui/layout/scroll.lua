@@ -475,7 +475,9 @@ function scroll:draw()
         love.graphics.applyTransform(self._transform)
         animated_transform.apply(self.transform)
         love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.setBlendMode("alpha", "premultiplied")
         love.graphics.draw(self.canvas)
+        love.graphics.setBlendMode("alpha", "alphamultiply")
         if self.scrollbar_vanish then
             -- visible for 1.5s after interaction, then fading out
             self.scrollbar_color[4] =

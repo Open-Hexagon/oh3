@@ -238,7 +238,9 @@ function collapse:draw()
     -- negate the translation of the child, this way the child position is constant and just the cutoff from the canvas is moving
     love.graphics.translate(self.lt2wh(self.pos() - self.content_length, 0))
     love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setBlendMode("alpha", "premultiplied")
     love.graphics.draw(self.canvas)
+    love.graphics.setBlendMode("alpha", "alphamultiply")
     love.graphics.pop()
 end
 
