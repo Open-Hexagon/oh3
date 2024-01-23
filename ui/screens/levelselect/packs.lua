@@ -24,7 +24,7 @@ function pack_elements.make_pack_element(pack, sort)
                 if state.levels.element then
                     search_pattern = state.levels.element.search_pattern
                     -- undo search in current pack
-                    search.create_result_layout("", state.levels.element.elements, state.levels.element)
+                    search.create_result_layout("", state.levels.element.elements)
                 end
                 for j = 1, #pack_elements.elements do
                     pack_elements.elements[j].style.background_color = theme.get("contrast_background_color")
@@ -59,7 +59,7 @@ function pack_elements.make_pack_element(pack, sort)
                 end
                 -- restore search pattern in newly selected pack
                 if search_pattern then
-                    search.create_result_layout(search_pattern, state.levels.element.elements, state.levels.element)
+                    search.create_result_layout(search_pattern, state.levels.element.elements)
                 end
             end,
         })

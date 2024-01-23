@@ -60,7 +60,7 @@ state.top_bar = flex:new({
         expand = true,
         no_text_text = "Search a level",
         change_handler = function(text)
-            search.create_result_layout(text, state.levels.element.elements, state.levels.element)
+            search.create_result_layout(text, state.levels.element.elements)
         end,
     }),
     quad:new({

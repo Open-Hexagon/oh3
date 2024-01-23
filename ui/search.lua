@@ -39,16 +39,11 @@ function search.find(pattern, elements)
     for i = 1, #elements do
         local matches = search.match(elements[i], pattern)
         if matches > 0 then
-            if #results == 0 then
-                results[1] = elements[i]
-                matches_per_result[1] = matches
-            else
-                for j = 1, #results + 1 do
-                    if (matches_per_result[j] or 0) < matches then
-                        table.insert(results, j, elements[i])
-                        table.insert(matches_per_result, j, matches)
-                        break
-                    end
+            for j = 1, #results + 1 do
+                if matches_per_result[j] == matches or matches_per_result[j] == nil then
+                    table.insert(results, j, elements[i])
+                    table.insert(matches_per_result, j, matches)
+                    break
                 end
             end
         end
@@ -66,6 +61,7 @@ local function remove_highlights(elem)
             remove_highlights(elem.elements[i])
         end
     end
+    elem.changed = true
 end
 
 local old_layouts = {}
@@ -76,8 +72,17 @@ local old_parents = {}
 ---also restores the original layout if the pattern is a empty string
 ---@param pattern string
 ---@param elements table
----@param flex_container flex
+---@param flex_container flex?
 function search.create_result_layout(pattern, elements, flex_container)
+    if #elements == 0 then
+        return
+    end
+    if flex_container == nil then
+        flex_container = elements[1].parent
+        if old_layouts[flex_container] then
+            elements = old_layouts[flex_container]
+        end
+    end
     if old_layouts[flex_container] then
         -- remove old highlights
         remove_highlights(flex_container)
