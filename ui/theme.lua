@@ -13,6 +13,7 @@ theme.themes = {
         transparent_light_selection_color = { 0.5, 0.5, 0, 1 },
         border_color = { 1, 1, 1, 1 },
         border_thickness = 1,
+        selection_border_thickness = 2,
     },
     default = {
         text_color = { 1, 1, 1, 1 },
@@ -26,6 +27,7 @@ theme.themes = {
         transparent_light_selection_color = { 0.5, 0.5, 0, 0.7 },
         border_color = { 0, 0, 0, 0.7 },
         border_thickness = 2,
+        selection_border_thickness = 4,
     },
 }
 
@@ -43,8 +45,10 @@ function theme.get_selection_handler()
     return function(self)
         if self.selected then
             self.border_color = theme.get("selection_color")
+            self.border_thickness = theme.get("selection_border_thickness")
         else
             self.border_color = theme.get("border_color")
+            self.border_thickness = theme.get("border_thickness")
         end
     end
 end
