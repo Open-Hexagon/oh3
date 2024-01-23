@@ -25,6 +25,7 @@ function search.match(elem, pattern)
             found_pattern = found_pattern + search.match(elem.elements[i], pattern)
         end
     end
+    elem.changed = true
     return found_pattern
 end
 
@@ -82,16 +83,19 @@ function search.create_result_layout(pattern, elements, flex_container)
         remove_highlights(flex_container)
     end
     if pattern == "" then
-        -- restore old layout
-        local results = flex_container.elements
-        flex_container.elements = old_layouts[flex_container]
-        for i = 1, #results do
-            results[i].parent = old_parents[flex_container][i]
-            results[i].parent_index = old_parent_indices[flex_container][i]
+        if old_layouts[flex_container] then
+            -- restore old layout
+            local results = flex_container.elements
+            flex_container.elements = old_layouts[flex_container]
+            for i = 1, #results do
+                results[i].parent = old_parents[flex_container][i]
+                results[i].parent_index = old_parent_indices[flex_container][i]
+            end
+            flex_container:mutated(false)
+            flex_container.changed = true
+            element.update_size(flex_container)
+            flex_container.search_pattern = nil
         end
-        flex_container:mutated(false)
-        flex_container.changed = true
-        element.update_size(flex_container)
     else
         local results = search.find(pattern, elements)
         if not old_layouts[flex_container] then
@@ -110,6 +114,7 @@ function search.create_result_layout(pattern, elements, flex_container)
         flex_container:mutated(false)
         flex_container.changed = true
         element.update_size(flex_container)
+        flex_container.search_pattern = pattern
     end
 end
 

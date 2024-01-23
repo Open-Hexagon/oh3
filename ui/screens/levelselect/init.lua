@@ -2,12 +2,14 @@ local flex = require("ui.layout.flex")
 local icon = require("ui.elements.icon")
 local quad = require("ui.elements.quad")
 local hexagon = require("ui.elements.hexagon")
+local entry = require("ui.elements.entry")
 local scroll = require("ui.layout.scroll")
 local settings = require("ui.overlay.settings")
 local pack_overlay = require("ui.overlay.packs")
 local pack_elements = require("ui.screens.levelselect.packs")
 local score = require("ui.screens.levelselect.score")
 local options = require("ui.screens.levelselect.options")
+local search = require("ui.search")
 
 local state = {}
 
@@ -54,6 +56,13 @@ state.top_bar = flex:new({
             return packs.width + slope_width, height
         end,
     }),
+    entry:new({
+        expand = true,
+        no_text_text = "Search a level",
+        change_handler = function(text)
+            search.create_result_layout(text, state.levels.element.elements, state.levels.element)
+        end,
+    }),
     quad:new({
         child_element = flex:new({
             hexagon:new({
@@ -71,9 +80,9 @@ state.top_bar = flex:new({
     }),
 }, { justify_content = "between", align_relative_to = "area" })
 state.top_bar.elements[1].padding = 0
-state.top_bar.elements[2].padding = 0
+state.top_bar.elements[3].padding = 0
 state.top_bar.elements[1].flex_expand = 1
-state.top_bar.elements[2].flex_expand = 1
+state.top_bar.elements[3].flex_expand = 1
 
 state.root = flex:new({
     state.top_bar,

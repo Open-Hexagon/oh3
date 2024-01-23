@@ -4,6 +4,7 @@ local quad = require("ui.elements.quad")
 local flex = require("ui.layout.flex")
 local make_level_element = require("ui.screens.levelselect.level").create
 local theme = require("ui.theme")
+local search = require("ui.search")
 
 local cache_folder_flex = {}
 
@@ -19,6 +20,12 @@ function pack_elements.make_pack_element(pack, sort)
             ),
             selectable = true,
             click_handler = function(self)
+                local search_pattern
+                if state.levels.element then
+                    search_pattern = state.levels.element.search_pattern
+                    -- undo search in current pack
+                    search.create_result_layout("", state.levels.element.elements, state.levels.element)
+                end
                 for j = 1, #pack_elements.elements do
                     pack_elements.elements[j].style.background_color = theme.get("contrast_background_color")
                     pack_elements.elements[j].element.style.color = theme.get("contrast_text_color")
@@ -49,6 +56,10 @@ function pack_elements.make_pack_element(pack, sort)
                     levels.parent.scrollbar_visibility_timer = -2
                     levels.parent.scroll_pos:set_immediate_value(0)
                     levels.parent.scroll_target = 0
+                end
+                -- restore search pattern in newly selected pack
+                if search_pattern then
+                    search.create_result_layout(search_pattern, state.levels.element.elements, state.levels.element)
                 end
             end,
         })
