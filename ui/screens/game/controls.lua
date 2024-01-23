@@ -65,8 +65,10 @@ function buttons.update()
             btn.pressing = btn.ui_pressing or btn.real_input_state
             if btn.pressing then
                 btn.border_color = theme.get("selection_color")
+                btn.border_thickness = theme.get("selection_border_thickness")
             else
                 btn.border_color = theme.get("border_color")
+                btn.border_thickness = theme.get("border_thickness")
             end
             btn.updated = false
         else

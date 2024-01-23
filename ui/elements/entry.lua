@@ -19,11 +19,7 @@ function entry:new(options)
         selectable = true,
         selection_handler = function(elem)
             love.keyboard.setTextInput(elem.selected)
-            if elem.selected then
-                elem.border_color = theme.get("selection_color")
-            else
-                elem.border_color = theme.get("border_color")
-            end
+            theme.get_selection_handler()(elem)
         end,
         change_handler = options.change_handler,
     })

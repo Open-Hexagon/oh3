@@ -1,4 +1,5 @@
 local element = require("ui.elements.element")
+local theme = require("ui.theme")
 local progress = {}
 progress.__index = setmetatable(progress, {
     __index = element,
@@ -11,8 +12,7 @@ function progress:new(options)
     local obj = element.new(
         setmetatable({
             percentage = 0,
-            background_color = { 0, 0, 0, 1 },
-            border_color = { 1, 1, 1, 1 },
+            background_color = theme.get("background_color"),
         }, progress),
         options
     )
@@ -23,7 +23,6 @@ end
 ---@param style table
 function progress:set_style(style)
     self.background_color = self.style.background_color or style.background_color or self.background_color
-    self.border_color = self.style.border_color or style.border_color or self.border_color
     self.padding = 0
     element.set_style(self, style)
 end
@@ -34,8 +33,8 @@ end
 ---@return number
 ---@return number
 function progress:calculate_element_layout(available_width, available_height)
-    width = 100 * self.scale
-    height = 10 * self.scale
+    local width = 100 * self.scale
+    local height = 10 * self.scale
     if self.flex_expand then
         if self.flex_expand == 1 then
             -- only expand in width
@@ -52,7 +51,7 @@ end
 function progress:draw_element()
     love.graphics.setColor(self.background_color)
     love.graphics.rectangle("fill", 0, 0, self.width, self.height)
-    love.graphics.setColor(self.border_color)
+    love.graphics.setColor(self.color)
     love.graphics.rectangle("fill", 0, 0, self.width * self.percentage / 100, self.height)
 end
 

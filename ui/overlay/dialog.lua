@@ -60,13 +60,6 @@ alert.layout = flex:new({
             quad:new({
                 child_element = label:new("Ok"),
                 selectable = true,
-                selection_handler = function(self)
-                    if self.selected then
-                        self.border_color = { 0, 0, 1, 1 }
-                    else
-                        self.border_color = { 1, 1, 1, 1 }
-                    end
-                end,
                 click_handler = function()
                     alert:close()
                 end,
