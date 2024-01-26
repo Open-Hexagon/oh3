@@ -9,13 +9,14 @@ on:
 
 env:
   BUILD_TYPE: Release
+  LOVE_ARTIFACT_URL: "https://api.github.com/repos/love2d/love/actions/artifacts/1142100892/zip"
 
 jobs:
   build:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
 
     - name: Build sqlite3
       run: |
@@ -37,7 +38,7 @@ jobs:
     - name: Create App bundle
       run: |
         # get love osx binary
-        curl -L -H "Accept: application/vnd.github+json" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" --output love12.zip --url "https://api.github.com/repos/love2d/love/actions/artifacts/1142100888/zip"
+        curl -L -H "Accept: application/vnd.github+json" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" --output love12.zip --url "${{ env.LOVE_ARTIFACT_URL }}"
         7z x love12.zip
         7z x love-macos.zip
         mv love.app oh3.app
@@ -50,7 +51,7 @@ jobs:
         tar -cf oh3.app.tar oh3.app
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.3.0
       with:
         name: oh3.app.tar
         path: oh3.app.tar
