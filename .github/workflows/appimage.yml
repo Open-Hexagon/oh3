@@ -9,6 +9,7 @@ on:
 
 env:
   BUILD_TYPE: Release
+  LOVE_ARTIFACT_URL: "https://api.github.com/repos/love2d/love/actions/artifacts/1142100887/zip"
 
 jobs:
   build:
@@ -16,7 +17,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
 
     - name: Build sqlite3
       run: |
@@ -44,7 +45,7 @@ jobs:
         cp -r *.lua assets compat extlibs game game_handler server ui input_schemes extra/linux/squashfs-root/share/games/oh3
         # extract love over everything
         cd extra/linux
-        curl -L -H "Accept: application/vnd.github+json" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" --output love12.zip --url "https://api.github.com/repos/love2d/love/actions/artifacts/1142100887/zip"
+        curl -L -H "Accept: application/vnd.github+json" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" --output love12.zip --url "${{ env.LOVE_ARTIFACT_URL }}"
         7z x love12.zip
         chmod +x love-*.AppImage
         ./love-*.AppImage --appimage-extract
@@ -61,7 +62,7 @@ jobs:
         ./appimagetool-x86_64.AppImage squashfs-root oh3.AppImage
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.3.0
       with:
         name: oh3.AppImage
         path: extra/linux/oh3.AppImage
