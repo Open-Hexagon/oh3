@@ -410,6 +410,7 @@ function flex:calculate_layout(width, height)
     self.expandable_y = math.max(height - self.height, 0)
     element._update_child_expand(self)
     self.changed = false
+    self.chunks = nil
     return self.width, self.height
 end
 
@@ -490,13 +491,71 @@ function flex:align_and_justify()
     end
 end
 
+local function get_rotation()
+    local x1, y1 = love.graphics.transformPoint(0, 0)
+    local x2, y2 = love.graphics.transformPoint(0, 100)
+    return math.atan2(x2 - x1, y2 - y1)
+end
+
+local chunk_size = 500
+
 ---draw all the elements in the container
-function flex:draw()
+---@param view table?
+function flex:draw(view)
     love.graphics.push()
     love.graphics.applyTransform(self._transform)
     animated_transform.apply(self.transform)
-    for i = 1, #self.elements do
-        self.elements[i]:draw()
+    self.x, self.y = love.graphics.transformPoint(0, 0)
+    if #self.elements == 0 then
+        love.graphics.pop()
+        return
+    end
+    if not view or get_rotation() ~= 0 then
+        for i = 1, #self.elements do
+            self.elements[i]:draw(view)
+        end
+    else -- can only optimize easily if no rotation transform is present
+        local size_name = self.direction == "row" and "width" or "height"
+        if not self.chunks then
+            self.chunks = {}
+            local pos = 0
+            for i = 1, #self.elements do
+                local elem = self.elements[i]
+                local chunk_start = math.floor(pos / chunk_size)
+                pos = pos + elem[size_name]
+                local chunk_end = math.ceil(pos / chunk_size)
+                for index = chunk_start, chunk_end do
+                    self.chunks[index] = self.chunks[index] or {}
+                    self.chunks[index][#self.chunks[index] + 1] = elem
+                end
+            end
+        end
+        local view_x1, view_y1 = love.graphics.inverseTransformPoint(unpack(view, 1, 2))
+        local view_x2, view_y2 = love.graphics.inverseTransformPoint(unpack(view, 3, 4))
+        local local_start, local_end
+        if self.direction == "row" then
+            local_start = view_x1
+            local_end = view_x2
+        else
+            local_start = view_y1
+            local_end = view_y2
+        end
+        local chunk_start = math.floor(local_start / chunk_size)
+        local chunk_end = math.ceil(local_end / chunk_size)
+        for i = chunk_start, chunk_end do
+            if self.chunks[i] then
+                for j = 1, #self.chunks[i] do
+                    local elem = self.chunks[i][j]
+                    if not elem.was_drawn then
+                        elem:draw(view)
+                        elem.was_drawn = true
+                    end
+                end
+            end
+        end
+        for i = 1, #self.elements do
+            self.elements[i].was_drawn = false
+        end
     end
     love.graphics.pop()
 end

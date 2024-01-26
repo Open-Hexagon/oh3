@@ -462,12 +462,15 @@ function scroll:draw()
         -- when drawing on canvas 0, 0 (origin) will always be the top left corner
         love.graphics.origin()
         love.graphics.translate(self.lt2wh(-self.scroll_pos(), 0))
+        self.view = self.view or {}
+        self.view[1], self.view[2] = 0, 0
+        self.view[3], self.view[4] = self.width, self.height
     else
         -- when not drawing on canvas transformations have to be taken into account
         love.graphics.applyTransform(self._transform)
         animated_transform.apply(self.transform)
     end
-    self.element:draw()
+    self.element:draw(self.view)
     if self.scrollable then
         love.graphics.setCanvas(last_canvas)
         love.graphics.pop()

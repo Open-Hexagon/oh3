@@ -98,7 +98,8 @@ function hexagon:calculate_element_layout(available_width, available_height)
 end
 
 ---draw the hexagon
-function hexagon:draw_element()
+---@param view table?
+function hexagon:draw_element(view)
     local radius = math.max(self.width, self.height) / 2 - self.padding * self.scale
     love.graphics.translate(radius, radius)
     love.graphics.setColor(self.background_color)
@@ -110,7 +111,7 @@ function hexagon:draw_element()
     end
     love.graphics.translate(-radius, -radius)
     if self.element then
-        self.element:draw()
+        self.element:draw(view)
     end
 end
 

@@ -127,7 +127,8 @@ function quad:calculate_element_layout(available_width, available_height)
 end
 
 ---draw the quad
-function quad:draw_element()
+---@param view table
+function quad:draw_element(view)
     love.graphics.setColor(self.background_color)
     love.graphics.polygon("fill", self.vertices)
     if self.border_thickness ~= 0 then
@@ -136,7 +137,7 @@ function quad:draw_element()
         love.graphics.polygon("line", self.vertices)
     end
     if self.element then
-        self.element:draw()
+        self.element:draw(view)
     end
 end
 

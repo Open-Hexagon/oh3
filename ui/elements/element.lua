@@ -321,7 +321,8 @@ function element:process_event(name, ...)
 end
 
 ---draw the element
-function element:draw()
+---@param view table
+function element:draw(view)
     love.graphics.push()
     love.graphics.applyTransform(self._transform)
     animated_transform.apply(self.transform)
@@ -331,10 +332,10 @@ function element:draw()
     if self.disabled then
         local last_shader = love.graphics.getShader()
         love.graphics.setShader(disabled_shader)
-        self:draw_element()
+        self:draw_element(view)
         love.graphics.setShader(last_shader)
     else
-        self:draw_element()
+        self:draw_element(view)
     end
     love.graphics.pop()
 end
