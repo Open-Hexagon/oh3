@@ -499,6 +499,22 @@ end
 
 local chunk_size = 500
 
+local function generate_chunks(self)
+    local size_name = self.direction == "row" and "width" or "height"
+    self.chunks = {}
+    local pos = 0
+    for i = 1, #self.elements do
+        local elem = self.elements[i]
+        local chunk_start = math.floor(pos / chunk_size)
+        pos = pos + elem[size_name]
+        local chunk_end = math.ceil(pos / chunk_size)
+        for index = chunk_start, chunk_end do
+            self.chunks[index] = self.chunks[index] or {}
+            self.chunks[index][#self.chunks[index] + 1] = elem
+        end
+    end
+end
+
 ---draw all the elements in the container
 ---@param view table?
 function flex:draw(view)
@@ -515,20 +531,8 @@ function flex:draw(view)
             self.elements[i]:draw(view)
         end
     else -- can only optimize easily if no rotation transform is present
-        local size_name = self.direction == "row" and "width" or "height"
         if not self.chunks then
-            self.chunks = {}
-            local pos = 0
-            for i = 1, #self.elements do
-                local elem = self.elements[i]
-                local chunk_start = math.floor(pos / chunk_size)
-                pos = pos + elem[size_name]
-                local chunk_end = math.ceil(pos / chunk_size)
-                for index = chunk_start, chunk_end do
-                    self.chunks[index] = self.chunks[index] or {}
-                    self.chunks[index][#self.chunks[index] + 1] = elem
-                end
-            end
+            generate_chunks(self)
         end
         local view_x1, view_y1 = love.graphics.inverseTransformPoint(unpack(view, 1, 2))
         local view_x2, view_y2 = love.graphics.inverseTransformPoint(unpack(view, 3, 4))
@@ -548,6 +552,10 @@ function flex:draw(view)
                     local elem = self.chunks[i][j]
                     if not elem.was_drawn then
                         elem:draw(view)
+                        if not self.chunks then
+                            generate_chunks(self)
+                            break
+                        end
                         elem.was_drawn = true
                     end
                 end
