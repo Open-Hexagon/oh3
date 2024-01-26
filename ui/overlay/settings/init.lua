@@ -123,6 +123,9 @@ local function create_setting(name, property, value)
                 state = (state - property.min) * (steps - 1) / (property.max - property.min)
                 setter:set(state)
             end
+            if property.name == "fps_limit" and value == 0 then
+                gui_setters[name](0)
+            end
         end
     elseif property.category == "Input" then
         layout = input_setting:new(property)
