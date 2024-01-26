@@ -9,6 +9,7 @@ on:
 
 env:
   BUILD_TYPE: Release
+  LOVE_ARTIFACT_URL: "https://api.github.com/repos/love2d/love/actions/artifacts/1142100892/zip"
 
 jobs:
   build:
@@ -28,11 +29,11 @@ jobs:
           mingw-w64-x86_64-sqlite3
         update: true
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
 
     - name: Create App bundle
       run: |
-        curl -L -H "Accept: application/vnd.github+json" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" --output love12.zip --url "https://api.github.com/repos/love2d/love/actions/artifacts/1142100892/zip"
+        curl -L -H "Accept: application/vnd.github+json" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" --output love12.zip --url "${{ env.LOVE_ARTIFACT_URL }}"
         7z x love12.zip
         7z x love-*.zip
         mv love-*-win64 oh3
@@ -43,6 +44,7 @@ jobs:
         cp /mingw64/bin/libuv-1.dll oh3
         cp -r *.lua assets compat extlibs game game_handler server ui input_schemes oh3
         cp extra/windows/launch.bat oh3
+
         # create extra folder so the zip contains an oh3 folder instead of directly having all files
         mkdir zip_contents
         mv oh3 zip_contents
