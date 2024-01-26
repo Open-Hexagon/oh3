@@ -72,18 +72,12 @@ local old_parents = {}
 ---also restores the original layout if the pattern is a empty string
 ---@param pattern string
 ---@param elements table
----@param flex_container flex?
+---@param flex_container flex
 function search.create_result_layout(pattern, elements, flex_container)
-    if #elements == 0 then
-        return
-    end
-    if flex_container == nil then
-        flex_container = elements[1].parent
-        if old_layouts[flex_container] then
+    if old_layouts[flex_container] then
+        if flex_container.elements == elements then
             elements = old_layouts[flex_container]
         end
-    end
-    if old_layouts[flex_container] then
         -- remove old highlights
         remove_highlights(flex_container)
     end
