@@ -50,7 +50,7 @@ jobs:
         mv oh3 zip_contents
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.3.0
       with:
         name: oh3
         path: zip_contents
