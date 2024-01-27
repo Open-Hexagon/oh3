@@ -56,7 +56,7 @@ local game = {
 local wall_quads, pivot_quads, player_tris, cap_tris
 if args.headless then
     -- should be fine as long as no level uses initial values here to make rng
-    game.width, game.height = 0, 0
+    game.width, game.height = 1024, 768
 else
     game.width = love.graphics.getWidth()
     game.height = love.graphics.getHeight()
