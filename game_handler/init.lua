@@ -223,7 +223,9 @@ end)
 
 ---stops the game (it will not be updated or rendered anymore)
 function game_handler.stop()
-    current_game.stop()
+    if current_game then
+        current_game.stop()
+    end
 end
 
 ---check if the game is replaying a replay
