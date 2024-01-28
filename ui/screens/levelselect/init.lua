@@ -53,7 +53,7 @@ state.top_bar = flex:new({
         }),
         vertex_offsets = { 0, 0, slope_width, 0, 0, 0, 0, 0 },
         limit_area = function(_, height)
-            return packs.width + slope_width, height
+            return love.graphics.getWidth() / 4 + slope_width, height
         end,
     }),
     entry:new({
@@ -75,7 +75,7 @@ state.top_bar = flex:new({
         }, { justify_content = "end", align_relative_to = "area" }),
         vertex_offsets = { slope_width, 0, 0, 0, 0, 0, 0, 0 },
         limit_area = function(_, height)
-            return info_column.width + slope_width, height
+            return love.graphics.getWidth() / 4 + slope_width, height
         end,
     }),
 }, { justify_content = "between", align_relative_to = "area" })
