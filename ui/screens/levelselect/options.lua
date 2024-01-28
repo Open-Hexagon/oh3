@@ -112,4 +112,9 @@ options.layout = flex:new({
     right_button,
 }, { justify_content = "between", align_relative_to = "area" })
 
+left_button.style.disabled = true
+left_button.disabled = true
+right_button.style.disabled = true
+right_button.disabled = true
+
 return options
