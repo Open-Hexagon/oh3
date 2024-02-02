@@ -14,6 +14,7 @@ local icon = require("ui.elements.icon")
 local search = require("ui.search")
 local input_setting = require("ui.overlay.settings.input")
 local settings_profile_selection = require("ui.overlay.settings.settings_profile_selection")
+local game_profile_selection = require("ui.overlay.settings.game_profile_selection")
 local theme = require("ui.theme")
 local element = require("ui.elements.element")
 
@@ -234,7 +235,10 @@ local content = flex:new({
                 search.create_result_layout(text, all_setting_layouts, settings_column)
             end,
         }),
-        settings_profile_selection,
+        flex:new({
+            settings_profile_selection,
+            game_profile_selection,
+        }, { direction = "column" }),
         quad:new({
             child_element = icon:new("x-lg"),
             selectable = true,

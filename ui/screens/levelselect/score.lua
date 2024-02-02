@@ -1,4 +1,3 @@
-local quad = require("ui.elements.quad")
 local flex = require("ui.layout.flex")
 local label = require("ui.elements.label")
 local profile = require("game_handler.profile")
@@ -18,6 +17,9 @@ function score.refresh(pack, level)
     local options = require("ui.screens.levelselect.options")
     pack = pack or last_pack
     level = level or last_level
+    if not pack or not level then
+        return
+    end
     local data = profile.get_scores(pack, level, options.current)
     local number = 0
     for i = 1, #data do

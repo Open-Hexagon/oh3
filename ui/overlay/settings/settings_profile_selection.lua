@@ -45,21 +45,23 @@ local list = modifyable_list:new({
 })
 
 local function init()
-    list:set(config.list_profiles())
-    list:select(config.get_profile())
+    list:set(config.list_profiles(), config.get_profile())
 end
 local dropdown = collapse:new(list.layout)
 
 local layout = flex:new({
-    quad:new({
-        child_element = profile_name_label,
-        selectable = true,
-        click_handler = function()
-            dropdown:toggle()
-        end,
-    }),
-    dropdown,
-}, { direction = "column" })
+    label:new("Settings Profile:"),
+    flex:new({
+        quad:new({
+            child_element = profile_name_label,
+            selectable = true,
+            click_handler = function()
+                dropdown:toggle()
+            end,
+        }),
+        dropdown,
+    }, { direction = "column" }),
+}, { align_items = "center" })
 
 local old = layout.calculate_layout
 layout.calculate_layout = function(...)

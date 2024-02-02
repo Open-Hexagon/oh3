@@ -21,6 +21,16 @@ function profile.get_current_profile()
     return current_profile
 end
 
+---get a list of all available game profiles
+---@return table
+function profile.list()
+    local profiles = love.filesystem.getDirectoryItems(profile_path)
+    for i = 1, #profiles do
+        profiles[i] = profiles[i]:sub(1, -4)
+    end
+    return profiles
+end
+
 ---open or create a new profile
 ---@param name string
 function profile.open_or_new(name)
