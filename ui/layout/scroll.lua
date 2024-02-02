@@ -389,12 +389,6 @@ function scroll:calculate_layout(width, height)
     -- scroll if there is overflow
     self.scrollable = overflow > 0
     self.max_scroll = math.max(overflow, 0)
-    local new_scroll_target = extmath.clamp(self.scroll_target, 0, self.max_scroll)
-    if self.scroll_target ~= new_scroll_target then
-        self.scroll_target = new_scroll_target
-        self.scroll_pos:stop()
-        self.scroll_pos:set_immediate_value(self.scroll_target)
-    end
     local expandable_len = self.scrollable and math.huge or 0
     self.expandable_x, self.expandable_y = self.lt2wh(expandable_len, avail_thick - thick)
     self.expandable_x = math.max(self.expandable_x, 0)
@@ -409,6 +403,13 @@ end
 
 ---draw the scroll container with its child
 function scroll:draw()
+    -- stop scroll from going over boundaries
+    local new_scroll_target = extmath.clamp(self.scroll_target, 0, self.max_scroll)
+    if self.scroll_target ~= new_scroll_target then
+        self.scroll_target = new_scroll_target
+        self.scroll_pos:stop()
+        self.scroll_pos:set_immediate_value(self.scroll_target)
+    end
     self.x, self.y = love.graphics.transformPoint(0, 0)
     if self.width <= 0 or self.height <= 0 then
         -- don't draw anything without having any size
@@ -421,15 +422,17 @@ function scroll:draw()
         self.last_height = self.height
     end
     if size_changed or (self.scrollable and not self.canvas) then
-        if self.scrollable then
+        local w = math.floor(self.width)
+        local h = math.floor(self.height)
+        if self.scrollable and w ~= 0 and h ~= 0 then
             -- dimensions changed or scrollable but no canvas created yet
-            self.canvas = love.graphics.newCanvas(self.width, self.height)
+            self.canvas = love.graphics.newCanvas(w, h)
         end
         self.last_width = self.width
         self.last_height = self.height
     end
     if
-        self.scrollable
+        self.scrollable and self.canvas
         and (
             self.scroll_pos() ~= self.last_scroll_value
             or size_changed
@@ -455,7 +458,7 @@ function scroll:draw()
     end
     love.graphics.push()
     local last_canvas
-    if self.scrollable then
+    if self.scrollable and self.canvas then
         last_canvas = love.graphics.getCanvas()
         love.graphics.setCanvas(self.canvas)
         love.graphics.clear(0, 0, 0, 0)
@@ -471,7 +474,7 @@ function scroll:draw()
         animated_transform.apply(self.transform)
     end
     self.element:draw(self.view)
-    if self.scrollable then
+    if self.scrollable and self.canvas then
         love.graphics.setCanvas(last_canvas)
         love.graphics.pop()
         love.graphics.push()

@@ -52,6 +52,8 @@ end
 function entry:set_text(text)
     self.text = text
     if text == "" and self.options.no_text_text then
+        self.cursor_pos = 0
+        self.cursor_pixel_pos = 0
         self.label.raw_text = self.options.no_text_text
         self.label:set_style({ color = theme.get("greyed_out_text_color") })
     else

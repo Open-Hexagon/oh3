@@ -34,18 +34,9 @@ function slider:process_event(name, ...)
     if element.process_event(self, name, ...) then
         return true
     end
-    local function select_this_elem()
-        -- don't call handlers there to respect handlers stopping propagation
-        keyboard_navigation.select_element(self, false)
-        if self.selection_handler then
-            if self.selection_handler(self) then
-                return true
-            end
-        end
-    end
     local last_state = self.state
     if name == "wheelmoved" and self.is_mouse_over and self:check_screen() then
-        select_this_elem()
+        keyboard_navigation.select_element(self)
         local _, direction = ...
         self.state = extmath.clamp(self.state - direction, 0, self.steps)
     end
@@ -56,7 +47,7 @@ function slider:process_event(name, ...)
     if name == "mousepressed" and self.is_mouse_over then
         self.grabbed = true
         require("ui").set_grabbed(self)
-        select_this_elem()
+        keyboard_navigation.select_element(self)
         move_state_to_mouse()
     end
     if name == "mousemoved" and self.grabbed then

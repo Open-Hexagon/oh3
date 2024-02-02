@@ -518,6 +518,9 @@ end
 ---draw all the elements in the container
 ---@param view table?
 function flex:draw(view)
+    if self.must_calculate_alignement then
+        flex.process_alignement()
+    end
     love.graphics.push()
     love.graphics.applyTransform(self._transform)
     animated_transform.apply(self.transform)

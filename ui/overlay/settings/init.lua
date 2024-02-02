@@ -234,7 +234,7 @@ local content = flex:new({
                 search.create_result_layout(text, all_setting_layouts, settings_column)
             end,
         }),
-        settings_profile_selection.layout,
+        settings_profile_selection,
         quad:new({
             child_element = icon:new("x-lg"),
             selectable = true,

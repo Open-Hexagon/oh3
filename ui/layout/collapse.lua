@@ -1,4 +1,3 @@
-local log = require("log")(...)
 local animated_transform = require("ui.anim.transform")
 local signal = require("ui.anim.signal")
 local update_expand = require("ui.elements.element")._update_child_expand
