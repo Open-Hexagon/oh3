@@ -90,6 +90,7 @@ local load_pack_chunk = async(function()
         local elem = quad:new({
             child_element = flex:new({
                 label:new(pack.name, { wrap = true }),
+                label:new(tostring(pack.game_version), { font_size = 16 }),
                 progress_collapse,
             }, { direction = "column", align_items = "stretch", align_relative_to = "parentparent" }),
             selectable = true,
