@@ -123,7 +123,7 @@ app.handlers["/get_packs/.../..."] = function(captures, headers)
     headers["content-type"] = "application/json"
     local start = tonumber(captures[1])
     local stop = tonumber(captures[2])
-    local last_index
+    local last_index = 0
     for i = 1, stop - start + 1 do
         local index = i + start - 1
         if not packs[index] then
