@@ -118,9 +118,24 @@ app.handlers["/get_pack_preview_data/.../..."] = function(captures, headers)
     return json.encode(result)
 end
 
-app.handlers["/get_packs"] = function(_, headers)
+local pack_list = {}
+app.handlers["/get_packs/.../..."] = function(captures, headers)
     headers["content-type"] = "application/json"
-    return json.encode(packs)
+    local start = tonumber(captures[1])
+    local stop = tonumber(captures[2])
+    local last_index
+    for i = 1, stop - start + 1 do
+        local index = i + start - 1
+        if not packs[index] then
+            break
+        end
+        pack_list[i] = packs[index]
+        last_index = i
+    end
+    while pack_list[last_index + 1] do
+        pack_list[#pack_list] = nil
+    end
+    return json.encode(pack_list)
 end
 
 app.handlers["/get_pack/.../..."] = function(captures, headers)
