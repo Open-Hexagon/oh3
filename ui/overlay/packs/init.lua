@@ -27,7 +27,7 @@ local ongoing_downloads = {}
 local pack_id_elem_map = {}
 
 local current_chunk = 0
-local chunk_size = 10
+local chunk_size = 50
 local loading_in_progress = false
 local all_loaded = false
 
@@ -36,16 +36,20 @@ local load_pack_chunk = async(function()
     pack_list.elements[#pack_list.elements + 1] = label:new("Loading...")
     pack_list:mutated(false)
     pack_list.elements[#pack_list.elements]:update_size()
-    local start = current_chunk * chunk_size + 1
-    local stop = current_chunk * chunk_size + chunk_size
-    local new_packs = async.await(download.get_pack_list(start, stop))
+    local new_packs
+    repeat
+        local start = current_chunk * chunk_size + 1
+        local stop = current_chunk * chunk_size + chunk_size
+        new_packs = async.await(download.get_pack_list(start, stop))
+        if new_packs then
+            current_chunk = current_chunk + 1
+        end
+    until new_packs ~= nil and (type(new_packs) ~= "table" or #new_packs ~= 0)
     if new_packs == true then
         pack_list.elements[#pack_list.elements] = nil
         pack_list.elements[1]:update_size()
         all_loaded = true
-        return
-    end
-    if not new_packs then
+        loading_in_progress = false
         return
     end
     pack_list.elements[#pack_list.elements] = nil
@@ -127,7 +131,6 @@ local load_pack_chunk = async(function()
     elseif #pack_list.elements > 0 then
         pack_list.elements[1]:update_size()
     end
-    current_chunk = current_chunk + 1
     loading_in_progress = false
 end)
 
