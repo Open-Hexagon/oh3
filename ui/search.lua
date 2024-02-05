@@ -67,6 +67,7 @@ end
 local old_layouts = {}
 local old_parent_indices = {}
 local old_parents = {}
+local old_elements = {}
 
 ---adds all matching elements to a flex container for showing the result to the user
 ---also restores the original layout if the pattern is a empty string
@@ -84,11 +85,11 @@ function search.create_result_layout(pattern, elements, flex_container)
     if pattern == "" then
         if old_layouts[flex_container] then
             -- restore old layout
-            local results = flex_container.elements
             flex_container.elements = old_layouts[flex_container]
-            for i = 1, #results do
-                results[i].parent = old_parents[flex_container][i]
-                results[i].parent_index = old_parent_indices[flex_container][i]
+            local elems = old_elements[flex_container]
+            for i = 1, #elems do
+                elems[i].parent = old_parents[flex_container][i]
+                elems[i].parent_index = old_parent_indices[flex_container][i]
             end
             flex_container:mutated(false)
             flex_container.changed = true
@@ -101,13 +102,14 @@ function search.create_result_layout(pattern, elements, flex_container)
             -- backup old layout
             local parent_indices = {}
             local parents = {}
-            for i = 1, #results do
-                parents[i] = results[i].parent
-                parent_indices[i] = results[i].parent_index
+            for i = 1, #elements do
+                parents[i] = elements[i].parent
+                parent_indices[i] = elements[i].parent_index
             end
             old_parent_indices[flex_container] = parent_indices
             old_parents[flex_container] = parents
             old_layouts[flex_container] = flex_container.elements
+            old_elements[flex_container] = elements
         end
         flex_container.elements = results
         flex_container:mutated(false)
