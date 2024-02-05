@@ -441,7 +441,8 @@ function scroll:draw()
         self.last_height = self.height
     end
     if
-        self.scrollable and self.canvas
+        self.scrollable
+        and self.canvas
         and (
             self.scroll_pos() ~= self.last_scroll_value
             or size_changed
