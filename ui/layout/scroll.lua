@@ -161,16 +161,15 @@ function scroll:mutated()
 end
 
 ---scroll some bounds in this container's coordinate system into view
----@param x any
----@param y any
----@param width any
----@param height any
----@param instant any
+---@param x number
+---@param y number
+---@param width number
+---@param height number
+---@param instant boolean?
 function scroll:scroll_into_view(x, y, width, height, instant)
     if self.scrollable then
         local bounds_start = self.wh2lt(x, y)
         local bounds_end = self.wh2lt(x + width, y + height)
-        local scroll_before = self.scroll_pos()
         local visual_length = self.wh2lt(self.width, self.height)
         if self.scroll_target > bounds_start then
             --          +---+------------+
@@ -185,8 +184,17 @@ function scroll:scroll_into_view(x, y, width, height, instant)
             -- view has to move so the end of the bounds (right side) is on the end of the view
             self.scroll_target = bounds_end - visual_length
         end
-        -- ensure it doesn't scroll outside even if bounds are outside the container
-        self.scroll_target = extmath.clamp(self.scroll_target, 0, self.max_scroll)
+        self:set_pos(self.scroll_target, instant)
+    end
+end
+
+---set scroll pos directly
+---@param scroll_pos number
+---@param instant boolean?
+function scroll:set_pos(scroll_pos, instant)
+    if self.scrollable then
+        local scroll_before = self.scroll_pos()
+        self.scroll_target = extmath.clamp(scroll_pos, 0, self.max_scroll)
         if scroll_before ~= self.scroll_target then
             self.scroll_pos:stop()
             if instant then

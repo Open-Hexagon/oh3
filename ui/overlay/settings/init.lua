@@ -206,7 +206,7 @@ for i = 1, #category_names do
         selectable = true,
         selection_handler = function(self)
             theme.get_selection_handler()(self)
-            keyboard_navigation.scroll_into_view(category_settings)
+            settings.scroll_to_category(category)
             -- make keyboard navigation go into the category and not wherever it was last when going into the settings column
             category_settings.parent.last_selection = category_settings
         end,
@@ -216,6 +216,30 @@ end
 local settings_column = flex:new(category_layouts, { direction = "column", align_items = "stretch" })
 local category_column = flex:new(category_indicators, { direction = "column" })
 local settings_scroll
+
+function settings.scroll_to_category(name)
+    local index
+    for i = 1, #category_names do
+        if category_names[i] == name then
+            index = i
+            break
+        end
+    end
+    if category_indicators[index].background_color == theme.get("background_color") then
+        local target_percentage = 0
+        local total = 0
+        for i = 1, index do
+            local layout = category_layouts[i]
+            local category_percentage = layout.height / settings_column.height
+            target_percentage = total + category_percentage / 2
+            total = total + category_percentage
+        end
+        local scroll_pos = target_percentage * settings_scroll.max_scroll
+        settings_scroll:set_pos(scroll_pos + 1)
+        keyboard_navigation.scroll_into_view(category_layouts[index])
+    end
+end
+
 settings_scroll = scroll:new(settings_column, {
     change_handler = function(scroll_pos)
         local percentage = scroll_pos / settings_scroll.max_scroll
@@ -228,6 +252,7 @@ settings_scroll = scroll:new(settings_column, {
                 layout.border_color = theme.get("transparent_light_selection_color")
                 layout.border_thickness = theme.get("selection_border_thickness")
                 indicator.background_color = theme.get("transparent_light_selection_color")
+                category_column.last_selection = indicator
             else
                 layout.border_color = theme.get("border_color")
                 layout.border_thickness = theme.get("border_thickness")
