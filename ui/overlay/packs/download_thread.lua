@@ -35,11 +35,13 @@ function download.set_server(serv_url, http_port, https_port)
     server_https_url = "https://" .. serv_url .. ":" .. https_port .. "/"
 end
 
----gets a list of pack names for the specified game version
+---gets a list of packs
+---@param start number
+---@param stop number
 ---@return table
-function download.get_pack_list()
+function download.get_pack_list(start, stop)
     if not pack_data_list then
-        pack_data_list = api("get_packs")
+        pack_data_list = api(("get_packs/%d/%d"):format(start, stop))
         if not pack_data_list then
             return {}
         end
