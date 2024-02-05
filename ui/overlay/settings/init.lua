@@ -215,9 +215,31 @@ end
 
 local settings_column = flex:new(category_layouts, { direction = "column", align_items = "stretch" })
 local category_column = flex:new(category_indicators, { direction = "column" })
+local settings_scroll
+settings_scroll = scroll:new(settings_column, {
+    change_handler = function(scroll_pos)
+        local percentage = scroll_pos / settings_scroll.max_scroll
+        local total = 0
+        for i = 1, #category_layouts do
+            local layout = category_layouts[i]
+            local indicator = category_indicators[i]
+            local category_percentage = layout.height / settings_column.height
+            if percentage >= total and percentage <= total + category_percentage then
+                layout.border_color = theme.get("transparent_light_selection_color")
+                layout.border_thickness = theme.get("selection_border_thickness")
+                indicator.background_color = theme.get("transparent_light_selection_color")
+            else
+                layout.border_color = theme.get("border_color")
+                layout.border_thickness = theme.get("border_thickness")
+                indicator.background_color = theme.get("background_color")
+            end
+            total = total + category_percentage
+        end
+    end,
+})
 local settings_body = flex:new({
     scroll:new(category_column),
-    scroll:new(settings_column),
+    settings_scroll,
 })
 
 local content = flex:new({

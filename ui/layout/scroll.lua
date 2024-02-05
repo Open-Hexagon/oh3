@@ -72,6 +72,7 @@ function scroll:new(element, options)
         -- used for scroll
         last_mouse_pos = { 0, 0 },
         content_length = 0,
+        change_handler = options.change_handler,
         last_content_length = 0,
         -- amount that children can expand
         expandable_x = 0,
@@ -439,6 +440,9 @@ function scroll:draw()
             or self.content_length ~= self.last_content_length
         )
     then
+        if self.change_handler then
+            self.change_handler(self.scroll_pos())
+        end
         self.last_content_length = self.content_length
         self.last_scroll_value = self.scroll_pos()
         -- update the scrollbar area
