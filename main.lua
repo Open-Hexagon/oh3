@@ -183,6 +183,8 @@ local main = async(function()
     ui.open_screen("loading")
     local game_handler = require("game_handler")
     global_config.init()
+    -- apply fullscreen setting initially
+    config.get_definitions().fullscreen.onchange(config.get("fullscreen"))
 
     local fps_limit = config.get("fps_limit")
     local delta_target = 1 / fps_limit
