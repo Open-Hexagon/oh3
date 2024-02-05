@@ -20,11 +20,8 @@ local log = require("log")(...)
 download.set_server(config.get("server_url"), config.get("server_http_api_port"), config.get("server_https_api_port"))
 
 local pack_overlay = overlay:new()
-local loading = label:new("Loading...")
 
-local pack_list = flex:new({
-    loading,
-}, { direction = "column", align_items = "stretch" })
+local pack_list = flex:new({}, { direction = "column", align_items = "stretch" })
 
 local ongoing_downloads = {}
 local pack_id_elem_map = {}
@@ -32,14 +29,26 @@ local pack_id_elem_map = {}
 local current_chunk = 0
 local chunk_size = 10
 local loading_in_progress = false
+local all_loaded = false
 
 local load_pack_chunk = async(function()
     loading_in_progress = true
-    pack_list.elements[#pack_list.elements] = nil
+    pack_list.elements[#pack_list.elements + 1] = label:new("Loading...")
+    pack_list:mutated(false)
+    pack_list.elements[#pack_list.elements]:update_size()
     local start = current_chunk * chunk_size + 1
-    current_chunk = current_chunk + 1
-    local stop = current_chunk * chunk_size
+    local stop = current_chunk * chunk_size + chunk_size
     local new_packs = async.await(download.get_pack_list(start, stop))
+    if new_packs == true then
+        pack_list.elements[#pack_list.elements] = nil
+        pack_list.elements[1]:update_size()
+        all_loaded = true
+        return
+    end
+    if not new_packs then
+        return
+    end
+    pack_list.elements[#pack_list.elements] = nil
     local new_elem
     for i = 1, #new_packs do
         local pack = new_packs[i]
@@ -113,20 +122,27 @@ local load_pack_chunk = async(function()
         new_elem = elem
     end
     if new_elem then
-        pack_list.elements[#pack_list.elements] = loading
         pack_list:mutated(false)
         new_elem:update_size()
     elseif #pack_list.elements > 0 then
         pack_list.elements[1]:update_size()
     end
+    current_chunk = current_chunk + 1
     loading_in_progress = false
 end)
 
 local pack_scroll
+local current_promise
 pack_scroll = scroll:new(pack_list, {
-    change_handler = async(function()
-        if loading.y < pack_scroll.height then
-            async.await(load_pack_chunk())
+    change_handler = async(function(scroll_pos)
+        if all_loaded then
+            return
+        end
+        if scroll_pos == pack_scroll.max_scroll then
+            while loading_in_progress and current_promise do
+                async.await(current_promise)
+            end
+            current_promise = load_pack_chunk()
         end
     end),
 })
@@ -146,10 +162,16 @@ pack_overlay.layout = quad:new({
     }, { direction = "column" }),
 })
 pack_overlay.transition = transitions.slide
-pack_overlay.onopen = function()
-    if current_chunk == 0 and not loading_in_progress then
-        load_pack_chunk()
+pack_overlay.onopen = async(function()
+    if all_loaded then
+        return
     end
-end
+    if current_chunk == 0 and not loading_in_progress then
+        while pack_list.height <= pack_scroll.height do
+            current_promise = load_pack_chunk()
+            async.await(current_promise)
+        end
+    end
+end)
 
 return pack_overlay

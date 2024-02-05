@@ -13,7 +13,8 @@ if not love.filesystem.getInfo(tmp_folder) then
     love.filesystem.createDirectory(tmp_folder)
 end
 
-local pack_data_list
+local pack_list
+
 local pack_map = {}
 local download = {}
 
@@ -38,39 +39,41 @@ end
 ---gets a list of packs
 ---@param start number
 ---@param stop number
----@return table
+---@return table|boolean|nil
 function download.get_pack_list(start, stop)
-    if not pack_data_list then
-        pack_data_list = api(("get_packs/%d/%d"):format(start, stop))
-        if not pack_data_list then
-            return {}
-        end
-        -- remove packs the player already has
+    if not pack_list then
         local promise = assets.init({}, true)
-        local result
         promise:done(function(res)
-            result = res
+            pack_list = res
         end)
         while not promise.executed do
             threadify.update()
             uv.sleep(10)
         end
-        if not result then
+        if not pack_list then
             error("could not get current pack list")
         end
-        local map = {}
-        for i = 1, #result do
-            local pack = result[i]
-            map[pack.game_version] = map[pack.game_version] or {}
-            map[pack.game_version][pack.id] = true
-        end
-        for i = #pack_data_list, 1, -1 do
-            local pack = pack_data_list[i]
-            pack_map[pack.game_version] = pack_map[pack.game_version] or {}
-            pack_map[pack.game_version][pack.folder_name] = pack
-            if map[pack.game_version] and map[pack.game_version][pack.id] then
-                table.remove(pack_data_list, i)
-            end
+    end
+    local pack_data_list = api(("get_packs/%d/%d"):format(start, stop))
+    if not pack_data_list then
+        return
+    end
+    if #pack_data_list == 0 then
+        return true
+    end
+    -- remove packs the player already has
+    local map = {}
+    for i = 1, #pack_list do
+        local pack = pack_list[i]
+        map[pack.game_version] = map[pack.game_version] or {}
+        map[pack.game_version][pack.id] = true
+    end
+    for i = #pack_data_list, 1, -1 do
+        local pack = pack_data_list[i]
+        pack_map[pack.game_version] = pack_map[pack.game_version] or {}
+        pack_map[pack.game_version][pack.folder_name] = pack
+        if map[pack.game_version] and map[pack.game_version][pack.id] then
+            table.remove(pack_data_list, i)
         end
     end
     return pack_data_list
@@ -90,13 +93,6 @@ function download.get(version, pack_name)
         or love.thread.getChannel(string.format("pack_download_error_%d_%s", version, pack_name)):pop()
     if err then
         return err
-    end
-    for i = #pack_data_list, 1, -1 do
-        local pack = pack_data_list[i]
-        if pack.game_version == version and pack.folder_name == pack_name then
-            table.remove(pack_data_list, i)
-            break
-        end
     end
     log("Done")
 end
