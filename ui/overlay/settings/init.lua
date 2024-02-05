@@ -4,6 +4,7 @@ local keyboard_navigation = require("ui.keyboard_navigation")
 local transitions = require("ui.anim.transitions")
 local quad = require("ui.elements.quad")
 local flex = require("ui.layout.flex")
+local collapse = require("ui.layout.collapse")
 local label = require("ui.elements.label")
 local config = require("config")
 local scroll = require("ui.layout.scroll")
@@ -132,6 +133,51 @@ local function create_setting(name, property, value)
         layout = input_setting:new(property)
         gui_setters[name] = function()
             layout:init_bindings()
+        end
+    elseif property.options and #property.options > 0 then
+        -- multiple choice dropdown setting
+        local option_quads = {}
+        local dropdown
+        local button_label = label:new(value)
+        for i = 1, #property.options do
+            option_quads[i] = quad:new({
+                child_element = label:new(property.options[i]),
+                selectable = true,
+                click_handler = function()
+                    button_label.raw_text = property.options[i]
+                    button_label.changed = true
+                    button_label:update_size()
+                    config.set(name, property.options[i])
+                    onchange()
+                    if property.onchange then
+                        property.onchange(button_label.raw_text)
+                    end
+                    button_label.parent:click()
+                    dropdown:toggle(false)
+                end,
+            })
+        end
+        dropdown = collapse:new(flex:new(option_quads, { direction = "column" }))
+        layout = flex:new({
+            label:new(property.display_name .. ":"),
+            flex:new({
+                quad:new({
+                    child_element = button_label,
+                    selectable = true,
+                    click_handler = function()
+                        dropdown:toggle()
+                    end,
+                }),
+                dropdown,
+            }, { direction = "column" }),
+        }, { align_items = "center" })
+        gui_setters[name] = function(text)
+            for i = 1, #property.options do
+                if property.options[i] == text then
+                    option_quads[i]:click()
+                    return
+                end
+            end
         end
     end
     name_layout_map[name] = layout
