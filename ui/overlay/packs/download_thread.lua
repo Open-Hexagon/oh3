@@ -5,6 +5,7 @@ local json = require("extlibs.json.json")
 local https = require("https")
 local threadify = require("threadify")
 local assets = threadify.require("game_handler.assets")
+local url = require("socket.url")
 local uv = require("luv")
 
 local server_http_url, server_https_url
@@ -19,9 +20,9 @@ local pack_map = {}
 local download = {}
 
 local function api(suffix)
-    local code, json_data = https.request(server_https_url .. suffix)
+    local code, json_data = https.request(server_https_url .. url.escape(suffix))
     if code ~= 200 then
-        log("'" .. suffix .. "' api request failed")
+        log("'" .. server_https_url .. url.escape(suffix) .. "' api request failed")
         return
     end
     if not json_data or (json_data:sub(1, 1) ~= "{" and json_data:sub(1, 1) ~= "[") then
@@ -34,6 +35,18 @@ end
 function download.set_server(serv_url, http_port, https_port)
     server_http_url = "http://" .. serv_url .. ":" .. http_port .. "/"
     server_https_url = "https://" .. serv_url .. ":" .. https_port .. "/"
+end
+
+local preview_data = {}
+
+---get preview data
+---@param game_version number
+---@param pack string
+---@return table
+function download.get_preview_data(game_version, pack)
+    preview_data[game_version] = preview_data[game_version] or {}
+    preview_data[game_version][pack] = preview_data[game_version][pack] or api(("get_pack_preview_data/%d/%s"):format(game_version, pack))
+    return preview_data[game_version][pack]
 end
 
 ---gets a list of packs

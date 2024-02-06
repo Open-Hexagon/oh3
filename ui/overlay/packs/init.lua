@@ -12,6 +12,7 @@ local threadify = require("threadify")
 local download = threadify.require("ui.overlay.packs.download_thread")
 local channel_callbacks = require("channel_callbacks")
 local pack_elements = require("ui.screens.levelselect.packs")
+local pack_details = require("ui.overlay.packs.details")
 local game_handler = require("game_handler")
 local async = require("async")
 local config = require("config")
@@ -87,62 +88,81 @@ local load_pack_chunk = async(function()
             progress_bar.percentage = percent
             progress_collapse:toggle(true)
         end)
-        local elem = quad:new({
+        local download_func = async(function(self)
+            ongoing_downloads[pack.game_version] = ongoing_downloads[pack.game_version] or {}
+            if ongoing_downloads[pack.game_version][pack.folder_name] then
+                -- download already in progress
+                return
+            end
+            ongoing_downloads[pack.game_version][pack.folder_name] = true
+            local promises = {}
+            for j = 1, #pack.dependency_ids do
+                local elem = pack_id_elem_map[pack.dependency_ids[j]]
+                -- element may not exist if pack is already downloaded
+                if elem then
+                    if elem.download_promise then
+                        -- download is in progress
+                        promises[#promises + 1] = elem.download_promise
+                    else
+                        -- download is started
+                        promises[#promises + 1] = elem.click_handler(elem)
+                    end
+                end
+            end
+            local ret = async.await(download.get(pack.game_version, pack.folder_name))
+            progress_collapse:toggle(false)
+            if ret then
+                ongoing_downloads[pack.game_version][pack.folder_name] = nil
+                progress_bar.percentage = 0
+                dialogs.alert(ret)
+                return
+            end
+            log("Waiting for dependency packs...")
+            for j = 1, #promises do
+                async.await(promises[j])
+            end
+            local pack_data = async.await(game_handler.import_pack(pack.folder_name, pack.game_version))
+            local elem = pack_elements.make_pack_element(pack_data, true)
+            -- element may not be created if an element for the pack already exists
+            if elem then
+                require("ui.screens.levelselect").state.packs:mutated(false)
+                elem:update_size()
+                elem:click(false)
+            end
+            table.remove(pack_list.elements, self.parent_index)
+            pack_list:mutated(false)
+            require("ui.elements.element").update_size(pack_list)
+            ongoing_downloads[pack.game_version][pack.folder_name] = nil
+        end)
+        local elem
+        elem = quad:new({
             child_element = flex:new({
-                label:new(pack.name, { wrap = true }),
-                label:new(tostring(pack.game_version), { font_size = 16 }),
+                flex:new({
+                    flex:new({
+                        label:new(pack.name, { wrap = true }),
+                        label:new(tostring(pack.game_version), { font_size = 16 }),
+                    }, { direction = "column" }),
+                    flex:new({
+                        quad:new({
+                            child_element = icon:new("list"),
+                            selectable = true,
+                            click_handler = function()
+                                pack_details.set_pack(pack)
+                                pack_details:open()
+                            end,
+                        }),
+                        quad:new({
+                            child_element = icon:new("download"),
+                            selectable = true,
+                            click_handler = function()
+                                elem.download_promise = download_func(elem)
+                                return elem.download_promise
+                            end,
+                        }),
+                    }),
+                }, { justify_content = "between", align_relative_to = "area" }),
                 progress_collapse,
             }, { direction = "column", align_items = "stretch", align_relative_to = "parentparent" }),
-            selectable = true,
-            click_handler = function(self)
-                self.download_promise = async(function()
-                    ongoing_downloads[pack.game_version] = ongoing_downloads[pack.game_version] or {}
-                    if ongoing_downloads[pack.game_version][pack.folder_name] then
-                        -- download already in progress
-                        return
-                    end
-                    ongoing_downloads[pack.game_version][pack.folder_name] = true
-                    local promises = {}
-                    for j = 1, #pack.dependency_ids do
-                        local elem = pack_id_elem_map[pack.dependency_ids[j]]
-                        -- element may not exist if pack is already downloaded
-                        if elem then
-                            if elem.download_promise then
-                                -- download is in progress
-                                promises[#promises + 1] = elem.download_promise
-                            else
-                                -- download is started
-                                promises[#promises + 1] = elem.click_handler(elem)
-                            end
-                        end
-                    end
-                    local ret = async.await(download.get(pack.game_version, pack.folder_name))
-                    progress_collapse:toggle(false)
-                    if ret then
-                        ongoing_downloads[pack.game_version][pack.folder_name] = nil
-                        progress_bar.percentage = 0
-                        dialogs.alert(ret)
-                        return
-                    end
-                    log("Waiting for dependency packs...")
-                    for j = 1, #promises do
-                        async.await(promises[j])
-                    end
-                    local pack_data = async.await(game_handler.import_pack(pack.folder_name, pack.game_version))
-                    local elem = pack_elements.make_pack_element(pack_data, true)
-                    -- element may not be created if an element for the pack already exists
-                    if elem then
-                        require("ui.screens.levelselect").state.packs:mutated(false)
-                        elem:update_size()
-                        elem:click(false)
-                    end
-                    table.remove(pack_list.elements, self.parent_index)
-                    pack_list:mutated(false)
-                    require("ui.elements.element").update_size(pack_list)
-                    ongoing_downloads[pack.game_version][pack.folder_name] = nil
-                end)()
-                return self.download_promise
-            end,
         })
         pack_list.elements[#pack_list.elements + 1] = elem
         pack_id_elem_map[pack.id] = elem

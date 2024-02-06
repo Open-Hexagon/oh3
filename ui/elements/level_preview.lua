@@ -2,6 +2,8 @@ local element = require("ui.elements.element")
 local game_handler = require("game_handler")
 local signal = require("ui.anim.signal")
 local theme = require("ui.theme")
+local threadify = require("threadify")
+local download = threadify.require("ui.overlay.packs.download_thread")
 local level_preview = {}
 level_preview.__index = setmetatable(level_preview, {
     __index = element,
@@ -23,7 +25,15 @@ function level_preview:new(game_version, pack, level, options)
         }, level_preview),
         options
     )
-    local promise = game_handler.get_preview_data(game_version, pack)
+    if options.has_pack == nil then
+        options.has_pack = true
+    end
+    local promise
+    if options.has_pack then
+        promise = game_handler.get_preview_data(game_version, pack)
+    else
+        promise = download.get_preview_data(game_version, pack)
+    end
     if promise then
         promise:done(function(data)
             obj.data = data[level]
