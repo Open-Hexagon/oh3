@@ -64,12 +64,15 @@ add_setting("UI", "area_based_gui_scale", false, {
         return true
     end,
 })
-add_setting("UI", "background_preview", true, {
+add_setting("UI", "background_preview", "minimal", {
+    options = { "minimal", "full" },
     onchange = function(value)
-        if value then
+        if value == "full" then
             require("ui.screens.levelselect.level").resume_preview()
+            require("ui.screens.levelselect.level").current_preview_active = false
         else
             require("game_handler").stop()
+            require("ui.screens.levelselect.level").current_preview_active = true
         end
     end,
 })

@@ -1,3 +1,4 @@
+local preview = require("ui.screens.levelselect.level_preview")
 local level_preview = require("ui.elements.level_preview")
 local game_handler = require("game_handler")
 local config = require("config")
@@ -8,18 +9,26 @@ local flex = require("ui.layout.flex")
 local options = require("ui.screens.levelselect.options")
 local theme = require("ui.theme")
 
+local t = {}
+
+t.current_preview = preview:new()
+t.current_preview_active = false
 local pending_promise
 local last_pack, last_level
 local set_preview_level = async(function(pack, level)
     last_pack = pack
     last_level = level
-    if config.get("background_preview") then
+    if config.get("background_preview") == "full" then
         if pending_promise then
             async.await(pending_promise)
             pending_promise = nil
         end
         game_handler.set_version(pack.game_version)
         pending_promise = game_handler.preview_start(pack.id, level.id, {})
+    else
+        game_handler.stop()
+        t.current_preview:set(pack.game_version, pack.id, level.id)
+        t.current_preview_active = true
     end
 end)
 
@@ -36,8 +45,6 @@ end)
 
 local level_element_selected
 
-local t = {}
-
 function t.resume_preview()
     if last_pack and last_level then
         set_preview_level(last_pack, last_level)
@@ -49,11 +56,11 @@ function t.create(state, pack, level, extra_info)
     extra_info.song = extra_info.song or "no song"
     extra_info.composer = extra_info.composer or "no composer"
     local music = extra_info.song .. "\n" .. extra_info.composer
-    local preview = level_preview:new(pack.game_version, pack.id, level.id, { style = { padding = 4 } })
+    local preview_elem = level_preview:new(pack.game_version, pack.id, level.id, { style = { padding = 4 } })
     return quad:new({
         child_element = flex:new({
             flex:new({
-                preview,
+                preview_elem,
                 flex:new({
                     label:new(level.name, { font_size = 40, wrap = true, style = { padding = 5 } }),
                     label:new(level.author, { font_size = 26, wrap = true, style = { padding = 5 } }),

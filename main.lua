@@ -198,6 +198,7 @@ local main = async(function()
             ui.open_screen("levelselect")
         end
     end)
+    local level = require("ui.screens.levelselect.level")
 
     -- function is called every frame by love
     return function()
@@ -238,6 +239,9 @@ local main = async(function()
             love.graphics.origin()
             love.graphics.clear(0, 0, 0, 1)
             game_handler.draw()
+            if level.current_preview_active and not game_handler.is_running() then
+                level.current_preview:draw(true)
+            end
             ui.draw()
             love.graphics.present()
         end

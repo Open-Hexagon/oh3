@@ -135,6 +135,10 @@ local function create_setting(name, property, value)
             layout:init_bindings()
         end
     elseif property.options and #property.options > 0 then
+        if type(value) ~= "string" then
+            config.set(name, property.default)
+            value = property.default
+        end
         -- multiple choice dropdown setting
         local option_quads = {}
         local dropdown

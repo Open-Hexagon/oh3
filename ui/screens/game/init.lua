@@ -4,6 +4,7 @@ local quad = require("ui.elements.quad")
 local game_handler = require("game_handler")
 local death_overlay = require("ui.overlay.death")
 local buttons = require("ui.screens.game.controls")
+local config = require("config")
 local args = require("args")
 
 local timer = quad:new({
@@ -46,7 +47,7 @@ game_handler.onupdate = function()
         if game_handler.is_replaying() then
             if not args.render then
                 -- TODO: show appropriate ui when replay ends (retry/back buttons would be wrong here)
-                back_to_menu()
+                back_to_menu(config.get("background_preview") ~= "full")
             end
         elseif not death_overlay.is_open then
             death_overlay:open()

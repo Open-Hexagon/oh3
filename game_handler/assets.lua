@@ -442,10 +442,12 @@ function assets.get_pack(version, id, headless)
         local style_module = require("compat.game" .. pack_data.game_version .. ".style")
         local set_function = style_module.select or style_module.set
         for level_id, level in pairs(pack_data.levels) do
-            -- get side count
+            -- get side count and rotation speed
             local sides = 6
+            local rotation_speed = 0
             if version == 192 then
                 sides = level.sides or 6
+                rotation_speed = level.rotation_speed or 0
             else
                 local lua_path = pack_data.path .. "/" .. level.lua_file
                 if love.filesystem.getInfo(lua_path) then
@@ -454,9 +456,15 @@ function assets.get_pack(version, id, headless)
                     for match in code:gmatch("function.-onInit.-l_setSides%((.-)%).-end") do
                         sides = tonumber(match) or sides
                     end
+                    -- match set rotation speed calls in the lua file to get the rotation speed
+                    for match in code:gmatch("function.-onInit.-l_setRotationSpeed%((.-)%).-end") do
+                        rotation_speed = tonumber(match) or rotation_speed
+                    end
                 end
             end
             sides = math.max(sides, 3)
+            -- convert to rad/s
+            rotation_speed = rotation_speed * math.pi * 10 / 3
 
             -- get colors
             set_function(pack_data.styles[level.style_id])
@@ -491,6 +499,7 @@ function assets.get_pack(version, id, headless)
                 r, g, b, a = style_module.get_second_color()
             end
             pack_data.preview_data[level_id] = {
+                rotation_speed = rotation_speed,
                 sides = sides,
                 background_colors = colors,
                 pivot_color = main_color,

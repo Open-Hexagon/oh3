@@ -1,9 +1,7 @@
 local element = require("ui.elements.element")
-local game_handler = require("game_handler")
+local preview = require("ui.screens.levelselect.level_preview")
 local signal = require("ui.anim.signal")
 local theme = require("ui.theme")
-local threadify = require("threadify")
-local download = threadify.require("ui.overlay.packs.download_thread")
 local level_preview = {}
 level_preview.__index = setmetatable(level_preview, {
     __index = element,
@@ -13,9 +11,7 @@ local SIZE = 96
 function level_preview:new(game_version, pack, level, options)
     local obj = element.new(
         setmetatable({
-            game_version = game_version,
-            pack = pack,
-            level = level,
+            preview = preview:new(),
             background_color = theme.get("background_color"),
             border_color = theme.get("border_color"),
             border_thickness = theme.get("border_thickness"),
@@ -25,20 +21,7 @@ function level_preview:new(game_version, pack, level, options)
         }, level_preview),
         options
     )
-    if options.has_pack == nil then
-        options.has_pack = true
-    end
-    local promise
-    if options.has_pack then
-        promise = game_handler.get_preview_data(game_version, pack)
-    else
-        promise = download.get_preview_data(game_version, pack)
-    end
-    if promise then
-        promise:done(function(data)
-            obj.data = data[level]
-        end)
-    end
+    obj.preview:set(game_version, pack, level, options.has_pack)
     return obj
 end
 
@@ -55,42 +38,14 @@ end
 
 function level_preview:draw_element()
     local half_size = SIZE * self.scale / 2
-    if self.data then
+    if self.preview.data then
         love.graphics.translate(half_size, half_size)
         love.graphics.scale(self.scale, self.scale)
-        self.vertices = self.vertices or {}
-        local distance = 48
-        local pivot_thickness = 2
-        for i = 1, self.data.sides do
-            local angle1 = i * 2 * math.pi / self.data.sides - math.pi / 2
-            local cos1 = math.cos(angle1)
-            local sin1 = math.sin(angle1)
-            local angle2 = angle1 + 2 * math.pi / self.data.sides
-            local cos2 = math.cos(angle2)
-            local sin2 = math.sin(angle2)
-            -- background
-            love.graphics.setColor(self.data.background_colors[i])
-            love.graphics.polygon("fill", 0, 0, cos1 * distance, sin1 * distance, cos2 * distance, sin2 * distance)
-            self.vertices[(i - 1) * 2 + 1] = cos1 * distance
-            self.vertices[i * 2] = sin1 * distance
-        end
-        -- pivot
-        love.graphics.setColor(self.data.pivot_color)
-        local pivot_mult = 1 / 3 + 1 / distance
-        love.graphics.scale(pivot_mult, pivot_mult)
-        love.graphics.setLineWidth(pivot_thickness / pivot_mult)
-        love.graphics.polygon("line", self.vertices)
-        love.graphics.scale(1 / pivot_mult, 1 / pivot_mult)
-        -- cap
-        local cap_mult = 1 / 3
-        love.graphics.scale(cap_mult, cap_mult)
-        love.graphics.setColor(self.data.cap_color)
-        love.graphics.polygon("fill", self.vertices)
-        love.graphics.scale(1 / cap_mult, 1 / cap_mult)
+        self.preview:draw()
         -- border
         love.graphics.setColor(self.border_color)
         love.graphics.setLineWidth(self.border_thickness)
-        love.graphics.polygon("line", self.vertices)
+        love.graphics.polygon("line", self.preview.vertices)
     else
         love.graphics.setColor(self.border_color)
         love.graphics.setLineWidth(self.scale * 5)
