@@ -82,21 +82,19 @@ return function(public, game)
     end
     env.e_messageAdd = function(message, duration)
         game.event_timeline:append_do(function()
-            add_message(message, duration, true)
-        end)
-    end
-    env.e_messageAddImportant = function(message, duration)
-        game.event_timeline:append_do(function()
             if public.first_play then
                 add_message(message, duration, true)
             end
         end)
     end
+    env.e_messageAddImportant = function(message, duration)
+        game.event_timeline:append_do(function()
+            add_message(message, duration, true)
+        end)
+    end
     env.e_messageAddImportantSilent = function(message, duration)
         game.event_timeline:append_do(function()
-            if public.first_play then
-                add_message(message, duration, false)
-            end
+            add_message(message, duration, false)
         end)
     end
     env.e_clearMessages = function()

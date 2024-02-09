@@ -20,9 +20,9 @@ else
         count = count + 1
         return io.open(save_dir .. name, "w")
     end
-    
+
     function tmpfile.clear()
-	count = 0
+        count = 0
     end
 end
 
