@@ -98,7 +98,7 @@ add_setting("Audio", "background_preview_sound_volume", 0, {
 })
 add_setting("General", "preload_all_packs", false)
 add_setting("Display", "fps_limit", 200, { min = 30, max = 1001, step = 5 })
-add_setting("Display", "fullscreen", "exclusive", {
+add_setting("Display", "fullscreen", "windowed", {
     options = { "exclusive", "borderless", "windowed" },
     onchange = function(value)
         if love.window and love.window.isOpen() then
