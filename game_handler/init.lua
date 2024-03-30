@@ -257,6 +257,35 @@ function game_handler.process_event(name, ...)
             msaa = 4,
         })
     end
+    if name == "customkeydown" and game_handler.is_running() and not input.is_replaying() then
+        local key = ...
+        if not current_game.preview_mode then
+            if key == "exit" then
+                local death_overlay = require("ui.overlay.death")
+                if death_overlay.is_open then
+                    death_overlay.layout.elements[2]:click()
+                else
+                    if current_game.death_callback then
+                        current_game.death_callback()
+                    end
+                    game_handler.stop()
+                    require("ui.screens.levelselect.score").refresh()
+                    game_handler.onupdate()
+                end
+            elseif key == "restart" then
+                local death_overlay = require("ui.overlay.death")
+                if death_overlay.is_open then
+                    death_overlay.layout.elements[1]:click()
+                else
+                    if current_game.death_callback then
+                        current_game.death_callback()
+                    end
+                    game_handler.stop()
+                    game_handler.retry()
+                end
+            end
+        end
+    end
     if current_game then
         -- allow game modules to have their own event handlers
         if current_game.running and current_game[name] ~= nil then

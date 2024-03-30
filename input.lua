@@ -88,7 +88,7 @@ local mapping = {
 ---records changes if recording
 ---gets input state from replay if replaying
 ---@param input_name string
----@param add_ui_button boolean
+---@param add_ui_button boolean?
 ---@return boolean
 function input.get(input_name, add_ui_button)
     input_name = mapping[input_name] or input_name

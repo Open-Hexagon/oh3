@@ -1,6 +1,7 @@
 local input = require("input")
 local key_repeat = {}
-local keys = { "ui_up", "ui_down", "ui_left", "ui_right", "ui_click", "ui_backspace", "ui_delete" }
+local keys = { "ui_up", "ui_down", "ui_left", "ui_right", "ui_click", "ui_backspace", "ui_delete", "exit", "restart" }
+local modules = { "ui", "game_handler" }
 local states = {}
 local press_timers = {}
 local press_timer_repeat = {}
@@ -20,10 +21,13 @@ function key_repeat.update(dt)
             press_timer_repeat[i] = 0.4
         end
         if state ~= states[i] then
-            if state then
-                require("ui").process_event("customkeydown", keys[i])
-            else
-                require("ui").process_event("customkeyup", keys[i])
+            for j = 1, #modules do
+                local module = require(modules[j])
+                if state then
+                    module.process_event("customkeydown", keys[i])
+                else
+                    module.process_event("customkeyup", keys[i])
+                end
             end
         end
         states[i] = state
