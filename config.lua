@@ -76,7 +76,7 @@ add_setting("UI", "background_preview", "minimal", {
         end
     end,
 })
-add_setting("UI", "background_preview_has_text", false, { dependencies = { background_preview = true } })
+add_setting("UI", "background_preview_has_text", false, { dependencies = { background_preview = "full" } })
 add_setting("UI", "in-game_buttons", true)
 add_setting("Audio", "background_preview_music_volume", 0, {
     min = 0,
@@ -85,7 +85,7 @@ add_setting("Audio", "background_preview_music_volume", 0, {
     onchange = function(value)
         require("game_handler").set_volume(value)
     end,
-    dependencies = { background_preview = true },
+    dependencies = { background_preview = "full" },
 })
 add_setting("Audio", "background_preview_sound_volume", 0, {
     min = 0,
@@ -94,7 +94,7 @@ add_setting("Audio", "background_preview_sound_volume", 0, {
     onchange = function(value)
         require("game_handler").set_volume(nil, value)
     end,
-    dependencies = { background_preview = true },
+    dependencies = { background_preview = "full" },
 })
 add_setting("General", "preload_all_packs", false)
 add_setting("Display", "fps_limit", 200, { min = 30, max = 1001, step = 5 })
