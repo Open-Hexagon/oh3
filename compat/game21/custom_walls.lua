@@ -21,7 +21,7 @@ local function create_cw(deadly, collision)
     cw.visible = true
     cw.old_vertices = cw.old_vertices or { 0, 0, 0, 0, 0, 0, 0, 0 }
     cw.vertices = cw.vertices or { 0, 0, 0, 0, 0, 0, 0, 0 }
-    cw.colors = cw.colors or { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+    cw.colors = cw.colors or { 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 }
     cw.collision = collision
     cw.deadly = deadly
     cw.killing_side = 0
