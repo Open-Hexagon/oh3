@@ -52,7 +52,9 @@ function lua_runtime.init_env(game, public)
         tostring = tostring,
         load = function(...)
             local f = load(...)
-            setfenv(f, lua_runtime.env)
+            if f then
+                setfenv(f, lua_runtime.env)
+            end
             return f
         end,
     }

@@ -36,8 +36,10 @@ function custom_timelines.add_lua_functions(game)
     function lua.ct_eval(handle, code)
         local timeline = custom_timelines.get(handle)
         local fn = loadstring(code)
-        setfenv(fn, lua_runtime.env)
-        timeline:append_do(fn)
+        if fn then
+            setfenv(fn, lua_runtime.env)
+            timeline:append_do(fn)
+        end
     end
 
     function lua.ct_kill(handle)

@@ -9,8 +9,10 @@ return function(public, game)
     -- Main timeline functions
     env.t_eval = function(code)
         local fn = loadstring(code)
-        setfenv(fn, env)
-        game.main_timeline:append_do(fn)
+        if fn then
+            setfenv(fn, env)
+            game.main_timeline:append_do(fn)
+        end
     end
     env.t_clear = function()
         game.main_timeline:clear(true)
@@ -35,8 +37,10 @@ return function(public, game)
     -- Event timeline functions
     env.e_eval = function(code)
         local fn = loadstring(code)
-        setfenv(fn, env)
-        game.event_timeline:append_do(fn)
+        if fn then
+            setfenv(fn, env)
+            game.event_timeline:append_do(fn)
+        end
     end
     env.e_kill = function()
         game.event_timeline:append_do(function()
