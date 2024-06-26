@@ -387,6 +387,7 @@ function assets.get_pack(version, id, headless)
                     end
                 end
                 if pack_data.game_version ~= 21 then
+                    music_json.segments = music_json.segments or {}
                     for i = 1, #music_json.segments do
                         if type(music_json.segments[i]) == "table" then
                             music_json.segments[i].time = math.floor(music_json.segments[i].time)
