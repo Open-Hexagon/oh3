@@ -36,6 +36,7 @@ return function(game)
         style.set_cap_color(2)
     end
     env.s_setCapColorByIndex = function(index)
+        index = index or 0
         style.set_cap_color(4 + index)
     end
     env.s_getMainColor = function()
