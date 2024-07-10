@@ -82,7 +82,7 @@ function game.increment_difficulty()
             * (game.level_data.rotation_speed > 0 and 1 or -1)
     end
     status.fast_spin = game.level_data.fast_spin
-    game.main_timeline:append_do(function()
+    game.main_timeline:at_start_do(function()
         game.side_change(math.random(game.level_data.sides_min, game.level_data.sides_max))
     end)
 end
