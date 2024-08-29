@@ -5,7 +5,7 @@ local style = {}
 
 local function set_default_color(color)
     for i = 1, 4 do
-        color[i] = color[i] or 0
+        color[i] = (color[i] or 0) % 256
     end
 end
 
