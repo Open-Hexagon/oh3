@@ -62,6 +62,9 @@ function assets.set_volume(volume)
 end
 
 function assets.get_pack_sound(pack, id)
+    if id:match("_(.*)") == nil then
+        return assets.get_sound(id)
+    end
     if cached_sounds[id] == nil then
         cached_sounds[id] = audio_module.new_static(pack.path .. "Sounds/" .. id:match("_(.*)"))
         cached_sounds[id].volume = sound_volume
