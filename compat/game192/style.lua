@@ -21,7 +21,6 @@ local function set_color_data_defaults(data)
     data.result = { 0, 0, 0, 0 }
     set_default_color(data.value)
     set_default_color(data.pulse)
-    set_default_color(data.result)
 end
 
 local root
@@ -89,13 +88,13 @@ function style.calculate_color(color_data)
         else
             if color_data.dynamic_offset then
                 for i = 1, 3 do
-                    color_data.result[i] = color_data.value[i] + current_hue_color[i] / color_data.offset
+                    color_data.result[i] = (color_data.value[i] + current_hue_color[i] / color_data.offset) % 256
                 end
                 -- hue color alpha is always 255
-                color_data.result[4] = color_data.value[4] + 255
+                color_data.result[4] = (color_data.value[4] + 255) % 256
             else
                 for i = 1, 3 do
-                    color_data.result[i] = current_hue_color[i] / color_data.dynamic_darkness
+                    color_data.result[i] = (current_hue_color[i] / color_data.dynamic_darkness) % 256
                 end
                 -- hue color alpha is always 255
                 color_data.result[4] = 255
