@@ -1,7 +1,11 @@
 -- small async implementation using coroutines to suspend a function awaiting a callback
 
 ---@class promise
+---@field done_callbacks table
+---@field error_callbacks table
 ---@field executed boolean
+---@field result any
+---@field resolved boolean
 ---@private done_callbacks table
 local promise = {}
 promise.__index = promise
@@ -56,7 +60,7 @@ function promise:done(callback)
                 error("Uncaught error in done callback of promise")
             end, unpack(self.result))
         end
-        return
+        return self
     end
     self.done_callbacks[#self.done_callbacks + 1] = callback
     return self
@@ -74,7 +78,7 @@ function promise:err(callback)
                 error("Uncaught error in promise")
             end, unpack(self.result))
         end
-        return
+        return self
     end
     self.error_callbacks[#self.error_callbacks + 1] = callback
     return self
