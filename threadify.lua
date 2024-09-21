@@ -62,7 +62,6 @@ else
             local thread_table = {
                 resolvers = {},
                 rejecters = {},
-                free_indices = {},
             }
             local global_threads = threads_channel:peek()
             if global_threads and global_threads[require_string] then
@@ -88,18 +87,21 @@ else
                 return function(...)
                     local msg = { -1, key, ... }
                     return async.promise:new(function(resolve, reject)
-                        local index = 0
-                        if #thread.free_indices == 0 then
-                            index = #thread.resolvers + 1
-                        else
-                            local last_index = #thread.free_indices
-                            index = thread.free_indices[last_index]
-                            thread.free_indices[last_index] = nil
-                        end
-                        msg[1] = index
-                        love.thread.getChannel(require_string .. "_cmd"):push(msg)
-                        thread.resolvers[index] = resolve
-                        thread.rejecters[index] = reject
+                        local cmd_channel = love.thread.getChannel(require_string .. "_cmd")
+                        local request_id = 1
+                        cmd_channel:performAtomic(function(channel)
+                            local last_cmd = cmd_channel:peek()
+                            if last_cmd then
+                                request_id = last_cmd[1] + 1
+                            end
+                            while thread.resolvers[request_id] ~= nil do
+                                request_id = request_id + 1
+                            end
+                            msg[1] = request_id
+                            thread.resolvers[request_id] = resolve
+                            thread.rejecters[request_id] = reject
+                            channel:push(msg)
+                        end)
                     end)
                 end
             end,
@@ -112,14 +114,12 @@ else
             local thread = threads[require_string]
             local channel = love.thread.getChannel(require_string .. "_out")
             local result
-            channel:performAtomic(function()
-                local check_result = channel:peek()
-                if check_result then
-                    if thread.resolvers[check_result[1]] and thread.rejecters[check_result[1]] then
-                        result = channel:pop()
-                    end
+            local check_result = channel:peek()
+            if check_result then
+                if thread.resolvers[check_result[1]] and thread.rejecters[check_result[1]] then
+                    result = channel:pop()
                 end
-            end)
+            end
             if result then
                 if result[2] then
                     thread.resolvers[result[1]](unpack(result, 3))
@@ -129,7 +129,6 @@ else
                 end
                 thread.resolvers[result[1]] = nil
                 thread.rejecters[result[1]] = nil
-                thread.free_indices[#thread.free_indices + 1] = result[1]
             end
         end
     end
