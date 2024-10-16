@@ -1,5 +1,4 @@
 local args = require("args")
-local uv = require("luv")
 local playsound = require("compat.game21.playsound")
 local assets = require("compat.game20.assets")
 local make_fake_config = require("compat.game20.fake_config")
@@ -49,7 +48,7 @@ local instance_colors = {}
 public.start = async(function(pack_id, level_id, level_options)
     level_options.difficulty_mult = level_options.difficulty_mult or 1
     game.difficulty_mult = level_options.difficulty_mult
-    local seed = math.floor(uv.hrtime())
+    local seed = math.floor(love.timer.getTime() * 1000000000)
     math.randomseed(input.next_seed(seed))
     game.pack = async.await(assets.get_pack(pack_id))
     level.set(game.pack.levels[level_id])

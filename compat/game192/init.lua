@@ -7,7 +7,6 @@ local Timeline = require("compat.game192.timeline")
 local set_color = require("compat.game21.color_transform")
 local make_fake_config = require("compat.game192.fake_config")
 local music = require("compat.music")
-local uv = require("luv")
 local async = require("async")
 local style = require("compat.game192.style")
 local status = require("compat.game192.status")
@@ -128,7 +127,7 @@ public.start = async(function(pack_folder, level_id, level_options)
     public.tickrate = 960
     level_options.difficulty_mult = level_options.difficulty_mult or 1
     local difficulty_mult = level_options.difficulty_mult
-    local seed = math.floor(uv.hrtime() * 1000)
+    local seed = math.floor(love.timer.getTime() * 1000000000)
     math.randomseed(input.next_seed(seed))
 
     game.real_time = 0

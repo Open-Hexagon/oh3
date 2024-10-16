@@ -8,7 +8,6 @@ local Tris = require("compat.game21.dynamic_tris")
 local set_color = require("compat.game21.color_transform")
 local assets = require("compat.game21.assets")
 local utils = require("compat.game192.utils")
-local uv = require("luv")
 local pulse = require("compat.game21.pulse")
 local beat_pulse = require("compat.game21.beat_pulse")
 local pseudo3d = require("compat.game21.pseudo3d")
@@ -82,7 +81,7 @@ public.start = async(function(pack_id, level_id, level_options)
     end
     level_options.difficulty_mult = level_options.difficulty_mult or 1
     local difficulty_mult = level_options.difficulty_mult
-    local seed = uv.hrtime()
+    local seed = math.floor(love.timer.getTime() * 1000000000)
     math.randomseed(game_input.next_seed(seed))
     math.random()
     game.pack_data = async.await(assets.get_pack(pack_id))

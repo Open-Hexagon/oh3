@@ -3,7 +3,6 @@ local msgpack = require("extlibs.msgpack.msgpack")
 local replay = require("game_handler.replay")
 local game_handler = require("game_handler")
 local config = require("config")
-local uv = require("luv")
 local threadify = require("threadify")
 
 -- avoid local redefinition
@@ -47,7 +46,7 @@ local function get_replay_save_path(hash)
 end
 
 function api.verify_replay(compressed_replay, time, steam_id)
-    local start = uv.hrtime()
+    local start = love.timer.getTime()
     local decoded_replay = replay:new_from_data(compressed_replay)
     local around_time = 0
     local last_around_time = 0
@@ -59,8 +58,8 @@ function api.verify_replay(compressed_replay, time, steam_id)
         love.timer.sleep(0.01)
     end
     game_handler.run_until_death(function()
-        local now = uv.hrtime()
-        around_time = math.floor((now - start) / (10 ^ 9) % 10)
+        local now = love.timer.getTime()
+        around_time = math.floor((now - start) % 10)
         if math.abs(around_time - last_around_time) > 2 then
             -- print progress every 10s
             log(
