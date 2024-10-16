@@ -1,11 +1,10 @@
 local ffi = require("ffi")
 local bit = require("bit")
-local luv = require("luv")
 local M = {}
 
 --- Load clib
 local clib = (function()
-    local path, _
+    local path
 
     if vim then
         if vim.g.sql_clib_path then
@@ -15,12 +14,12 @@ local clib = (function()
     end
 
     if not path then
-        path, _ = luv.os_getenv("LIBSQLITE")
+        path = os.getenv("LIBSQLITE")
     end
 
     local clib_path = path
-        or (function() --- try to find libsqlite.Linux and Macos support only.
-            local os = luv.os_uname()
+        or (function() --- try to find libsqlite.
+            local os = love.system.getOS()
 
             local file_exists = function(file_path)
                 local f = io.open(file_path, "r")
@@ -32,7 +31,7 @@ local clib = (function()
                 end
             end
 
-            if os.sysname == "Linux" then
+            if os == "Linux" or os == "Android" then
                 local linux_paths = {
                     "/usr/lib/x86_64-linux-gnu/libsqlite3.so",
                     "/usr/lib/x86_64-linux-gnu/libsqlite3.so.0",
@@ -47,10 +46,12 @@ local clib = (function()
                     end
                 end
                 -- assuming android (file does not exist but dlopen succeeds anyway)
+		-- (Keeping this in the linux block in case this isn't an android only thing)
                 return "libsqlite3.so"
             end
 
-            if os.sysname == "Darwin" then
+            -- assuming iOS works the same as OS X (I have no idea if this is the case)
+            if os == "OS X" or os == "iOS" then
                 local osx_paths = {
                     "/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib",
                     "/usr/local/opt/sqlite3/lib/libsqlite3.dylib",
@@ -64,8 +65,9 @@ local clib = (function()
                 return "lib/libsqlite3.dylib"
             end
 
-            -- assuming windows
-            return "lib/libsqlite3.dll"
+	    if os == "Windows" then
+                return "lib/libsqlite3.dll"
+            end
         end)()
 
     return ffi.load(clib_path or "libsqlite3")
