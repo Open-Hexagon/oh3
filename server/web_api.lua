@@ -13,7 +13,7 @@ local game_handler = require("game_handler")
 local promise = game_handler.init()
 while not promise.executed do
     threadify.update()
-    uv.sleep(10)
+    love.timer.sleep(0.01)
 end
 local packs = game_handler.get_packs()
 

@@ -1,12 +1,9 @@
--- require can't find it on android (other platforms will just silently fail and put in nil (the love.system module is not available))
-package.preload.luv = package.loadlib("libluv.so", "luaopen_luv")
 local log = require("log")("ui.overlay.packs.download_thread")
 local json = require("extlibs.json.json")
 local https = require("https")
 local threadify = require("threadify")
 local assets = threadify.require("game_handler.assets")
 local url = require("socket.url")
-local uv = require("luv")
 
 local server_http_url, server_https_url
 local tmp_folder = "download_cache/"
@@ -61,7 +58,7 @@ function download.get_pack_list(start, stop)
         end)
         while not promise.executed do
             threadify.update()
-            uv.sleep(10)
+            love.timer.sleep(0.01)
         end
         if not pack_list then
             error("could not get current pack list")

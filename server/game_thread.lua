@@ -11,7 +11,7 @@ do
     local promise = game_handler.init()
     while not promise.executed do
         threadify.update()
-        uv.sleep(10)
+        love.timer.sleep(0.01)
     end
 end
 
@@ -56,7 +56,7 @@ function api.verify_replay(compressed_replay, time, steam_id)
     local promise = game_handler.replay_start(decoded_replay)
     while not promise.executed do
         threadify.update()
-        uv.sleep(10)
+        love.timer.sleep(0.01)
     end
     game_handler.run_until_death(function()
         local now = uv.hrtime()

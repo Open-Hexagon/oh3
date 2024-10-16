@@ -4,7 +4,6 @@ Edited version of https://raw.githubusercontent.com/thenumbernine/http-lua/maste
 local socket = require("socket")
 local url = require("socket.url")
 local json = require("json.json")
-local uv = require("luv")
 
 local mimes = {
     ["3gp"] = "video/3gpp",
@@ -808,7 +807,7 @@ function HTTP:run()
             end
         end
         if self.working == 0 then
-            uv.sleep(10)
+            love.timer.sleep(0.01)
         end
     end
 end
