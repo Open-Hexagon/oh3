@@ -4,6 +4,7 @@ local replay = require("game_handler.replay")
 local game_handler = require("game_handler")
 local config = require("config")
 local threadify = require("threadify")
+require("love.timer")
 
 -- avoid local redefinition
 do

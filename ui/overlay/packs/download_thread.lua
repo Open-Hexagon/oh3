@@ -4,6 +4,7 @@ local https = require("https")
 local threadify = require("threadify")
 local assets = threadify.require("game_handler.assets")
 local url = require("socket.url")
+require("love.timer")
 
 local server_http_url, server_https_url
 local tmp_folder = "download_cache/"

@@ -8,6 +8,7 @@ local log = require("log")("server.web_api")
 local zip = require("extlibs.love-zip")
 local threadify = require("threadify")
 local game_handler = require("game_handler")
+require("love.timer")
 
 local promise = game_handler.init()
 while not promise.executed do

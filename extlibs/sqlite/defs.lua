@@ -1,5 +1,6 @@
 local ffi = require("ffi")
 local bit = require("bit")
+require("love.system")
 local M = {}
 
 --- Load clib

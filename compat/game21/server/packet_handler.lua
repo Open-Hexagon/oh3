@@ -5,6 +5,7 @@ local packet_types = require("compat.game21.server.packet_types")
 local version = require("server.version")
 local sodium = require("extlibs.luasodium")
 local game = require("server.game")
+require("love.timer")
 
 local packet_handler = {}
 local server_pk, server_sk = sodium.crypto_kx_keypair()
