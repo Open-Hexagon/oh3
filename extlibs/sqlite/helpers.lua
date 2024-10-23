@@ -1,5 +1,4 @@
 local M = {}
-local luv = require("luv")
 local a = require("extlibs.sqlite.assert")
 local u = require("extlibs.sqlite.utils")
 local fmt = string.format
@@ -73,7 +72,7 @@ M.run = function(func, o)
         --- Run once pre-init
         if o.tbl_exists == nil then
             o.tbl_exists = o.db:exists(o.name)
-            o.mtime = o.db.uri and (luv.fs_stat(o.db.uri) or { mtime = {} }).mtime.sec or nil
+            o.mtime = o.db.uri and (love.filesystem.getInfo(o.db.uri) or {}).modtime or nil
             rawset(
                 o,
                 "has_content",

@@ -4,7 +4,6 @@ local strfun = require("extlibs.sqlite.strfun")
 local profile = {}
 
 local profile_path = "profiles/"
-local db_path = love.filesystem.getSaveDirectory() .. "/" .. profile_path
 if not love.filesystem.getInfo(profile_path) then
     love.filesystem.createDirectory(profile_path)
 end
@@ -34,7 +33,7 @@ end
 ---open or create a new profile
 ---@param name string
 function profile.open_or_new(name)
-    local path = db_path .. name .. ".db"
+    local path = profile_path .. name .. ".db"
     database = sqlite({
         uri = path,
         scores = {

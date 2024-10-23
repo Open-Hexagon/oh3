@@ -1,5 +1,4 @@
 local u = require("sql.utils")
-local luv = require("luv")
 
 local Cache = {}
 
@@ -62,8 +61,8 @@ end
 ---@param query sqlite_query_select
 ---@return table
 function Cache:get(query)
-    local stat = luv.fs_stat(self.db.uri)
-    local mtime = stat and stat.mtime.sec
+    local stat = love.filesystem.getInfo(self.db.uri)
+    local mtime = stat and stat.modtime
 
     if self.db.modified or mtime ~= self.mtime then
         self:clear(true)

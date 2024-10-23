@@ -721,7 +721,7 @@ M.connect = function(uri, opts)
         open_mode = M.open_modes[open_mode or "rwc"]
     end
 
-    local code = clib.sqlite3_open_v2(uri, conn, open_mode, nil)
+    local code = clib.sqlite3_open_v2(love.filesystem.getSaveDirectory() .. "/" .. uri, conn, open_mode, nil)
 
     if code ~= M.flags.ok then
         error(("sqlite.lua: couldn't connect to sql database, ERR: %s"):format(M.last_errmsg(conn[0])))

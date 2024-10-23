@@ -1,4 +1,3 @@
-local luv = require("luv")
 local M = {}
 
 M.if_nil = function(a, b)
@@ -102,11 +101,6 @@ M.expand = function(path)
     local expanded
     if string.find(path, "~") then
         expanded = string.gsub(path, "^~", os.getenv("HOME"))
-    elseif string.find(path, "^%.") then
-        expanded = luv.fs_realpath(path)
-        if expanded == nil then
-            error("Path not valid")
-        end
     elseif string.find(path, "%$") then
         local rep = string.match(path, "([^%$][^/]*)")
         local val = os.getenv(string.upper(rep))

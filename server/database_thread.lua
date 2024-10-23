@@ -6,7 +6,7 @@ local msgpack = require("extlibs.msgpack.msgpack")
 local api = {}
 
 local server_path = "server/"
-local db_path = love.filesystem.getSaveDirectory() .. "/" .. server_path .. "server.db"
+local db_path = server_path .. "server.db"
 local replay_path = server_path .. "replays/"
 love.filesystem.createDirectory(server_path)
 love.filesystem.createDirectory(replay_path)
