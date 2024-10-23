@@ -24,11 +24,11 @@ function quads:_resize()
     end
 end
 
-function quads:set_instance_attribute_array(attribute, attr_type, components, values)
+function quads:set_instance_attribute_array(attribute, attr_format, bindinglocation, values)
     if self.instance_meshes[attribute] == nil or #values ~= self.instance_meshes[attribute]:getVertexCount() then
         -- give some fake draw mode as love 12 does not like nil as draw mode anymore
         self.instance_meshes[attribute] =
-            love.graphics.newMesh({ { attribute, attr_type, components } }, values, "strip", "stream")
+            love.graphics.newMesh({ { name = attribute, format = attr_format, location = bindinglocation } }, values, "strip", "stream")
         self.mesh:attachAttribute(attribute, self.instance_meshes[attribute], "perinstance")
     else
         self.instance_meshes[attribute]:setVertices(values)

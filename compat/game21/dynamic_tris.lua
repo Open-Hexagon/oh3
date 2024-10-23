@@ -14,11 +14,11 @@ function tris:_resize()
     end
 end
 
-function tris:set_instance_attribute_array(attribute, attr_type, components, values)
+function tris:set_instance_attribute_array(attribute, attr_type, bindinglocation, values)
     if self.instance_meshes[attribute] == nil or #values ~= self.instance_meshes[attribute]:getVertexCount() then
         -- give some fake draw mode as love 12 does not like nil as draw mode anymore
         self.instance_meshes[attribute] =
-            love.graphics.newMesh({ { attribute, attr_type, components } }, values, "strip", "stream")
+            love.graphics.newMesh({ { name = attribute, format = attr_type, location = bindinglocation } }, values, "strip", "stream")
         self.mesh:attachAttribute(attribute, self.instance_meshes[attribute], "perinstance")
     else
         self.instance_meshes[attribute]:setVertices(values)

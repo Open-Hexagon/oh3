@@ -365,8 +365,8 @@ function public.draw(screen)
             instance_colors[i][4] = a
             a = (a - alpha_falloff) % 256
         end
-        main_quads:set_instance_attribute_array("instance_offset", "float", 2, instance_offsets)
-        main_quads:set_instance_attribute_array("instance_color", "float", 4, instance_colors)
+        main_quads:set_instance_attribute_array("instance_offset", "floatvec2", 3, instance_offsets)
+        main_quads:set_instance_attribute_array("instance_color", "floatvec4", 4, instance_colors)
         love.graphics.setShader(layer_shader)
         main_quads:draw_instanced(depth)
         love.graphics.setShader()
@@ -463,8 +463,8 @@ public.init = async(function(conf, audio)
         message_font = love.graphics.newFont("assets/font/imagine.ttf", 38)
         layer_shader = love.graphics.newShader(
             [[
-                attribute vec2 instance_offset;
-                attribute vec4 instance_color;
+                layout(location = 3) in vec2 instance_offset;
+                layout(location = 4) in vec4 instance_color;
                 varying vec4 instance_color_out;
 
                 vec4 position(mat4 transform_projection, vec4 vertex_position)

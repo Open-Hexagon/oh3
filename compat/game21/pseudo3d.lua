@@ -14,8 +14,8 @@ function pseudo3d.init(pass_game)
     if not args.headless then
         layer_shader = love.graphics.newShader(
             [[
-                attribute vec2 instance_position;
-                attribute vec4 instance_color;
+                layout(location = 3) in vec2 instance_position;
+                layout(location = 4) in vec4 instance_color;
                 varying vec4 instance_color_out;
 
                 vec4 position(mat4 transform_projection, vec4 vertex_position)
@@ -123,12 +123,12 @@ function pseudo3d.draw(set_render_stage, wall_quads, pivot_quads, player_tris, b
             player_layer_colors[j][4] = a
         end
         if depth > 0 then
-            wall_quads:set_instance_attribute_array("instance_position", "float", 2, layer_offsets)
-            wall_quads:set_instance_attribute_array("instance_color", "float", 4, wall_layer_colors)
-            pivot_quads:set_instance_attribute_array("instance_position", "float", 2, layer_offsets)
-            pivot_quads:set_instance_attribute_array("instance_color", "float", 4, pivot_layer_colors)
-            player_tris:set_instance_attribute_array("instance_position", "float", 2, layer_offsets)
-            player_tris:set_instance_attribute_array("instance_color", "float", 4, player_layer_colors)
+            wall_quads:set_instance_attribute_array("instance_position", "floatvec2", 3, layer_offsets)
+            wall_quads:set_instance_attribute_array("instance_color", "floatvec4", 4, wall_layer_colors)
+            pivot_quads:set_instance_attribute_array("instance_position", "floatvec2", 3, layer_offsets)
+            pivot_quads:set_instance_attribute_array("instance_color", "floatvec4", 4, pivot_layer_colors)
+            player_tris:set_instance_attribute_array("instance_position", "floatvec2", 3, layer_offsets)
+            player_tris:set_instance_attribute_array("instance_color", "floatvec4", 4, player_layer_colors)
 
             set_render_stage(1, layer_shader, true)
             wall_quads:draw_instanced(depth)
