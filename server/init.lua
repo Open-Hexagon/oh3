@@ -5,26 +5,34 @@ local packet_handler21 = require("compat.game21.server.packet_handler")
 local packet_types21 = require("compat.game21.server.packet_types")
 local database = require("server.database")
 local version = require("server.version")
-local uv = require("luv")
+local socket = require("socket")
 
 database.set_identity(0)
 
-local function create_server(host, port, on_connection)
-    local server = uv.new_tcp()
-    server:bind(host, port)
+local function run_server(host, port, on_connection)
+    local server = assert(socket.bind(host, port))
+    assert(server:settimeout(0, "b"))
+    log("listening on", server:getsockname())
 
-    server:listen(128, function(err)
-        -- Make sure there was no problem setting up listen
-        assert(not err, err)
-
-        -- Accept the client
-        local client = uv.new_tcp()
-        server:accept(client)
-
-        on_connection(client)
-    end)
-
-    return server
+    local coroutines = {}
+    while true do
+        local client = server:accept()
+        if client then
+            assert(client:setoption("keepalive", true))
+            assert(client:settimeout(0, "b"))
+            local new_coroutine = coroutine.create(on_connection)
+            local index = #coroutines + 1
+            coroutines[index] = new_coroutine
+            coroutine.resume(new_coroutine, client, server)
+        end
+        for i = #coroutines, 1, -1 do
+            if coroutine.status(coroutines[i]) == "dead" then
+                table.remove(coroutines, i)
+            else
+                coroutine.resume(coroutines[i])
+            end
+        end
+    end
 end
 
 local function process_packet(data, client)
@@ -59,9 +67,41 @@ local function process_packet(data, client)
     end
 end
 
-create_server("0.0.0.0", 50505, function(client)
-    local client_details = client:getpeername()
-    local name = client_details.ip .. ":" .. client_details.port
+local web_thread
+if start_web then
+    web_thread = love.thread.newThread("server/web_api.lua")
+end
+
+database.init()
+packet_handler21.init(database, is_thread)
+if start_web then
+    web_thread:start()
+end
+
+local ffi = require("ffi")
+
+ffi.cdef([[
+typedef void (*__sighandler_t) (int);
+__sighandler_t signal (int __sig, __sighandler_t __handler);
+]])
+
+local function handler()
+    ffi.C.signal(2, handler)
+    log("got interrupt while running server, shutting down")
+    log("waiting for game to stop...")
+    packet_handler21.stop_game()
+    log("waiting for database to stop...")
+    database.stop()
+    if start_web and not web_thread:isRunning() then
+        log("Error in web thread: " .. web_thread:getError())
+    end
+    os.exit(1)
+end
+ffi.C.signal(2, handler)
+
+run_server("0.0.0.0", 50505, function(client)
+    local client_ip, client_port = client:getpeername()
+    local name = client_ip .. ":" .. client_port
     local pending_packet_size
     local data = ""
     local client_data = {
@@ -89,18 +129,36 @@ create_server("0.0.0.0", 50505, function(client)
                     )
                     .. contents
                 local packet = love.data.pack("string", ">I4", #contents) .. contents
-                client:write(packet)
+                local writing = true
+                local i = 1
+                local timeout_count = 0
+                while writing do
+                    local written, reason, failed_at = client:send(packet:sub(i))
+                    if written then
+                        writing = false
+                    elseif reason == "wantwrite" then
+                    elseif reason == "timeout" then
+                        timeout_count = timeout_count + 1
+                        if timeout_count > 10000000 then
+                            log("Failed sending packet with type '" .. packet_type .. "' to " .. name .. " due to timeout")
+                            writing = false
+                        end
+                    else
+                        log("Failed sending packet with type '" .. packet_type .. "' to " .. name)
+                        writing = false
+                    end
+                    if writing then
+                        i = i + failed_at
+                        coroutine.yield()
+                    end
+                end
             end
         end,
     }
     log("Connection from " .. name)
-    client:read_start(function(err, chunk)
-        if err then
-            log("Closing connection from " .. name .. " due to error: ", err)
-            client:close()
-            return
-        end
-
+    local connected = true
+    while connected do
+        local chunk, reason = client:receive(1)
         if chunk then
             data = data .. chunk
             local reading = true
@@ -125,36 +183,12 @@ create_server("0.0.0.0", 50505, function(client)
                     data = data:sub(5)
                 end
             end
-        else
-            log("Client from " .. name .. " disconnected")
-            client:close()
         end
-    end)
-end)
-
-log("listening")
-
-local web_thread
-if start_web then
-    web_thread = love.thread.newThread("server/web_api.lua")
-end
-
-local signal = uv.new_signal()
-signal:start("sigint", function(sig)
-    log("got " .. sig .. ", shutting down")
-    log("waiting for game to stop...")
-    packet_handler21.stop_game()
-    log("waiting for database to stop...")
-    database.stop()
-    if start_web and not web_thread:isRunning() then
-        log("Error in web thread: " .. web_thread:getError())
+        if reason == "closed" then
+            log("Client " .. name .. " disconnected")
+            client:close()
+            return
+        end
+        coroutine.yield()
     end
-    os.exit(1)
 end)
-
-database.init()
-packet_handler21.init(database, is_thread)
-if start_web then
-    web_thread:start()
-end
-uv.run()
