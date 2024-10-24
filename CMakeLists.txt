@@ -4,25 +4,22 @@ cmake_minimum_required(VERSION 3.17)
 set(CMAKE_INSTALL_PREFIX ..)
 
 # -------------- video encoding library --------------
-option(VIDEO_EXPORT "Compile the library for video export." TRUE)
-if(VIDEO_EXPORT)
-	project(encode DESCRIPTION "library for encoding video files from lua using ffi")
+project(encode DESCRIPTION "library for encoding video files from lua using ffi")
 
-	find_package(PkgConfig REQUIRED)
-	pkg_check_modules(LIBAV REQUIRED IMPORTED_TARGET
-	    libavformat
-	    libavcodec
-	    libswresample
-	    libswscale
-	    libavutil
-	)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBAV REQUIRED IMPORTED_TARGET
+    libavformat
+    libavcodec
+    libswresample
+    libswscale
+    libavutil
+)
 
-	add_library(encode SHARED
-		game_handler/video/encode.c
-	)
-	target_link_libraries(encode
-	    PkgConfig::LIBAV
-	)
+add_library(encode SHARED
+	game_handler/video/encode.c
+)
+target_link_libraries(encode
+    PkgConfig::LIBAV
+)
 
-	install(TARGETS encode RUNTIME DESTINATION lib)
-endif()
+install(TARGETS encode RUNTIME DESTINATION lib)
