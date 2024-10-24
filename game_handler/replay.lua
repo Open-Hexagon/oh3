@@ -144,7 +144,7 @@ end
 ---@return love.CompressedData
 function replay:get_hash()
     local data = self:_get_compressed()
-    return love.data.encode("string", "hex", love.data.hash("sha256", data)), data
+    return love.data.encode("string", "hex", love.data.hash("string", "sha256", data)), data
 end
 
 ---saves the replay into a file the data to write can optionally be specified if already gotten
