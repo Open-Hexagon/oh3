@@ -165,7 +165,7 @@ function shader_compat.compile(new_code, code, filename)
             [[
                 attribute vec2 instance_position;
                 attribute vec4 instance_color;
-                varying vec4 instance_color_out;
+                out vec4 instance_color_out;
 
                 vec4 position(mat4 transform_projection, vec4 vertex_position)
                 {
@@ -175,7 +175,7 @@ function shader_compat.compile(new_code, code, filename)
                 }
             ]],
             [[
-                varying vec4 instance_color_out;
+                in vec4 instance_color_out;
             ]]
                 .. new_code:gsub(
                     "_new_wrap_original_pixel_color = color;",

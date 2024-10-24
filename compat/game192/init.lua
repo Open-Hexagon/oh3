@@ -44,7 +44,7 @@ if not args.headless then
         [[
             layout(location = 3) in vec2 instance_offset;
             layout(location = 4) in vec4 instance_color;
-            varying vec4 instance_color_out;
+            out vec4 instance_color_out;
 
             vec4 position(mat4 transform_projection, vec4 vertex_position)
             {
@@ -54,7 +54,7 @@ if not args.headless then
             }
         ]],
         [[
-            varying vec4 instance_color_out;
+            in vec4 instance_color_out;
 
             vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
             {

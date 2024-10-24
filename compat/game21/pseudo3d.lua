@@ -16,7 +16,7 @@ function pseudo3d.init(pass_game)
             [[
                 layout(location = 3) in vec2 instance_position;
                 layout(location = 4) in vec4 instance_color;
-                varying vec4 instance_color_out;
+                out vec4 instance_color_out;
 
                 vec4 position(mat4 transform_projection, vec4 vertex_position)
                 {
@@ -26,7 +26,7 @@ function pseudo3d.init(pass_game)
                 }
             ]],
             [[
-                varying vec4 instance_color_out;
+                in vec4 instance_color_out;
 
                 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
                 {
