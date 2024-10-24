@@ -163,8 +163,8 @@ function shader_compat.compile(new_code, code, filename)
         -- to slow down the game with runtime compilation)
         local instance_shader = love.graphics.newShader(
             [[
-                attribute vec2 instance_position;
-                attribute vec4 instance_color;
+                layout(location = 3) in vec2 instance_position;
+                layout(location = 4) in vec4 instance_color;
                 out vec4 instance_color_out;
 
                 vec4 position(mat4 transform_projection, vec4 vertex_position)
