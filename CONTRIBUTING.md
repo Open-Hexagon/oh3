@@ -4,7 +4,7 @@ Thanks for considering to contribute to open hexagon 3.
 
 ## General
 To not waste any work on something that doesn't fit in the scope of the game, talk to us either on discord or in a feature request github issue first.
-The task will then be added to the prototype column of the [board](https://github.com/orgs/Open-Hexagon/projects/2/views/1).
+The task will then be added to the prototype column of the [board](https://github.com/orgs/Open-Hexagon/projects/4/views/1).
 If the suggestion gets accepted it will be added to the backlog, then you may assign yourself or get assigned to the task.
 
 Code contributions must be tied to a task on the board.
