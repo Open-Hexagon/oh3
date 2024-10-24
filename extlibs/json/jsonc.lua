@@ -206,7 +206,7 @@ local function decode_number()
         end
     end
     statusPos = statusPos + #num
-        return tonumber(num) or math.huge
+    return tonumber(num) or math.huge
 end
 
 local function decode_number_zero()

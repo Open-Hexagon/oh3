@@ -140,7 +140,13 @@ run_server("0.0.0.0", 50505, function(client)
                     elseif reason == "timeout" then
                         timeout_count = timeout_count + 1
                         if timeout_count > 10000000 then
-                            log("Failed sending packet with type '" .. packet_type .. "' to " .. name .. " due to timeout")
+                            log(
+                                "Failed sending packet with type '"
+                                    .. packet_type
+                                    .. "' to "
+                                    .. name
+                                    .. " due to timeout"
+                            )
                             writing = false
                         end
                     else

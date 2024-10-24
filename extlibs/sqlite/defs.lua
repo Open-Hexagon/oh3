@@ -47,7 +47,7 @@ local clib = (function()
                     end
                 end
                 -- assuming android (file does not exist but dlopen succeeds anyway)
-		-- (Keeping this in the linux block in case this isn't an android only thing)
+                -- (Keeping this in the linux block in case this isn't an android only thing)
                 return "libsqlite3.so"
             end
 
@@ -66,7 +66,7 @@ local clib = (function()
                 return "lib/libsqlite3.dylib"
             end
 
-	    if os == "Windows" then
+            if os == "Windows" then
                 return "lib/libsqlite3.dll"
             end
         end)()

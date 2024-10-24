@@ -43,7 +43,8 @@ local preview_data = {}
 ---@return table
 function download.get_preview_data(game_version, pack)
     preview_data[game_version] = preview_data[game_version] or {}
-    preview_data[game_version][pack] = preview_data[game_version][pack] or api(("get_pack_preview_data/%d/%s"):format(game_version, pack))
+    preview_data[game_version][pack] = preview_data[game_version][pack]
+        or api(("get_pack_preview_data/%d/%s"):format(game_version, pack))
     return preview_data[game_version][pack]
 end
 
