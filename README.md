@@ -4,12 +4,12 @@ A potential rewrite for Open Hexagon by Vittorio Romeo using Love2D.
 
 *(omg it's finally happening)*
 
+You can get the game by downloading an actions artifact by clicking on a build [here](https://github.com/Open-Hexagon/oh3/actions).
+
 ## External dependencies
 Apart from the pure lua dependencies that are present in the repository, the game relies on:
 - Love2D 12.0 
-> --> download it from actions artifact by clicking on a build <a href="https://github.com/Open-Hexagon/oh3/actions">here</a>
 - SQLite
-- Luv
 - libsodium (for server)
 - ffmpeg (for video export)
 

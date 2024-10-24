@@ -26,16 +26,6 @@ jobs:
         mkdir lib
         gcc -shared -fPIC sqlite-amalgamation-3430100/sqlite3.c -o lib/libsqlite3.so
 
-    - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DVIDEO_EXPORT=0
-
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-      
-    - name: Install
-      working-directory: ${{github.workspace}}/build
-      run: cmake --install .
-
     - name: Create App image
       run: |
         # required for app image creation
@@ -50,7 +40,6 @@ jobs:
         chmod +x love-*.AppImage
         ./love-*.AppImage --appimage-extract
         # put libs in their place
-        cp ../../lib/luv.so squashfs-root/share/games/oh3
         cp ../../lib/libsqlite3.so squashfs-root/lib
         # remove unneeded parts
         rm -r squashfs-root/share/applications/ squashfs-root/share/icons/ squashfs-root/share/lua squashfs-root/share/mime/ squashfs-root/share/pixmaps/ squashfs-root/love.desktop squashfs-root/love.svg

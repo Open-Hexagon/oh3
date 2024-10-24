@@ -79,12 +79,6 @@ jobs:
         mv sqlite3-android/libs/x86/libsqlite3.so love-android/app/src/main/jniLibs/x86
         mv sqlite3-android/libs/x86_64/libsqlite3.so love-android/app/src/main/jniLibs/x86_64
 
-    - name: Build luv
-      if: steps.cache-deps.outputs.cache-hit != 'true'
-      run: |
-        export ANDROID_NDK="$(realpath android-ndk-r21e)"
-        ./extra/android/build_luv.sh
-
     - name: Assemble Debug APK
       run: |
         export ANDROID_NDK="$(realpath android-ndk-r21e)"

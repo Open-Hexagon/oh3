@@ -1,7 +1,3 @@
-if love.system.getOS() == "Android" then
-    -- require can't find it on android
-    package.preload.luv = package.loadlib("libluv.so", "luaopen_luv")
-end
 local log = require("log")(...)
 local async = require("async")
 local args = require("args")
@@ -75,7 +71,7 @@ local main = async(function()
     -- make sure no level accesses malicious files via symlinks
     love.filesystem.setSymlinksEnabled(false)
 
-    -- find luasodium and luv
+    -- find libs
     add_require_path("extlibs/?.lua")
     add_c_require_path("lib/??")
 
