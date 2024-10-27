@@ -93,7 +93,7 @@ public.start = async(function(pack_id, level_id, level_options)
         lua_runtime.run_fn_if_exists("onUnload")
     end
     lua_runtime.init_env(game, public, assets)
-    lua_runtime.run_lua_file(game.pack.path .. level.luaFile)
+    lua_runtime.run_lua_file(game.pack.path .. level.lua_file)
     lua_runtime.run_fn_if_exists("onInit")
     lua_runtime.run_fn_if_exists("onLoad")
     game.set_sides(level_status.sides)

@@ -188,6 +188,17 @@ local function preload_pack(pack_folder_name, version, persistent_data)
 
                         -- default
                         level_json.id = level_json.id or "nullId"
+                        level_json.name = level_json.name or "nullName"
+                        level_json.description = level_json.description or ""
+                        level_json.author = level_json.author or ""
+                        level_json.menu_priority = level_json.menu_priority or 0
+                        if level_json.selectable == nil then
+                            level_json.selectable = true
+                        end
+                        level_json.music_id = level_json.music_id or "nullMusicId"
+                        level_json.sound_id = level_json.sound_id or "nullSoundId"
+                        level_json.style_id = level_json.style_id or "nullStyleId"
+                        level_json.lua_file = level_json.lua_file or "nullLuaPath"
                         level_json.difficulty_mults = level_json.difficulty_mults or {}
                         -- add 1x difficulty mult if it doesn't exist
                         local has1 = false

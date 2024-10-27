@@ -128,7 +128,7 @@ public.start = async(function(pack_id, level_id, level_options)
         lua_runtime.run_fn_if_exists("onPreUnload")
     end
     lua_runtime.init_env(game, public)
-    lua_runtime.run_lua_file(game.pack_data.path .. game.level_data.luaFile)
+    lua_runtime.run_lua_file(game.pack_data.path .. game.level_data.lua_file)
     if public.first_play then
         playsound(select_sound)
     else
