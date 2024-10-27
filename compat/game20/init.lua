@@ -53,10 +53,10 @@ public.start = async(function(pack_id, level_id, level_options)
     game.pack = async.await(assets.get_pack(pack_id))
     level.set(game.pack.levels[level_id])
     level_status.reset()
-    style.set(game.pack.styles[level.styleId])
+    style.set(game.pack.styles[level.style_id])
     music.stop()
     local pitch = config.get("sync_music_to_dm") and math.pow(game.difficulty_mult, 0.12) or 1
-    music.play(game.pack.music[level.musicId], not public.first_play, nil, pitch)
+    music.play(game.pack.music[level.music_id], not public.first_play, nil, pitch)
     if not args.headless then
         go_sound:play()
     end

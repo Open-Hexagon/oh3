@@ -90,9 +90,9 @@ public.start = async(function(pack_id, level_id, level_options)
         error("Error: level with id '" .. level_id .. "' not found")
     end
     level_status.reset(config.get("sync_music_to_dm"))
-    local style_data = game.pack_data.styles[game.level_data.styleId]
+    local style_data = game.pack_data.styles[game.level_data.style_id]
     if style_data == nil then
-        log("Warn: style with id '" .. game.level_data.styleId .. "' not found")
+        log("Warn: style with id '" .. game.level_data.style_id .. "' not found")
         -- still continue with default style values
     end
     style.select(style_data or {})
@@ -100,9 +100,9 @@ public.start = async(function(pack_id, level_id, level_options)
     game.difficulty_mult = difficulty_mult
     status.reset_all_data()
     music.stop()
-    local new_music = game.pack_data.music[game.level_data.musicId]
+    local new_music = game.pack_data.music[game.level_data.music_id]
     if new_music == nil then
-        error("Music with id '" .. game.level_data.musicId .. "' doesn't exist!")
+        error("Music with id '" .. game.level_data.music_id .. "' doesn't exist!")
     end
     music.play(new_music, not public.first_play, nil, public.refresh_music_pitch())
     status.beat_pulse_delay = status.beat_pulse_delay + (music.segment.beat_pulse_delay_offset or 0)

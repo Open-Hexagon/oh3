@@ -5,12 +5,12 @@ local defaults = {
     name = "nullName",
     description = "",
     author = "",
-    menuPriority = 0,
+    menu_priority = 0,
     selectable = true,
-    musicId = "nullMusicId",
-    styleId = "nullStyleId",
-    luaFile = "nullLuaPath",
-    difficultyMults = {},
+    music_id = "nullMusicId",
+    style_id = "nullStyleId",
+    lua_file = "nullLuaPath",
+    difficulty_multipliers = {},
 }
 
 function level.set(level_json)
@@ -18,16 +18,16 @@ function level.set(level_json)
         level[key] = level_json[key] or value
     end
     local has1 = false
-    for i = 1, #level.difficultyMults do
-        if level.difficultyMults[i] == 1 then
+    for i = 1, #level.difficulty_multipliers do
+        if level.difficulty_multipliers[i] == 1 then
             has1 = true
             break
         end
     end
     if not has1 then
-        level.difficultyMults[#level.difficultyMults + 1] = 1
+        level.difficulty_multipliers[#level.difficulty_multipliers + 1] = 1
     end
-    table.sort(level.difficultyMults)
+    table.sort(level.difficulty_multipliers)
 end
 
 return level
