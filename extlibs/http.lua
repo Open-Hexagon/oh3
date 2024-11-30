@@ -283,6 +283,7 @@ function HTTP:init(args)
         -- [[
         for _, server in ipairs(self.servers) do
             assert(server:settimeout(0, "b"))
+            assert(server:settimeout(0, "t"))
         end
         --]]
     end
@@ -498,7 +499,7 @@ end
 function HTTP:handleClient(client)
     local request = self:receive(client)
     if not request then
-        return
+        return true
     end
 
     local increased_working = false
@@ -729,6 +730,7 @@ function HTTP:connectCoroutine(client, server)
 
         if not self.block then
             assert(client:settimeout(0, "b"))
+            assert(client:settimeout(0, "t"))
         end
 
         self:log(3, "waiting for handshake")
@@ -757,9 +759,10 @@ function HTTP:connectCoroutine(client, server)
     self.clients[#self.clients + 1] = client
     self:log(1, "total #clients", #self.clients)
 
-    self:handleClient(client)
-    self:log(1, "closing client...")
-    self:receive(client, 1)
+    if not self:handleClient(client) then
+        self:log(1, "closing client...")
+        self:receive(client, 1)
+    end
     client:close()
     for i = 1, #self.clients do
         if self.clients[i] == client then
@@ -791,6 +794,7 @@ function HTTP:run()
                     -- [[ should the client be non-blocking as well?  or can we assert the client will respond in time?
                     assert(client:setoption("keepalive", true))
                     assert(client:settimeout(0, "b"))
+                    assert(client:settimeout(0, "t"))
                     --]]
                     local new_coroutine = coroutine.create(self.connectCoroutine)
                     local index = #coroutines + 1
