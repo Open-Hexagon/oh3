@@ -20,6 +20,11 @@ function love.conf(t)
 
         -- don't enable the audio module when rendering
         t.modules.audio = not args.render
+
+        -- disable vulkan for now as it introduces an
+        -- immediately noticable amount of latency
+        -- TODO: make configurable
+        t.graphics.renderers = { "metal", "opengl" }
     else
         t.modules.data = true
         t.modules.event = false
