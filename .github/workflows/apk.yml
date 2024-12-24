@@ -41,10 +41,10 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Install gcc-multilib
+    - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install gcc-multilib
+        sudo apt install gcc-multilib cmake ninja-build
 
     - name: Setup love-android
       if: steps.cache-deps.outputs.cache-hit != 'true'
