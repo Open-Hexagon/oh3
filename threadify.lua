@@ -63,22 +63,21 @@ else
                 resolvers = {},
                 rejecters = {},
             }
-            local global_threads = threads_channel:peek()
-            if global_threads and global_threads[require_string] then
-                thread_table.thread = global_threads[require_string]
-            else
-                thread_table.thread = love.thread.newThread("threadify.lua")
-            end
-            if not thread_table.thread:isRunning() then
-                thread_table.thread:start(require_string, true)
-            end
-            threads[require_string] = thread_table
-            thread_names[#thread_names + 1] = require_string
-            threads_channel:performAtomic(function(channel, thread_object, module_name)
+            threads_channel:performAtomic(function(channel)
                 local all_threads = channel:pop() or {}
-                all_threads[module_name] = thread_object
+                if all_threads and all_threads[require_string] then
+                    thread_table.thread = all_threads[require_string]
+                else
+                    thread_table.thread = love.thread.newThread("threadify.lua")
+                end
+                if not thread_table.thread:isRunning() then
+                    thread_table.thread:start(require_string, true)
+                end
+                all_threads[require_string] = thread_table.thread
                 channel:push(all_threads)
-            end, thread_table.thread, require_string)
+            end)
+            thread_names[#thread_names + 1] = require_string
+            threads[require_string] = thread_table
         end
         local thread = threads[require_string]
         local interface = {}
@@ -87,21 +86,29 @@ else
                 return function(...)
                     local msg = { -1, key, ... }
                     return async.promise:new(function(resolve, reject)
+                        local id_channel = love.thread.getChannel(require_string .. "_ids")
                         local cmd_channel = love.thread.getChannel(require_string .. "_cmd")
+                        -- get a request id with no duplicates across any other threads
                         local request_id = 1
-                        cmd_channel:performAtomic(function(channel)
-                            local last_cmd = cmd_channel:peek()
-                            if last_cmd then
-                                request_id = last_cmd[1] + 1
-                            end
-                            while thread.resolvers[request_id] ~= nil do
-                                request_id = request_id + 1
-                            end
-                            msg[1] = request_id
-                            thread.resolvers[request_id] = resolve
-                            thread.rejecters[request_id] = reject
-                            channel:push(msg)
+                        id_channel:performAtomic(function(channel)
+                            local used_ids = channel:pop() or {}
+                            repeat
+                                local not_used = true
+                                for i = 1, #used_ids do
+                                    if used_ids[i] == request_id then
+                                        not_used = false
+                                        request_id = request_id + 1
+                                        break
+                                    end
+                                end
+                            until not_used
+                            used_ids[#used_ids + 1] = request_id
+                            channel:push(used_ids)
                         end)
+                        msg[1] = request_id
+                        thread.resolvers[request_id] = resolve
+                        thread.rejecters[request_id] = reject
+                        cmd_channel:push(msg)
                     end)
                 end
             end,
@@ -112,12 +119,12 @@ else
         for i = 1, #thread_names do
             local require_string = thread_names[i]
             local thread = threads[require_string]
-            local channel = love.thread.getChannel(require_string .. "_out")
+            local out_channel = love.thread.getChannel(require_string .. "_out")
             local result
-            local check_result = channel:peek()
+            local check_result = out_channel:peek()
             if check_result then
                 if thread.resolvers[check_result[1]] and thread.rejecters[check_result[1]] then
-                    result = channel:pop()
+                    result = out_channel:pop()
                 end
             end
             if result then
@@ -129,6 +136,18 @@ else
                 end
                 thread.resolvers[result[1]] = nil
                 thread.rejecters[result[1]] = nil
+                -- remove id from used id table for this thread
+                local id_channel = love.thread.getChannel(require_string .. "_ids")
+                id_channel:performAtomic(function(channel)
+                    local used_ids = channel:pop() or {}
+                    for j = 1, #used_ids do
+                        if used_ids[j] == result[1] then
+                            table.remove(used_ids, j)
+                            break
+                        end
+                    end
+                    channel:push(used_ids)
+                end)
             end
         end
     end
