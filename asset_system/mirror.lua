@@ -22,6 +22,7 @@ while not promise.executed do
 end
 
 local last_id
+local asset_callbacks = {}
 
 ---updates the contents of the mirror using the asset notifications
 function mirror.update()
@@ -31,13 +32,23 @@ function mirror.update()
         -- notifications are only removed from the channel once all mirrors
         -- acked them, so only process it again once the id changes
         if id ~= last_id then
+            update_ack_channel:push(id)
             last_id = id
             local key = notification[2]
             local asset = notification[3]
             mirror[key] = asset
-            update_ack_channel:push(id)
+            if asset_callbacks[key] then
+                asset_callbacks[key](asset)
+            end
         end
     end
+end
+
+---listen to asset changes, to unregister listener set callback to nil
+---@param key string
+---@param callback function?
+function mirror.listen(key, callback)
+    asset_callbacks[key] = callback
 end
 
 return mirror

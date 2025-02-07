@@ -51,7 +51,7 @@ end
 Note that `index.local_request` will not give the asset a key which means it will not appear in a mirror. If this is desired it can still be requested with a key from any thread later. This will also not cause it to be reloaded since the internal asset id is based on the loader and its arguments. This ensures uniqueness among ids and makes writing loaders a lot simpler.
 
 ## Reloading
-While there is a promise for the initial request of an asset, once it is loaded subsequent changes due to hot reloading or calling reload manually will only change the asset/s in the mirror, so caching in local variables should only be done if the assignement is executed before the usages.
+While there is a promise for the initial request of an asset, once it is loaded subsequent changes due to hot reloading or calling reload manually will only change the asset/s in the mirror.
 ```lua
 local assets = require("asset_system")
 local async = require("async")
@@ -68,4 +68,24 @@ end)
 async.await(assets.index.reload("some_key"))
 -- the updated contents have to be read from the mirror again
 print(assets.mirror.some_key)
+```
+Alternatively the mirror can listen to changes of an asset and call a callback.
+```lua
+local assets = require("asset_system")
+local async = require("async")
+...
+assets.mirror.listen("some_key", function(value)
+    -- prints value of the asset with the key "some_key" whenever it changes
+    -- it has not been loaded yet, so this will first be called once it is loaded
+    print(value)
+end)
+
+-- "some_key" is the key in the mirror
+-- "text_file" is the loader (a function in asset_system.loaders)
+-- "helloworld.txt" is a parameter given to the loader
+assets.index.request("some_key", "text_file", "helloworld.txt")
+-- the contents of "helloworld.txt" will now be printed once
+...
+-- this will call the callback causing it to be printed again
+assets.index.reload("some_key")
 ```
