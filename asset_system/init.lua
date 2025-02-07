@@ -31,8 +31,11 @@ end
 
 ---automatically call index.reload on the correct assets based on file changes
 ---(note that in case luv is not available this will fall back to polling)
-function asset_system.start_hot_reloading()
-    watcher.start()
+---the filter can specify a starting path under which all files are monitored
+---without one all files that were used are monitored, which with polling could be quite inefficient
+---@param filter string?
+function asset_system.start_hot_reloading(filter)
+    watcher.start(filter)
 end
 
 ---don't automatically call index.reload on the correct assets based on file changes
