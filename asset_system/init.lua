@@ -1,6 +1,6 @@
 local threadify = require("threadify")
 local index = threadify.require("asset_system.index")
-local mirror = require("asset_system.mirror")
+local mirror = require("asset_system.mirror_client")
 local watcher = threadify.require("asset_system.watcher")
 
 local asset_system = {

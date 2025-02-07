@@ -43,7 +43,6 @@ function loaders.icon_font(name, size)
     }
 end
 
-
 -- set this to true to see the called loaders and their arguments
 local loader_debug = true
 if loader_debug then
