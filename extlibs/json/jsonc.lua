@@ -144,7 +144,7 @@ local function decode_string()
     local has_escape = false
     local i = statusPos + 1
     while true do
-        i = string_find(statusBuf, '[%z\1-\31\\"]', i)
+        i = string_find(statusBuf, '[%z\\"]', i)
         if not i then
             decode_error("expected closing quote for string")
         end
