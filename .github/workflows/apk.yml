@@ -87,7 +87,7 @@ jobs:
         mv app/build/outputs/apk/embedNoRecord/debug/app-embed-noRecord-debug.apk ../oh3-debug.apk
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.3.0
       with:
         name: oh3-debug.apk
         path: oh3-debug.apk
