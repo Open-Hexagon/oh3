@@ -20,6 +20,19 @@ end
 local loading_stack = {}
 local loading_stack_index = 0
 
+local function add_to_array_if_not_present(value, array)
+    local already_present = false
+    for i = 1, #array do
+        if array[i] == value then
+            already_present = true
+            break
+        end
+    end
+    if not already_present then
+        array[#array + 1] = value
+    end
+end
+
 ---generates a unique asset id based on the loader and the parameters
 ---@param loader string
 ---@param ... unknown
@@ -60,16 +73,7 @@ function index.request(key, loader, ...)
     -- if asset is requested from another loader the other one has this one as dependency
     if loading_stack_index > 0 then
         local caller = loading_stack[loading_stack_index]
-        local already_present = false
-        for i = 1, #asset.has_as_dependency do
-            if asset.has_as_dependency[i] == caller then
-                already_present = true
-                break
-            end
-        end
-        if not already_present then
-            asset.has_as_dependency[#asset.has_as_dependency + 1] = caller
-        end
+        add_to_array_if_not_present(caller, asset.has_as_dependency)
     end
 
     -- only load if the asset is not already loaded
@@ -160,16 +164,7 @@ function index.watch(path)
     local asset_id = loading_stack[loading_stack_index]
     if file_watch_map[path] then
         local ids = file_watch_map[path]
-        local already_present = false
-        for i = 1, #ids do
-            if ids[i] == asset_id then
-                already_present = true
-                break
-            end
-        end
-        if not already_present then
-            ids[#ids + 1] = asset_id
-        end
+        add_to_array_if_not_present(asset_id, ids)
     else
         file_watch_map[path] = { asset_id }
         watcher.add(path)
