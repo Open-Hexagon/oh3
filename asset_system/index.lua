@@ -1,9 +1,11 @@
 local log = require("log")(...)
+local json = require("extlibs.json.json")
 require("love.timer")
 local index = {}
 
 -- this is the real global index
 local assets = {}
+local mirrored_assets = {}
 
 -- required to know how many acks to wait for when sending notifications for mirroring
 local mirror_count = 0
@@ -13,7 +15,7 @@ local mirror_count = 0
 function index.register_mirror()
     mirror_count = mirror_count + 1
     local new_mirror = {}
-    for key, asset in pairs(assets) do
+    for key, asset in pairs(mirrored_assets) do
         if asset.value then
             new_mirror[key] = asset.value
         end
@@ -40,9 +42,9 @@ local pending_notifications = {}
 local pending_notification_count = 0
 local notification_id = 0
 
-local function add_mirror_notification(key, value)
+local function add_mirror_notification(asset)
     pending_notification_count = pending_notification_count + 1
-    pending_notifications[pending_notification_count] = { notification_id, key, value }
+    pending_notifications[pending_notification_count] = { notification_id, asset.key, asset.value }
     notification_id = notification_id + 1
 end
 
@@ -76,18 +78,42 @@ local function sync_pending_assets()
     end
 end
 
+---generates a unique asset id based on the loader and the parameters
+---@param loader string
+---@param ... unknown
+---@return string
+local function generate_asset_id(loader, ...)
+    return json.encode({ loader, ... })
+end
+
 ---request an asset to be loaded and mirrored into the index
----@param key string
+---(mirroring only happens for this asset if a key is given)
+---@param key string?
 ---@param loader string
 ---@param ... unknown
 function index.request(key, loader, ...)
-    assets[key] = assets[key]
+    local id = generate_asset_id(loader, ...)
+    assets[id] = assets[id]
         or {
             loader_function = require("asset_system.loaders")[loader],
             arguments = { ... },
             has_as_dependency = {},
+            id = id,
         }
-    local asset = assets[key]
+    local asset = assets[id]
+    local should_mirror = false
+
+    -- if a key is given set the asset to use it and make sure it doesn't already have another one
+    if key then
+        if asset.key then
+            assert(asset.key == key, "requested the same asset with a different key")
+        else
+            asset.key = key
+            mirrored_assets[key] = asset
+            -- newly requested with key, so should mirror even if already loaded
+            should_mirror = true
+        end
+    end
 
     -- if asset is requested from another loader the other one has this one as dependency
     if loading_stack_index > 0 then
@@ -104,23 +130,28 @@ function index.request(key, loader, ...)
         end
     end
 
-    -- stop now if the asset is already loaded
-    if asset.value then
-        return
+    -- only load if the asset is not already loaded
+    if not asset.value then
+        -- push asset id to loading stack
+        loading_stack_index = loading_stack_index + 1
+        loading_stack[loading_stack_index] = id
+
+        -- load the asset
+        asset.value = asset.loader_function(unpack(asset.arguments))
+
+        -- pop asset id from loading stack
+        loading_stack_index = loading_stack_index - 1
+
+        -- only mirror after loading if there is a key
+        if asset.key then
+            should_mirror = true
+        end
     end
 
-    -- push asset key to loading stack
-    loading_stack_index = loading_stack_index + 1
-    loading_stack[loading_stack_index] = key
-
-    -- load the asset
-    asset.value = asset.loader_function(unpack(asset.arguments))
-
-    -- pop asset key from loading stack
-    loading_stack_index = loading_stack_index - 1
-
-    -- schedule notification for this asset
-    add_mirror_notification(key, asset.value)
+    if should_mirror then
+        -- schedule notification for this asset
+        add_mirror_notification(asset)
+    end
 
     -- mirror all pending assets once at the end of the initial request
     if loading_stack_index == 0 then
@@ -129,32 +160,31 @@ function index.request(key, loader, ...)
 end
 
 ---same as request but returns the asset's value (for use in loaders)
----also generates the key automatically based on loader and parameters
+---also leaves the key as nil, since it's only used in this thread
 ---@param loader string
 ---@param ... unknown
 ---@return unknown
 function index.local_request(loader, ...)
-    local key = "_" .. loader .. "_" .. table.concat({ ... }, "_")
-    index.request(key, loader, ...)
-    return assets[key].value
+    index.request(nil, loader, ...)
+    return assets[generate_asset_id(loader, ...)].value
 end
 
 local reload_depth = 0
 
----reloads an asset
----@param key string
-function index.reload(key)
-    local asset = assets[key]
+---reloads an asset, using either its id or key
+---@param id_or_key string
+function index.reload(id_or_key)
+    local asset = mirrored_assets[id_or_key] or assets[id_or_key]
     asset.value = nil
 
-    -- push asset key to loading stack
+    -- push asset id to loading stack
     loading_stack_index = loading_stack_index + 1
-    loading_stack[loading_stack_index] = key
+    loading_stack[loading_stack_index] = asset.id
 
     -- load the asset
     asset.value = asset.loader_function(unpack(asset.arguments))
 
-    -- pop asset key from loading stack
+    -- pop asset id from loading stack
     loading_stack_index = loading_stack_index - 1
 
     -- reload assets that depend on this one
@@ -164,8 +194,10 @@ function index.reload(key)
     end
     reload_depth = reload_depth - 1
 
-    -- schedule notification for this asset
-    add_mirror_notification(key, asset.value)
+    -- schedule notification for this asset if required
+    if asset.key then
+        add_mirror_notification(asset)
+    end
 
     -- mirror all pending assets once at the end of the initial reload
     if reload_depth == 0 then
@@ -178,26 +210,26 @@ local watcher = threadify.require("asset_system.watcher")
 local file_watch_map = {} -- file as key, asset key array as value
 
 ---adds the specified file as dependency for the currently loading asset
----@param path any
+---@param path string
 function index.watch(path)
     if loading_stack_index <= 0 then
         error("cannot register file watcher outside of asset loader")
     end
-    local asset_key = loading_stack[loading_stack_index]
+    local asset_id = loading_stack[loading_stack_index]
     if file_watch_map[path] then
-        local keys = file_watch_map[path]
+        local ids = file_watch_map[path]
         local already_present = false
-        for i = 1, #keys do
-            if keys[i] == asset_key then
+        for i = 1, #ids do
+            if ids[i] == asset_id then
                 already_present = true
                 break
             end
         end
         if not already_present then
-            keys[#keys + 1] = asset_key
+            ids[#ids + 1] = asset_id
         end
     else
-        file_watch_map[path] = { asset_key }
+        file_watch_map[path] = { asset_id }
         watcher.add(path)
     end
 end
@@ -206,9 +238,9 @@ end
 ---@param path string
 function index.changed(path)
     if file_watch_map[path] then
-        local keys = file_watch_map[path]
-        for i = 1, #keys do
-            index.reload(keys[i])
+        local ids = file_watch_map[path]
+        for i = 1, #ids do
+            index.reload(ids[i])
         end
     end
 end

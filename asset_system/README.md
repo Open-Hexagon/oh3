@@ -23,7 +23,7 @@ Requesting an asset will return a promise that is fulfilled as soon as the asset
 ```lua
 local assets = require("asset_system")
 ...
--- "some_key" is the key in the mirror
+-- "some_key" is the key in the mirror (there should never be duplicates!)
 -- "text_file" is the loader (a function in asset_system.loaders)
 -- "helloworld.txt" is a parameter given to the loader
 assets.index.request("some_key", "text_file", "helloworld.txt"):done(function()
@@ -48,7 +48,7 @@ function loaders.json(path)
     return json.decode(text)
 end
 ```
-Note that `index.local_request` generates an asset key automatically based on the loader and its arguments. This ensures uniqueness among non-user keys and makes writing loaders a lot simpler. To avoid collisions with user keys, all of them are prefixed with an underscore.
+Note that `index.local_request` will not give the asset a key which means it will not appear in a mirror. If this is desired it can still be requested with a key from any thread later. This will also not cause it to be reloaded since the internal asset id is based on the loader and its arguments. This ensures uniqueness among ids and makes writing loaders a lot simpler.
 
 ## Reloading
 While there is a promise for the initial request of an asset, once it is loaded subsequent changes due to hot reloading or calling reload manually will only change the asset/s in the mirror, so caching in local variables should only be done if the assignement is executed before the usages.
