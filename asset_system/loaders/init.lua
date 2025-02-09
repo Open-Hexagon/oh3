@@ -1,18 +1,8 @@
 local log = require("log")(...)
 local index = require("asset_system.index")
+local utils = require("asset_system.loaders.utils")
 local loaders = {}
 
-local main_thread_tasks = love.thread.getChannel("asset_loading_main_thread_tasks")
-
----run a task on the main thread
----@param ... string
----@return unknown
-local function run_on_main(...)
-    main_thread_tasks:supply({ ... })
-    return unpack(main_thread_tasks:demand())
-end
-
--- All subsequent functions are loaders, taking any number of love.Variant as arguments and returning love.Variant
 
 function loaders.text_file(path)
     index.watch(path)
@@ -21,12 +11,12 @@ end
 
 function loaders.image(path)
     index.watch(path)
-    return run_on_main("love", "graphics", "newImage", path)
+    return utils.run_on_main("love", "graphics", "newImage", path)
 end
 
 function loaders.font(path, size)
     index.watch(path)
-    return run_on_main("love", "graphics", "newFont", path, size)
+    return utils.run_on_main("love", "graphics", "newFont", path, size)
 end
 
 function loaders.json(path)
@@ -42,6 +32,7 @@ function loaders.icon_font(name, size)
         id_map = index.local_request("json", path .. ".json"),
     }
 end
+
 
 -- set this to true to see the called loaders and their arguments
 local loader_debug = true
