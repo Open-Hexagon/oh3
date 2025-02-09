@@ -28,7 +28,13 @@ return function(file_list)
         event_handles[name] = event_handles[name] or uv.new_fs_event()
         -- the file path of a handle is nil if it has been stopped or not started yet
         if event_handles[name]:getpath() == nil then
-            event_handles[name]:start(name, {}, get_callback(name))
+            if love.filesystem.getRealDirectory(name) == love.filesystem.getSaveDirectory() then
+                -- is in save directory
+                event_handles[name]:start(love.filesystem.getSaveDirectory() .. "/" .. name, {}, get_callback(name))
+            else
+                -- is outside save directory
+                event_handles[name]:start(name, {}, get_callback(name))
+            end
         end
     end
     uv.run("nowait")
