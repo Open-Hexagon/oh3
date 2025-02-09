@@ -34,15 +34,24 @@ local function add_to_array_if_not_present(value, array)
 end
 
 ---generates a unique asset id based on the loader and the parameters
----may also return a second value used to detect argument changes
+---may also return a second value used to detect argument changes for the same asset
 ---@param loader string
 ---@param ... unknown
 ---@return string
 ---@return string?
 local function generate_asset_id(loader, ...)
     local loader_function = require("asset_system.loaders")[loader]
-    if type(loader_function) == "table" and loader_function.single then
-        return loader, json.encode({ ... })
+    if type(loader_function) == "table" then
+        local id_components = { loader }
+        local non_id_args = {}
+        for i = 1, select("#", ...) do
+            if loader_function[i] then
+                non_id_args[#non_id_args + 1] = select(i, ...)
+            else
+                id_components[#id_components + 1] = select(i, ...)
+            end
+        end
+        return json.encode(id_components), json.encode(non_id_args)
     end
     return json.encode({ loader, ... })
 end
@@ -60,13 +69,13 @@ function index.request(key, loader, ...)
             arguments = { ... },
             has_as_dependency = {},
             id = id,
-            -- will always be nil for non-single asset loaders
+            -- will be nil if loader doesn't have a reload filter
             encoded_args = encoded_args,
         }
     local asset = assets[id]
     local should_mirror = false
 
-    -- reload asset if arguments changed (only applicable for single asset loaders)
+    -- reload asset if arguments from reload filter changed changed
     if asset.encoded_args ~= encoded_args then
         asset.value = nil
     end

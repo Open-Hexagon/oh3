@@ -49,7 +49,19 @@ function loaders.json(path)
 end
 ```
 Note that `index.local_request` will not give the asset a key which means it will not appear in a mirror. If this is desired it can still be requested with a key from any thread later. This will also not cause it to be reloaded since the internal asset id is based on the loader and its arguments. This ensures uniqueness among ids and makes writing loaders a lot simpler.
-Also note that there are single asset loaders, which are loaders that can only be associated with a single asset which thus only has the loader as internal id. Requesting an asset of a single asset loader again with a different arguments will cause it to reload.
+
+A loader can also specifically request a parameter to not be added to the internal asset id and instead reload the same asset when it changes.
+```lua
+local utils = require("asset_system.loaders.utils")
+...
+loaders.some_loader = utils.reload_filter({
+    param2 = true,
+}, function(param1, param2, param3)
+    -- if param1 or param3 are different this asset will be saved under a new internal id
+    -- if param2 is different the internal id will not change
+    ...
+end)
+```
 
 ## Reloading
 While there is a promise for the initial request of an asset, once it is loaded subsequent changes due to hot reloading or calling reload manually will only change the asset/s in the mirror.
