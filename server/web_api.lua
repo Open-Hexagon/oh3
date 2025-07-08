@@ -100,7 +100,7 @@ app.handlers["/get_video/..."] = function(captures, headers)
     if path then
         return http.file(path, headers)
     else
-        return "no video for this replay"
+        return "video for this replay hasn't finished processing, or doesn't exist"
     end
 end
 
