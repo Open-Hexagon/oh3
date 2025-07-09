@@ -32,6 +32,15 @@ local database = sqlite({
         created = { "timestamp", default = strfun.strftime("%s", "now") },
         token = { "text", unique = true, primary = true },
     },
+    rank_1_scores = {
+        steam_id = "text",
+        pack = "text",
+        level = "text",
+        level_options = "text",
+        created = { "timestamp", default = strfun.strftime("%s", "now") },
+        time = "real",
+        score = "real",
+    },
 })
 
 ---get the replay path
@@ -106,6 +115,19 @@ function api.register(username, steam_id, password_hash)
     })
 end
 
+local function save_to_db_rank_1_scores(time, steam_id, pack, level, level_options, score, timestamp)
+    database:insert("rank_1_scores", {
+        steam_id = steam_id,
+        pack = pack,
+        level = level,
+        level_options = level_options,
+        time = time,
+        score = score,
+        replay_hash = hash,
+        created = timestamp,
+    })
+end
+
 ---save a score into the database and save the replay
 ---@param time number
 ---@param steam_id string
@@ -137,7 +159,6 @@ function api.save_score(time, steam_id, pack, level, level_options, score, hash,
             replay_hash = hash,
             created = timestamp,
         })
-        return true
     else
         if #results > 1 then
             log("Player has more than one score on the same ranking!")
@@ -174,8 +195,14 @@ function api.save_score(time, steam_id, pack, level, level_options, score, hash,
                 created = timestamp or os.time(),
             },
         })
-        return true
     end
+
+    local position = api.get_score_position(pack, level, level_options, steam_id, true)
+    if position == 1 then
+        save_to_db_rank_1_scores(time, steam_id, pack, level, level_options, score, timestamp)
+    end
+
+    return true
 end
 
 ---get all scores that were done in the last however many seconds
