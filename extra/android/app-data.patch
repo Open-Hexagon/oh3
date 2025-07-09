@@ -4,11 +4,11 @@
  #   it in `app.name_byte_array`
 -#app.name=LÖVE for Android
 -app.name_byte_array=76,195,150,86,69,32,102,111,114,32,65,110,100,114,111,105,100
-+app.name=Open Hexagon 3
++app.name=Open Hexagon CE
 +#app.name_byte_array=76,195,150,86,69,32,102,111,114,32,65,110,100,114,111,105,100
 
 -app.application_id=org.love2d.android
-+app.application_id=fun.openhexagon.oh3
++app.application_id=fun.openhexagon.ohce
  app.orientation=landscape
  app.version_code=33
 -app.version_name=12.0

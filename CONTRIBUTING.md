@@ -1,5 +1,5 @@
 # Contribution Guidelines
-Thanks for considering to contribute to open hexagon 3.
+Thanks for considering to contribute to Open Hexagon CE.
 
 
 ## General

@@ -1,11 +1,11 @@
 63c63
 < 	<string>org.love2d.love</string>
 ---
-> 	<string>fun.openhexagon.oh3</string>
+> 	<string>fun.openhexagon.ohce</string>
 67c67
 < 	<string>LÖVE</string>
 ---
-> 	<string>Open Hexagon 3</string>
+> 	<string>Open Hexagon CE</string>
 71c71
 < 	<string>12.0</string>
 ---

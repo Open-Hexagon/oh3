@@ -31,8 +31,8 @@ jobs:
         # required for app image creation
         sudo apt install desktop-file-utils
         # create directory (git doesn't push empty directories)
-        mkdir -p extra/linux/squashfs-root/share/games/oh3
-        cp -r *.lua assets compat extlibs game game_handler server ui input_schemes extra/linux/squashfs-root/share/games/oh3
+        mkdir -p extra/linux/squashfs-root/share/games/oh-ce
+        cp -r *.lua assets compat extlibs game game_handler server ui input_schemes extra/linux/squashfs-root/share/games/oh-ce
         # extract love over everything
         cd extra/linux
         curl -L -H "Accept: application/vnd.github+json" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" --output love12.zip --url "${{ env.LOVE_ARTIFACT_URL }}"
@@ -48,10 +48,10 @@ jobs:
         # use appimagetool to create app image
         wget https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
         chmod +x appimagetool-x86_64.AppImage
-        ./appimagetool-x86_64.AppImage squashfs-root oh3.AppImage
+        ./appimagetool-x86_64.AppImage squashfs-root oh-ce.AppImage
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4.3.0
       with:
-        name: oh3.AppImage
-        path: extra/linux/oh3.AppImage
+        name: oh-ce.AppImage
+        path: extra/linux/oh-ce.AppImage

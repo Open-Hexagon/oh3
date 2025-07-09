@@ -1,10 +1,10 @@
-# Open Hexagon 3
+# Open Hexagon CE
 
 A potential rewrite for Open Hexagon by Vittorio Romeo using Love2D.
 
 *(omg it's finally happening)*
 
-You can get the game by downloading an actions artifact by clicking on a build [here](https://github.com/Open-Hexagon/oh3/actions).
+You can get the game by downloading an actions artifact by clicking on a build [here](https://github.com/Open-Hexagon/oh-ce/actions).
 
 ## External dependencies
 Apart from the pure lua dependencies that are present in the repository, the game relies on:

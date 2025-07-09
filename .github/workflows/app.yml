@@ -31,17 +31,17 @@ jobs:
         curl -L -H "Accept: application/vnd.github+json" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" --output love12.zip --url "${{ env.LOVE_ARTIFACT_URL }}"
         7z x love12.zip
         7z x love-macos.zip
-        mv love.app oh3.app
+        mv love.app oh-ce.app
         # copy files into bundle (.love folder ending to fool love into thinking there is a zip bundle to start)
-        mkdir oh3.app/Contents/Resources/oh3.love
-        cp -r *.lua lib assets compat extlibs game game_handler server ui input_schemes oh3.app/Contents/Resources/oh3.love
+        mkdir oh-ce.app/Contents/Resources/oh-ce.love
+        cp -r *.lua lib assets compat extlibs game game_handler server ui input_schemes oh-ce.app/Contents/Resources/oh-ce.love
         # insert the right metadata
-        patch oh3.app/Contents/Info.plist extra/osx/app-data.patch
+        patch oh-ce.app/Contents/Info.plist extra/osx/app-data.patch
         # work around https://github.com/actions/upload-artifact/issues/38 (executable permission not preserved) by uploading a zipped tarball
-        tar -cf oh3.app.tar oh3.app
+        tar -cf oh-ce.app.tar oh-ce.app
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4.3.0
       with:
-        name: oh3.app.tar
-        path: oh3.app.tar
+        name: oh-ce.app.tar
+        path: oh-ce.app.tar

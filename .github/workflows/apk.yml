@@ -84,10 +84,10 @@ jobs:
         export ANDROID_NDK="$(realpath android-ndk-r21e)"
         cd love-android
         ./gradlew assembleDebug --no-daemon
-        mv app/build/outputs/apk/embedNoRecord/debug/app-embed-noRecord-debug.apk ../oh3-debug.apk
+        mv app/build/outputs/apk/embedNoRecord/debug/app-embed-noRecord-debug.apk ../oh-ce-debug.apk
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4.3.0
       with:
-        name: oh3-debug.apk
-        path: oh3-debug.apk
+        name: oh-ce-debug.apk
+        path: oh-ce-debug.apk

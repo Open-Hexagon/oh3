@@ -1,10 +1,10 @@
 [Desktop Entry]
-Name=Open Hexagon 3
-Comment=The new version of Open Hexagon
+Name=Open Hexagon CE
+Comment=The community edition of Open Hexagon
 MimeType=application/x-love-game;
 Exec=start %f
 Type=Application
 Categories=Game;
 Terminal=false
-Icon=oh3
+Icon=oh-ce
 NoDisplay=true
