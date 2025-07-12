@@ -289,6 +289,7 @@ function HTTP:init(args)
     end
 
     self.clients = {}
+    self.couroutine_client_map = {}
 end
 
 function HTTP:send(conn, data)
@@ -773,6 +774,17 @@ function HTTP:connectCoroutine(client, server)
     self:log(2, "# clients remaining: " .. #self.clients)
 end
 
+function HTTP:close_and_remove_client(co)
+    local client = self.couroutine_client_map[co]
+    self:log(0, "Forcibly closing client:", pcall(client.close, client))
+    for i = 1, #self.clients do
+        if self.clients[i] == client then
+            table.remove(self.clients, i)
+            break
+        end
+    end
+end
+
 function HTTP:run()
     local coroutines = {}
     while true do
@@ -785,9 +797,14 @@ function HTTP:run()
                 local client = assert(server:accept())
                 assert(client:settimeout(3600, "b"))
                 local new_coroutine = coroutine.create(self.connectCoroutine)
+                self.couroutine_client_map[new_coroutine] = client
                 local index = #coroutines + 1
                 coroutines[index] = new_coroutine
-                coroutine.resume(new_coroutine, self, client, server)
+                local success, err = coroutine.resume(new_coroutine, self, client, server)
+                if not success then
+                    self:log(0, "Error in coroutine:", err)
+                    self:close_and_remove_client(new_coroutine)
+                end
             else
                 local client = server:accept()
                 if client then
@@ -797,17 +814,27 @@ function HTTP:run()
                     assert(client:settimeout(0, "t"))
                     --]]
                     local new_coroutine = coroutine.create(self.connectCoroutine)
+                    self.couroutine_client_map[new_coroutine] = client
                     local index = #coroutines + 1
                     coroutines[index] = new_coroutine
-                    coroutine.resume(new_coroutine, self, client, server)
+                    local success, err = coroutine.resume(new_coroutine, self, client, server)
+                    if not success then
+                        self:log(0, "Error in coroutine:", err)
+                        self:close_and_remove_client(new_coroutine)
+                    end
                 end
             end
         end
         for i = #coroutines, 1, -1 do
             if coroutine.status(coroutines[i]) == "dead" then
+                self.couroutine_client_map[coroutines[i]] = nil
                 table.remove(coroutines, i)
             else
-                coroutine.resume(coroutines[i])
+                local success, err = coroutine.resume(coroutines[i])
+                if not success then
+                    self:log(0, "Error in coroutine:", err)
+                    self:close_and_remove_client(coroutines[i])
+                end
             end
         end
         if self.working == 0 then
