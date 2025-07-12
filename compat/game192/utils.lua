@@ -114,7 +114,7 @@ function utils.round_to_even(num)
 end
 
 function utils.float_round(num)
-    return tonumber(ffi.new("float", num))
+    return ffi.tonumber(ffi.new("float", num))
 end
 
 -- This is quite messy since it's copied from 1.92
