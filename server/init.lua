@@ -16,6 +16,7 @@ local function run_server(host, port, on_connection)
     log("listening on", server:getsockname())
 
     local coroutines = {}
+    local clients = {}
     while true do
         local client = server:accept()
         if client then
@@ -24,13 +25,23 @@ local function run_server(host, port, on_connection)
             local new_coroutine = coroutine.create(on_connection)
             local index = #coroutines + 1
             coroutines[index] = new_coroutine
-            coroutine.resume(new_coroutine, client, server)
+            clients[index] = client
+            local success, err = coroutine.resume(new_coroutine, client, server)
+            if not success then
+                log("Error in coroutine:", err)
+                log("Forcibly closing client:", pcall(client.close, client))
+            end
         end
         for i = #coroutines, 1, -1 do
             if coroutine.status(coroutines[i]) == "dead" then
                 table.remove(coroutines, i)
+                table.remove(clients, i)
             else
-                coroutine.resume(coroutines[i])
+                local success, err = coroutine.resume(coroutines[i])
+                if not success then
+                    log("Error in coroutine:", err)
+                    log("Forcibly closing client:", pcall(clients[i].close, clients[i]))
+                end
             end
         end
         -- exit if an error happened in a different thread
