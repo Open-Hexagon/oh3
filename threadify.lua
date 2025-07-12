@@ -22,9 +22,9 @@ if is_thread then
                 if api[cmd[2] .. "_co"] then
                     -- coroutine
                     local co = coroutine.create(fn)
-                    local _, ret = coroutine.resume(co, unpack(cmd, 3))
+                    local success, ret = coroutine.resume(co, unpack(cmd, 3))
                     if coroutine.status(co) == "dead" then
-                        out_channel:push({ call_id, true, ret })
+                        out_channel:push({ call_id, success, ret })
                     else
                         running_coroutines[#running_coroutines + 1] = { call_id, cmd[2], co }
                     end
@@ -39,10 +39,10 @@ if is_thread then
             for i = #running_coroutines, 1, -1 do
                 local call_id, name, co = unpack(running_coroutines[i])
                 xpcall(function()
-                    local _, ret = coroutine.resume(co)
+                    local success, ret = coroutine.resume(co)
                     if coroutine.status(co) == "dead" then
                         table.remove(running_coroutines, i)
-                        out_channel:push({ call_id, true, ret })
+                        out_channel:push({ call_id, success, ret })
                     end
                 end, function(err)
                     table.remove(running_coroutines, i)
