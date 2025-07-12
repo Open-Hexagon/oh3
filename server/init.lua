@@ -32,6 +32,16 @@ local function run_server(host, port, on_connection)
                 coroutine.resume(coroutines[i])
             end
         end
+        -- exit if an error happened in a different thread
+        if not is_thread then
+            love.event.pump()
+            for event_name, _, b in love.event.poll() do
+                if event_name == "threaderror" then
+                    log("Error in thread: " .. b, 10)
+                    return
+                end
+            end
+        end
     end
 end
 
@@ -173,7 +183,7 @@ run_server("0.0.0.0", 50505, function(client)
                 if pending_packet_size then
                     if #data >= pending_packet_size then
                         reading = true
-                        err = process_packet(data:sub(1, pending_packet_size), client_data)
+                        local err = process_packet(data:sub(1, pending_packet_size), client_data)
                         if err then
                             -- client sends wrong packets (e.g. wrong protocol version)
                             client:close()

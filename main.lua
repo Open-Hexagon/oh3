@@ -116,7 +116,22 @@ local main = async(function()
         game_handler.process_event("resize", 1920, 1080)
         local Replay = require("game_handler.replay")
         return function()
-            local replay_file = love.thread.getChannel("replays_to_render"):demand()
+            local replay_file = love.thread.getChannel("replays_to_render"):demand(10)
+
+            -- exit if another thread has an error
+            love.event.pump()
+            for name, a, b, c, d, e, f in love.event.poll() do
+                if name == "threaderror" then
+                    log("Error in thread: " .. b, 10)
+                    return 0
+                end
+            end
+
+            -- no replay, continue
+            if not replay_file then
+                return
+            end
+
             -- replay may no longer exist if player got new pb
             if love.filesystem.getInfo(replay_file) then
                 local replay = Replay:new(replay_file)

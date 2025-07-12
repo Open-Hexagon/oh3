@@ -27,7 +27,7 @@ function love.conf(t)
         t.graphics.renderers = { "metal", "opengl" }
     else
         t.modules.data = true
-        t.modules.event = false
+        t.modules.event = args.server
         t.modules.audio = false
         t.modules.font = false
         t.modules.graphics = false
