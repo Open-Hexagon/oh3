@@ -77,10 +77,7 @@ local main = async(function()
 
     if args.migrate then
         -- migrate a ranking database from the old game to the new format
-        if args.no_option == nil then
-            error("Called migrate without a database to migrate")
-        end
-        require("compat.game21.server.migrate")(args.no_option)
+        require("compat.game21.server.migrate")(args.migrate)
         return function()
             return 0
         end
@@ -147,13 +144,13 @@ local main = async(function()
     end
 
     if args.headless then
-        if args.no_option == nil then
+        if args.replay_file == nil then
             error("Started headless mode without replay")
         end
         local game_handler = require("game_handler")
         global_config.init()
         async.await(game_handler.init())
-        async.await(game_handler.replay_start(args.no_option))
+        async.await(game_handler.replay_start(args.replay_file))
         game_handler.run_until_death()
         log("Score: " .. game_handler.get_score())
         return function()
@@ -162,7 +159,7 @@ local main = async(function()
     end
 
     if args.render then
-        if args.no_option == nil then
+        if args.replay_file == nil then
             error("trying to render replay without replay")
         end
         love.window.setMode(1920, 1080)
@@ -172,7 +169,7 @@ local main = async(function()
         global_config.init()
         async.await(game_handler.init(audio))
         game_handler.process_event("resize", 1920, 1080)
-        return async.await(render_replay(game_handler, video_encoder, audio, args.no_option, "output.mp4"))
+        return async.await(render_replay(game_handler, video_encoder, audio, args.replay_file, "output.mp4"))
     end
 
     local ui = require("ui")
@@ -187,8 +184,8 @@ local main = async(function()
     local last_time = love.timer.getTime()
 
     game_handler.init():done(function()
-        if args.no_option then
-            async.await(game_handler.replay_start(args.no_option))
+        if args.replay_file then
+            async.await(game_handler.replay_start(args.replay_file))
             ui.open_screen("game")
         else
             ui.open_screen("levelselect")
