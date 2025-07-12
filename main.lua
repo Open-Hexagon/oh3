@@ -83,6 +83,15 @@ local main = async(function()
         end
     end
 
+    -- mount pack folders
+    for i = 1, #args.mount_pack_folder do
+        local pack_folder = args.mount_pack_folder[i]
+        local version = pack_folder[1]
+        local path = pack_folder[2]
+        log("mounting " .. path .. " to packs" .. version)
+        love.filesystem.mountFullPath(path, "packs" .. version)
+    end
+
     if args.server and not args.render then
         -- game21 compat server (made for old clients)
         require("server")
