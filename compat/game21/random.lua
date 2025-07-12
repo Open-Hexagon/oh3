@@ -1,6 +1,7 @@
 local bit = require("bit")
-local mcg_state = 0xcafef00dd15ea5e7ULL
-local multiplier = 6364136223846793005ULL
+local ffi = require("ffi")
+local mcg_state = bit.lshift(ffi.new("uint64_t", 0xcafef00d), 32) + 0xd15ea5e7
+local multiplier = bit.lshift(ffi.new("uint64_t", 1481765933), 32) + 1284865837
 -- only used to keep track of the given seed
 local seed = 0
 local rng = {}
@@ -13,14 +14,15 @@ local function pcg32_fast()
     return bit.rshift(x, 22 + count) % 2 ^ 32
 end
 
+local three = ffi.new("uint64_t", 3)
 function rng.set_seed(value)
-    mcg_state = bit.bor(value, 3ULL)
+    mcg_state = bit.bor(value, three)
     rng.advance(1)
     seed = value
 end
 
 function rng.get_seed()
-    return tonumber(seed)
+    return ffi.tonumber(seed)
 end
 
 function rng.advance(delta)
@@ -44,25 +46,22 @@ function rng.get_real(a, b)
     local sum = 0
     local tmp = 1
     for _ = 1, m do
-        sum = sum + tonumber(pcg32_fast()) * tmp
+        sum = sum + ffi.tonumber(pcg32_fast()) * tmp
         tmp = tmp * r
     end
     return sum / tmp * (b - a) + a
 end
 
-local function to_int(num)
-    return num < 0 and math.ceil(num) or math.floor(num)
-end
-
 local rng_max = 4294967295
-local rng_range = rng_max
+local rng_range = ffi.new("uint64_t", rng_max)
 function rng.get_int(a, b)
-    a = to_int(a)
-    b = to_int(b)
+    local old_a = a
+    a = ffi.new("uint64_t", a)
+    b = ffi.new("uint64_t", b)
     local range = b - a
     local ret
     if rng_range > range then
-        range = range + 1ULL
+        range = range + 1
         local product = pcg32_fast() * range
         local low = product % 2 ^ 32
         if low < range then
@@ -72,18 +71,18 @@ function rng.get_int(a, b)
                 low = product % 2 ^ 32
             end
         end
-        ret = tonumber(bit.rshift(product, 32))
+        ret = bit.rshift(product, 32)
     elseif rng_range < range then
-        local tmp = 1
-        ret = 0
+        local tmp = ffi.new("uint64_t", 1)
+        ret = ffi.new("uint64_t", 0)
         while ret > range or ret < tmp do
             tmp = ((rng_range + 1) * pcg32_fast()) % 2 ^ 32
             ret = tmp + pcg32_fast()
         end
     else
-        ret = tonumber(pcg32_fast())
+        ret = pcg32_fast()
     end
-    ret = ret + a
+    ret = ffi.tonumber(ret) + old_a
     if ret >= 2 ^ 31 then
         ret = ret - 2 ^ 32
     end

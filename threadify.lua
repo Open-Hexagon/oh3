@@ -1,5 +1,8 @@
+local ffi = require("ffi")
 local log = require("log")("threadify")
 local modname, is_thread = ...
+
+ffi.tonumber = ffi.tonumber or tonumber
 
 if is_thread then
     local api = require(modname)
