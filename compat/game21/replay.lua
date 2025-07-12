@@ -1,4 +1,5 @@
 local bit = require("bit")
+local ffi = require("ffi")
 
 local replay = {}
 
@@ -28,16 +29,16 @@ function replay.read(replay_obj, data, offset)
         local part1, part2
         part1, offset = love.data.unpack("<I4", data, offset)
         part2, offset = love.data.unpack("<I4", data, offset)
-        return bit.lshift(part2 * 1ULL, 32) + part1 * 1ULL
+        return bit.lshift(ffi.new("uint64_t", part2), 32) + part1
     end
     replay_obj.player_name = read_str()
     local seed = read_uint64()
     -- even if not correct, the first seed is only used for music segment (which was random in replays from this version)
-    replay_obj.data.seeds[1] = tonumber(seed)
+    replay_obj.data.seeds[1] = ffi.tonumber(seed)
     replay_obj.data.seeds[2] = seed
     local input_len
     -- may cause issues with replays longer than ~9000 years
-    input_len = tonumber(read_uint64())
+    input_len = ffi.tonumber(read_uint64())
     replay_obj.input_tick_length = input_len
     local state = { 0, 0, 0, 0 }
     local last_tick = 0

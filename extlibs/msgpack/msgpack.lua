@@ -1,18 +1,7 @@
-local bit = require("bit")
 local table = require("table")
 local string = require("string")
-
-local luabit
-local res, err = pcall(function()
-    return require("bit")
-end)
-
-if not res then
-    print("msgpack: no bitops. falling back: load local luabit.")
-    luabit = require("./luabit") -- local
-else
-    luabit = require("bit")
-end
+local ffi = require("ffi")
+local luabit = require("bit")
 
 local tostr = string.char
 
@@ -20,7 +9,7 @@ local double_decode_count = 0
 local double_encode_count = 0
 
 -- cache bitops
-local bor, band, bxor, rshift = luabit.bor, luabit.band, luabit.bxor, luabit.brshift
+local bor, band, bxor, rshift, lshift = luabit.bor, luabit.band, luabit.bxor, luabit.rshift, luabit.lshift
 if not rshift then -- luajit differ from luabit
     rshift = luabit.rshift
 end
@@ -409,13 +398,13 @@ local unpack_number = function(offset, ntype, nlen)
         --                            print( string.format("i32 bytes: %x %x %x %x ", b1, b2, b3, b4 ), n, nn )
         return nn
     elseif ntype == "uint64_t" then
-        local n = bit.lshift(b1 * 1ULL, 56)
-            + bit.lshift(b2 * 1ULL, 48)
-            + bit.lshift(b3 * 1ULL, 40)
-            + bit.lshift(b4 * 1ULL, 32)
-            + bit.lshift(b5 * 1ULL, 24)
-            + bit.lshift(b6 * 1ULL, 16)
-            + bit.lshift(b7 * 1ULL, 8)
+        local n = lshift(ffi.new("uint64_t", b1), 56)
+            + lshift(ffi.new("uint64_t", b2), 48)
+            + lshift(ffi.new("uint64_t", b3), 40)
+            + lshift(ffi.new("uint64_t", b4), 32)
+            + lshift(ffi.new("uint64_t", b5), 24)
+            + lshift(ffi.new("uint64_t", b6), 16)
+            + lshift(ffi.new("uint64_t", b7), 8)
             + b8
         return n
     elseif ntype == "double_t" then
