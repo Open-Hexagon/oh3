@@ -17,37 +17,28 @@ if is_thread then
         end
         if cmd then
             local call_id = cmd[1]
-            xpcall(function()
-                local fn = api[cmd[2]]
-                if api[cmd[2] .. "_co"] then
-                    -- coroutine
-                    local co = coroutine.create(fn)
-                    local success, ret = coroutine.resume(co, unpack(cmd, 3))
-                    if coroutine.status(co) == "dead" then
-                        out_channel:push({ call_id, success, ret })
-                    else
-                        running_coroutines[#running_coroutines + 1] = { call_id, cmd[2], co }
-                    end
+            local fn = api[cmd[2]]
+            if type(fn) == "function" then
+                local co = coroutine.create(fn)
+                local success, ret = coroutine.resume(co, unpack(cmd, 3))
+                ret = success and ret or (ret or "") .. "\n" .. debug.traceback(co)
+                if coroutine.status(co) == "dead" then
+                    out_channel:push({ call_id, success, ret })
                 else
-                    -- normal function
-                    out_channel:push({ call_id, true, fn(unpack(cmd, 3)) })
+                    running_coroutines[#running_coroutines + 1] = { call_id, cmd[2], co }
                 end
-            end, function(err)
-                out_channel:push({ call_id, false, "Failed to call '" .. modname .. "." .. cmd[2] .. "'", err })
-            end)
+            else
+                out_channel:push({ call_id, false, "'" .. modname .. "." .. cmd[2] .. "' is not a function" })
+            end
         else
             for i = #running_coroutines, 1, -1 do
                 local call_id, name, co = unpack(running_coroutines[i])
-                xpcall(function()
-                    local success, ret = coroutine.resume(co)
-                    if coroutine.status(co) == "dead" then
-                        table.remove(running_coroutines, i)
-                        out_channel:push({ call_id, success, ret })
-                    end
-                end, function(err)
+                local success, ret = coroutine.resume(co)
+                ret = success and ret or (ret or "") .. "\n" .. debug.traceback(co)
+                if coroutine.status(co) == "dead" then
                     table.remove(running_coroutines, i)
-                    out_channel:push({ call_id, false, "Failed to call '" .. modname .. "." .. name .. "'", err })
-                end)
+                    out_channel:push({ call_id, success, ret })
+                end
             end
         end
     end
@@ -133,7 +124,7 @@ else
                     thread.resolvers[result[1]](unpack(result, 3))
                 else
                     log(result[3])
-                    thread.rejecters[result[1]](result[4])
+                    thread.rejecters[result[1]]()
                 end
                 thread.resolvers[result[1]] = nil
                 thread.rejecters[result[1]] = nil
