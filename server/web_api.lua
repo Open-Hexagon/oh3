@@ -45,9 +45,20 @@ database.set_identity(3)
 
 local replay_path = database.get_replay_path()
 
+local function replay_get_path(hash)
+    local path = replay_path .. hash:sub(1, 2) .. "/" .. hash
+    if love.filesystem.exists(path) then
+        return path
+    end
+end
+
 local function replay_get_video_path(hash)
-    local path = replay_path .. hash:sub(1, 2) .. "/" .. hash .. ".mp4"
-    if love.filesystem.getInfo(path) then
+    local path = replay_get_path(hash)
+    if path == nil then
+        return
+    end
+    path = path .. ".mp4"
+    if love.filesystem.exists(path) then
         return path
     end
 end
@@ -101,6 +112,16 @@ app.handlers["/get_video/..."] = function(captures, headers)
         return http.file(path, headers)
     else
         return "video for this replay hasn't finished processing, or doesn't exist"
+    end
+end
+
+app.handlers["/get_replay/..."] = function(captures, headers)
+    local replay_hash = captures[1]
+    local path = replay_get_path(replay_hash)
+    if path then
+        return http.file(path, headers)
+    else
+        return "invalid replay hash"
     end
 end
 
