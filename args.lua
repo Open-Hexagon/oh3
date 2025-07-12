@@ -22,4 +22,8 @@ parser:option("--mount-pack-folder", "Mount a different pack folder/archive into
     :count("*")
     :argname({"<192|20|21>", "<path>"})
 
-return parser:parse(love.arg.parseGameArguments(arg))
+local ret = parser:parse(love.arg.parseGameArguments(arg))
+if (ret.server and not ret.render) or ret.migrate then
+    ret.headless = true
+end
+return ret
