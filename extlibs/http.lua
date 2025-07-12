@@ -802,7 +802,7 @@ function HTTP:run()
                 coroutines[index] = new_coroutine
                 local success, err = coroutine.resume(new_coroutine, self, client, server)
                 if not success then
-                    self:log(0, "Error in coroutine:", err)
+                    self:log(0, "Error in coroutine:", err .. "\n" .. debug.traceback(new_coroutine))
                     self:close_and_remove_client(new_coroutine)
                 end
             else
@@ -819,7 +819,7 @@ function HTTP:run()
                     coroutines[index] = new_coroutine
                     local success, err = coroutine.resume(new_coroutine, self, client, server)
                     if not success then
-                        self:log(0, "Error in coroutine:", err)
+                        self:log(0, "Error in coroutine:", err .. "\n" .. debug.traceback(new_coroutine))
                         self:close_and_remove_client(new_coroutine)
                     end
                 end
@@ -832,12 +832,14 @@ function HTTP:run()
             else
                 local success, err = coroutine.resume(coroutines[i])
                 if not success then
-                    self:log(0, "Error in coroutine:", err)
+                    self:log(0, "Error in coroutine:", err .. "\n" .. debug.traceback(coroutines[i]))
                     self:close_and_remove_client(coroutines[i])
                 end
             end
         end
-        if self.working == 0 then
+        if #self.clients == 0 then
+            love.timer.sleep(0.1)
+        elseif self.working == 0 then
             love.timer.sleep(0.01)
         end
     end

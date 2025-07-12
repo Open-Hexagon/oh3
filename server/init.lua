@@ -18,6 +18,9 @@ local function run_server(host, port, on_connection)
     local coroutines = {}
     local clients = {}
     while true do
+        if #clients == 0 then
+            love.timer.sleep(0.1)
+        end
         local client = server:accept()
         if client then
             assert(client:setoption("keepalive", true))
@@ -28,7 +31,7 @@ local function run_server(host, port, on_connection)
             clients[index] = client
             local success, err = coroutine.resume(new_coroutine, client, server)
             if not success then
-                log("Error in coroutine:", err)
+                log("Error in coroutine:", err .. "\n" .. debug.traceback(new_coroutine))
                 log("Forcibly closing client:", pcall(client.close, client))
             end
         end
@@ -39,7 +42,7 @@ local function run_server(host, port, on_connection)
             else
                 local success, err = coroutine.resume(coroutines[i])
                 if not success then
-                    log("Error in coroutine:", err)
+                    log("Error in coroutine:", err .. "\n" .. debug.traceback(coroutines[i]))
                     log("Forcibly closing client:", pcall(clients[i].close, clients[i]))
                 end
             end
