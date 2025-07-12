@@ -1,5 +1,6 @@
 local msgpack = require("extlibs.msgpack.msgpack")
 local old_replay = require("compat.game21.replay")
+local log = require("log")(...)
 
 ---@class Replay
 ---@field data table
@@ -30,11 +31,14 @@ function replay:new(path)
         score = 0,
         input_tick_length = 0,
     }, replay)
-    if path ~= nil then
-        if not love.filesystem.getInfo(path) then
-            error("Could not find replay at '" .. path .. "'")
+    if path then
+        local file, errstr = love.filesystem.openNativeFile(path, "r")
+        if file == nil then
+            file, errstr = love.filesystem.openFile(path, "r")
+            if file == nil then
+                error("could not read replay file: " .. errstr)
+            end
         end
-        local file = love.filesystem.openFile(path, "r")
         obj:_read(file:read("data"))
         file:close()
     end
