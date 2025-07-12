@@ -1,3 +1,4 @@
+require("platform")
 local log_name, is_thread, start_web = ...
 start_web = start_web or require("args").web
 local log = require("log")(log_name)

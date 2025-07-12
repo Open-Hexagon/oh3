@@ -1,3 +1,4 @@
+require("platform")
 local version, pack_name, tmp_folder, server_api_url, pack_size = ...
 xpcall(function()
     local zip = require("extlibs.zip")
