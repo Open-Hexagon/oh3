@@ -1,3 +1,4 @@
+require("platform")
 local utils = require("compat.game192.utils")
 local database = require("server.database")
 local json = require("extlibs.json.json")

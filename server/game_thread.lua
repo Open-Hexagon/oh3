@@ -1,3 +1,4 @@
+require("platform")
 local log = require("log")(...)
 local msgpack = require("extlibs.msgpack.msgpack")
 local replay = require("game_handler.replay")
