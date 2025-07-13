@@ -1,6 +1,9 @@
 local game_handler = require("game_handler")
 local threadify = require("threadify")
-local download = threadify.require("ui.overlay.packs.download_thread")
+local download
+if love.system.getOS() ~= "Web" then
+    download = threadify.require("ui.overlay.packs.download_thread")
+end
 
 local preview = {}
 preview.__index = preview
