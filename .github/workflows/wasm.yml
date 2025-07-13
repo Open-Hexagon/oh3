@@ -39,20 +39,13 @@ jobs:
       run: |
         git clone https://github.com/q66/cffi-lua
         cd cffi-lua
-        mkdir -p build/deps/include
+        mkdir build
         cd build
-        cp ../../extra/web/lua.hpp deps/include
-        meson setup --cross-file ../../extra/web/wasm.txt -Dlua_version=vendor -Dstatic=true --buildtype release ..
+        # lua.hpp is expected at cffi-lua/<deps_dir>/include/lua.hpp, in later meson versions this'd be cffi-lua/build/<deps_dir>/include/lua.hpp
+        meson setup --cross-file ../../extra/web/wasm.txt -Ddeps_dir=../extra/web -Dlua_version=vendor -Dstatic=true --buildtype release ..
         ninja all
         mv libcffi-lua-5.-501.a subprojects/libffi/src/libffi.a ../../megasource-web
         cd ../..
-
-    - name: Print meson log
-      if: always()
-      run: |
-        tree .
-        cat cffi-lua/build/meson-logs/meson-log.txt
-        cat cffi-lua/build/deps/include/lua.hpp
 
     - name: Build megasource
       run: |
