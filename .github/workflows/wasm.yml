@@ -18,6 +18,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4.1.1
 
+    - name: Install Tools
+      run: |
+        apt install dos2unix
+
     - name: Setup megasource
       run: |
         git clone https://github.com/rozenmad/megasource-web
