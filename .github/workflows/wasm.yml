@@ -13,10 +13,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4.1.1
+    - uses: mymindstorm/setup-emsdk@v10
+      with:
+        version: 3.1.35
 
     - name: Install Tools
       run: |
-        sudo apt install dos2unix meson emscripten
+        sudo apt install dos2unix meson
 
     - name: Setup megasource
       run: |
