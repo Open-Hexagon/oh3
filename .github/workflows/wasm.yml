@@ -45,7 +45,7 @@ jobs:
         mkdir -p build/deps/include
         cd build
         cp ../../extra/web/lua.hpp deps/include
-        meson setup --cross-file ../../extra/web/wasm.txt -Dlua_version=vendor -Dstatic=true ..
+        meson setup --cross-file ../../extra/web/wasm.txt -Dlua_version=vendor -Dstatic=true --buildtype release ..
         ninja all
         mv libcffi-lua-5.-501.a subprojects/libffi/src/libffi.a ../../megasource-web
         cd ../..
