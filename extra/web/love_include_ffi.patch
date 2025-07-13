@@ -5,7 +5,7 @@
                         "-lwebsocket.js" # websocket API
                         "-lopenal"
 +                       "${CMAKE_SOURCE_DIR}/libffi.a"
-+                       "${CMAKE_SOURCE_DIR}/libcffi-lua-5.-501.a"
++                       "${CMAKE_SOURCE_DIR}/libcffi-lua-5.1.a"
                 )
 
                 add_executable(${LOVE_EXE_NAME} src/love.cpp)
