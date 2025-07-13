@@ -53,7 +53,9 @@ jobs:
     - name: Print meson log
       if: always()
       run: |
+        tree .
         cat cffi-lua/build/meson-logs/meson-log.txt
+        cat cffi-lua/build/deps/include/lua.hpp
 
     - name: Build megasource
       run: |
