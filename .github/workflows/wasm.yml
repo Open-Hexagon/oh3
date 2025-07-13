@@ -14,10 +14,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4.1.1
 
-    - name: Install Tools
-      run: |
-        sudo apt install dos2unix meson
-
     - name: Cache build
       id: cache-build
       uses: actions/cache@v3
@@ -25,6 +21,11 @@ jobs:
         path: |
           megasource
         key: cache-build
+
+    - name: Install Tools
+      if: steps.cache-deps.outputs.cache-hit != 'true'
+      run: |
+        sudo apt install dos2unix meson
 
     - name: Install emscripten
       if: steps.cache-deps.outputs.cache-hit != 'true'
