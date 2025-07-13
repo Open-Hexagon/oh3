@@ -16,8 +16,8 @@ function input.init(pass_game, particles)
     game = pass_game
     swap_particles = particles
     if lua_runtime.env.onInput then
-        print(debug.getinfo(lua_runtime.env.onInput).nparams)
-        has_swap = debug.getinfo(lua_runtime.env.onInput).nparams > 3
+        local nparams = debug.getinfo(lua_runtime.env.onInput).nparams
+        has_swap = nparams > 3
     end
     if not args.headless then
         swap_blip_sound = assets.get_sound("swap_blip.ogg")
