@@ -110,6 +110,7 @@ app.handlers["/get_video/..."] = function(captures, headers)
     local replay_hash = captures[1]
     local path = replay_get_video_path(replay_hash)
     if path then
+        headers["Cache-Control"] = "max-age=604800, must-revalidate"
         return http.file(path, headers)
     else
         return "video for this replay hasn't finished processing, or doesn't exist"
@@ -173,6 +174,7 @@ app.handlers["/get_pack/.../..."] = function(captures, headers)
             return string.format("Could not find pack at '%s'!", pack_path)
         end
     end
+    headers["Cache-Control"] = "max-age=604800, must-revalidate"
     return http.file(filename, headers)
 end
 
