@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en-us">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <meta name="mobile-web-app-capable" content="yes">
+
+        <title>{{{ TITLE }}}</title>
+
+        <!-- Load custom style sheet -->
+        <link rel="stylesheet" type="text/css" href="theme/love.css">
+    </head>
+    <body>
+        <div id="container" class="love-desktop-frame">
+            <div id='play-overlay'>
+                    <div id='play-button'></div>
+            </div>
+            <canvas id="canvas" width="{{{ WIDTH }}}" height="{{{ HEIGHT }}}" tabindex="-1"></canvas>
+            <div id='message-container' style="display: none">
+                <div id='message'></div>
+                <div id='progress-border'><div id='progress-bar'></div></div>
+            </div>
+        </div>
+
+        <!-- LÖVE -->
+        <script type='text/javascript'>
+            var container = document.querySelector("#container");
+            var canvas = document.getElementById("canvas");
+            var progress_bar = document.querySelector("#progress-bar");
+
+            var complete = false;
+
+            var Module;
+
+            function setFocus() {
+                window.focus();
+                canvas.focus();
+            }
+
+            document.addEventListener('contextmenu', event => event.preventDefault());
+
+            canvas.addEventListener("touchstart", () => {
+                window.focus();
+            });
+            canvas.addEventListener("pointerdown", () => {
+                window.focus();
+            });
+
+            // window.addEventListener('pointerdown', () => {
+            //     setFocus();
+            // });
+            // window.addEventListener('touchstart', () => {
+            //     setFocus();
+            // });
+
+            document.addEventListener("pointerdown", () => {
+                container.focus();
+                setFocus();
+            });
+
+            for (const key of [
+                "fullscreenchange", "mozfullscreenchange", "webkitfullscreenchange", "msfullscreenchange"]) {
+                    if (key in document) {
+                        document.addEventListener(key, function(params) {
+                            setFocus();
+                        })
+                    }
+            }
+
+            function drawMessage(text) {
+                message.innerHTML = text;
+            }
+
+            function drawLoadingStatus(text, current_value, total_value) {
+                var ratio = complete ? 1 : 0;
+                if (current_value && total_value) {
+                    ratio = current_value / total_value;
+                }
+                if (ratio >= 1 || text == 'Running...') {
+                    complete = true;
+                    ratio = 1;
+                }
+
+                progress_bar.style.width = (ratio * 100) + '%';
+                drawMessage(text);
+            }
+
+            function onException(exception_message) {
+                canvas.remove();
+                console.log(exception_message);
+                alert('An error has occurred:\n' + exception_message + '\n\nSee JavaScript console.')
+                
+                drawMessage('An error has occurred, see JavaScript console');
+                Module.setStatus = function(text) {
+                    if (text) Module.printErr('[post-exception status] ' + text);
+                };
+            }
+
+            window.onerror = function(message) {
+                onException(message);
+            };
+
+            function onScriptLoad(script_tag) {
+                    let fun;
+                    fun = function() {
+                            document.getElementById('play-overlay').style.display = 'none';
+                            document.getElementById('message-container').style.display = 'block';
+                            applicationLoad(script_tag);
+                            container.removeEventListener("click", fun);
+                    }
+
+                    if (!Module['preRun']) Module['preRun'] = [];
+                    Module["preRun"].push(function() {
+                        // load replay and pack from query parameters
+                        let searchParams = new URLSearchParams(location.search);
+                        const api_url = "https://openhexagon.fun:8001/"
+                        if (searchParams.get("replay") !== null) {
+                            Module.arguments.push("/home/web_user/replayfile", "--replay-viewer")
+                            Module["FS_createPreloadedFile"](
+                               "/home/web_user/replayfile",
+                               null,
+                               api_url + "get_replay/" + searchParams.get("replay"),
+                               true,
+                               true,
+                               null,
+                               function(err) {
+                                   onerror("Error loading replay: " + err);
+                               }
+                            );
+                        }
+                        if (searchParams.get("packs") !== null) {
+                            const packs = searchParams.get("packs")
+                            for (const pack_str of packs.split(",")) {
+                                 const [game, pack] = pack_str.split(":")
+                                 const path = "/home/web_user/" + game + "_" + pack + ".zip"
+                                 Module.arguments.push("--mount-pack-folder", game, path)
+                                 Module["FS_createPreloadedFile"](
+                                    path,
+                                    null,
+                                    api_url + "get_pack/" + game + "/" + pack,
+                                    true,
+                                    true,
+                                    null,
+                                    function(err) {
+                                        onerror("Error loading pack: " + err);
+                                    }
+                                 );
+                            }
+                        }
+                    });
+                    container.addEventListener("click", fun)
+            }
+        </script>
+
+        <script type="text/javascript" src="game.js"></script>
+        <script type="text/javascript" src="love.js" onload="onScriptLoad(this);"></script>
+    </body>
+</html>

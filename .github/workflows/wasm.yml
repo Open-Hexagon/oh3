@@ -1,0 +1,74 @@
+name: Build and package for Web
+
+on:
+  push:
+    branches: [ "main", "wasm" ]
+  pull_request:
+    branches: [ "main", "wasm" ]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    # should be as old as possible
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4.1.1
+
+    - name: Setup megasource
+      run: |
+        git clone https://github.com/rozenmad/megasource-web
+        cd megasource-web/libs/lua-5.1.5/src
+        # extra utility functions
+        wget https://raw.githubusercontent.com/lunarmodules/lua-compat-5.3/refs/heads/master/c-api/compat-5.3.h
+        wget https://raw.githubusercontent.com/lunarmodules/lua-compat-5.3/refs/heads/master/c-api/compat-5.3.c
+        cd ../../..
+        dos2unix libs/love/CMakeLists.txt  # patch does *not* like different line endings
+        patch -p1 -i ../extra/web/lua_include_cffi.patch  # register cffi with require
+        patch -p1 -li ../extra/web/lua_intsize_fix.patch  # fix love.data errors due to internal 32 bit integer usage
+        patch -p1 -li ../extra/web/love_include_ffi.patch  # make final love binary link against lua-cffi
+        cd ..
+
+    - name: Build cffi-lua
+      run: |
+        git clone https://github.com/q66/cffi-lua
+        cd cffi-lua
+        mkdir -p build/deps/include
+        cd build
+        wget https://raw.githubusercontent.com/mesonbuild/meson/refs/heads/master/cross/wasm.txt
+        cp ../../extra/web/lua.hpp deps/include
+        meson setup --cross-file wasm.txt -Dlua_version=vendor -Dstatic=true ..
+        ninja all
+        mv libcffi-lua-5.-501.a subprojects/libffi/src/libffi.a ../../megasource-web
+        cd ../..
+
+    - name: Build megasource
+      run: |
+        cd megasource-web
+        mkdir build
+        cd build
+        emcmake cmake -DLOVE_JIT=0 -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-pthread" -DCMAKE_CXX_FLAGS="-pthread" -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ../..
+        emmake make
+        cd ../..
+
+    - name: Setup Web Builder
+      run: |
+        git clone https://github.com/rozenmad/love-web-builder
+        cp extra/web/template.html extra/web/love.css love-web-builder/lovejs_source
+        cp megasource-web/build/love/love.js megasource-web/build/love/love.wasm love-web-builder/lovejs_source/compat
+
+    - name: Create Website
+      run: |
+        mkdir oh-ce-source
+        cp -r *.lua lib assets compat extlibs game game_handler server ui input_schemes oh-ce-source
+        mkdir contents
+        python love-web-builder/build.py -n "Open Hexagon CE" oh-ce-source contents/oh-ce-wasm
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4.3.0
+      with:
+        name: oh-ce-wasm
+        path: love-web-builder/contents
