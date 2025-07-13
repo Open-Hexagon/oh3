@@ -1,0 +1,39 @@
+--- a/libs/lua-5.1.5/src/luaconf.h
++++ b/libs/lua-5.1.5/src/luaconf.h
+@@ -10,6 +10,7 @@
+
+ #include <limits.h>
+ #include <stddef.h>
++#include <stdint.h>
+
+
+ /*
+@@ -140,7 +141,7 @@
+ ** CHANGE that if ptrdiff_t is not adequate on your machine. (On most
+ ** machines, ptrdiff_t gives a good choice between int or long.)
+ */
+-#define LUA_INTEGER    ptrdiff_t
++#define LUA_INTEGER    int64_t
+
+
+ /*
+
+--- a/libs/love/src/libraries/lua53/lstrlib.c
++++ b/libs/love/src/libraries/lua53/lstrlib.c
+@@ -62,6 +62,7 @@
+ #include <stddef.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <stdint.h>
+
+ #include "lua.h"
+
+@@ -70,7 +71,7 @@
+ #include "lstrlib.h"
+
+ #if LUA_VERSION_NUM == 501
+-typedef size_t lua_Unsigned;
++typedef uint64_t lua_Unsigned;
+ #endif
+
+ #if LUA_VERSION_NUM >= 504
