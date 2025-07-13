@@ -13,13 +13,27 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4.1.1
-    - uses: mymindstorm/setup-emsdk@v10
 
     - name: Install Tools
       run: |
         sudo apt install dos2unix meson
 
+    - name: Cache build
+      id: cache-build
+      uses: actions/cache@v3
+      with:
+        path: |
+          megasource
+        key: cache-build
+
+    - name: Install emscripten
+      if: steps.cache-deps.outputs.cache-hit != 'true'
+      uses: mymindstorm/setup-emsdk@v10
+      with:
+        actions-cache-folder: 'emsdk-cache'
+
     - name: Setup megasource
+      if: steps.cache-deps.outputs.cache-hit != 'true'
       run: |
         git clone https://github.com/rozenmad/megasource-web
         cd megasource-web
@@ -36,6 +50,7 @@ jobs:
         cd ..
 
     - name: Build cffi-lua
+      if: steps.cache-deps.outputs.cache-hit != 'true'
       run: |
         git clone https://github.com/q66/cffi-lua
         cd cffi-lua
@@ -49,6 +64,7 @@ jobs:
         cd ../..
 
     - name: Build megasource
+      if: steps.cache-deps.outputs.cache-hit != 'true'
       run: |
         cd megasource-web
         mkdir build
@@ -67,8 +83,9 @@ jobs:
       run: |
         mkdir oh-ce-source
         cp -r *.lua assets compat extlibs game game_handler server ui input_schemes oh-ce-source
+        cd love-web-builder
         mkdir contents
-        python love-web-builder/build.py -n "Open Hexagon CE" oh-ce-source contents/oh-ce-wasm
+        python build.py -n "Open Hexagon CE" ../oh-ce-source contents/oh-ce-wasm
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4.3.0
