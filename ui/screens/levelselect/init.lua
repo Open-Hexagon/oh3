@@ -10,6 +10,11 @@ local pack_elements = require("ui.screens.levelselect.packs")
 local score = require("ui.screens.levelselect.score")
 local options = require("ui.screens.levelselect.options")
 local search = require("ui.search")
+local dialog = require("ui.overlay.dialog")
+
+if love.system.getOS() == "Web" then
+    dialog.alert("You are playing in the Browser.\nScores will not be saved at all.")
+end
 
 local state = {}
 

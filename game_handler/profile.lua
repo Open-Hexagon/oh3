@@ -1,3 +1,14 @@
+require("love.system")
+if love.system.getOS() == "Web" then
+    -- just fake it for now
+    return setmetatable({}, {
+        __index = function()
+            return function()
+                return {}
+            end
+        end
+    })
+end
 local sqlite = require("extlibs.sqlite")
 local strfun = require("extlibs.sqlite.strfun")
 
