@@ -22,6 +22,8 @@ local function back_to_menu(no_resume)
     ui.open_screen("levelselect")
 end
 
+local stop_time
+
 game_handler.onupdate = function()
     local score = game_handler.get_score()
     score = math.floor(score * 1000) / 1000
@@ -46,8 +48,17 @@ game_handler.onupdate = function()
     if game_handler.is_dead() then
         if game_handler.is_replaying() then
             if not args.render then
-                -- TODO: show appropriate ui when replay ends (retry/back buttons would be wrong here)
-                back_to_menu(config.get("background_preview") ~= "full")
+                if args.replay_viewer then
+                    if not stop_time then
+                        stop_time = love.timer.getTime()
+                    end
+                    if love.timer.getTime() - stop_time > 3 then
+                        love.event.push("quit")
+                    end
+                else
+                    -- TODO: show appropriate ui when replay ends (retry/back buttons would be wrong here)
+                    back_to_menu(config.get("background_preview") ~= "full")
+                end
             end
         elseif not death_overlay.is_open then
             death_overlay:open()
