@@ -9,7 +9,6 @@ local entry = require("ui.elements.entry")
 local progress = require("ui.elements.progress")
 local collapse = require("ui.layout.collapse")
 local threadify = require("threadify")
-local download = threadify.require("ui.overlay.packs.download_thread")
 local channel_callbacks = require("channel_callbacks")
 local pack_elements = require("ui.screens.levelselect.packs")
 local pack_details = require("ui.overlay.packs.details")
@@ -20,9 +19,34 @@ local dialogs = require("ui.overlay.dialog")
 local search = require("ui.search")
 local log = require("log")(...)
 
-download.set_server(config.get("server_url"), config.get("server_http_api_port"), config.get("server_https_api_port"))
-
 local pack_overlay = overlay:new()
+pack_overlay.transition = transitions.slide
+
+if love.system.getOS() == "Web" then
+    pack_overlay.layout = quad:new({
+        child_element = flex:new({
+            flex:new({
+                entry:new({
+                    no_text_text = "Search",
+                }),
+                quad:new({
+                    child_element = icon:new("x-lg"),
+                    selectable = true,
+                    click_handler = function()
+                        pack_overlay:close()
+                    end,
+                }),
+            }, { justify_content = "between" }),
+            label:new("This feature is not available for the Web platform."),
+        }, { direction = "column" }),
+    })
+
+    return pack_overlay
+end
+
+local download = threadify.require("ui.overlay.packs.download_thread")
+
+download.set_server(config.get("server_url"), config.get("server_http_api_port"), config.get("server_https_api_port"))
 
 local pack_list = flex:new({}, { direction = "column", align_items = "stretch" })
 
@@ -224,7 +248,6 @@ pack_overlay.layout = quad:new({
         pack_scroll,
     }, { direction = "column" }),
 })
-pack_overlay.transition = transitions.slide
 pack_overlay.onopen = async(function()
     if all_loaded then
         return
