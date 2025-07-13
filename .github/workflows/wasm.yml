@@ -55,7 +55,7 @@ jobs:
         cd megasource-web
         mkdir build
         cd build
-        emcmake cmake -DLOVE_JIT=0 -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-pthread" -DCMAKE_CXX_FLAGS="-pthread" -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ../..
+        emcmake cmake -DLOVE_JIT=0 -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-pthread" -DCMAKE_CXX_FLAGS="-pthread" -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ..
         emmake make
         cd ../..
 
