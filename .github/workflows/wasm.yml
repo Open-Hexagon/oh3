@@ -20,7 +20,7 @@ jobs:
 
     - name: Install Tools
       run: |
-        sudo apt install dos2unix
+        sudo apt install dos2unix meson
 
     - name: Setup megasource
       run: |
