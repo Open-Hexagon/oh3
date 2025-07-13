@@ -11,6 +11,7 @@ local parser = argparse("oh-ce", "Open Hexagon Community Edition")
 
 parser:argument("replay_file", "Path to replay file.")
     :args("?")
+parser:flag("--replay-viewer", "Close the game after replay has finished. Only does anything if a replay file is given.")
 parser:flag("--headless", "Run the game in headless mode.")
 parser:flag("--server", "Start the game server.")
 parser:flag("--render", "Render a video of the given replay. Also enables server side replay rendering for #1 scores.")
