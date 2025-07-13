@@ -24,7 +24,8 @@ jobs:
 
     - name: Setup megasource
       run: |
-        git clone https://github.com/rozenmad/megasource-web --recursive
+        git clone https://github.com/rozenmad/megasource-web
+        git clone https://github.com/rozenmad/love-web libs/love
         cd megasource-web/libs/lua-5.1.5/src
         # extra utility functions
         wget https://raw.githubusercontent.com/lunarmodules/lua-compat-5.3/refs/heads/master/c-api/compat-5.3.h
