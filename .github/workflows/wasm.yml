@@ -7,9 +7,6 @@ on:
     branches: [ "main", "wasm" ]
   workflow_dispatch:
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
   build:
     # should be as old as possible
@@ -31,7 +28,7 @@ jobs:
         # extra utility functions
         wget https://raw.githubusercontent.com/lunarmodules/lua-compat-5.3/refs/heads/master/c-api/compat-5.3.h
         wget https://raw.githubusercontent.com/lunarmodules/lua-compat-5.3/refs/heads/master/c-api/compat-5.3.c
-        cd ../../..
+        cd -
         dos2unix libs/love/CMakeLists.txt  # patch does *not* like different line endings
         patch -p1 -i ../extra/web/lua_include_cffi.patch  # register cffi with require
         patch -p1 -li ../extra/web/lua_intsize_fix.patch  # fix love.data errors due to internal 32 bit integer usage
