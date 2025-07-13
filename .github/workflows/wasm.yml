@@ -50,6 +50,11 @@ jobs:
         mv libcffi-lua-5.-501.a subprojects/libffi/src/libffi.a ../../megasource-web
         cd ../..
 
+    - name: Print meson log
+      if: always()
+      run: |
+        cat cffi-lua/build/meson-logs/meson-log.txt
+
     - name: Build megasource
       run: |
         cd megasource-web
