@@ -23,18 +23,18 @@ jobs:
         key: cache-build
 
     - name: Install Tools
-      if: steps.cache-deps.outputs.cache-hit != 'true'
+      if: steps.cache-build.outputs.cache-hit != 'true'
       run: |
         sudo apt install dos2unix meson
 
     - name: Install emscripten
-      if: steps.cache-deps.outputs.cache-hit != 'true'
+      if: steps.cache-build.outputs.cache-hit != 'true'
       uses: mymindstorm/setup-emsdk@v10
       with:
         version: 4.0.10
 
     - name: Setup megasource
-      if: steps.cache-deps.outputs.cache-hit != 'true'
+      if: steps.cache-build.outputs.cache-hit != 'true'
       run: |
         git clone https://github.com/rozenmad/megasource-web
         cd megasource-web
@@ -51,7 +51,7 @@ jobs:
         cd ..
 
     - name: Build cffi-lua
-      if: steps.cache-deps.outputs.cache-hit != 'true'
+      if: steps.cache-build.outputs.cache-hit != 'true'
       run: |
         git clone https://github.com/q66/cffi-lua
         cd cffi-lua
@@ -65,7 +65,7 @@ jobs:
         cd ../..
 
     - name: Build megasource
-      if: steps.cache-deps.outputs.cache-hit != 'true'
+      if: steps.cache-build.outputs.cache-hit != 'true'
       run: |
         cd megasource-web
         mkdir build
