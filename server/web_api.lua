@@ -106,22 +106,22 @@ app.handlers["/get_leaderboard/.../.../..."] = function(captures, headers)
     end
 end
 
-app.handlers["/get_video/..."] = function(captures, headers)
+app.handlers["/get_video/..."] = function(captures, headers, req_headers)
     local replay_hash = captures[1]
     local path = replay_get_video_path(replay_hash)
     if path then
-        headers["Cache-Control"] = "max-age=604800, must-revalidate"
-        return http.file(path, headers)
+        headers["cache-control"] = "max-age=604800, must-revalidate"
+        return http.file(path, headers, req_headers)
     else
         return "video for this replay hasn't finished processing, or doesn't exist"
     end
 end
 
-app.handlers["/get_replay/..."] = function(captures, headers)
+app.handlers["/get_replay/..."] = function(captures, headers, req_headers)
     local replay_hash = captures[1]
     local path = replay_get_path(replay_hash)
     if path then
-        return http.file(path, headers)
+        return http.file(path, headers, req_headers)
     else
         return "invalid replay hash"
     end
@@ -161,7 +161,7 @@ app.handlers["/get_packs/.../..."] = function(captures, headers)
     return json.encode(pack_list)
 end
 
-app.handlers["/get_pack/.../..."] = function(captures, headers)
+app.handlers["/get_pack/.../..."] = function(captures, headers, req_headers)
     local version, name = unpack(captures)
     local filename = string.format("%s%s_%s.zip", zip_path, version, name)
     if not love.filesystem.getInfo(filename) then
@@ -174,8 +174,8 @@ app.handlers["/get_pack/.../..."] = function(captures, headers)
             return string.format("Could not find pack at '%s'!", pack_path)
         end
     end
-    headers["Cache-Control"] = "max-age=604800, must-revalidate"
-    return http.file(filename, headers)
+    headers["cache-control"] = "max-age=604800, must-revalidate"
+    return http.file(filename, headers, req_headers)
 end
 
 log("Compressing all packs")
