@@ -331,21 +331,55 @@ function HTTP:log(level, ...)
     print(...)
 end
 
-function HTTP.file(path, headers)
+function HTTP.file(path, headers, reqHeaders)
+    local CHUNK_SIZE = 1024
     local ext = path:match(".*%.(.*)")
     headers["content-type"] = ext and mimes[ext:lower()] or mimes.default
+    headers["accept-ranges"] = "bytes"
     local file = love.filesystem.openFile(path, "r")
-    headers["content-length"] = file:getSize()
-    headers["transfer-encoding"] = "chunked"
+    local file_size = file:getSize()
+    local start_pos = 0
+    local to_read = file_size
+    if reqHeaders["range"] then
+        local unit, range_start, range_end = reqHeaders["range"]:match("(.*)=(%d*)%-(%d*)")
+        range_start = tonumber(range_start)
+        range_end = tonumber(range_end)
+        if not range_start then
+            -- range_end is the suffix length in this case
+            range_start = file_size - range_end
+            range_end = file_size - 1
+        elseif not range_end then
+            -- no end given means end of the resource
+            range_end = file_size - 1
+        end
+        if unit ~= "bytes" or range_start > range_end or range_start < 0 or range_end < 0 or range_end >= file_size then
+            local message = "invalid range: '" .. reqHeaders["range"] .. "'"
+            headers["content-type"] = "text/plain"
+            headers["content-length"] = #message
+            return coroutine.wrap(function()
+                coroutine.yield(message)
+            end), "400"
+        end
+        start_pos = range_start
+        to_read = range_end + 1 - range_start
+        headers["content-range"] = string.format("bytes %d-%d/%d", range_start, range_end, file_size)
+    end
+    file:seek(start_pos)
+    headers["content-length"] = to_read
+    headers["transfer-encoding"] = to_read > CHUNK_SIZE and "chunked" or nil
     return coroutine.wrap(function()
-        repeat
-            -- this is the only place with the number, so chunk size can be adjusted here
-            local chunk = file:read(1024)
-            local len = #chunk
-            coroutine.yield(string.format("%x\r\n%s\r\n", len, chunk))
-        until len == 0
+        if to_read <= CHUNK_SIZE then
+            coroutine.yield(file:read(to_read))
+        else
+            while to_read > 0 do
+                local chunk = file:read(CHUNK_SIZE)
+                to_read = to_read - CHUNK_SIZE
+                coroutine.yield(string.format("%x\r\n%s\r\n", #chunk, chunk))
+            end
+            coroutine.yield("0\r\n\r\n")
+        end
         file:close()
-    end)
+    end), reqHeaders["range"] and "206" or "200"  -- 206 is partial content
 end
 
 function HTTP:handleFile(filename, localfilename, ext, dir, headers, reqHeaders, GET, POST)
@@ -359,7 +393,7 @@ function HTTP:handleFile(filename, localfilename, ext, dir, headers, reqHeaders,
     end
 
     self:log(1, "serving file", filename)
-    return "200 OK", HTTP.file(localfilename)
+    return "200 OK", HTTP.file(localfilename, headers, reqHeaders)
 end
 
 function HTTP:handleRequest(...)
@@ -393,7 +427,7 @@ function HTTP:handleRequest(...)
         end
     end
     if handler_search_result then
-        local coroutine_or_string = handler_search_result(captures, headers, reqHeaders, GET, POST)
+        local coroutine_or_string, return_code = handler_search_result(captures, headers, reqHeaders, GET, POST)
         if type(coroutine_or_string) == "string" then
             local CHUNK_SIZE = 1024 -- only for strings (file chunk size is separate)
             local str = coroutine_or_string
@@ -417,7 +451,7 @@ function HTTP:handleRequest(...)
                 end)
             end
         end
-        return "200 OK", coroutine_or_string
+        return return_code or "200 OK", coroutine_or_string
     end
 
     local folder = filename:match(".*/")
@@ -515,34 +549,32 @@ function HTTP:handleClient(client)
         local method, filename, proto = unpack(parts)
 
         local POST
-        local reqHeaders
+        local reqHeaders = {}
+        while true do
+            local line = self:receive(client)
+            if not line then
+                break
+            end
+            line = line:match("^%s*(.-)%s*$")
+            if line == "" then
+                self:log(1, "done reading header")
+                break
+            end
+            local k, v = line:match("^(.-):(.*)$")
+            if not k then
+                self:log(1, "got invalid header line: " .. line)
+                break
+            end
+            v = v:match("^%s*(.-)%s*$")
+            reqHeaders[k:lower()] = v
+            self:log(3, "reqHeaders[" .. k:lower() .. "] = " .. v)
+        end
 
         method = method:lower()
         if method == "get" then
             -- fall through, don't error
             -- [[
         elseif method == "post" then
-            reqHeaders = {}
-            while true do
-                local line = self:receive(client)
-                if not line then
-                    break
-                end
-                line = line:match("^%s*(.-)%s*$")
-                if line == "" then
-                    self:log(1, "done reading header")
-                    break
-                end
-                local k, v = line:match("^(.-):(.*)$")
-                if not k then
-                    self:log(1, "got invalid header line: " .. line)
-                    break
-                end
-                v = v:match("^%s*(.-)%s*$")
-                reqHeaders[k:lower()] = v
-                self:log(3, "reqHeaders[" .. k:lower() .. "] = " .. v)
-            end
-
             local postLen = tonumber(reqHeaders["content-length"])
             if not postLen then
                 self:log(0, "didn't get POST data length")
@@ -686,7 +718,11 @@ function HTTP:handleClient(client)
                 increased_working = true
                 for str in callback do
                     coroutine.yield()
-                    assert(self:send(client, str))
+                    -- closed connection during sending of longer data
+                    -- usually just means the browser noticed it's too much
+                    -- and aborted in order to start again with ranged requests
+                    local successlen, reason = self:send(client, str)
+                    assert(successlen or reason == "closed", reason)
                 end
                 self.working = self.working - 1
                 increased_working = false
