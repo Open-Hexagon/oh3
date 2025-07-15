@@ -30,6 +30,8 @@ jobs:
     - name: Install emscripten
       if: steps.cache-deps.outputs.cache-hit != 'true'
       uses: mymindstorm/setup-emsdk@v10
+      with:
+        version: 4.0.10
 
     - name: Setup megasource
       if: steps.cache-deps.outputs.cache-hit != 'true'
