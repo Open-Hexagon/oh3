@@ -56,9 +56,9 @@ local rng_max = 4294967295
 local rng_range = ffi.new("uint64_t", rng_max)
 function rng.get_int(a, b)
     local old_a = a
+    local range = ffi.new("uint64_t", b - a)
     a = ffi.new("uint64_t", a)
     b = ffi.new("uint64_t", b)
-    local range = b - a
     local ret
     if rng_range > range then
         range = range + 1
