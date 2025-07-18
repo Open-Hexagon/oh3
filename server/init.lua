@@ -1,3 +1,4 @@
+require("platform")
 local log_name, is_thread, start_web = ...
 start_web = start_web or require("args").web
 local log = require("log")(log_name)
@@ -15,7 +16,11 @@ local function run_server(host, port, on_connection)
     log("listening on", server:getsockname())
 
     local coroutines = {}
+    local clients = {}
     while true do
+        if #clients == 0 then
+            love.timer.sleep(0.1)
+        end
         local client = server:accept()
         if client then
             assert(client:setoption("keepalive", true))
@@ -23,13 +28,33 @@ local function run_server(host, port, on_connection)
             local new_coroutine = coroutine.create(on_connection)
             local index = #coroutines + 1
             coroutines[index] = new_coroutine
-            coroutine.resume(new_coroutine, client, server)
+            clients[index] = client
+            local success, err = coroutine.resume(new_coroutine, client, server)
+            if not success then
+                log("Error in coroutine:", err .. "\n" .. debug.traceback(new_coroutine))
+                log("Forcibly closing client:", pcall(client.close, client))
+            end
         end
         for i = #coroutines, 1, -1 do
             if coroutine.status(coroutines[i]) == "dead" then
                 table.remove(coroutines, i)
+                table.remove(clients, i)
             else
-                coroutine.resume(coroutines[i])
+                local success, err = coroutine.resume(coroutines[i])
+                if not success then
+                    log("Error in coroutine:", err .. "\n" .. debug.traceback(coroutines[i]))
+                    log("Forcibly closing client:", pcall(clients[i].close, clients[i]))
+                end
+            end
+        end
+        -- exit if an error happened in a different thread
+        if not is_thread then
+            love.event.pump()
+            for event_name, _, b in love.event.poll() do
+                if event_name == "threaderror" then
+                    log("Error in thread: " .. b, 10)
+                    return
+                end
             end
         end
     end
@@ -173,7 +198,7 @@ run_server("0.0.0.0", 50505, function(client)
                 if pending_packet_size then
                     if #data >= pending_packet_size then
                         reading = true
-                        err = process_packet(data:sub(1, pending_packet_size), client_data)
+                        local err = process_packet(data:sub(1, pending_packet_size), client_data)
                         if err then
                             -- client sends wrong packets (e.g. wrong protocol version)
                             client:close()

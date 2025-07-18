@@ -187,11 +187,7 @@ game_handler.replay_start = async(function(file_or_replay_obj)
     if type(file_or_replay_obj) == "table" then
         replay = file_or_replay_obj
     else
-        if love.filesystem.getInfo(file_or_replay_obj) then
-            replay = Replay:new(file_or_replay_obj)
-        else
-            error("Replay file at '" .. file_or_replay_obj .. "' does not exist")
-        end
+        replay = Replay:new(file_or_replay_obj)
     end
     if replay.game_version ~= current_game_version then
         game_handler.set_version(replay.game_version)

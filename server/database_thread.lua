@@ -1,8 +1,10 @@
+require("platform")
 local log_name, as_thread = ...
 local log = require("log")(log_name)
 local sqlite = require("extlibs.sqlite")
 local strfun = require("extlibs.sqlite.strfun")
 local msgpack = require("extlibs.msgpack.msgpack")
+
 local api = {}
 
 local server_path = "server/"

@@ -1,10 +1,17 @@
 local log = require("log")("ui.overlay.packs.download_thread")
 local json = require("extlibs.json.json")
-local https = require("https")
 local threadify = require("threadify")
 local assets = threadify.require("game_handler.assets")
 local url = require("socket.url")
 require("love.timer")
+
+-- don't import https when running in the browser
+-- TODO: find an alternative?
+require("love.system")
+local https
+if love.system.getOS() ~= "Web" then
+    https = require("https")
+end
 
 local server_http_url, server_https_url
 local tmp_folder = "download_cache/"
