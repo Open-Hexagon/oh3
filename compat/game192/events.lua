@@ -129,28 +129,28 @@ function events.init(game, public)
         end,
         -- level int set, add, subtract, multiply, divide
         level_int_set = function(event)
-            lua_runtime.env.setLevelValueFloat(event.value_name, event.value)
+            lua_runtime.env.setLevelValueInt(event.value_name, event.value)
         end,
         level_int_add = function(event)
-            lua_runtime.env.setLevelValueFloat(
+            lua_runtime.env.setLevelValueInt(
                 event.value_name,
                 lua_runtime.env.getLevelValueFloat(event.value_name) + event.value
             )
         end,
         level_int_subtract = function(event)
-            lua_runtime.env.setLevelValueFloat(
+            lua_runtime.env.setLevelValueInt(
                 event.value_name,
                 lua_runtime.env.getLevelValueFloat(event.value_name) - event.value
             )
         end,
         level_int_multiply = function(event)
-            lua_runtime.env.setLevelValueFloat(
+            lua_runtime.env.setLevelValueInt(
                 event.value_name,
                 lua_runtime.env.getLevelValueFloat(event.value_name) * event.value
             )
         end,
         level_int_divide = function(event)
-            lua_runtime.env.setLevelValueFloat(
+            lua_runtime.env.setLevelValueInt(
                 event.value_name,
                 lua_runtime.env.getLevelValueFloat(event.value_name) / event.value
             )
@@ -185,28 +185,28 @@ function events.init(game, public)
         end,
         -- style int set, add, subtract, multiply, divide
         style_int_set = function(event)
-            lua_runtime.env.setStyleValueFloat(event.value_name, event.value)
+            lua_runtime.env.setStyleValueInt(event.value_name, event.value)
         end,
         style_int_add = function(event)
-            lua_runtime.env.setStyleValueFloat(
+            lua_runtime.env.setStyleValueInt(
                 event.value_name,
                 lua_runtime.env.getLevelValueFloat(event.value_name) + event.value
             )
         end,
         style_int_subtract = function(event)
-            lua_runtime.env.setStyleValueFloat(
+            lua_runtime.env.setStyleValueInt(
                 event.value_name,
                 lua_runtime.env.getLevelValueFloat(event.value_name) - event.value
             )
         end,
         style_int_multiply = function(event)
-            lua_runtime.env.setStyleValueFloat(
+            lua_runtime.env.setStyleValueInt(
                 event.value_name,
                 lua_runtime.env.getLevelValueFloat(event.value_name) * event.value
             )
         end,
         style_int_divide = function(event)
-            lua_runtime.env.setStyleValueFloat(
+            lua_runtime.env.setStyleValueInt(
                 event.value_name,
                 lua_runtime.env.getLevelValueFloat(event.value_name) / event.value
             )
