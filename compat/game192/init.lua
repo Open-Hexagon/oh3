@@ -16,6 +16,7 @@ local lua_runtime = require("compat.game192.lua_runtime")
 local events = require("compat.game192.events")
 local walls = require("compat.game192.walls")
 local vfs = require("compat.game192.virtual_filesystem")
+local utils = require("compat.game192.utils")
 local config = require("config")
 local input = require("input")
 local public = {
@@ -108,6 +109,7 @@ function game.side_change(side_count)
 end
 
 function game.set_sides(side_count)
+    side_count = utils.round_to_even(side_count) % 2 ^ 32
     playsound(beep_sound)
     if side_count < 3 then
         side_count = 3
@@ -408,12 +410,12 @@ function public.draw(screen)
     style.compute_colors()
     local black_and_white = config.get("black_and_white")
     if config.get("background") then
-        style.draw_background(game.level_data.sides, black_and_white)
+        style.draw_background(game.level_data.sides % 2 ^ 32, black_and_white)
     end
     main_quads:clear()
     walls.draw(main_quads, game.get_main_color(black_and_white))
     if public.preview_mode then
-        player.draw_pivot(game.level_data.sides, status.radius, main_quads, game.get_main_color(black_and_white))
+        player.draw_pivot(game.level_data.sides % 2 ^ 32, status.radius, main_quads, game.get_main_color(black_and_white))
     else
         player.draw(
             style,
@@ -468,7 +470,7 @@ function public.draw(screen)
         love.graphics.setShader()
     end
     main_quads:draw()
-    player.draw_cap(game.level_data.sides, style, false)
+    player.draw_cap(game.level_data.sides % 2 ^ 32, style, false)
     -- message and flash shouldn't be affected by skew/rotation
     love.graphics.origin()
     love.graphics.scale(zoom_factor, zoom_factor)

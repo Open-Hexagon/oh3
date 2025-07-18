@@ -37,7 +37,7 @@ local function spawn_wall(side, thickness, speed, acceleration, minSpeed, maxSpe
         log("Not spawning wall with NaN thickness!")
         return
     end
-    local side_count = level_data.sides
+    local side_count = level_data.sides % 2 ^ 32
     local wall_angle_left = level_data.wall_angle_left
     local wall_angle_right = level_data.wall_angle_right
     local wall_skew_left = level_data.wall_skew_left
