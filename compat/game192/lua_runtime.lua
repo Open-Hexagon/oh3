@@ -3,6 +3,7 @@ local args = require("args")
 local play_sound = require("compat.game192.play_sound")
 local utils = require("compat.game192.utils")
 local style = require("compat.game192.style")
+local level = require("compat.game192.level")
 local status = require("compat.game192.status")
 local events = require("compat.game192.events")
 local walls = require("compat.game192.walls")
@@ -205,15 +206,15 @@ function lua_runtime.init_env(game, public)
         setfenv(func, env)
         return func()
     end
-    local function make_get_set_functions(tbl, name)
+    local function make_get_set_functions(get, set, name)
         env["get" .. name .. "ValueInt"] = function(field)
-            return utils.round_to_even(tonumber(tbl[field] or 0))
+            return utils.round_to_even(tonumber(get(field)))
         end
         env["get" .. name .. "ValueFloat"] = function(field)
-            return tonumber(tbl[field] or 0)
+            return tonumber(get(field) or 0)
         end
         env["get" .. name .. "ValueString"] = function(field)
-            local value = tbl[field] or ""
+            local value = get(field) or ""
             local str = tostring(value)
             -- fix float to string conversion expecting 0 after dot
             if type(value) == "number" and str:match("[.]") then
@@ -223,23 +224,23 @@ function lua_runtime.init_env(game, public)
             end
         end
         env["get" .. name .. "ValueBool"] = function(field)
-            return tbl[field] or false
+            return get(field) or false
         end
         env["set" .. name .. "ValueInt"] = function(field, value)
-            tbl[field] = utils.round_to_even(value)
+            set(field, utils.round_to_even(value))
         end
         env["set" .. name .. "ValueFloat"] = function(field, value)
-            tbl[field] = value
+            set(field, value)
         end
         env["set" .. name .. "ValueString"] = function(field, value)
-            tbl[field] = value
+            set(field, value)
         end
         env["set" .. name .. "ValueBool"] = function(field, value)
-            tbl[field] = value
+            set(field, value)
         end
     end
-    make_get_set_functions(game.level_data, "Level")
-    make_get_set_functions(style.get_table(), "Style")
+    make_get_set_functions(level.get_value, level.set_value, "Level")
+    make_get_set_functions(style.get_value, style.set_value, "Style")
     env.log = function(text)
         log("Lua: " .. text)
     end
