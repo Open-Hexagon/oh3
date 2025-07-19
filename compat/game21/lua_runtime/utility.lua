@@ -117,7 +117,7 @@ return function(public, game)
     local lua_runtime = require("compat.game21.lua_runtime")
     local env = lua_runtime.env
     env.u_isHeadless = function()
-        return args.headless
+        return args.headless or false
     end
     env.u_rndReal = function()
         return rng.get_real(0, 1)
