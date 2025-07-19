@@ -3,6 +3,7 @@ local async = require("async")
 local args = require("args")
 local threadify = require("threadify")
 local channel_callbacks = require("channel_callbacks")
+local audio = require("audio")
 
 local function add_require_path(path)
     love.filesystem.setRequirePath(love.filesystem.getRequirePath() .. ";" .. path)
@@ -12,7 +13,7 @@ local function add_c_require_path(path)
     love.filesystem.setCRequirePath(love.filesystem.getCRequirePath() .. ";" .. path)
 end
 
-local render_replay = async(function(game_handler, video_encoder, audio, replay, out_file, final_score)
+local render_replay = async(function(game_handler, video_encoder, replay, out_file, final_score)
     local ui = require("ui")
     ui.open_screen("game")
     local fps = 60
@@ -109,10 +110,9 @@ local main = async(function()
         local server_thread = love.thread.newThread("server/init.lua")
         server_thread:start("server", true, args.web)
         local game_handler = require("game_handler")
-        local audio = require("game_handler.video.audio")
         local video_encoder = require("game_handler.video")
         global_config.init()
-        async.await(game_handler.init(audio))
+        async.await(game_handler.init())
         game_handler.process_event("resize", 1920, 1080)
         local Replay = require("game_handler.replay")
         return function()
@@ -137,7 +137,7 @@ local main = async(function()
                 local replay = Replay:new(replay_file)
                 local out_file_path = love.filesystem.getSaveDirectory() .. "/" .. replay_file .. ".part.mp4"
                 log("Got new #1 on '" .. replay.level_id .. "' from '" .. replay.pack_id .. "', rendering...")
-                local promise = render_replay(game_handler, video_encoder, audio, replay, out_file_path, replay.score)
+                local promise = render_replay(game_handler, video_encoder, replay, out_file_path, replay.score)
                 local fn
                 promise:done(function(func)
                     fn = func
@@ -188,12 +188,11 @@ local main = async(function()
         end
         love.window.setMode(1920, 1080)
         local game_handler = require("game_handler")
-        local audio = require("game_handler.video.audio")
         local video_encoder = require("game_handler.video")
         global_config.init()
-        async.await(game_handler.init(audio))
+        async.await(game_handler.init())
         game_handler.process_event("resize", 1920, 1080)
-        return async.await(render_replay(game_handler, video_encoder, audio, args.replay_file, "output.mp4"))
+        return async.await(render_replay(game_handler, video_encoder, args.replay_file, "output.mp4"))
     end
 
     local ui = require("ui")
@@ -247,6 +246,7 @@ local main = async(function()
         threadify.update()
         channel_callbacks.update()
         ui.update(love.timer.getDelta())
+        audio.update()
 
         -- ensures tickrate on its own
         game_handler.update(true)

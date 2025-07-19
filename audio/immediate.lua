@@ -37,6 +37,8 @@ audio.__newindex = function(t, k, v)
     end
 end
 
+function audio.update() end
+
 local function new(filename, read_type)
     return setmetatable({
         source = love.audio.newSource(filename, read_type),

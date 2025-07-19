@@ -1,3 +1,4 @@
+local args = require("args")
 local audio = {
     sample_rate = 48000,
 }
@@ -7,10 +8,14 @@ audio.__index = audio
 local BYTES_PER_SAMPLE = 2
 local BITS_PER_SAMPLE = BYTES_PER_SAMPLE * 8
 local SAMPLE_RATE = audio.sample_rate
+local frame_size = 800  -- results in an effective update rate of 60hz for reacting to audio:play calls
 
-local samples_to_read = 0
 local encoder
-local target_data
+local target_data, source
+if not args.headless then
+    target_data = love.sound.newSoundData(frame_size, SAMPLE_RATE, BITS_PER_SAMPLE, 2)
+    source = love.audio.newQueueableSource(SAMPLE_RATE, BITS_PER_SAMPLE, 2, 8)
+end
 local loaded_audio = {}
 
 local function resample(data, pitch, duration)
@@ -48,7 +53,9 @@ end
 
 function audio.set_encoder(video_encoder)
     encoder = video_encoder
-    target_data = love.sound.newSoundData(encoder.audio_frame_size, SAMPLE_RATE, BITS_PER_SAMPLE, 2)
+    frame_size = (encoder or {}).audio_frame_size or 800
+    target_data:release()
+    target_data = love.sound.newSoundData(frame_size, SAMPLE_RATE, BITS_PER_SAMPLE, 2)
 end
 
 function audio.new_static(file)
@@ -102,6 +109,12 @@ function audio:release()
             self.data:release()
         end
     end
+    for i = 1, #loaded_audio do
+        if loaded_audio[i] == self then
+            table.remove(loaded_audio, i)
+            return
+        end
+    end
 end
 
 function audio:seek(offset)
@@ -143,10 +156,21 @@ local function clamp_signal(value)
     end
 end
 
+
+local samples_read = 0
+local samples_to_read = 0
+
 function audio.update(delta)
-    samples_to_read = samples_to_read + delta * SAMPLE_RATE
-    while samples_to_read >= encoder.audio_frame_size do
-        for buffer_pos = 0, encoder.audio_frame_size - 1 do
+    if delta then
+        samples_to_read = samples_to_read + delta * SAMPLE_RATE
+    else
+        if samples_read == 0 then
+            samples_read = love.timer.getTime() * SAMPLE_RATE
+        end
+        samples_to_read = love.timer.getTime() * SAMPLE_RATE - samples_read
+    end
+    while samples_to_read >= frame_size do
+        for buffer_pos = 0, frame_size - 1 do
             target_data:setSample(buffer_pos, 1, 0)
             target_data:setSample(buffer_pos, 2, 0)
         end
@@ -157,7 +181,7 @@ function audio.update(delta)
                     obj.playing = obj.looping
                     obj:seek(0)
                 end
-                for buffer_pos = 0, encoder.audio_frame_size - 1 do
+                for buffer_pos = 0, frame_size - 1 do
                     if obj.data == nil then
                         obj.data = obj.decoder:decode()
                         if obj.data:getSampleRate() ~= SAMPLE_RATE or obj.sample_rate ~= obj.data:getSampleRate() then
@@ -201,8 +225,16 @@ function audio.update(delta)
                 end
             end
         end
-        samples_to_read = samples_to_read - encoder.audio_frame_size
-        encoder.supply_audio_data(target_data)
+        samples_to_read = samples_to_read - frame_size
+        samples_read = samples_read + frame_size
+        if encoder then
+            encoder.supply_audio_data(target_data)
+        else
+            source:queue(target_data)
+        end
+    end
+    if not encoder then
+        source:play()
     end
 end
 
