@@ -38,9 +38,7 @@ end
 game_handler.profile = require("game_handler.profile")
 
 ---initialize all games (has to be called before doing anything)
----@param audio any
-game_handler.init = async(function(audio)
-    audio = audio or require("audio")
+game_handler.init = async(function()
     -- 1.92 needs persistent data for asset loading as it can overwrite any file
     local persistent_data
     if not args.server and not args.migrate then
@@ -49,12 +47,11 @@ game_handler.init = async(function(audio)
     local packs = async.await(threaded_assets.init(persistent_data, args.headless))
     pack_level_data.import_packs(packs)
     for _, game in pairs(games) do
-        local promise = game.init(config, audio)
+        local promise = game.init(config)
         if promise then
             async.await(promise)
         end
     end
-    music.init(audio)
 end)
 
 ---import a pack

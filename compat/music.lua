@@ -1,19 +1,15 @@
 local args = require("args")
 local log = require("log")(...)
+local audio = require("audio")
 local music = {
     volume = 1,
 }
-local audio
 
 function music.update_volume(volume)
     if music.playing and music.playing.source then
         music.playing.source.volume = volume
     end
     music.volume = volume
-end
-
-function music.init(audio_module)
-    audio = audio_module
 end
 
 function music.play(music_data, random_segment, time, pitch)

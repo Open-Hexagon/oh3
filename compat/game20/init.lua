@@ -449,10 +449,8 @@ end
 
 ---initialize the game
 ---@param conf table
----@param audio table
-public.init = async(function(conf, audio)
-    async.await(assets.init(audio, conf))
-    game.audio = audio
+public.init = async(function(conf)
+    async.await(assets.init(conf))
     if not args.headless then
         game.beep_sound = assets.get_sound("click.ogg")
         death_sound = assets.get_sound("death.ogg")

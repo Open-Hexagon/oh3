@@ -4,6 +4,7 @@ local async = require("async")
 local threadify = require("threadify")
 local threaded_assets = threadify.require("game_handler.assets")
 local shader_compat = require("compat.game21.shader_compat")
+local audio = require("audio")
 local pack_id_map = {}
 local pack_id_list = {}
 local sound_mapping = {
@@ -20,7 +21,7 @@ local audio_path = "assets/audio/"
 local cached_sounds = {}
 local loaded_fonts = {}
 local loaded_images = {}
-local audio_module, sound_volume
+local sound_volume
 local dependency_mapping = {}
 local cached_packs = {}
 local pending_packs = {}
@@ -39,8 +40,7 @@ local function compile_shaders(pack)
     end
 end
 
-assets.init = async(function(audio, config)
-    audio_module = audio
+assets.init = async(function(config)
     sound_volume = config.get("sound_volume")
     if config.get("preload_all_packs") then
         local game_handler = require("game_handler")
@@ -122,7 +122,7 @@ function assets.get_sound(id)
     id = sound_mapping[id] or id
     if cached_sounds[id] == nil then
         if love.filesystem.getInfo(audio_path .. id) then
-            cached_sounds[id] = audio_module.new_static(audio_path .. id)
+            cached_sounds[id] = audio.new_static(audio_path .. id)
             cached_sounds[id].volume = sound_volume
         else
             return assets.get_pack_sound(nil, id)
@@ -150,7 +150,7 @@ function assets.get_pack_sound(pack, id)
         end
     end
     if cached_sounds[glob_id] == nil then
-        cached_sounds[glob_id] = audio_module.new_static(pack.path .. "/Sounds/" .. id)
+        cached_sounds[glob_id] = audio.new_static(pack.path .. "/Sounds/" .. id)
         cached_sounds[glob_id].volume = sound_volume
     end
     return cached_sounds[glob_id]

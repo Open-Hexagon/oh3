@@ -1,16 +1,16 @@
 local threadify = require("threadify")
 local threaded_assets = threadify.require("game_handler.assets")
 local async = require("async")
+local audio = require("audio")
 local assets = {}
-local audio_module, sound_volume
+local sound_volume
 local sound_path = "assets/audio/"
 local cached_sounds = {}
 local cached_packs = {}
 local pending_packs = {}
 
-assets.init = async(function(audio, config)
+assets.init = async(function(config)
     sound_volume = config.get("sound_volume")
-    audio_module = audio
     if config.get("preload_all_packs") then
         local game_handler = require("game_handler")
         local packs = game_handler.get_packs()
@@ -37,7 +37,7 @@ end)
 function assets.get_sound(filename)
     if not cached_sounds[filename] then
         if love.filesystem.getInfo(sound_path .. filename) then
-            cached_sounds[filename] = audio_module.new_static(sound_path .. filename)
+            cached_sounds[filename] = audio.new_static(sound_path .. filename)
             cached_sounds[filename].volume = sound_volume
         else
             if filename:match("_") then
@@ -50,7 +50,7 @@ function assets.get_sound(filename)
                     if not love.filesystem.getInfo(path) then
                         return
                     end
-                    cached_sounds[filename] = audio_module.new_static(path)
+                    cached_sounds[filename] = audio.new_static(path)
                     cached_sounds[filename].volume = sound_volume
                 end
             end

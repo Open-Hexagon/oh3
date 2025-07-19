@@ -481,10 +481,9 @@ function public.stop()
 end
 
 ---initialize the game
----@param audio any
-public.init = async(function(conf, audio)
-    async.await(assets.init(audio, conf))
-    game.audio = audio
+---@param conf table
+public.init = async(function(conf)
+    async.await(assets.init(conf))
     pseudo3d.init(game)
     if not args.headless then
         message_font = assets.get_font("OpenSquare-Regular.ttf", 32 * config.get("text_scale"))

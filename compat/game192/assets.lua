@@ -1,4 +1,5 @@
 local async = require("async")
+local audio = require("audio")
 local threadify = require("threadify")
 local threaded_assets = threadify.require("game_handler.assets")
 
@@ -14,13 +15,12 @@ local sound_mapping = {
     ["swapBlip.ogg"] = "swap_blip.ogg",
 }
 local audio_path = "assets/audio/"
-local audio_module, sound_volume
+local sound_volume
 local cached_packs = {}
 local cached_sounds = {}
 local pending_packs = {}
 
-assets.init = async(function(audio, config)
-    audio_module = audio
+assets.init = async(function(config)
     sound_volume = config.get("sound_volume")
     if config.get("preload_all_packs") then
         local game_handler = require("game_handler")
@@ -48,7 +48,7 @@ end)
 function assets.get_sound(id)
     id = sound_mapping[id] or id
     if cached_sounds[id] == nil then
-        cached_sounds[id] = audio_module.new_static(audio_path .. id)
+        cached_sounds[id] = audio.new_static(audio_path .. id)
         cached_sounds[id].volume = sound_volume
     end
     return cached_sounds[id]
@@ -66,7 +66,7 @@ function assets.get_pack_sound(pack, id)
         return assets.get_sound(id)
     end
     if cached_sounds[id] == nil then
-        cached_sounds[id] = audio_module.new_static(pack.path .. "Sounds/" .. id:match("_(.*)"))
+        cached_sounds[id] = audio.new_static(pack.path .. "Sounds/" .. id:match("_(.*)"))
         cached_sounds[id].volume = sound_volume
     end
     return cached_sounds[id]
