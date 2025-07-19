@@ -136,6 +136,7 @@ game_handler.record_start = async(function(pack, level, level_settings, is_retry
     game_handler.set_volume(config.get("music_volume"), config.get("sound_volume"))
     current_game.preview_mode = false
     current_game.death_callback = function()
+        love.mouse.setVisible(true)
         input.record_stop()
         if current_game.update_save_data ~= nil then
             current_game.update_save_data()
@@ -168,6 +169,7 @@ game_handler.record_start = async(function(pack, level, level_settings, is_retry
     last_pack = pack
     last_level = level
     last_level_settings = level_settings
+    love.mouse.setVisible(false)
 end)
 
 ---retry the level that was last started with record_start
@@ -235,18 +237,17 @@ end
 ---@param ... unknown
 function game_handler.process_event(name, ...)
     if name == "resize" then
-        local width, height = ...
+        local width, height = love.graphics.getDimensions()
         if width < height * aspect_ratio then
             -- window is too high for the aspect_ratio
             scale[1] = 1
             scale[2] = width / (aspect_ratio * height)
         else
-            -- window is toowide for the aspect_ratio
+            -- window is too wide for the aspect_ratio
             scale[1] = height * aspect_ratio / width
             scale[2] = 1
         end
         -- recreate screen canvas to have the correct size
-        width, height = love.graphics.getDimensions()
         local res_scale = config.get("game_resolution_scale")
         screen = love.graphics.newCanvas(width * scale[1] / res_scale, height * scale[2] / res_scale, {
             -- TODO: make adjustable in settings
