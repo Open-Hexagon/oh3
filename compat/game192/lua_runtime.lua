@@ -344,7 +344,11 @@ local function limit_function_calls(fn, ...)
         if count > 1000000 then
             debug.sethook()
             lua_runtime.reset_timings = true
-            require("game_handler").stop()
+            -- not ideal as this can stop preview music
+            -- but it is required to not hang on some previews
+            if require("compat.game192").preview_mode then
+                require("game_handler").stop()
+            end
             error("too many function calls without returning to the game")
         end
     end, "c")
