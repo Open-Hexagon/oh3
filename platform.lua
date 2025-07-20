@@ -1,4 +1,8 @@
 -- platform specific adjustments
+
+-- thanks to fake dlfcn functions, the library is actually just statically compiled in
+-- dlsym just uses a table with symbol names and pointers to the actual symbols
+package.preload.ffi = package.loadlib("cffi.a", "luaopen_cffi")
 local ffi = require("ffi")
 
 -- cffi-lua has its own ffi.tonumber
