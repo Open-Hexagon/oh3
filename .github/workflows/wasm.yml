@@ -92,7 +92,7 @@ jobs:
       run: |
         git clone https://github.com/rozenmad/love-web-builder
         cp extra/web/template.html extra/web/love.css love-web-builder/lovejs_source
-        cp extra/web/love.css extra/web/love.css love-web-builder/lovejs_source/theme
+        cp extra/web/love.css love-web-builder/lovejs_source/theme
         cp megasource-web/build/love/love.js megasource-web/build/love/love.wasm love-web-builder/lovejs_source/compat
 
     - name: Create Website
