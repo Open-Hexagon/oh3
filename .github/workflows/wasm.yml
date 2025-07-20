@@ -75,7 +75,7 @@ jobs:
       if: steps.cache-build.outputs.cache-hit != 'true'
       run: |
         cd megasource-web
-        ../extra/web/build_fake_dlfcn.sh
+        ../extra/web/build_fake_dlfcn.sh -I../sqlite-amalgamation-3500300
         cd ..
 
     - name: Build megasource
