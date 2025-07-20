@@ -69,6 +69,12 @@ local clib = (function()
             if os == "Windows" then
                 return "lib/libsqlite3.dll"
             end
+
+            if os == "Web" then
+                -- thanks to fake dlfcn functions, the library is actually just statically compiled in
+                -- dlsym just uses a table with symbol names and pointers to the actual symbols
+                return "libsqlite3.a"
+            end
         end)()
 
     return ffi.load(clib_path or "libsqlite3")
@@ -300,8 +306,8 @@ M.flags["null"] = 5
 ffi.cdef([[
   typedef struct sqlite3 sqlite3;
 
-  typedef __int64 sqlite_int64;
-  typedef unsigned __int64 sqlite_uint64;
+  typedef int64_t sqlite_int64;
+  typedef uint64_t sqlite_uint64;
 
   typedef sqlite_int64 sqlite3_int64;
   typedef sqlite_uint64 sqlite3_uint64;
@@ -637,8 +643,13 @@ ffi.cdef([[
 ---@class sqlite_blob @sqlite3 blob object
 
 M.to_str = function(ptr, len)
-    if ptr == nil then
+    if ptr == ffi.nullptr then
         return
+    end
+    if not len then
+        -- cffi-lua wants the argcount to be 1 in order
+        -- to do strlen even if the 2nd arg is nil
+        return ffi.string(ptr)
     end
     return ffi.string(ptr, len)
 end
