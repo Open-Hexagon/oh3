@@ -465,7 +465,9 @@ function sqlite.db:insert(tbl_name, rows, schema)
             stmt:bind_clear()
             table.insert(ret_vals, stmt:finalize())
         end
-        last_rowid = tonumber(clib.last_insert_rowid(self.conn))
+        -- This throws "TypeError: can't convert BigInt to number" in emscripten
+        -- we don't use the return value anyway, so comment it out for now
+        -- last_rowid = tonumber(clib.last_insert_rowid(self.conn))
     end)
 
     local succ = u.all(ret_vals, function(_, v)
