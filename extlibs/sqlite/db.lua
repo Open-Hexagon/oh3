@@ -219,10 +219,13 @@ function sqlite.db:with_open(...)
     local success, result = pcall(function()
         return func(self)
     end)
-    self:close()
     if not success then
         error(result)
     end
+    -- only close after checking success, since closing may fail
+    -- when a stmt isn't finalized yet, causing a different error
+    -- than the initial one, which is confusing when debugging
+    self:close()
     return result
 end
 
