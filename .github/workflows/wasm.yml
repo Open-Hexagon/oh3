@@ -45,9 +45,8 @@ jobs:
         wget https://raw.githubusercontent.com/lunarmodules/lua-compat-5.3/refs/heads/master/c-api/compat-5.3.c
         cd -
         dos2unix libs/love/CMakeLists.txt  # patch does *not* like different line endings
-        patch -p1 -i ../extra/web/lua_include_cffi.patch  # register cffi with require
         patch -p1 -li ../extra/web/lua_intsize_fix.patch  # fix love.data errors due to internal 32 bit integer usage
-        patch -p1 -li ../extra/web/love_include_ffi.patch  # make final love binary link against lua-cffi
+        patch -p1 -li ../extra/web/include_fake_dlfcn.patch  # make final love binary include fake dynamic (actually static) libraries
         cd ..
 
     - name: Build cffi-lua
@@ -60,9 +59,24 @@ jobs:
         # lua.hpp is expected at cffi-lua/<deps_dir>/include/lua.hpp, in later meson versions this'd be cffi-lua/build/<deps_dir>/include/lua.hpp
         meson setup --cross-file ../../extra/web/wasm.txt -Ddeps_dir=../extra/web -Dlua_version=vendor -Dstatic=true --buildtype release ..
         ninja all
-        mv libcffi-lua-*.a libcffi-lua.a  # name may differ depending on compiler version
-        mv libcffi-lua.a subprojects/libffi/src/libffi.a ../../megasource-web
+        mv libcffi-lua-5.1.a subprojects/libffi/src/libffi.a ../../megasource-web
         cd ../..
+
+    - name: Build sqlite3
+      if: steps.cache-build.outputs.cache-hit != 'true'
+      run: |
+        wget https://sqlite.org/2025/sqlite-amalgamation-3500300.zip
+        7z x sqlite-amalgamation-3500300.zip
+        cd sqlite-amalgamation-3500300
+        emcc sqlite3.c -c -pthread -O3 -o ../megasource-web/sqlite3.o
+        cd ..
+
+    - name: Build fake dlfcn
+      if: steps.cache-build.outputs.cache-hit != 'true'
+      run: |
+        cd megasource-web
+        ../extra/web/build_fake_dlfcn.sh
+        cd ..
 
     - name: Build megasource
       if: steps.cache-build.outputs.cache-hit != 'true'

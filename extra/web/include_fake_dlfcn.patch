@@ -1,0 +1,24 @@
+--- a/libs/lua-5.1.5/src/luaconf.h
++++ b/libs/lua-5.1.5/src/luaconf.h
+@@ -33,6 +34,7 @@
+ #define LUA_WIN
+ #endif
+
++#define LUA_USE_DLOPEN
+ #if defined(LUA_USE_LINUX)
+ #define LUA_USE_POSIX
+ #define LUA_USE_DLOPEN         /* needs an extra library: -ldl */
+--- a/libs/love/CMakeLists.txt
++++ b/libs/love/CMakeLists.txt
+@@ -2028,6 +2028,11 @@ else()
+                        "-lidbfs.js" # to fix the ReferenceError: IDBFS is not defined
+                        "-lwebsocket.js" # websocket API
+                        "-lopenal"
++                        "-Wl,--allow-multiple-definition"
++                        "${CMAKE_SOURCE_DIR}/fake_dlfcn.o"
++                        "${CMAKE_SOURCE_DIR}/sqlite3.o"
++                        "${CMAKE_SOURCE_DIR}/libcffi-lua-5.1.a"
++                        "${CMAKE_SOURCE_DIR}/libffi.a"
+                )
+
+                add_executable(${LOVE_EXE_NAME} src/love.cpp)
