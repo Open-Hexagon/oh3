@@ -102,55 +102,79 @@
                 onException(message);
             };
 
-            function onScriptLoad(script_tag) {
-                    let fun;
-                    fun = function() {
-                            document.getElementById('play-overlay').style.display = 'none';
-                            document.getElementById('message-container').style.display = 'block';
-                            applicationLoad(script_tag);
-                            container.removeEventListener("click", fun);
-                    }
+            async function onScriptLoad(script_tag) {
+                const api_url = "https://openhexagon.fun:8001/";
+                const response = await fetch(api_url + "get_packs/1/1000")
+                if (response.status != 200) {
+                    onerror("Failed getting pack index.");
+                    return;
+                }
+                const pack_index = await response.json();
 
-                    if (!Module['preRun']) Module['preRun'] = [];
-                    Module["preRun"].push(function() {
-                        // load replay and pack from query parameters
-                        let searchParams = new URLSearchParams(location.search);
-                        const api_url = "https://openhexagon.fun:8001/"
-                        if (searchParams.get("replay") !== null) {
-                            Module.arguments.push("/home/web_user/replayfile", "--replay-viewer")
-                            Module["FS_createPreloadedFile"](
-                               "/home/web_user/replayfile",
-                               null,
-                               api_url + "get_replay/" + searchParams.get("replay"),
-                               true,
-                               true,
-                               null,
-                               function(err) {
-                                   onerror("Error loading replay: " + err);
-                               }
-                            );
-                        }
-                        if (searchParams.get("packs") !== null) {
-                            const packs = searchParams.get("packs")
-                            for (const pack_str of packs.split(",")) {
-                                 const [game, pack] = pack_str.split(":")
-                                 const path = "/home/web_user/" + game + "_" + pack + ".zip"
-                                 Module.arguments.push("--mount-pack-folder", game, path)
-                                 Module["FS_createPreloadedFile"](
-                                    path,
-                                    null,
-                                    api_url + "get_pack/" + game + "/" + pack,
-                                    true,
-                                    true,
-                                    null,
-                                    function(err) {
-                                        onerror("Error loading pack: " + err);
+                let fun;
+                fun = function() {
+                        document.getElementById('play-overlay').style.display = 'none';
+                        document.getElementById('message-container').style.display = 'block';
+                        applicationLoad(script_tag);
+                        container.removeEventListener("click", fun);
+                }
+
+                if (!Module['preRun']) Module['preRun'] = [];
+                Module["preRun"].push(function() {
+                    // load replay and pack from query parameters
+                    let searchParams = new URLSearchParams(location.search);
+                    if (searchParams.get("replay") !== null) {
+                        Module.arguments.push("/home/web_user/replayfile", "--replay-viewer")
+                        Module["FS_createPreloadedFile"](
+                           "/home/web_user/replayfile",
+                           null,
+                           api_url + "get_replay/" + searchParams.get("replay"),
+                           true,
+                           true,
+                           null,
+                           function(err) {
+                               onerror("Error loading replay: " + err);
+                           }
+                        );
+                    }
+                    if (searchParams.get("packs") !== null) {
+                        const added_packs = {}
+                        function add_pack(game, pack_id) {
+                            for (const pack of pack_index) {
+                                if (pack.game_version == game && pack.id == pack_id) {
+                                    const file_name = game + "_" + pack.folder_name;
+                                    if (added_packs[file_name]) {
+                                        return;
                                     }
-                                 );
+                                    added_packs[file_name] = true
+                                    for (const dependency_id of pack.dependency_ids) {
+                                        add_pack(game, dependency_id);
+                                    }
+                                    const path = "/home/web_user/" + file_name + ".zip"
+                                    Module.arguments.push("--mount-pack-folder", game, path)
+                                    Module["FS_createPreloadedFile"](
+                                       path,
+                                       null,
+                                       api_url + "get_pack/" + game + "/" + pack.folder_name,
+                                       true,
+                                       true,
+                                       null,
+                                       function(err) {
+                                       onerror("Error loading pack: " + err);
+                                       }
+                                    );
+                                    return;
+                                }
                             }
                         }
-                    });
-                    container.addEventListener("click", fun)
+                        const packs = searchParams.get("packs")
+                        for (const pack_str of packs.split(",")) {
+                            const [game, pack] = pack_str.split(":");
+                            add_pack(game, pack);
+                        }
+                    }
+                });
+                container.addEventListener("click", fun)
             }
         </script>
 
