@@ -48,6 +48,7 @@ end
 ---sets the current game profile (creates it if it doesn't exist)
 ---@param name string
 function global_config.set_game_profile(name)
+    profile.close()
     profile.open_or_new(name)
     settings.game_profile = name
     save()

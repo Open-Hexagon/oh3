@@ -51,6 +51,7 @@ function profile.open_or_new(name)
         },
     })
     current_profile = name
+    database:open()
 end
 
 local function escape(str)
@@ -103,12 +104,10 @@ end
 ---@param pack_id string
 ---@param data table
 function profile.store_data(pack_id, data)
-    database:open()
     database:update("custom_data", {
         where = { pack = escape(pack_id) },
         set = { data = data },
     })
-    database:close()
 end
 
 ---save a score into the profile's database and save the replay as well
@@ -132,7 +131,6 @@ function profile.save_score(time, replay)
         end
         hash = hash .. n
     end
-    database:open()
     database:insert("scores", {
         pack = escape(replay.pack_id),
         level = escape(replay.level_id),
@@ -141,7 +139,6 @@ function profile.save_score(time, replay)
         score = replay.score,
         replay_hash = hash,
     })
-    database:close()
     replay:save(path, data)
 end
 
@@ -151,14 +148,12 @@ end
 ---@param level_options table
 ---@return table
 function profile.get_scores(pack, level, level_options)
-    database:open()
     local results = database:select("scores", {
         where = {
             pack = escape(pack),
             level = level,
         },
     })
-    database:close()
     for i = #results, 1, -1 do
         for k, v in pairs(results[i].level_options) do
             if level_options[k] ~= v then
@@ -172,7 +167,6 @@ end
 
 ---delete the currently selected profile with all its replays
 function profile.delete()
-    database:open()
     local scores = database:select("scores")
     for i = 1, #scores do
         local score = scores[i]
@@ -183,11 +177,18 @@ function profile.delete()
             love.filesystem.remove(folder)
         end
     end
-    database:close()
+    profile.close()
     local path = profile_path .. current_profile .. ".db"
     love.filesystem.remove(path)
     database = nil
     current_profile = nil
+end
+
+---close the profile database
+function profile.close()
+    if database and not database.closed then
+        database:close()
+    end
 end
 
 return profile

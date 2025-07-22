@@ -28,7 +28,7 @@ local list = modifyable_list:new({
                 return
             end
         end
-        profile.open_or_new(name)
+        global_config.set_game_profile(name)
     end,
 })
 
