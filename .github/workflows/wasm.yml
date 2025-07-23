@@ -2,9 +2,9 @@ name: Build and package for Web
 
 on:
   push:
-    branches: [ "main", "wasm" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "wasm" ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
