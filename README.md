@@ -4,7 +4,7 @@ A potential rewrite for Open Hexagon by Vittorio Romeo using Love2D.
 
 *(omg it's finally happening)*
 
-You can get the game by downloading an actions artifact by clicking on a build [here](https://github.com/Open-Hexagon/oh-ce/actions).
+You can get the game [here](https://openhexagon.fun). The website gets the latest action artifacts via webhook.
 
 ## External dependencies
 Apart from the pure lua dependencies that are present in the repository, the game relies on:
@@ -12,10 +12,11 @@ Apart from the pure lua dependencies that are present in the repository, the gam
 - SQLite
 - libsodium (for server)
 - ffmpeg (for video export)
+If love is compiled with puc lua 5.1 instead of luajit, the cffi-lua library is also required.
 
 These dependencies may have dependencies of their own.
 
-## Building
+## Building the video export module
 There is a `CMakeLists.txt` for building the c code for the video export. It requires the following dependencies to work:
 - cmake
 - make
@@ -43,6 +44,8 @@ On arch based distributions they can be installed with this line:
 ```
 pacman -S cmake make gcc libsodium pkgconf ffmpeg
 ```
+(Keep in mind that the packages should not be too up to date for the code to compile.)
+
 Then you can proceed with building
 ```
 mkdir build && cd build
