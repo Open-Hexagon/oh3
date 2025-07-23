@@ -181,10 +181,11 @@ end
 log("Compressing all packs")
 for i = 1, #packs do
     local pack = packs[i]
+    local pack_path = string.format("packs%s/%s", pack.game_version, pack.folder_name)
+    local folder_info = love.filesystem.getInfo(pack_path)
     local filename = string.format("%s%s_%s.zip", zip_path, pack.game_version, pack.folder_name)
     local info = love.filesystem.getInfo(filename)
-    if not info then
-        local pack_path = string.format("packs%s/%s", pack.game_version, pack.folder_name)
+    if not info or info.modtime < folder_info.modtime then
         log("Compressing " .. pack_path)
         if not zip.writeZip(pack_path, filename) then
             error("Failed to compress pack")
