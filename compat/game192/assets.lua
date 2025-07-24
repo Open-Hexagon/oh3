@@ -59,7 +59,6 @@ function assets.get_sound(id)
         local pack, actual_id = id:match("(.*)_(.*)")
         cached_sounds[id] = try_sound("packs192/" .. (pack or "") .. "/" .. "Sounds/" .. (actual_id or "")) or try_sound(audio_path .. id)
     end
-    print("loaded", cached_sounds[id])
     return cached_sounds[id]
 end
 
