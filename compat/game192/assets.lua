@@ -45,12 +45,21 @@ assets.get_pack = async(function(folder)
     return cached_packs[folder]
 end)
 
+local function try_sound(path)
+    if love.filesystem.exists(path) then
+        local obj = audio.new_static(path)
+        obj.volume = sound_volume
+        return obj
+    end
+end
+
 function assets.get_sound(id)
     id = sound_mapping[id] or id
     if cached_sounds[id] == nil then
-        cached_sounds[id] = audio.new_static(audio_path .. id)
-        cached_sounds[id].volume = sound_volume
+        local pack, actual_id = id:match("(.*)_(.*)")
+        cached_sounds[id] = try_sound("packs192/" .. (pack or "") .. "/" .. "Sounds/" .. (actual_id or "")) or try_sound(audio_path .. id)
     end
+    print("loaded", cached_sounds[id])
     return cached_sounds[id]
 end
 
@@ -59,17 +68,6 @@ function assets.set_volume(volume)
     for _, sound in pairs(cached_sounds) do
         sound.volume = sound_volume
     end
-end
-
-function assets.get_pack_sound(pack, id)
-    if id:match("_(.*)") == nil then
-        return assets.get_sound(id)
-    end
-    if cached_sounds[id] == nil then
-        cached_sounds[id] = audio.new_static(pack.path .. "Sounds/" .. id:match("_(.*)"))
-        cached_sounds[id].volume = sound_volume
-    end
-    return cached_sounds[id]
 end
 
 return assets

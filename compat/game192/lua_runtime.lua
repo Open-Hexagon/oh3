@@ -274,7 +274,7 @@ function lua_runtime.init_env(game, public)
         game.main_timeline:append_wait(duration)
     end
     env.playSound = function(id)
-        play_sound(game.assets.get_pack_sound(game.pack, id))
+        play_sound(game.assets.get_sound(id))
     end
     env.forceIncrement = function()
         game.increment_difficulty()
