@@ -12,6 +12,7 @@ Apart from the pure lua dependencies that are present in the repository, the gam
 - SQLite
 - libsodium (for server)
 - ffmpeg (for video export)
+
 If love is compiled with puc lua 5.1 instead of luajit, the cffi-lua library is also required.
 
 These dependencies may have dependencies of their own.
