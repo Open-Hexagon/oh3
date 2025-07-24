@@ -15,6 +15,7 @@ function shader_compat.translate(code, filename)
         :gsub("gl_FragCoord", "_new_wrap_pixel_coord")
         :gsub("gl_FragColor", "_new_wrap_pixel_color")
         :gsub("gl_TexCoord.0.", "VaryingTexCoord")
+        :gsub("texture2D", "Texel")
         :gsub("texture", "Texel")
         :gsub("gl_Color", "_new_wrap_original_pixel_color") .. [[
 
@@ -189,10 +190,10 @@ function shader_compat.compile(new_code, code, filename)
             if pos ~= nil then
                 local uni_string = line:sub(pos + 8)
                 local space_pos = uni_string:find(" ")
-                local uni_name = uni_string:sub(space_pos + 1)
+                local uni_name = uni_string:sub(space_pos + 1):match("%s*(.*)%s*")
                 -- in case it was optimized out
                 if shader:hasUniform(uni_name) then
-                    local uni_type = uni_string:sub(1, space_pos - 1)
+                    local uni_type = uni_string:sub(1, space_pos - 1):match("%s*(.*)%s*")
                     uniforms[uni_name] = uni_type
                 end
             end

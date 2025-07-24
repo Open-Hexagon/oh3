@@ -23,7 +23,6 @@ return function(game)
                 shaders[id] = shader
                 loaded_filenames[pack_data.path] = loaded_filenames[pack_data.path] or {}
                 loaded_filenames[pack_data.path][filename] = id
-                print(id)
                 return id
             end
         end
