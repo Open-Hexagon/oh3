@@ -24,6 +24,10 @@ if is_thread then
                 ret = success and ret or (ret or "") .. "\n" .. debug.traceback(co)
                 if coroutine.status(co) == "dead" then
                     out_channel:push({ call_id, success, ret })
+                    if not success then
+                        log(("Error calling '%s.%s' with:"):format(modname, cmd[2]), unpack(cmd, 3))
+                        log(debug.traceback(co, ret))
+                    end
                 else
                     running_coroutines[#running_coroutines + 1] = { call_id, cmd[2], co }
                 end
