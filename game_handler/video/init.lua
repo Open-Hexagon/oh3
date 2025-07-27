@@ -35,14 +35,15 @@ function api.start(filename, width, height, framerate, sample_rate)
     api.audio_frame_size = clib.get_audio_frame_size()
 end
 
+local imagedata
+
 ---add a video frame
----@param imagedata love.ImageData
-function api.supply_video_data(imagedata)
+---@param texture love.Texture
+function api.supply_video_data(texture)
+    imagedata = love.graphics.readbackTexture(texture, nil, nil, nil, nil, nil, nil, imagedata)
     if clib.supply_video_data(imagedata:getFFIPointer()) ~= 0 then
         error("Failed sending video frame.")
     end
-    -- prevent memory leak
-    imagedata:release()
 end
 
 ---add an audio frame

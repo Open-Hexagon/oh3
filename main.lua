@@ -13,7 +13,9 @@ local function add_c_require_path(path)
     love.filesystem.setCRequirePath(love.filesystem.getCRequirePath() .. ";" .. path)
 end
 
-local render_replay = async(function(game_handler, video_encoder, replay, out_file, final_score)
+local render_replay = async(function(game_handler, replay, out_file, final_score)
+    local video_encoder = require("game_handler.video")
+    game_handler.set_game_dimensions(1920, 1080)
     local ui = require("ui")
     ui.open_screen("game")
     local fps = 60
@@ -24,6 +26,7 @@ local render_replay = async(function(game_handler, video_encoder, replay, out_fi
     async.await(game_handler.replay_start(replay))
     local frames = 0
     local last_print = love.timer.getTime()
+    local canvas = love.graphics.newCanvas(1920, 1080, { msaa = 4 })
     return function()
         love.event.pump()
         for name, a in love.event.poll() do
@@ -49,13 +52,14 @@ local render_replay = async(function(game_handler, video_encoder, replay, out_fi
             end
             audio.update(1 / fps)
             love.timer.step()
+            love.graphics.setCanvas(canvas)
             love.graphics.origin()
             love.graphics.clear(0, 0, 0, 1)
             game_handler.draw(1 / fps)
             ui.update(1 / fps)
             ui.draw()
-            love.graphics.captureScreenshot(video_encoder.supply_video_data)
-            love.graphics.present()
+            love.graphics.setCanvas()
+            video_encoder.supply_video_data(canvas)
             if game_handler.is_dead() then
                 after_death_frames = after_death_frames - 1
                 if after_death_frames <= 0 then
@@ -106,14 +110,11 @@ local main = async(function()
 
     if args.server and args.render then
         -- render top scores sent to the server
-        love.window.setMode(1920, 1080)
         local server_thread = love.thread.newThread("server/init.lua")
         server_thread:start("server", true, args.web)
         local game_handler = require("game_handler")
-        local video_encoder = require("game_handler.video")
         global_config.init()
         async.await(game_handler.init())
-        game_handler.process_event("resize", 1920, 1080)
         local Replay = require("game_handler.replay")
         return function()
             local replay_file = love.thread.getChannel("replays_to_render"):demand(10)
@@ -137,7 +138,7 @@ local main = async(function()
                 local replay = Replay:new(replay_file)
                 local out_file_path = love.filesystem.getSaveDirectory() .. "/" .. replay_file .. ".part.mp4"
                 log("Got new #1 on '" .. replay.level_id .. "' from '" .. replay.pack_id .. "', rendering...")
-                local promise = render_replay(game_handler, video_encoder, replay, out_file_path, replay.score)
+                local promise = render_replay(game_handler, replay, out_file_path, replay.score)
                 local fn
                 promise:done(function(func)
                     fn = func
@@ -151,7 +152,7 @@ local main = async(function()
                     local abort_hash = love.thread.getChannel("abort_replay_render"):pop()
                     if abort_hash and abort_hash == replay_file:match(".*/(.*)") then
                         aborted = true
-                        video_encoder.stop()
+                        require("game_handler.video").stop()
                         game_handler.stop()
                         break
                     end
@@ -186,13 +187,10 @@ local main = async(function()
         if args.replay_file == nil then
             error("trying to render replay without replay")
         end
-        love.window.setMode(1920, 1080)
         local game_handler = require("game_handler")
-        local video_encoder = require("game_handler.video")
         global_config.init()
         async.await(game_handler.init())
-        game_handler.process_event("resize", 1920, 1080)
-        return async.await(render_replay(game_handler, video_encoder, args.replay_file, "output.mp4"))
+        return async.await(render_replay(game_handler, args.replay_file, "output.mp4"))
     end
 
     local ui = require("ui")
