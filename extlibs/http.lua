@@ -379,7 +379,8 @@ function HTTP.file(path, headers, reqHeaders)
             coroutine.yield("0\r\n\r\n")
         end
         file:close()
-    end), reqHeaders["range"] and "206" or "200"  -- 206 is partial content
+    end),
+        reqHeaders["range"] and "206" or "200" -- 206 is partial content
 end
 
 function HTTP:handleFile(filename, localfilename, ext, dir, headers, reqHeaders, GET, POST)

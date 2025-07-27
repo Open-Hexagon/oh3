@@ -18,15 +18,17 @@ if not xpcall_takes_arguments then
     local old_xpcall = xpcall
     xpcall = function(fun, errfun, ...)
         local varargs = { ... }
-        return old_xpcall(function() return fun(unpack(varargs)) end, errfun)
+        return old_xpcall(function()
+            return fun(unpack(varargs))
+        end, errfun)
     end
 end
 
 -- PUC lua 5.1 does not return nparams or isvararg from debug.getinfo
 -- instead the data is encoded in string.dump(function).
-if debug.getinfo(function(a, b)end).nparams ~= 2 then
+if debug.getinfo(function(a, b) end).nparams ~= 2 then
     local old_getinfo = debug.getinfo
-    debug.getinfo = function (f, what)
+    debug.getinfo = function(f, what)
         local res = old_getinfo(f, what)
         local s = string.dump(f)
         assert(s:sub(1, 6) == "\27LuaQ\0", "This code works only in Lua 5.1")

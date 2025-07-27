@@ -415,7 +415,12 @@ function public.draw(screen)
     main_quads:clear()
     walls.draw(main_quads, game.get_main_color(black_and_white))
     if public.preview_mode then
-        player.draw_pivot(game.level_data.sides % 2 ^ 32, status.radius, main_quads, game.get_main_color(black_and_white))
+        player.draw_pivot(
+            game.level_data.sides % 2 ^ 32,
+            status.radius,
+            main_quads,
+            game.get_main_color(black_and_white)
+        )
     else
         player.draw(
             style,

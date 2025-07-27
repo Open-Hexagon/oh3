@@ -8,7 +8,7 @@ audio.__index = audio
 local BYTES_PER_SAMPLE = 2
 local BITS_PER_SAMPLE = BYTES_PER_SAMPLE * 8
 local SAMPLE_RATE = audio.sample_rate
-local frame_size = 800  -- results in an effective update rate of 60hz for reacting to audio:play calls
+local frame_size = 800 -- results in an effective update rate of 60hz for reacting to audio:play calls
 
 local encoder
 local target_data, source
@@ -155,7 +155,6 @@ local function clamp_signal(value)
         return value
     end
 end
-
 
 local samples_read = 0
 local samples_to_read = 0

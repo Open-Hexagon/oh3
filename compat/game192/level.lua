@@ -7,7 +7,9 @@ local level_data_types = {
     description = tostring,
     author = tostring,
     menu_priority = utils.round_to_even,
-    selectable = function(v) return v or false end,
+    selectable = function(v)
+        return v or false
+    end,
     music_id = tostring,
     style_id = tostring,
     speed_multiplier = utils.float_round,

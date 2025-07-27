@@ -57,7 +57,8 @@ function assets.get_sound(id)
     id = sound_mapping[id] or id
     if cached_sounds[id] == nil then
         local pack, actual_id = id:match("(.*)_(.*)")
-        cached_sounds[id] = try_sound("packs192/" .. (pack or "") .. "/" .. "Sounds/" .. (actual_id or "")) or try_sound(audio_path .. id)
+        cached_sounds[id] = try_sound("packs192/" .. (pack or "") .. "/" .. "Sounds/" .. (actual_id or ""))
+            or try_sound(audio_path .. id)
     end
     return cached_sounds[id]
 end
