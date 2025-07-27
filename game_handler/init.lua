@@ -234,22 +234,7 @@ end
 ---@param ... unknown
 function game_handler.process_event(name, ...)
     if name == "resize" then
-        local width, height = love.graphics.getDimensions()
-        if width < height * aspect_ratio then
-            -- window is too high for the aspect_ratio
-            scale[1] = 1
-            scale[2] = width / (aspect_ratio * height)
-        else
-            -- window is too wide for the aspect_ratio
-            scale[1] = height * aspect_ratio / width
-            scale[2] = 1
-        end
-        -- recreate screen canvas to have the correct size
-        local res_scale = config.get("game_resolution_scale")
-        screen = love.graphics.newCanvas(width * scale[1] / res_scale, height * scale[2] / res_scale, {
-            -- TODO: make adjustable in settings
-            msaa = 4,
-        })
+        game_handler.set_game_dimensions(love.graphics.getDimensions())
     end
     if name == "customkeydown" and game_handler.is_running() and not input.is_replaying() then
         local key = ...
@@ -286,6 +271,27 @@ function game_handler.process_event(name, ...)
             current_game[name](...)
         end
     end
+end
+
+---resize the screen
+---@param width number
+---@param height number
+function game_handler.set_game_dimensions(width, height)
+    if width < height * aspect_ratio then
+        -- window is too high for the aspect_ratio
+        scale[1] = 1
+        scale[2] = width / (aspect_ratio * height)
+    else
+        -- window is too wide for the aspect_ratio
+        scale[1] = height * aspect_ratio / width
+        scale[2] = 1
+    end
+    -- recreate screen canvas to have the correct size
+    local res_scale = config.get("game_resolution_scale")
+    screen = love.graphics.newCanvas(width * scale[1] / res_scale, height * scale[2] / res_scale, {
+        -- TODO: make adjustable in settings
+        msaa = 4,
+    })
 end
 
 ---get the dimensions of the game (returns 0, 0 if it was not created yet)
@@ -373,12 +379,13 @@ function game_handler.draw(frametime)
             end
         elseif screen ~= nil then
             -- render onto the screen
+            local last_canvas = love.graphics.getCanvas()
             love.graphics.setCanvas(screen)
             love.graphics.clear(0, 0, 0, 1)
             -- make (0, 0) be the center
             love.graphics.translate(screen:getWidth() / 2, screen:getHeight() / 2)
             current_game.draw(screen, frametime)
-            love.graphics.setCanvas()
+            love.graphics.setCanvas(last_canvas)
             -- render the canvas in the middle of the window
             love.graphics.origin()
             love.graphics.translate((width - width * scale[1]) / 2, (height - height * scale[2]) / 2)
