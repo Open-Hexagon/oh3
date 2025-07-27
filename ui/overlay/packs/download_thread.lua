@@ -2,6 +2,7 @@ local log = require("log")("ui.overlay.packs.download_thread")
 local json = require("extlibs.json.json")
 local threadify = require("threadify")
 local assets = threadify.require("game_handler.assets")
+local async = require("async")
 local url = require("socket.url")
 require("love.timer")
 
@@ -61,14 +62,7 @@ end
 ---@return table|boolean|nil
 function download.get_pack_list(start, stop)
     if not pack_list then
-        local promise = assets.init({}, true)
-        promise:done(function(res)
-            pack_list = res
-        end)
-        while not promise.executed do
-            threadify.update()
-            love.timer.sleep(0.01)
-        end
+        pack_list = async.busy_await(assets.init({}, true))
         if not pack_list then
             error("could not get current pack list")
         end

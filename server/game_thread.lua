@@ -5,16 +5,10 @@ local replay = require("game_handler.replay")
 local game_handler = require("game_handler")
 local config = require("config")
 local threadify = require("threadify")
+local async = require("async")
 require("love.timer")
 
--- avoid local redefinition
-do
-    local promise = game_handler.init()
-    while not promise.executed do
-        threadify.update()
-        love.timer.sleep(0.01)
-    end
-end
+async.busy_await(game_handler.init())
 
 local database, replay_path
 database = require("server.database")
@@ -54,11 +48,7 @@ function api.verify_replay(compressed_replay, time, steam_id)
     local last_around_time = 0
     local replay_was_done = false
     local replay_end_compare_score, replay_end_timed_score, exceeded_max_processing_time
-    local promise = game_handler.replay_start(decoded_replay)
-    while not promise.executed do
-        threadify.update()
-        love.timer.sleep(0.01)
-    end
+    async.busy_await(game_handler.replay_start(decoded_replay))
     game_handler.run_until_death(function()
         local now = love.timer.getTime()
         around_time = math.floor((now - start) % 10)

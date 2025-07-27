@@ -4,13 +4,9 @@ local utils = require("compat.game192.utils")
 local sqlite = require("extlibs.sqlite")
 local game_handler = require("game_handler")
 local config = require("config")
-local threadify = require("threadify")
+local async = require("async")
 
-local promise = game_handler.init(config)
-while not promise.executed do
-    love.timer.sleep(0.01)
-    threadify.update()
-end
+async.busy_await(game_handler.init(config), true)
 local packs = game_handler.get_packs()
 local level_validator_to_id = {}
 for j = 1, #packs do

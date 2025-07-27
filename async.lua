@@ -91,7 +91,7 @@ local async = setmetatable({}, {
     end,
 })
 
-async.await = function(prom)
+function async.await(prom)
     if prom.executed then
         return unpack(prom.result)
     end
@@ -106,6 +106,28 @@ async.await = function(prom)
         end
     end)
     return coroutine.yield()
+end
+
+function async.busy_await(prom, is_main, in_coroutine_loop)
+    -- this function is the only implementation specific one (assumes love and threadify are used)
+    local threadify = require("threadify")
+    while not prom.executed do
+        threadify.update()
+        love.timer.sleep(0.01)
+        -- main thread is the only one that needs to do this
+        if is_main then
+            love.event.pump()
+            for event, _, b in love.event.poll() do
+                if event == "threaderror" then
+                    error("Error in thread: " .. b)
+                end
+            end
+        end
+        if in_coroutine_loop then
+            coroutine.yield()
+        end
+    end
+    return unpack(prom.result)
 end
 
 async.promise = promise

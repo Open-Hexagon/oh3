@@ -138,15 +138,7 @@ local main = async(function()
                 local replay = Replay:new(replay_file)
                 local out_file_path = love.filesystem.getSaveDirectory() .. "/" .. replay_file .. ".part.mp4"
                 log("Got new #1 on '" .. replay.level_id .. "' from '" .. replay.pack_id .. "', rendering...")
-                local promise = render_replay(game_handler, replay, out_file_path, replay.score)
-                local fn
-                promise:done(function(func)
-                    fn = func
-                end)
-                while not promise.executed do
-                    threadify.update()
-                    love.timer.sleep(0.01)
-                end
+                local fn = async.busy_await(render_replay(game_handler, replay, out_file_path, replay.score), true)
                 local aborted = false
                 while fn() ~= 0 do
                     local abort_hash = love.thread.getChannel("abort_replay_render"):pop()
@@ -265,14 +257,5 @@ local main = async(function()
 end)
 
 function love.run()
-    local promise = main()
-    local result
-    promise:done(function(...)
-        result = ...
-    end)
-    while not result do
-        threadify.update()
-        love.timer.sleep(0.01)
-    end
-    return result
+    return async.busy_await(main(), true)
 end

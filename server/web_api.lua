@@ -9,13 +9,10 @@ local log = require("log")("server.web_api")
 local zip = require("extlibs.love-zip")
 local threadify = require("threadify")
 local game_handler = require("game_handler")
+local async = require("async")
 require("love.timer")
 
-local promise = game_handler.init()
-while not promise.executed do
-    threadify.update()
-    love.timer.sleep(0.01)
-end
+async.busy_await(game_handler.init())
 local packs = game_handler.get_packs()
 
 local zip_path = "zip_cache/"
@@ -129,15 +126,7 @@ end
 
 app.handlers["/get_pack_preview_data/.../..."] = function(captures, headers)
     headers["content-type"] = "application/json"
-    local promise = game_handler.get_preview_data(tonumber(captures[1]), captures[2])
-    local result
-    promise:done(function(data)
-        result = data
-    end)
-    while not promise.executed do
-        coroutine.yield()
-        threadify.update()
-    end
+    local result = async.busy_await(game_handler.get_preview_data(tonumber(captures[1]), captures[2]))
     return json.encode(result)
 end
 
