@@ -69,10 +69,17 @@ end
 ---@param loader string
 ---@param ... unknown
 function index.request(key, loader, ...)
+    -- get loader function
+    local modname = loader:match("(.*)%.")
+    local module = modname and require("asset_system.loaders." .. modname) or require("asset_system.loaders")
+    local funname = loader:match(".*%.(.*)") or loader
+    local loader_function = module[funname]
+
+    -- put asset in index if not already there
     local id = generate_asset_id(loader, ...)
     assets[id] = assets[id]
         or {
-            loader_function = require("asset_system.loaders")[loader],
+            loader_function = loader_function,
             arguments = { ... },
             has_as_dependency = {},
             id = id,
