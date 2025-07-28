@@ -1,5 +1,6 @@
 local json = require("extlibs.json.json")
 local mirror_server = require("asset_system.mirror_server")
+local utils = require("asset_system.utils")
 require("love.timer")
 local index = {}
 
@@ -19,19 +20,6 @@ end
 -- used to check which asset is causing the loading of another asset to infer dependencies
 local loading_stack = {}
 local loading_stack_index = 0
-
-local function add_to_array_if_not_present(value, array)
-    local already_present = false
-    for i = 1, #array do
-        if array[i] == value then
-            already_present = true
-            break
-        end
-    end
-    if not already_present then
-        array[#array + 1] = value
-    end
-end
 
 ---generates a unique asset id based on the loader and the parameters
 ---may also return a second value used to detect argument changes for the same asset
@@ -96,7 +84,7 @@ function index.request(key, loader, ...)
     -- if asset is requested from another loader the other one has this one as dependency
     if loading_stack_index > 0 then
         local caller = loading_stack[loading_stack_index]
-        add_to_array_if_not_present(caller, asset.has_as_dependency)
+        utils.add_to_array_if_not_present(caller, asset.has_as_dependency)
     end
 
     -- only load if the asset is not already loaded
@@ -140,48 +128,6 @@ function index.reload(id_or_key)
     -- mirror all pending assets once at the end of the initial reload
     if reload_depth == 0 then
         mirror_server.sync_pending_assets()
-    end
-end
-
-
-local resource_watch_map = {}
-
----watch any external resource, the id has to be unique, returns true if resource has not been watched by any asset before
----@param resource_id string
----@return boolean
-function index.watch(resource_id)
-    if loading_stack_index <= 0 then
-        error("cannot register resource watcher outside of asset loader")
-    end
-    local asset_id = loading_stack[loading_stack_index]
-    if resource_watch_map[resource_id] then
-        local ids = resource_watch_map[resource_id]
-        add_to_array_if_not_present(resource_id, ids)
-        return false
-    end
-    resource_watch_map[resource_id] = { asset_id }
-    return true
-end
-
----notify the asset index of changes in an external resource
----@param resource_id string
-function index.changed(resource_id)
-    if resource_watch_map[resource_id] then
-        local ids = resource_watch_map[resource_id]
-        for i = 1, #ids do
-            index.reload(ids[i])
-        end
-    end
-end
-
-local threadify = require("threadify")
-local watcher = threadify.require("asset_system.watcher")
-
----adds the specified file as dependency for the currently loading asset
----@param path string
-function index.watch_file(path)
-    if index.watch(path) then
-        watcher.add(path)
     end
 end
 

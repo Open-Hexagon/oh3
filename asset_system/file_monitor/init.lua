@@ -4,10 +4,10 @@ if pcall(function()
     require("luv")
 end) then
     log("luv backend is available for hot reloading")
-    impl = require("asset_system.luv_watcher")
+    impl = require("asset_system.file_monitor.luv_watcher")
 else
     log("luv backend is not available for hot reloading, will fall back to polling")
-    impl = require("asset_system.poll_watcher")
+    impl = require("asset_system.file_monitor.poll_watcher")
 end
 
 local watcher = {}
