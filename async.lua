@@ -109,8 +109,12 @@ function async.await(prom)
 end
 
 function async.busy_await(prom, is_main, in_coroutine_loop)
-    -- this function is the only implementation specific one (assumes love and threadify are used)
+    -- this function is the only implementation specific one (assumes love, threadify and the asset system are used)
     local threadify = require("threadify")
+    local assets
+    if is_main then
+        assets = require("asset_system")
+    end
     while not prom.executed do
         threadify.update()
         love.timer.sleep(0.01)
@@ -122,6 +126,8 @@ function async.busy_await(prom, is_main, in_coroutine_loop)
                     error("Error in thread: " .. b)
                 end
             end
+            assets.run_main_thread_task()
+            assets.mirror.update()
         end
         if in_coroutine_loop then
             coroutine.yield()
