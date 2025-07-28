@@ -175,7 +175,7 @@ end
 
 local threadify = require("threadify")
 local watcher = threadify.require("asset_system.watcher")
-local file_watch_map = {} -- file as key, asset key array as value
+local file_watch_map = {} -- file as key, asset id array as value
 
 ---adds the specified file as dependency for the currently loading asset
 ---@param path string
