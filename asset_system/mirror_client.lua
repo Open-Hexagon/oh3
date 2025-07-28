@@ -1,25 +1,15 @@
 local threadify = require("threadify")
+local async = require("async")
 local index = threadify.require("asset_system.index")
 require("love.timer")
 
 local update_channel = love.thread.getChannel("asset_index_updates")
 local update_ack_channel = love.thread.getChannel("asset_index_update_acks")
-local mirror
 
 -- thanks to require caching modules this will only be called once per thread
-local promise = index.register_mirror()
-
 -- in case the mirror was created after some assets are already
 -- loaded the promise results in the inital mirror state
-promise:done(function(result)
-    mirror = result
-end)
-
--- synchronously wait for promise
-while not promise.executed do
-    threadify.update()
-    love.timer.sleep(0.01)
-end
+local mirror = async.busy_await(index.register_mirror())
 
 local last_id
 local asset_callbacks = {}
