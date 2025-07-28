@@ -22,11 +22,9 @@ local loading_stack = {}
 local loading_stack_index = 0
 
 ---generates a unique asset id based on the loader and the parameters
----may also return a second value used to detect argument changes for the same asset
 ---@param loader string
 ---@param ... unknown
 ---@return string
----@return string?
 local function generate_asset_id(loader, ...)
     return json.encode({ loader, ... })
 end
