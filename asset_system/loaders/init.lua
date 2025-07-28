@@ -3,7 +3,6 @@ local index = require("asset_system.index")
 local utils = require("asset_system.loaders.utils")
 local loaders = {}
 
-
 function loaders.text_file(path)
     index.watch_file(path)
     return love.filesystem.read(path)
@@ -33,18 +32,4 @@ function loaders.icon_font(name, size)
     }
 end
 
-
--- set this to true to see the called loaders and their arguments
-local loader_debug = true
-if loader_debug then
-    return setmetatable({}, {
-        __index = function(_, key)
-            return function(...)
-                log("Calling loader", key, "with", ...)
-                return loaders[key](...)
-            end
-        end,
-    })
-else
-    return loaders
-end
+return loaders
