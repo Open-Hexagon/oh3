@@ -1,22 +1,21 @@
 local log = require("log")(...)
 local index = require("asset_system.index")
-local utils = require("asset_system.utils")
-local resource_monitor = require("asset_system.resource_monitor")
+local utils = require("asset_system.loaders.utils")
 local loaders = {}
 
 
 function loaders.text_file(path)
-    resource_monitor.watch_file(path)
+    index.watch_file(path)
     return love.filesystem.read(path)
 end
 
 function loaders.image(path)
-    resource_monitor.watch_file(path)
+    index.watch_file(path)
     return utils.run_on_main("love", "graphics", "newImage", path)
 end
 
 function loaders.font(path, size)
-    resource_monitor.watch_file(path)
+    index.watch_file(path)
     return utils.run_on_main("love", "graphics", "newFont", path, size)
 end
 
