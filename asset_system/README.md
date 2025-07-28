@@ -1,12 +1,16 @@
 # Asset system
 ## Overview
-The asset system works using a global index (see `index.lua`) that sends load and change notifications to one or multiple asset mirrors (see `mirror.lua`) in different threads which then update their contents.
+The asset system works using a global index (see `index.lua`) that sends load and change notifications (see `mirror_server.lua`) to one or multiple asset mirrors (see `mirror_client.lua`) in different threads which then update their contents.
 
 All loading happens in the main asset thread where the global index is created and updated. To load an asset any thread has to request for it to be loaded. A reload can also be requested.
 
-For operations that require to be run on the main thread (e.g. shader compilation) the loading process sends a request to the main thread which after finishing its frame processes it and sends the result back to the loading thread.
+The index internally uses ids that uniquely identify assets using their loader and the arguments passed to it. Already loaded assets are not reloaded when requested again.
 
-If hot reloading is enabled the watcher thread (see `watcher.lua`) will send file change notifications to the asset thread causing certain assets to be reloaded.
+The keys in the mirror are supplied by the user. Only assets that have a user supplied key get mirrored. It is possible to retroactively add a key to an asset by requesting it again (this will not cause a reload).
+
+For operations that require to be run on the main thread (e.g. opengl shader compilation) the loading process sends a request to the main thread which after finishing its frame processes it and sends the result back to the loading thread.
+
+Assets can depend on any type of external resource (files or data from a channel). Any thread can send change notifications causing certain assets to be reloaded. Change notifications need to be sent by the user if the resource is not a file or if hot reloading is disabled. If hot reloading is enabled the file monitor thread (see `file_monitor/init.lua`) will send change notifications for files.
 
 ```mermaid
 graph TD;
@@ -14,8 +18,9 @@ graph TD;
     T -- request assets/reloads --> A
     A -- commands --> M[main thread]
     M -- results --> A
-    W[Watcher thread] -- file change notifications --> A
-    A -- paths to watch --> W
+    W[file monitor thread] -- change notifications --> A
+    A -- resources to watch --> W
+    O[any thread] -- change notifications --> A
 ```
 
 ## Requesting
@@ -50,21 +55,8 @@ end
 ```
 Note that `index.local_request` will not give the asset a key which means it will not appear in a mirror. If this is desired it can still be requested with a key from any thread later. This will also not cause it to be reloaded since the internal asset id is based on the loader and its arguments. This ensures uniqueness among ids and makes writing loaders a lot simpler.
 
-A loader can also specifically request a parameter to not be added to the internal asset id and instead reload the same asset when it changes.
-```lua
-local utils = require("asset_system.loaders.utils")
-...
-loaders.some_loader = utils.reload_filter({
-    param2 = true,
-}, function(param1, param2, param3)
-    -- if param1 or param3 are different this asset will be saved under a new internal id
-    -- if param2 is different the internal id will not change
-    ...
-end)
-```
-
 ## Reloading
-While there is a promise for the initial request of an asset, once it is loaded subsequent changes due to hot reloading or calling reload manually will only change the asset/s in the mirror.
+While there is a promise for the initial request of an asset, once it is loaded subsequent changes due to reloading will only change the asset/s in the mirror.
 ```lua
 local assets = require("asset_system")
 local async = require("async")
@@ -102,3 +94,39 @@ assets.index.request("some_key", "text_file", "helloworld.txt")
 -- this will call the callback causing it to be printed again
 assets.index.reload("some_key")
 ```
+### Reloading on resource changes
+A loader can make an asset depend on an external resource, this may be a file or any other data that is not constant or directly created by the loader.
+
+For example listening to changes for the data in a channel could look like this:
+
+Loader code:
+```lua
+function loaders.some_loader()
+    index.watch("mydata_id")
+    local data = love.thread.getChannel("mydata"):peek()
+    return data.number + 10
+end)
+```
+Application code:
+```lua
+local assets = require("asset_system")
+local async = require("async")
+...
+-- create data
+love.thread.getChannel("mydata"):push({ number = 5 })
+
+-- listen to changes
+assets.mirror.listen("some_key", function(value)
+    print("number + 10 = " .. value)
+end)
+
+-- request asset, will print "number + 10 = 15"
+async.await(assets.index.request("some_key", "some_loader"))
+-- in a real application this'd probably be in a performAtomic
+love.thread.getChannel("mydata"):pop()
+love.thread.getChannel("mydata"):push({ number = 10 })
+-- will print "number + 10 = 20"
+async.await(assets.index.changed("mydata_id"))
+```
+
+This can also work with files, the `index.watch_file` function also adds the resource id (in this case a file path) to a file watcher that can be turned on using `assets.start_hot_reloading`, so `assets.index.changed` no longer needs to be called manually in that case.
