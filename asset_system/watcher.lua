@@ -1,9 +1,12 @@
+local log = require("log")(...)
 local impl
 if pcall(function()
     require("luv")
 end) then
+    log("luv backend is available for hot reloading")
     impl = require("asset_system.luv_watcher")
 else
+    log("luv backend is not available for hot reloading, will fall back to polling")
     impl = require("asset_system.poll_watcher")
 end
 
