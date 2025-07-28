@@ -5,17 +5,17 @@ local loaders = {}
 
 
 function loaders.text_file(path)
-    index.watch(path)
+    index.watch_file(path)
     return love.filesystem.read(path)
 end
 
 function loaders.image(path)
-    index.watch(path)
+    index.watch_file(path)
     return utils.run_on_main("love", "graphics", "newImage", path)
 end
 
 function loaders.font(path, size)
-    index.watch(path)
+    index.watch_file(path)
     return utils.run_on_main("love", "graphics", "newFont", path, size)
 end
 

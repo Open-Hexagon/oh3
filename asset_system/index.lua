@@ -40,19 +40,6 @@ end
 ---@return string
 ---@return string?
 local function generate_asset_id(loader, ...)
-    local loader_function = require("asset_system.loaders")[loader]
-    if type(loader_function) == "table" then
-        local id_components = { loader }
-        local non_id_args = {}
-        for i = 1, select("#", ...) do
-            if loader_function[i] then
-                non_id_args[#non_id_args + 1] = select(i, ...)
-            else
-                id_components[#id_components + 1] = select(i, ...)
-            end
-        end
-        return json.encode(id_components), json.encode(non_id_args)
-    end
     return json.encode({ loader, ... })
 end
 
@@ -62,15 +49,13 @@ end
 ---@param loader string
 ---@param ... unknown
 function index.request(key, loader, ...)
-    local id, encoded_args = generate_asset_id(loader, ...)
+    local id = generate_asset_id(loader, ...)
     assets[id] = assets[id]
         or {
             loader_function = require("asset_system.loaders")[loader],
             arguments = { ... },
             has_as_dependency = {},
             id = id,
-            -- will be nil if loader doesn't have a reload filter
-            encoded_args = encoded_args,
         }
     local asset = assets[id]
     local should_mirror = false
@@ -173,34 +158,45 @@ function index.reload(id_or_key)
     end
 end
 
-local threadify = require("threadify")
-local watcher = threadify.require("asset_system.watcher")
-local file_watch_map = {} -- file as key, asset id array as value
 
----adds the specified file as dependency for the currently loading asset
----@param path string
-function index.watch(path)
+local resource_watch_map = {}
+
+---watch any external resource, the id has to be unique, returns true if resource has not been watched by any asset before
+---@param resource_id string
+---@return boolean
+function index.watch(resource_id)
     if loading_stack_index <= 0 then
-        error("cannot register file watcher outside of asset loader")
+        error("cannot register resource watcher outside of asset loader")
     end
     local asset_id = loading_stack[loading_stack_index]
-    if file_watch_map[path] then
-        local ids = file_watch_map[path]
-        add_to_array_if_not_present(asset_id, ids)
-    else
-        file_watch_map[path] = { asset_id }
-        watcher.add(path)
+    if resource_watch_map[resource_id] then
+        local ids = resource_watch_map[resource_id]
+        add_to_array_if_not_present(resource_id, ids)
+        return false
     end
+    resource_watch_map[resource_id] = { asset_id }
+    return true
 end
 
----notify the asset index of a file change
----@param path string
-function index.changed(path)
-    if file_watch_map[path] then
-        local ids = file_watch_map[path]
+---notify the asset index of changes in an external resource
+---@param resource_id string
+function index.changed(resource_id)
+    if resource_watch_map[resource_id] then
+        local ids = resource_watch_map[resource_id]
         for i = 1, #ids do
             index.reload(ids[i])
         end
+    end
+end
+
+local threadify = require("threadify")
+local watcher = threadify.require("asset_system.watcher")
+
+---adds the specified file as dependency for the currently loading asset
+---@param path string
+function index.watch_file(path)
+    if index.watch(path) then
+        watcher.add(path)
     end
 end
 
