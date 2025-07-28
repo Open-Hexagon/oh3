@@ -37,6 +37,6 @@ return function(file_list)
             end
         end
     end
-    uv.run("nowait")
     uv.sleep(100)
+    uv.run("nowait")
 end
