@@ -4,8 +4,8 @@ require("love.timer")
 local index = {}
 
 -- this is the real global index
-local assets = {}
-local mirrored_assets = {}
+local assets = {} -- using internal ids
+local mirrored_assets = {} -- using given asset keys
 
 -- expose mirror register functions (see mirror_server.lua for function descriptions)
 function index.register_mirror()
@@ -43,6 +43,25 @@ local function generate_asset_id(loader, ...)
     return json.encode({ loader, ... })
 end
 
+---puts an asset on the stack and calls its loader
+---@param asset any
+local function load_asset(asset)
+    -- push asset id to loading stack
+    loading_stack_index = loading_stack_index + 1
+    loading_stack[loading_stack_index] = asset.id
+
+    -- load the asset
+    asset.value = asset.loader_function(unpack(asset.arguments))
+
+    -- pop asset id from loading stack
+    loading_stack_index = loading_stack_index - 1
+
+    -- only mirror after loading if there is a key
+    if asset.key then
+        mirror_server.schedule_sync(asset)
+    end
+end
+
 ---request an asset to be loaded and mirrored into the index
 ---(mirroring only happens for this asset if a key is given)
 ---@param key string?
@@ -58,12 +77,6 @@ function index.request(key, loader, ...)
             id = id,
         }
     local asset = assets[id]
-    local should_mirror = false
-
-    -- reload asset if arguments from reload filter changed changed
-    if asset.encoded_args ~= encoded_args then
-        asset.value = nil
-    end
 
     -- if a key is given set the asset to use it and make sure it doesn't already have another one
     if key then
@@ -72,8 +85,11 @@ function index.request(key, loader, ...)
         else
             asset.key = key
             mirrored_assets[key] = asset
-            -- newly requested with key, so should mirror even if already loaded
-            should_mirror = true
+            if asset.value then
+                -- newly requested with key and already loaded, so should mirror
+                -- since it is otherwise only done when loading
+                mirror_server.schedule_sync(asset)
+            end
         end
     end
 
@@ -85,25 +101,7 @@ function index.request(key, loader, ...)
 
     -- only load if the asset is not already loaded
     if not asset.value then
-        -- push asset id to loading stack
-        loading_stack_index = loading_stack_index + 1
-        loading_stack[loading_stack_index] = id
-
-        -- load the asset
-        asset.value = asset.loader_function(unpack(asset.arguments))
-
-        -- pop asset id from loading stack
-        loading_stack_index = loading_stack_index - 1
-
-        -- only mirror after loading if there is a key
-        if asset.key then
-            should_mirror = true
-        end
-    end
-
-    if should_mirror then
-        -- schedule notification for this asset
-        mirror_server.schedule_sync(asset)
+        load_asset(asset)
     end
 
     -- mirror all pending assets once at the end of the initial request
@@ -130,15 +128,7 @@ function index.reload(id_or_key)
     local asset = mirrored_assets[id_or_key] or assets[id_or_key]
     asset.value = nil
 
-    -- push asset id to loading stack
-    loading_stack_index = loading_stack_index + 1
-    loading_stack[loading_stack_index] = asset.id
-
-    -- load the asset
-    asset.value = asset.loader_function(unpack(asset.arguments))
-
-    -- pop asset id from loading stack
-    loading_stack_index = loading_stack_index - 1
+    load_asset(asset)
 
     -- reload assets that depend on this one
     reload_depth = reload_depth + 1
@@ -146,11 +136,6 @@ function index.reload(id_or_key)
         index.reload(asset.has_as_dependency[i])
     end
     reload_depth = reload_depth - 1
-
-    -- schedule notification for this asset if required
-    if asset.key then
-        mirror_server.schedule_sync(asset)
-    end
 
     -- mirror all pending assets once at the end of the initial reload
     if reload_depth == 0 then
