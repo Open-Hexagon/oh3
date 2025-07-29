@@ -33,7 +33,7 @@ function pack_loaders.level_register(pack_folder_name, version)
 end
 
 function pack_loaders.pack_register(pack_folder_name, version)
-    local pack = index.local_request("pack.compat.preload_pack", pack_folder_name, version).info
+    local pack = index.local_request("pack.compat.info", pack_folder_name, version)
 
     -- check dependencies and add ids to list
     local has_all_deps = true
@@ -80,7 +80,7 @@ function pack_loaders.load_register()
             local pack_list = index.local_request("pack.preload_packs", version)
             for k = 1, #pack_list do
                 local pack = pack_list[k]
-                result[#result + 1] = index.local_request("pack.pack_register", pack.folder_name, version)
+                result[#result + 1] = index.local_request("pack.pack_register", pack.info.folder_name, version)
             end
         end
     end

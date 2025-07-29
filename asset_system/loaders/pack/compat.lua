@@ -137,7 +137,7 @@ end
 function compat_loaders.level_datas(pack_folder_name, version)
     local info = index.local_request("pack.compat.info", pack_folder_name, version)
     local levels = {}
-    for level_data in file_iter("Levels", ".json", "level_data", info) do
+    for level_data in file_iter("Levels", ".json", "pack.compat.level_data", info) do
         levels[#levels + 1] = level_data
         level_data.sort_index = #levels
     end
@@ -156,15 +156,14 @@ end
 
 function compat_loaders.info(pack_folder_name, version)
     local folder = "packs" .. version .. "/" .. pack_folder_name .. "/"
+    local info = {}
     if not love.filesystem.exists(folder .. "pack.json") then
         log("Invalid pack at " .. folder .. " missing pack.json")
-        return
-    end
-    if not love.filesystem.exists(folder .. "Scripts") then
+    elseif not love.filesystem.exists(folder .. "Scripts") then
         log("Invalid pack at " .. folder .. " missing Scripts folder")
-        return
+    else
+        info = index.local_request("pack.compat.json_file", folder .. "pack.json")
     end
-    local info = index.local_request("pack.compat.json_file", folder .. "pack.json")
     info.game_version = version
     info.path = folder
     info.folder_name = pack_folder_name
