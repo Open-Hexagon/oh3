@@ -1,5 +1,6 @@
 require("platform")
 local log = require("log")("threadify")
+local Set = require("set_table")
 local modname, is_thread = ...
 
 if is_thread then
@@ -87,18 +88,12 @@ else
                         -- get a request id with no duplicates across any other threads
                         local request_id = 1
                         id_channel:performAtomic(function(channel)
-                            local used_ids = channel:pop() or {}
-                            repeat
-                                local not_used = true
-                                for i = 1, #used_ids do
-                                    if used_ids[i] == request_id then
-                                        not_used = false
-                                        request_id = request_id + 1
-                                        break
-                                    end
-                                end
-                            until not_used
-                            used_ids[#used_ids + 1] = request_id
+                            local used_ids = channel:pop() or Set:new()
+                            request_id = #used_ids.entries + 1
+                            while Set.has(used_ids, request_id) do
+                                request_id = request_id + 1
+                            end
+                            Set.add(used_ids, request_id)
                             channel:push(used_ids)
                         end)
                         msg[1] = request_id
@@ -135,14 +130,11 @@ else
                 -- remove id from used id table for this thread
                 local id_channel = love.thread.getChannel(require_string .. "_ids")
                 id_channel:performAtomic(function(channel)
-                    local used_ids = channel:pop() or {}
-                    for j = 1, #used_ids do
-                        if used_ids[j] == result[1] then
-                            table.remove(used_ids, j)
-                            break
-                        end
+                    local used_ids = channel:pop()
+                    if used_ids then
+                        Set.remove(used_ids, result[1])
+                        channel:push(used_ids)
                     end
-                    channel:push(used_ids)
                 end)
             end
         end
