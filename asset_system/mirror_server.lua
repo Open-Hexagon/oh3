@@ -32,18 +32,24 @@ local update_ack_channel = love.thread.getChannel("asset_index_update_acks")
 -- keep track of notifications which need to be sent once loading stack is empty
 local pending_notifications = {}
 local pending_notification_count = 0
-local notification_id = 0
+local notification_id_offset = 0
 
 function mirror_server.schedule_sync(asset)
+    for i = pending_notification_count, 1, -1 do
+        if pending_notifications[i][2] == asset.key then
+            table.remove(pending_notifications, i)
+            pending_notification_count = pending_notification_count - 1
+        end
+    end
     pending_notification_count = pending_notification_count + 1
-    pending_notifications[pending_notification_count] = { notification_id, asset.key, asset.value }
-    notification_id = notification_id + 1
+    pending_notifications[pending_notification_count] = { 0, asset.key, asset.value }
 end
 
 function mirror_server.sync_pending_assets()
     for i = 1, pending_notification_count do
         local notification = pending_notifications[i]
-        local id = notification[1]
+        local id = i + notification_id_offset
+        notification[1] = id
         update_channel:push(notification)
         local acked = 0
         local timer = 0
@@ -62,12 +68,8 @@ function mirror_server.sync_pending_assets()
         end
         update_channel:pop()
     end
+    notification_id_offset = pending_notification_count + notification_id_offset > 1 and 0 or 1
     pending_notification_count = 0
-    -- if notification_id is still 1 then the last notification was sent with 0, so the next one cannot be 0 either
-    -- (the id has to change from the last notification for mirrors to register it properly)
-    if notification_id - 1 > 0 then
-        notification_id = 0
-    end
 end
 
 return mirror_server
