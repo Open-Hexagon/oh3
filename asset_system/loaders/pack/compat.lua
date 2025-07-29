@@ -219,19 +219,10 @@ function compat_loaders.load_dependency_map21()
     return map
 end
 
-function compat_loaders.get_pack(version, id)
-    local id_map = index.local_request("pack.load_id_map")
-    local pack = (id_map[version] or {})[id]
-    if not pack then
-        error("pack with id '" .. id .. "' does not exist.")
-    end
-    return pack
-end
-
-function compat_loaders.load_file_list(dir, ending, loader, key, version, id)
-    local pack = index.local_request("get_pack", version, id)
+function compat_loaders.load_file_list(dir, ending, loader, key, version, name)
+    local info = index.local_request("pack.compat.info", name, version)
     local list = {}
-    for result in file_iter(dir, ending, loader, pack.info) do
+    for result in file_iter(dir, ending, loader, info) do
         if key then
             list[result[key]] = result
         else
@@ -291,12 +282,24 @@ function compat_loaders.shader(path_or_content, filename, is_content)
     return compiled_shader
 end
 
-function compat_loaders.preview_data(version, id)
-    local pack = index.local_request("get_pack", version, id)
+function compat_loaders.preview_data(version, name)
+    local info = index.local_request("pack.compat.info", name, version)
+    local levels = index.local_request("pack.compat.level_datas", name, version)
+    local styles = index.local_request(
+        "pack.compat.load_file_list",
+        "Styles",
+        ".json",
+        "compat.pack.json_file",
+        "id",
+        version,
+        name
+    )
     local style_module = require("compat.game" .. version .. ".style")
     local set_function = style_module.select or style_module.set
     local preview_data = {}
-    for level_id, level in pairs(pack.levels) do
+    for i = 1, #levels do
+        local level = levels[i]
+
         -- get side count and rotation speed
         local side_count = 6
         local rotation_speed = 0
@@ -304,7 +307,7 @@ function compat_loaders.preview_data(version, id)
             side_count = level.sides or side_count
             rotation_speed = level.rotation_speed or rotation_speed
         else
-            local lua_path = pack.info.path .. "/" .. level.lua_file
+            local lua_path = info.path .. "/" .. level.lua_file
             if love.filesystem.exists(lua_path) then
                 local code = love.filesystem.read(lua_path)
                 for match in code:gmatch("function%s*onInit.-l_setSides%((.-)%).-end") do
@@ -320,24 +323,24 @@ function compat_loaders.preview_data(version, id)
         rotation_speed = rotation_speed * math.pi * 10 / 3
 
         -- get colors
-        set_function(pack.styles[level.style_id])
+        set_function(styles[level.style_id])
         style_module.compute_colors()
         local main_color = { style_module.get_main_color() }
-        for i = 1, 4 do
+        for j = 1, 4 do
             main_color[i] = main_color[i] / 255
         end
         local colors = {}
-        for i = 1, side_count do
-            local r, g, b, a = style_module.get_color(i - (version == 20 and 0 or 1))
-            local must_darken = i % 2 == 0 and i == side_count - 1
+        for j = 1, side_count do
+            local r, g, b, a = style_module.get_color(j - (version == 20 and 0 or 1))
+            local must_darken = j % 2 == 0 and j == side_count - 1
             if must_darken then
                 r = r / 1.4
                 g = g / 1.4
                 b = b / 1.4
             end
-            colors[i] = { r, g, b, 1 }
-            for j = 1, 3 do
-                colors[i][j] = colors[i][j] / 255 * a / 255
+            colors[j] = { r, g, b, 1 }
+            for k = 1, 3 do
+                colors[j][k] = colors[j][k] / 255 * a / 255
             end
         end
         local r, g, b, a
@@ -348,7 +351,7 @@ function compat_loaders.preview_data(version, id)
         elseif version == 192 then
             r, g, b, a = style_module.get_second_color()
         end
-        preview_data[level_id] = {
+        preview_data[level.id] = {
             rotation_speed = rotation_speed,
             sides = side_count,
             background_colors = colors,
@@ -360,30 +363,57 @@ function compat_loaders.preview_data(version, id)
 end
 
 function compat_loaders.full_load(version, id)
-    local pack = index.local_request("get_pack", version, id)
+    local id_map = index.local_request("pack.load_id_map")
+    local pack = (id_map[version] or {})[id]
+    if not pack then
+        error("pack with id '" .. id .. "' does not exist.")
+    end
+    local name = pack.info.folder_name
 
     log("Loading '" .. pack.id .. "' assets")
 
-    pack.music = index.local_request("pack.compat.load_file_list", "Music", ".json", "music", "id", version, id)
+    pack.music =
+        index.local_request("pack.compat.load_file_list", "Music", ".json", "compat.pack.music", "id", version, name)
 
     -- shaders in compat mode are only required for 21
     if not headless and version == 21 then
-        pack.shaders =
-            index.local_request("pack.compat.load_file_list", "Shaders", ".frag", "shader", "filename", version, id)
+        pack.shaders = index.local_request(
+            "pack.compat.load_file_list",
+            "Shaders",
+            ".frag",
+            "compat.pack.shader",
+            "filename",
+            version,
+            name
+        )
     end
 
     -- styles
-    pack.styles =
-        index.local_request("pack.compat.load_file_list", "Styles", ".json", "compat.pack.json_file", version, id)
+    pack.styles = index.local_request(
+        "pack.compat.load_file_list",
+        "Styles",
+        ".json",
+        "compat.pack.json_file",
+        "id",
+        version,
+        name
+    )
 
     -- only 1.92 has event files
     if version == 192 then
-        pack.events =
-            index.local_request("pack.compat.load_file_list", "Events", ".json", "compat.pack.json_file", version, id)
+        pack.events = index.local_request(
+            "pack.compat.load_file_list",
+            "Events",
+            ".json",
+            "compat.pack.json_file",
+            "id",
+            version,
+            name
+        )
     end
 
     -- small preview data
-    pack.preview_data = index.local_request("pack.compat.preview_data", version, id)
+    pack.preview_data = index.local_request("pack.compat.preview_data", version, name)
 
     return pack
 end
