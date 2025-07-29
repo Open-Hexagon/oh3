@@ -1,4 +1,5 @@
--- platform specific adjustments
+-- platform specific adjustments and features
+local features = {}
 
 -- thanks to fake dlfcn functions, the library is actually just statically compiled in
 -- dlsym just uses a table with symbol names and pointers to the actual symbols
@@ -40,3 +41,15 @@ if debug.getinfo(function(a, b) end).nparams ~= 2 then
         return res
     end
 end
+
+love.thread
+    .newThread([[
+    require("love.graphics")
+    local code = "vec4 effect(vec4,Image,vec2,vec2){return vec4(1.0);}"
+    local success = pcall(love.graphics.newShader, code)
+    love.thread.getChannel("_shader_test_result"):push(success)
+]])
+    :start()
+features.supports_threaded_shader_compilation = love.thread.getChannel("_shader_test_result"):demand()
+
+return features

@@ -2,6 +2,9 @@ local log = require("log")(...)
 local index = require("asset_system.index")
 local json = require("extlibs.json.jsonc")
 local vfs = require("compat.game192.virtual_filesystem")
+local shader_compat = require("compat.game21.shader_compat")
+local utils = require("asset_system.loaders.utils")
+local platform = require("platform")
 
 local compat_loaders = {}
 
@@ -27,7 +30,7 @@ function compat_loaders.text_file(path_or_content, use_vfs)
     end
 end
 
-function compat_loaders.json_file(path_or_content, use_vfs)
+function compat_loaders.json_file(path_or_content, use_vfs, filename)
     local str = index.local_request("pack.compat.text_file", path_or_content, use_vfs)
     -- not a good way but hardcoding some known cases
     str = str:gsub(": 00 }", ": 0 }")
@@ -42,7 +45,7 @@ function compat_loaders.json_file(path_or_content, use_vfs)
     end
     -- catch decode errors
     local _, result = xpcall(json.decode_jsonc, function(msg)
-        log("Error: can't decode '" .. path_or_content .. "': " .. msg)
+        log("Error: can't decode '" .. filename .. "': " .. msg)
     end, str)
     return result
 end
@@ -78,9 +81,20 @@ local function file_iter(dir, ending, loader, info)
             if name:sub(-#ending) == ending then
                 -- virtual files take precedence over real ones (overwriting)
                 if virt_folder[name] then
-                    coroutine.yield(index.local_request(loader, virt_folder[name], true), name)
+                    coroutine.yield(
+                        index.local_request(loader, virt_folder[name], true, name, info.game_version, info.folder_name)
+                    )
                 else
-                    coroutine.yield(index.local_request(loader, info.path .. dir .. "/" .. name), name)
+                    coroutine.yield(
+                        index.local_request(
+                            loader,
+                            info.path .. dir .. "/" .. name,
+                            false,
+                            name,
+                            info.game_version,
+                            info.folder_name
+                        )
+                    )
                 end
             end
         end
@@ -203,6 +217,175 @@ function compat_loaders.load_dependency_map21()
         map[compat_loaders.build_pack_id21(pack.info)] = pack
     end
     return map
+end
+
+function compat_loaders.get_pack(version, id)
+    local id_map = index.local_request("pack.load_id_map")
+    local pack = (id_map[version] or {})[id]
+    if not pack then
+        error("pack with id '" .. id .. "' does not exist.")
+    end
+    return pack
+end
+
+function compat_loaders.load_file_list(dir, ending, loader, key, version, id)
+    local pack = index.local_request("get_pack", version, id)
+    local list = {}
+    for result in file_iter(dir, ending, loader, pack.info) do
+        if key then
+            list[result[key]] = result
+        else
+            list[#list + 1] = result
+        end
+    end
+    return list
+end
+
+local headless = false -- TODO: get somehow
+
+function compat_loaders.music(path_or_content, filename, is_content, version, pack_folder_name)
+    local pack_info = index.local_request("pack.compat.info", pack_folder_name, version)
+    local music = index.local_request("pack.compat.json_file", path_or_content, filename, is_content)
+    if not headless then
+        local fallback_path = filename:gsub("%.json$", ".ogg")
+        music.file_name = music.file_name or fallback_path
+        local path = pack_info.path .. "Music/" .. music.file_name
+        if music.file_name:sub(-4) ~= ".ogg" or love.filesystem.exists(path) then
+            music.file_name = fallback_path
+        end
+        if love.filesystem.exists(path) then
+            -- don't load music here yet, load it when required and unload it again to save memory usage (otherwise the game may use 5+ gb just for music assets after clicking through the menu)
+            music.file_path = path
+        end
+    end
+    music.segments = music.segments or {}
+    if version ~= 21 then
+        for i = 1, #music.segments do
+            if type(music.segments[i]) == "table" then
+                music.segments[i].time = math.floor(music.segments[i].time)
+            else
+                -- happens with the last element of not properly closed segment list
+                music.segments[i] = nil
+            end
+        end
+    end
+    return music
+end
+
+function compat_loaders.shader(path_or_content, filename, is_content)
+    local code = index.local_request("pack.compat.text_file", path_or_content, is_content)
+    local translated_shader = shader_compat.translate(code, filename)
+    local compiled_shader
+    if platform.supports_threaded_shader_compilation then
+        compiled_shader = shader_compat.compile(translated_shader.new_code, code, filename)
+    else
+        compiled_shader = utils.run_on_main(
+            [[
+            local shader_compat = require("compat.game21.shader_compat")
+            local shader = ...
+            return shader_compat.compile(shader.new_code, shader.code, shader.filename)
+        ]],
+            translated_shader
+        )
+    end
+    return compiled_shader
+end
+
+function compat_loaders.preview_data(version, id)
+    local pack = index.local_request("get_pack", version, id)
+    local style_module = require("compat.game" .. version .. ".style")
+    local set_function = style_module.select or style_module.set
+    local preview_data = {}
+    for level_id, level in pairs(pack.levels) do
+        -- get side count and rotation speed
+        local side_count = 6
+        local rotation_speed = 0
+        if version == 192 then
+            side_count = level.sides or side_count
+            rotation_speed = level.rotation_speed or rotation_speed
+        else
+            local lua_path = pack.info.path .. "/" .. level.lua_file
+            if love.filesystem.exists(lua_path) then
+                local code = love.filesystem.read(lua_path)
+                for match in code:gmatch("function%s*onInit.-l_setSides%((.-)%).-end") do
+                    side_count = tonumber(match) or side_count
+                end
+                for match in code:gmatch("function%s*onInit.-l_setRotationSpeed%((.-)%).-end") do
+                    rotation_speed = tonumber(match) or rotation_speed
+                end
+            end
+        end
+        side_count = math.max(side_count, 3)
+        -- convert to rad/s
+        rotation_speed = rotation_speed * math.pi * 10 / 3
+
+        -- get colors
+        set_function(pack.styles[level.style_id])
+        style_module.compute_colors()
+        local main_color = { style_module.get_main_color() }
+        for i = 1, 4 do
+            main_color[i] = main_color[i] / 255
+        end
+        local colors = {}
+        for i = 1, side_count do
+            local r, g, b, a = style_module.get_color(i - (version == 20 and 0 or 1))
+            local must_darken = i % 2 == 0 and i == side_count - 1
+            if must_darken then
+                r = r / 1.4
+                g = g / 1.4
+                b = b / 1.4
+            end
+            colors[i] = { r, g, b, 1 }
+            for j = 1, 3 do
+                colors[i][j] = colors[i][j] / 255 * a / 255
+            end
+        end
+        local r, g, b, a
+        if version == 21 then
+            r, g, b, a = style_module.get_cap_color_result()
+        elseif version == 20 then
+            r, g, b, a = style_module.get_color(2)
+        elseif version == 192 then
+            r, g, b, a = style_module.get_second_color()
+        end
+        preview_data[level_id] = {
+            rotation_speed = rotation_speed,
+            sides = side_count,
+            background_colors = colors,
+            pivot_color = main_color,
+            cap_color = { r / 255, g / 255, b / 255, a / 255 },
+        }
+    end
+    return preview_data
+end
+
+function compat_loaders.full_load(version, id)
+    local pack = index.local_request("get_pack", version, id)
+
+    log("Loading '" .. pack.id .. "' assets")
+
+    pack.music = index.local_request("pack.compat.load_file_list", "Music", ".json", "music", "id", version, id)
+
+    -- shaders in compat mode are only required for 21
+    if not headless and version == 21 then
+        pack.shaders =
+            index.local_request("pack.compat.load_file_list", "Shaders", ".frag", "shader", "filename", version, id)
+    end
+
+    -- styles
+    pack.styles =
+        index.local_request("pack.compat.load_file_list", "Styles", ".json", "compat.pack.json_file", version, id)
+
+    -- only 1.92 has event files
+    if version == 192 then
+        pack.events =
+            index.local_request("pack.compat.load_file_list", "Events", ".json", "compat.pack.json_file", version, id)
+    end
+
+    -- small preview data
+    pack.preview_data = index.local_request("pack.compat.preview_data", version, id)
+
+    return pack
 end
 
 return compat_loaders
