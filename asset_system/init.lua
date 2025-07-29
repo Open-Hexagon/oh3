@@ -16,17 +16,8 @@ function asset_system.run_main_thread_task()
     if task == nil then
         return
     end
-    local namespace = _G
-    for i = 1, #task do
-        local part = task[i]
-        if type(namespace[part]) == "function" then
-            local ret = { namespace[part](unpack(task, i + 1)) }
-            main_thread_tasks:supply(ret)
-            break
-        else
-            namespace = namespace[part]
-        end
-    end
+    local ret = { loadstring(task[1])(unpack(task, 2)) }
+    main_thread_tasks:push(ret)
 end
 
 ---automatically call index.reload on the correct assets based on file changes
