@@ -289,7 +289,7 @@ function compat_loaders.preview_data(version, name)
         "pack.compat.load_file_list",
         "Styles",
         ".json",
-        "compat.pack.json_file",
+        "pack.compat.json_file",
         "id",
         version,
         name
@@ -373,7 +373,7 @@ function compat_loaders.full_load(version, id)
     log("Loading '" .. pack.id .. "' assets")
 
     pack.music =
-        index.local_request("pack.compat.load_file_list", "Music", ".json", "compat.pack.music", "id", version, name)
+        index.local_request("pack.compat.load_file_list", "Music", ".json", "pack.compat.music", "id", version, name)
 
     -- shaders in compat mode are only required for 21
     if not headless and version == 21 then
@@ -381,7 +381,7 @@ function compat_loaders.full_load(version, id)
             "pack.compat.load_file_list",
             "Shaders",
             ".frag",
-            "compat.pack.shader",
+            "pack.compat.shader",
             "filename",
             version,
             name
@@ -393,7 +393,7 @@ function compat_loaders.full_load(version, id)
         "pack.compat.load_file_list",
         "Styles",
         ".json",
-        "compat.pack.json_file",
+        "pack.compat.json_file",
         "id",
         version,
         name
@@ -405,7 +405,7 @@ function compat_loaders.full_load(version, id)
             "pack.compat.load_file_list",
             "Events",
             ".json",
-            "compat.pack.json_file",
+            "pack.compat.json_file",
             "id",
             version,
             name
