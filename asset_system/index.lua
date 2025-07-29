@@ -115,26 +115,45 @@ function index.local_request(loader, ...)
     return assets[generate_asset_id(loader, ...)].value
 end
 
-local reload_depth = 0
+---traverses the asset dependency tree without duplicates
+---returns a sequence of asset ids in the correct order
+---@param asset_ids table
+---@return table
+local function reload_traverse(asset_ids)
+    local plan = {}
+    repeat
+        local next_assets = {}
+        for dependee in pairs(asset_ids) do
+            for new_dependee in pairs(assets[dependee].has_as_dependency) do
+                next_assets[new_dependee] = true
+            end
+            for i = #plan, 1, -1 do
+                if plan[i] == dependee then
+                    table.remove(plan, i)
+                end
+            end
+            plan[#plan + 1] = dependee
+        end
+        asset_ids = next_assets
+    until not next(asset_ids)
+    return plan
+end
 
 ---reloads an asset, using either its id or key
 ---@param id_or_key string
 ---@param no_mirror boolean?
 function index.reload(id_or_key, no_mirror)
     local asset = mirrored_assets[id_or_key] or assets[id_or_key]
-    asset.value = nil
-
     load_asset(asset)
 
     -- reload assets that depend on this one
-    reload_depth = reload_depth + 1
-    for dependee in pairs(asset.has_as_dependency) do
-        index.reload(dependee)
+    local plan = reload_traverse(asset.has_as_dependency)
+    for i = 1, #plan do
+        load_asset(assets[plan[i]])
     end
-    reload_depth = reload_depth - 1
 
     -- mirror all pending assets once at the end of the initial reload
-    if reload_depth == 0 and not no_mirror then
+    if not no_mirror then
         mirror_server.sync_pending_assets()
     end
 end
