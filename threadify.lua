@@ -10,8 +10,11 @@ if is_thread then
     local running_coroutines = {}
     while run do
         local cmd
-        if #running_coroutines > 0 then
+        if #running_coroutines > 0 or package.loaded.threadify then
             cmd = in_channel:demand(0.01)
+            if package.loaded.threadify then
+                package.loaded.threadify.update()
+            end
         else
             cmd = in_channel:demand()
         end
