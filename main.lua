@@ -4,6 +4,7 @@ local args = require("args")
 local threadify = require("threadify")
 local channel_callbacks = require("channel_callbacks")
 local audio = require("audio")
+local assets = require("asset_system")
 
 local function add_require_path(path)
     love.filesystem.setRequirePath(love.filesystem.getRequirePath() .. ";" .. path)
@@ -234,6 +235,8 @@ function love.run()
         channel_callbacks.update()
         ui.update(love.timer.getDelta())
         audio.update()
+        assets.run_main_thread_task()
+        assets.mirror.update()
 
         -- ensures tickrate on its own
         game_handler.update(true)
