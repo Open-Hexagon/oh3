@@ -14,8 +14,8 @@ function pack_loaders.preload_packs(version)
     return packs
 end
 
-function pack_loaders.level_register(pack_path, pack_folder_name, version)
-    local level_list = index.local_request("pack.compat.level_datas", pack_path, pack_folder_name)
+function pack_loaders.level_register(pack_folder_name, version)
+    local level_list = index.local_request("pack.compat.level_datas", pack_folder_name, version)
     local result = {}
     for i = 1, #level_list do
         local level = level_list[i]
@@ -33,7 +33,7 @@ function pack_loaders.level_register(pack_path, pack_folder_name, version)
 end
 
 function pack_loaders.pack_register(pack_folder_name, version)
-    local pack = index.local_request("pack.compat.preload_pack", pack_folder_name, version)
+    local pack = index.local_request("pack.compat.preload_pack", pack_folder_name, version).info
 
     -- check dependencies and add ids to list
     local has_all_deps = true
@@ -42,7 +42,7 @@ function pack_loaders.pack_register(pack_folder_name, version)
         local dependency_pack_map21 = index.local_request("pack.compat.load_dependency_map21")
         for i = 1, #pack.dependencies do
             local dependency = pack.dependencies[i]
-            local index_pack_id = compat.build_pack_id21(dependency.disambiguator, dependency.author, dependency.name)
+            local index_pack_id = compat.build_pack_id21(dependency)
             local dependency_pack = dependency_pack_map21[index_pack_id]
             if dependency_pack == nil then
                 has_all_deps = false
@@ -53,7 +53,7 @@ function pack_loaders.pack_register(pack_folder_name, version)
     end
 
     if has_all_deps then
-        local levels = index.local_request("pack.level_register", pack.path, pack.folder_name, version)
+        local levels = index.local_request("pack.level_register", pack.folder_name, version)
         return {
             id = pack.id,
             name = pack.name,

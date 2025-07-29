@@ -6,15 +6,13 @@ local vfs = require("compat.game192.virtual_filesystem")
 local compat_loaders = {}
 
 ---steam version has special unique pack identifiers other than the folder name
----@param disambiguator string
----@param author string
----@param name string
----@param version number?
+---@param info table
+---@param include_version boolean?
 ---@return string
-function compat_loaders.build_pack_id21(disambiguator, author, name, version)
-    local pack_id = disambiguator .. "_" .. author .. "_" .. name
-    if version ~= nil then
-        pack_id = pack_id .. "_" .. math.floor(version)
+function compat_loaders.build_pack_id21(info, include_version)
+    local pack_id = info.disambiguator .. "_" .. info.author .. "_" .. info.name
+    if info.version ~= nil and include_version then
+        pack_id = pack_id .. "_" .. math.floor(info.version)
     end
     pack_id = pack_id:gsub(" ", "_")
     return pack_id
@@ -68,13 +66,12 @@ local file_loaders = {
 ---iterate over the contents of all files with a certain ending in a certain folder
 ---@param dir string
 ---@param ending string
----@param pack_path string
----@param pack_folder_name string
+---@param info table
 ---@return function
-local function file_iter(dir, ending, pack_path, pack_folder_name)
+local function file_iter(dir, ending, info)
     local loader = file_loaders[ending] or "pack.compat.text_file"
-    local files = love.filesystem.getDirectoryItems(pack_path .. dir)
-    local virt_folder = index.local_request("pack.compat.virtual_folder", pack_folder_name)
+    local files = love.filesystem.getDirectoryItems(info.path .. dir)
+    local virt_folder = index.local_request("pack.compat.virtual_folder", info.folder_name)
     virt_folder = virt_folder[dir] or {}
     -- add virtual files to list
     for file in pairs(virt_folder) do
@@ -88,16 +85,17 @@ local function file_iter(dir, ending, pack_path, pack_folder_name)
                 if virt_folder[name] then
                     coroutine.yield(index.local_request(loader, virt_folder[name], true), name)
                 else
-                    coroutine.yield(index.local_request(loader, pack_path .. dir .. "/" .. name), name)
+                    coroutine.yield(index.local_request(loader, info.path .. dir .. "/" .. name), name)
                 end
             end
         end
     end)
 end
 
-function compat_loaders.level_datas(pack_path, pack_folder_name)
+function compat_loaders.level_datas(pack_folder_name, version)
+    local info = index.local_request("pack.compat.info", pack_folder_name, version)
     local levels = {}
-    for level_json in file_iter("Levels", ".json", pack_path, pack_folder_name) do
+    for level_json in file_iter("Levels", ".json", info) do
         -- make keys have the same name for all versions
         -- get key names
         local key_names = {}
@@ -152,44 +150,46 @@ function compat_loaders.level_datas(pack_path, pack_folder_name)
     return levels
 end
 
-function compat_loaders.preload_pack(pack_folder_name, version)
+function compat_loaders.info(pack_folder_name, version)
     local folder = "packs" .. version .. "/" .. pack_folder_name .. "/"
-    local function check_file(file)
-        return love.filesystem.exists(folder .. file)
+    if not love.filesystem.exists(folder .. "pack.json") then
+        log("Invalid pack at " .. folder .. " missing pack.json")
+        return
     end
-    if check_file("pack.json") and check_file("Scripts") then
-        local pack = index.local_request("pack.compat.json_file", folder .. "pack.json")
-        pack.game_version = version
-        pack.path = folder
-        pack.folder_name = pack_folder_name
-        if version == 21 then
-            -- steam version defaults
-            pack.name = pack.name or "unkown name"
-            pack.author = pack.author or "unkown author"
-            pack.description = pack.description or "no description"
-            pack.version = pack.version or 0
-            pack.priority = pack.priority or 100
+    if not love.filesystem.exists(folder .. "Scripts") then
+        log("Invalid pack at " .. folder .. " missing Scripts folder")
+        return
+    end
+    local info = index.local_request("pack.compat.json_file", folder .. "pack.json")
+    info.game_version = version
+    info.path = folder
+    info.folder_name = pack_folder_name
+    if version == 21 then
+        -- steam version defaults
+        info.name = info.name or "unkown name"
+        info.author = info.author or "unkown author"
+        info.description = info.description or "no description"
+        info.version = info.version or 0
+        info.priority = info.priority or 100
 
-            pack.id = compat_loaders.build_pack_id21(pack.disambiguator, pack.author, pack.name, pack.version)
-        else
-            pack.name = pack.name or ""
-            pack.id = pack_folder_name
-        end
-
-        local level_list = index.local_request("pack.compat.level_datas", pack.path, pack.folder_name)
-        pack.levels = {}
-        for i = 1, #level_list do
-            local level = level_list[i]
-            pack.levels[level.id] = level
-        end
-        return pack
-    elseif check_file("pack.json") then
-        log("Invalid pack at '" .. pack_folder_name .. "' missing pack.json")
-    elseif check_file("Scripts") then
-        log("Invalid pack at '" .. pack_folder_name .. "' missing Scripts folder")
+        info.id = compat_loaders.build_pack_id21(info, true)
     else
-        log("Invalid pack at '" .. pack_folder_name .. "' missing pack.json and Scripts folder")
+        info.name = info.name or ""
+        info.id = pack_folder_name
     end
+    return info
+end
+
+function compat_loaders.preload_pack(pack_folder_name, version)
+    local pack = {}
+    pack.info = index.local_request("pack.compat.info", pack_folder_name, version)
+    local level_list = index.local_request("pack.compat.level_datas", pack_folder_name, version)
+    pack.levels = {}
+    for i = 1, #level_list do
+        local level = level_list[i]
+        pack.levels[level.id] = level
+    end
+    return pack
 end
 
 function compat_loaders.load_dependency_map21()
@@ -197,7 +197,7 @@ function compat_loaders.load_dependency_map21()
     local map = {}
     for i = 1, #packs21 do
         local pack = packs21[i]
-        map[compat_loaders.build_pack_id21(pack.disambiguator, pack.author, pack.name)] = pack
+        map[compat_loaders.build_pack_id21(pack.info)] = pack
     end
     return map
 end
