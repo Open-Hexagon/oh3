@@ -323,11 +323,11 @@ function compat_loaders.preview_data(version, name)
         rotation_speed = rotation_speed * math.pi * 10 / 3
 
         -- get colors
-        set_function(styles[level.style_id])
+        set_function(styles[level.style_id] or {})
         style_module.compute_colors()
         local main_color = { style_module.get_main_color() }
         for j = 1, 4 do
-            main_color[i] = main_color[i] / 255
+            main_color[j] = main_color[j] / 255
         end
         local colors = {}
         for j = 1, side_count do
