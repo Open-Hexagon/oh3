@@ -38,6 +38,7 @@ local default_values = {
     ["3D_pulse_speed"] = 0.01,
     ["3D_perspective_multiplier"] = 1,
     colors = {},
+    main = {},
 }
 local current_hue = 0
 local current_hue_color = { 0, 0, 0, 0 }
@@ -71,7 +72,6 @@ function style.select(style_data)
     for i = 1, #root.colors do
         set_color_data_defaults(root.colors[i])
     end
-    set_color_data_defaults(root.main)
 end
 
 function style.get_table()
