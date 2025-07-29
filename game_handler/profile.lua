@@ -1,5 +1,7 @@
 local sqlite = require("extlibs.sqlite")
 local strfun = require("extlibs.sqlite.strfun")
+local assets = require("asset_system")
+local json = require("extlibs.json.json")
 
 local profile = {}
 
@@ -47,11 +49,12 @@ function profile.open_or_new(name)
         },
         custom_data = {
             pack = { "text", unique = true, primary = true },
-            data = "luatable",
+            data = "blob",
         },
     })
     current_profile = name
     database:open()
+    profile.push_all_data()
 end
 
 local function escape(str)
@@ -74,6 +77,23 @@ local function unescape(str)
     return str
 end
 
+---update persistent data to all threads
+function profile.push_all_data()
+    local rows = database.custom_data:get()
+    for i = 1, #rows do
+        local row = rows[i]
+        local pack = unescape(row.pack)
+        local old_data
+        love.thread.getChannel("persistent_data:" .. pack):performAtomic(function(channel)
+            old_data = channel:pop() or "{}"
+            channel:push(row.data)
+        end)
+        if old_data ~= row.data then
+            assets.index.changed("persistent_data:" .. pack)
+        end
+    end
+end
+
 ---get all persistent data stored in the database for a pack
 ---@param pack_id string
 ---@return table?
@@ -82,22 +102,10 @@ function profile.get_data(pack_id)
     if #matches == 0 then
         return nil
     elseif #matches == 1 then
-        return matches[1].data
+        return json.decode(matches[1].data)
     else
         error("Found " .. #matches .. " matches for primary key value '" .. pack_id .. "' which should be impossible!")
     end
-end
-
----get all persistent data from the profile (pack_id/data as key/value pairs)
----@return table
-function profile.get_all_data()
-    local rows = database.custom_data:get()
-    local result = {}
-    for i = 1, #rows do
-        local row = rows[i]
-        result[unescape(row.pack)] = row.data
-    end
-    return result
 end
 
 ---store any persistent data for a pack in the database (overwrites data for the pack if it already has some)
@@ -106,8 +114,9 @@ end
 function profile.store_data(pack_id, data)
     database:update("custom_data", {
         where = { pack = escape(pack_id) },
-        set = { data = data },
+        set = { data = json.encode(data) },
     })
+    profile.push_all_data()
 end
 
 ---save a score into the profile's database and save the replay as well
