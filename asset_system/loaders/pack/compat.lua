@@ -59,17 +59,12 @@ function compat_loaders.virtual_folder(pack_folder_name)
     return virtual_pack_folder or {}
 end
 
-local file_loaders = {
-    [".json"] = "pack.compat.json_file",
-}
-
 ---iterate over the contents of all files with a certain ending in a certain folder
 ---@param dir string
 ---@param ending string
 ---@param info table
 ---@return function
-local function file_iter(dir, ending, info)
-    local loader = file_loaders[ending] or "pack.compat.text_file"
+local function file_iter(dir, ending, loader, info)
     local files = love.filesystem.getDirectoryItems(info.path .. dir)
     local virt_folder = index.local_request("pack.compat.virtual_folder", info.folder_name)
     virt_folder = virt_folder[dir] or {}
@@ -92,60 +87,69 @@ local function file_iter(dir, ending, info)
     end)
 end
 
+function compat_loaders.level_data(path_or_content, is_content)
+    local level_json = index.local_request("pack.compat.json_file", path_or_content, is_content)
+    -- make keys have the same name for all versions
+    -- get key names
+    local key_names = {}
+    for key in pairs(level_json) do
+        key_names[#key_names + 1] = key
+    end
+    -- and then translate them to avoid modifying the table while iterating (which may skip some keys)
+    for k = 1, #key_names do
+        local key = key_names[k]
+        local value = level_json[key]
+        local snake_case_key = key:gsub("([a-z])([A-Z])", "%1_%2"):lower()
+        snake_case_key = snake_case_key:gsub("multipliers", "mults")
+        level_json[snake_case_key] = value
+    end
+
+    -- set defaults
+    level_json.id = level_json.id or "nullId"
+    level_json.name = level_json.name or "nullName"
+    level_json.description = level_json.description or ""
+    level_json.author = level_json.author or ""
+    level_json.menu_priority = level_json.menu_priority or 0
+    if level_json.selectable == nil then
+        level_json.selectable = true
+    end
+    level_json.music_id = level_json.music_id or "nullMusicId"
+    level_json.sound_id = level_json.sound_id or "nullSoundId"
+    level_json.style_id = level_json.style_id or "nullStyleId"
+    level_json.lua_file = level_json.lua_file or "nullLuaPath"
+    level_json.difficulty_mults = level_json.difficulty_mults or {}
+    -- add 1x difficulty mult if it doesn't exist
+    local has1 = false
+    for k = 1, #level_json.difficulty_mults do
+        if level_json.difficulty_mults[k] == 1 then
+            has1 = true
+            break
+        end
+    end
+    if not has1 then
+        level_json.difficulty_mults[#level_json.difficulty_mults + 1] = 1
+    end
+    -- sort difficulties
+    table.sort(level_json.difficulty_mults)
+    return level_json
+end
+
 function compat_loaders.level_datas(pack_folder_name, version)
     local info = index.local_request("pack.compat.info", pack_folder_name, version)
     local levels = {}
-    for level_json in file_iter("Levels", ".json", info) do
-        -- make keys have the same name for all versions
-        -- get key names
-        local key_names = {}
-        for key in pairs(level_json) do
-            key_names[#key_names + 1] = key
+    for level_data in file_iter("Levels", ".json", "level_data", info) do
+        levels[#levels + 1] = level_data
+        level_data.sort_index = #levels
+    end
+    -- make sure levels are in menu priority order
+    table.sort(levels, function(a, b)
+        if a.menu_priority == b.menu_priority then
+            return a.sort_index > b.sort_index
         end
-        -- and then translate them to avoid modifying the table while iterating (which may skip some keys)
-        for k = 1, #key_names do
-            local key = key_names[k]
-            local value = level_json[key]
-            local snake_case_key = key:gsub("([a-z])([A-Z])", "%1_%2"):lower()
-            snake_case_key = snake_case_key:gsub("multipliers", "mults")
-            level_json[snake_case_key] = value
-        end
-
-        -- set defaults
-        level_json.id = level_json.id or "nullId"
-        level_json.name = level_json.name or "nullName"
-        level_json.description = level_json.description or ""
-        level_json.author = level_json.author or ""
-        level_json.menu_priority = level_json.menu_priority or 0
-        if level_json.selectable == nil then
-            level_json.selectable = true
-        end
-        level_json.music_id = level_json.music_id or "nullMusicId"
-        level_json.sound_id = level_json.sound_id or "nullSoundId"
-        level_json.style_id = level_json.style_id or "nullStyleId"
-        level_json.lua_file = level_json.lua_file or "nullLuaPath"
-        level_json.difficulty_mults = level_json.difficulty_mults or {}
-        -- add 1x difficulty mult if it doesn't exist
-        local has1 = false
-        for k = 1, #level_json.difficulty_mults do
-            if level_json.difficulty_mults[k] == 1 then
-                has1 = true
-                break
-            end
-        end
-        if not has1 then
-            level_json.difficulty_mults[#level_json.difficulty_mults + 1] = 1
-        end
-        -- sort difficulties
-        table.sort(level_json.difficulty_mults)
-
-        -- insertion sort by menu priority
-        for i = 1, #levels + 1 do
-            if levels[i] == nil or levels[i].menu_priority >= level_json.menu_priority then
-                table.insert(levels, i, level_json)
-                break
-            end
-        end
+        return a.menu_priority < b.menu_priority
+    end)
+    for i = 1, #levels do
+        levels[i].sort_index = nil
     end
     return levels
 end
