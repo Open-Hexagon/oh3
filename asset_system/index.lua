@@ -164,9 +164,12 @@ end
 function index.changed(resource_id)
     if resource_watch_map[resource_id] then
         local ids = resource_watch_map[resource_id]
-        for id in ids do
+        reload_depth = reload_depth + 1
+        for id in pairs(ids) do
             index.reload(id)
         end
+        reload_depth = reload_depth - 1
+        mirror_server.sync_pending_assets()
     end
 end
 
