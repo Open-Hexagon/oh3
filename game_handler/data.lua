@@ -47,4 +47,10 @@ function data.import_packs(new_packs)
     end
 end
 
+function data.clear()
+    packs = {}
+    pack_id_map = {}
+    pack_count = 0
+end
+
 return data
