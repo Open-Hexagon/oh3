@@ -1,5 +1,6 @@
 local json = require("extlibs.json.json")
 local mirror_server = require("asset_system.mirror_server")
+local Set = require("set_table")
 require("love.timer")
 local index = {}
 
@@ -19,22 +20,6 @@ end
 -- used to check which asset is causing the loading of another asset to infer dependencies
 local loading_stack = {}
 local loading_stack_index = 0
-
----adds a value to an array if it is not present
----@param value unknown
----@param array table
-local function add_to_array_if_not_present(value, array)
-    local already_present = false
-    for i = 1, #array do
-        if array[i] == value then
-            already_present = true
-            break
-        end
-    end
-    if not already_present then
-        array[#array + 1] = value
-    end
-end
 
 ---generates a unique asset id based on the loader and the parameters
 ---@param loader string
@@ -74,6 +59,9 @@ function index.request(key, loader, ...)
     local module = modname and require("asset_system.loaders." .. modname) or require("asset_system.loaders")
     local funname = loader:match(".*%.(.*)") or loader
     local loader_function = module[funname]
+    if not loader_function then
+        error(("Could not find loader '%s'"):format(loader))
+    end
 
     -- put asset in index if not already there
     local id = generate_asset_id(loader, ...)
@@ -81,7 +69,7 @@ function index.request(key, loader, ...)
         or {
             loader_function = loader_function,
             arguments = { ... },
-            has_as_dependency = {},
+            has_as_dependency = Set:new(),
             id = id,
         }
     local asset = assets[id]
@@ -104,7 +92,7 @@ function index.request(key, loader, ...)
     -- if asset is requested from another loader the other one has this one as dependency
     if loading_stack_index > 0 then
         local caller = loading_stack[loading_stack_index]
-        add_to_array_if_not_present(caller, asset.has_as_dependency)
+        asset.has_as_dependency:add(caller)
     end
 
     -- only load if the asset is not already loaded
@@ -140,8 +128,8 @@ function index.reload(id_or_key)
 
     -- reload assets that depend on this one
     reload_depth = reload_depth + 1
-    for i = 1, #asset.has_as_dependency do
-        index.reload(asset.has_as_dependency[i])
+    for dependee in asset.has_as_dependency do
+        index.reload(dependee)
     end
     reload_depth = reload_depth - 1
 
@@ -165,10 +153,10 @@ function index.watch(resource_id)
     local asset_id = loading_stack[loading_stack_index]
     if resource_watch_map[resource_id] then
         local ids = resource_watch_map[resource_id]
-        add_to_array_if_not_present(asset_id, ids)
+        ids:add(asset_id)
         return false
     end
-    resource_watch_map[resource_id] = { asset_id }
+    resource_watch_map[resource_id] = Set:new({ asset_id })
     return true
 end
 
@@ -177,8 +165,8 @@ end
 function index.changed(resource_id)
     if resource_watch_map[resource_id] then
         local ids = resource_watch_map[resource_id]
-        for i = 1, #ids do
-            index.reload(ids[i])
+        for id in ids do
+            index.reload(id)
         end
     end
 end
