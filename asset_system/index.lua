@@ -119,7 +119,8 @@ local reload_depth = 0
 
 ---reloads an asset, using either its id or key
 ---@param id_or_key string
-function index.reload(id_or_key)
+---@param no_mirror boolean?
+function index.reload(id_or_key, no_mirror)
     local asset = mirrored_assets[id_or_key] or assets[id_or_key]
     asset.value = nil
 
@@ -133,7 +134,7 @@ function index.reload(id_or_key)
     reload_depth = reload_depth - 1
 
     -- mirror all pending assets once at the end of the initial reload
-    if reload_depth == 0 then
+    if reload_depth == 0 and not no_mirror then
         mirror_server.sync_pending_assets()
     end
 end
@@ -164,11 +165,9 @@ end
 function index.changed(resource_id)
     if resource_watch_map[resource_id] then
         local ids = resource_watch_map[resource_id]
-        reload_depth = reload_depth + 1
         for id in pairs(ids) do
-            index.reload(id)
+            index.reload(id, true)
         end
-        reload_depth = reload_depth - 1
         mirror_server.sync_pending_assets()
     end
 end
