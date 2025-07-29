@@ -24,7 +24,9 @@ if is_thread then
             if type(fn) == "function" then
                 local co = coroutine.create(fn)
                 local success, ret = coroutine.resume(co, unpack(cmd, 3))
-                ret = success and ret or (ret or "") .. "\n" .. debug.traceback(co)
+                if not success then
+                    ret = (ret or "") .. "\n" .. debug.traceback(co)
+                end
                 if coroutine.status(co) == "dead" then
                     out_channel:push({ call_id, success, ret })
                     if not success then
@@ -32,16 +34,18 @@ if is_thread then
                         log(debug.traceback(co, ret))
                     end
                 else
-                    running_coroutines[#running_coroutines + 1] = { call_id, cmd[2], co }
+                    running_coroutines[#running_coroutines + 1] = { call_id, co }
                 end
             else
                 out_channel:push({ call_id, false, "'" .. modname .. "." .. cmd[2] .. "' is not a function" })
             end
         else
             for i = #running_coroutines, 1, -1 do
-                local call_id, name, co = unpack(running_coroutines[i])
+                local call_id, co = unpack(running_coroutines[i])
                 local success, ret = coroutine.resume(co)
-                ret = success and ret or (ret or "") .. "\n" .. debug.traceback(co)
+                if not success then
+                    ret = (ret or "") .. "\n" .. debug.traceback(co)
+                end
                 if coroutine.status(co) == "dead" then
                     table.remove(running_coroutines, i)
                     out_channel:push({ call_id, success, ret })
