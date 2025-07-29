@@ -1,6 +1,5 @@
 require("platform")
 local log = require("log")("threadify")
-local Set = require("set_table")
 local modname, is_thread = ...
 
 if is_thread then
@@ -88,12 +87,13 @@ else
                         -- get a request id with no duplicates across any other threads
                         local request_id = 1
                         id_channel:performAtomic(function(channel)
-                            local used_ids = channel:pop() or Set:new()
-                            request_id = #used_ids.entries + 1
-                            while Set.has(used_ids, request_id) do
+                            local used_ids = channel:pop() or {}
+                            request_id = (used_ids.count or 0) + 1
+                            while used_ids[request_id] do
                                 request_id = request_id + 1
                             end
-                            Set.add(used_ids, request_id)
+                            used_ids[request_id] = true
+                            used_ids.count = (used_ids.count or 0) + 1
                             channel:push(used_ids)
                         end)
                         msg[1] = request_id
@@ -132,7 +132,8 @@ else
                 id_channel:performAtomic(function(channel)
                     local used_ids = channel:pop()
                     if used_ids then
-                        Set.remove(used_ids, result[1])
+                        used_ids[result[1]] = nil
+                        used_ids.count = used_ids.count - 1
                         channel:push(used_ids)
                     end
                 end)

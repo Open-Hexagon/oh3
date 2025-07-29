@@ -1,6 +1,5 @@
 local json = require("extlibs.json.json")
 local mirror_server = require("asset_system.mirror_server")
-local Set = require("set_table")
 require("love.timer")
 local index = {}
 
@@ -69,7 +68,7 @@ function index.request(key, loader, ...)
         or {
             loader_function = loader_function,
             arguments = { ... },
-            has_as_dependency = Set:new(),
+            has_as_dependency = {},
             id = id,
         }
     local asset = assets[id]
@@ -92,7 +91,7 @@ function index.request(key, loader, ...)
     -- if asset is requested from another loader the other one has this one as dependency
     if loading_stack_index > 0 then
         local caller = loading_stack[loading_stack_index]
-        asset.has_as_dependency:add(caller)
+        asset.has_as_dependency[caller] = true
     end
 
     -- only load if the asset is not already loaded
@@ -128,7 +127,7 @@ function index.reload(id_or_key)
 
     -- reload assets that depend on this one
     reload_depth = reload_depth + 1
-    for dependee in asset.has_as_dependency do
+    for dependee in pairs(asset.has_as_dependency) do
         index.reload(dependee)
     end
     reload_depth = reload_depth - 1
@@ -153,10 +152,10 @@ function index.watch(resource_id)
     local asset_id = loading_stack[loading_stack_index]
     if resource_watch_map[resource_id] then
         local ids = resource_watch_map[resource_id]
-        ids:add(asset_id)
+        ids[asset_id] = true
         return false
     end
-    resource_watch_map[resource_id] = Set:new({ asset_id })
+    resource_watch_map[resource_id] = { [asset_id] = true }
     return true
 end
 
