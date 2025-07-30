@@ -188,6 +188,7 @@ function compat_loaders.info(pack_folder_name, version)
         info.description = info.description or "no description"
         info.version = info.version or 0
         info.priority = info.priority or 100
+        info.disambiguator = info.disambiguator or "no disambiguator"
 
         info.id = compat_loaders.build_pack_id21(info, true)
     else
