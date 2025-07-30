@@ -28,11 +28,13 @@ local loading_stack_index = 0
 local function load_asset(asset)
     -- push asset id to loading stack
     loading_stack_index = loading_stack_index + 1
-    loading_stack[loading_stack_index] = asset.id
+    loading_stack[loading_stack_index] = asset
 
-    -- back up and clear resource ids
+    -- back up and clear old data
     local resources = asset.resources
     asset.resources = {}
+    local dependencies = asset.dependencies
+    asset.dependencies = {}
 
     -- load the asset
     asset.value = asset.loader_function(unpack(asset.arguments))
@@ -46,6 +48,20 @@ local function load_asset(asset)
             -- call remove function if ids only has the element at 1 left
             if next(ids, next(ids)) == nil and ids[1] then
                 ids[1](resource_id)
+            end
+        end
+    end
+
+    -- note dependency changes in other assets
+    for i = 1, math.max(#dependencies, #asset.dependencies) do
+        local old_dep = assets[dependencies[i]]
+        local new_dep = assets[asset.dependencies[i]]
+        if old_dep ~= new_dep then
+            if old_dep then -- remove old dep
+                old_dep.depended_on_by[asset.id] = nil
+            end
+            if new_dep then -- add new dep
+                new_dep.depended_on_by[asset.id] = true
             end
         end
     end
@@ -101,7 +117,8 @@ function index.request(key, loader, ...)
         or {
             loader_function = get_loader_function(loader),
             arguments = { ... },
-            has_as_dependency = {},
+            depended_on_by = {},
+            dependencies = {},
             resources = {},
             id = id,
         }
@@ -125,7 +142,7 @@ function index.request(key, loader, ...)
     -- if asset is requested from another loader the other one has this one as dependency
     if loading_stack_index > 0 then
         local caller = loading_stack[loading_stack_index]
-        asset.has_as_dependency[caller] = true
+        caller.dependencies[#caller.dependencies + 1] = id
     end
 
     -- only load if the asset is not already loaded
@@ -159,7 +176,7 @@ local function reload_traverse(asset_ids)
         local next_assets = {}
         for dependee in pairs(asset_ids) do
             if type(dependee) == "string" then -- ignore other table content
-                for new_dependee in pairs(assets[dependee].has_as_dependency) do
+                for new_dependee in pairs(assets[dependee].depended_on_by) do
                     next_assets[new_dependee] = true
                 end
                 for i = #plan, 1, -1 do
@@ -182,7 +199,7 @@ function index.reload(id_or_key)
     load_asset(asset)
 
     -- reload assets that depend on this one
-    local plan = reload_traverse(asset.has_as_dependency)
+    local plan = reload_traverse(asset.depended_on_by)
     for i = 1, #plan do
         load_asset(assets[plan[i]])
     end
@@ -199,14 +216,14 @@ function index.watch(resource_id, watch_add, watch_del)
     if loading_stack_index <= 0 then
         error("cannot register resource watcher outside of asset loader")
     end
-    local asset_id = loading_stack[loading_stack_index]
-    assets[asset_id].resources[resource_id] = true
+    local asset = loading_stack[loading_stack_index]
+    assets[asset.id].resources[resource_id] = true
     if resource_watch_map[resource_id] then
         local ids = resource_watch_map[resource_id]
-        ids[asset_id] = true
+        ids[asset.id] = true
         return false
     end
-    resource_watch_map[resource_id] = { watch_del, [asset_id] = true }
+    resource_watch_map[resource_id] = { watch_del, [asset.id] = true }
     if watch_add then
         watch_add(resource_id)
     end
