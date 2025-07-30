@@ -27,7 +27,7 @@ local set_preview_level = async(function(pack, level)
         pending_promise = game_handler.preview_start(pack.id, level.id, {})
     else
         game_handler.stop()
-        t.current_preview:set(pack.game_version, pack.id, level.id)
+        t.current_preview:set(pack.game_version, pack.folder_name, level.id)
         t.current_preview_active = true
     end
 end)
@@ -56,7 +56,7 @@ function t.create(state, pack, level, extra_info)
     extra_info.song = extra_info.song or "no song"
     extra_info.composer = extra_info.composer or "no composer"
     local music = extra_info.song .. "\n" .. extra_info.composer
-    local preview_elem = level_preview:new(pack.game_version, pack.id, level.id, { style = { padding = 4 } })
+    local preview_elem = level_preview:new(pack.game_version, pack.folder_name, level.id, { style = { padding = 4 } })
     return quad:new({
         child_element = flex:new({
             flex:new({

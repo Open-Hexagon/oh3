@@ -16,7 +16,7 @@ function details.set_pack(pack)
     for i = 1, pack.level_count do
         local level = pack.levels[i]
         local preview =
-            level_preview:new(pack.game_version, pack.id, level.id, { style = { padding = 4 }, has_pack = false })
+            level_preview:new(pack.game_version, pack.folder_name, level.id, { style = { padding = 4 }, has_pack = false })
         level_list.elements[i] = quad:new({
             child_element = flex:new({
                 preview,

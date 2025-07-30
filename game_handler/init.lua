@@ -4,9 +4,8 @@ local Replay = require("game_handler.replay")
 local pack_level_data = require("game_handler.data")
 local async = require("async")
 local music = require("compat.music")
-local threadify = require("threadify")
 local config = require("config")
-local threaded_assets = threadify.require("game_handler.assets")
+local assets = require("asset_system")
 local game_handler = {}
 local games = {
     [192] = require("compat.game192"),
@@ -39,13 +38,11 @@ game_handler.profile = require("game_handler.profile")
 
 ---initialize all games (has to be called before doing anything)
 game_handler.init = async(function()
-    -- 1.92 needs persistent data for asset loading as it can overwrite any file
-    local persistent_data
-    if not args.server and not args.migrate then
-        persistent_data = game_handler.profile.get_all_data()
-    end
-    local packs = async.await(threaded_assets.init(persistent_data, args.headless))
-    pack_level_data.import_packs(packs)
+    assets.mirror.listen("pack_level_data", function(packs)
+        pack_level_data.clear()
+        pack_level_data.import_packs(packs)
+    end)
+    async.await(assets.index.request("pack_level_data", "pack.load_register"))
     for _, game in pairs(games) do
         local promise = game.init(config)
         if promise then
@@ -474,20 +471,5 @@ end
 function game_handler.is_running()
     return current_game and current_game.running or false
 end
-
----gets vertices and colors for a minimal level preview
----@param game_version number
----@param pack_id string
----@return table?
-game_handler.get_preview_data = async(function(game_version, pack_id)
-    local assets
-    if game_version == 3 then
-        assets = require("game.assets")
-    else
-        assets = require("compat.game" .. game_version .. ".assets")
-    end
-    local pack = async.await(assets.get_pack(pack_id))
-    return pack.preview_data
-end)
 
 return game_handler

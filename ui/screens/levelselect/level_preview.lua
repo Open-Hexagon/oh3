@@ -1,4 +1,4 @@
-local game_handler = require("game_handler")
+local assets = require("asset_system")
 local threadify = require("threadify")
 local download
 if love.system.getOS() ~= "Web" then
@@ -15,20 +15,18 @@ function preview:new()
 end
 
 function preview:set(game_version, pack, level, has_pack)
-    local promise
     if has_pack == nil then
         has_pack = true
     end
+    self.level = level
+    self.key = "preview_data_" .. game_version .. "_" .. pack
     if has_pack then
-        promise = game_handler.get_preview_data(game_version, pack)
+        assets.index.request(self.key, "pack.compat.preview_data", game_version, pack):done(function()
+            self.data = (assets.mirror[self.key] or {})[self.level]
+        end)
     else
-        promise = download.get_preview_data(game_version, pack)
-    end
-    if promise then
-        promise:done(function(data)
+        download.get_preview_data(game_version, pack):done(function(data)
             self.data = data[level]
-            self.vertices = {}
-            self.rotation = 0
         end)
     end
 end
@@ -36,6 +34,10 @@ end
 function preview:draw(fullscreen)
     if not self.data then
         return
+    end
+    if self.data ~= self.last_data then
+        self.last_data = self.data
+        self.vertices = {}
     end
     if fullscreen then
         local w, h = love.graphics.getDimensions()
