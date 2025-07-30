@@ -20,14 +20,6 @@ end
 local loading_stack = {}
 local loading_stack_index = 0
 
----generates a unique asset id based on the loader and the parameters
----@param loader string
----@param ... unknown
----@return string
-local function generate_asset_id(loader, ...)
-    return json.encode({ loader, ... })
-end
-
 ---puts an asset on the stack and calls its loader
 ---@param asset any
 local function load_asset(asset)
@@ -47,13 +39,11 @@ local function load_asset(asset)
     end
 end
 
----request an asset to be loaded and mirrored into the index
----(mirroring only happens for this asset if a key is given)
----@param key string?
+
+---get loader function based on loader string
 ---@param loader string
----@param ... unknown
-function index.request(key, loader, ...)
-    -- get loader function
+---@return function
+local function get_loader_function(loader)
     local modname = loader:match("(.*)%.")
     local module = modname and require("asset_system.loaders." .. modname) or require("asset_system.loaders")
     local funname = loader:match(".*%.(.*)") or loader
@@ -61,12 +51,35 @@ function index.request(key, loader, ...)
     if not loader_function then
         error(("Could not find loader '%s'"):format(loader))
     end
+    return loader_function
+end
 
+---generates a unique asset id based on the loader and the parameters
+---@param loader string
+---@param ... unknown
+---@return string
+local function generate_asset_id(loader, ...)
+    local t = { loader, ... }
+    local info = debug.getinfo(get_loader_function(loader))
+    if not info.isvararg and info.nparams < select("#", ...) then
+        for i = #t, info.nparams + 1, -1 do
+            t[i] = nil
+        end
+    end
+    return json.encode(t)
+end
+
+---request an asset to be loaded and mirrored into the index
+---(mirroring only happens for this asset if a key is given)
+---@param key string?
+---@param loader string
+---@param ... unknown
+function index.request(key, loader, ...)
     -- put asset in index if not already there
     local id = generate_asset_id(loader, ...)
     assets[id] = assets[id]
         or {
-            loader_function = loader_function,
+            loader_function = get_loader_function(loader),
             arguments = { ... },
             has_as_dependency = {},
             id = id,
