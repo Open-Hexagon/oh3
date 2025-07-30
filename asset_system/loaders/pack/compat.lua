@@ -183,11 +183,8 @@ function compat_loaders.info(pack_folder_name, version)
     local folder = "packs" .. version .. "/" .. pack_folder_name .. "/"
     local info = {}
     index.watch_file(folder .. "pack.json")
-    index.watch_file(folder .. "Scripts")
     if not love.filesystem.exists(folder .. "pack.json") then
         log("Invalid pack at " .. folder .. " missing pack.json")
-    elseif not love.filesystem.exists(folder .. "Scripts") then
-        log("Invalid pack at " .. folder .. " missing Scripts folder")
     else
         info = index.local_request("pack.compat.json_file", folder .. "pack.json")
     end
