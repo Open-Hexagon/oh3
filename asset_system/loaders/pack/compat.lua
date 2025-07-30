@@ -26,7 +26,12 @@ function compat_loaders.text_file(path_or_content, use_vfs)
         return path_or_content
     else
         index.watch_file(path_or_content)
-        return love.filesystem.read(path_or_content)
+        local contents, err = love.filesystem.read(path_or_content)
+        if not contents then
+            log(("Error reading file '%s': %s"):format(path_or_content, err))
+            contents = ""
+        end
+        return contents
     end
 end
 
@@ -47,6 +52,9 @@ function compat_loaders.json_file(path_or_content, use_vfs, filename)
     local _, result = xpcall(json.decode_jsonc, function(msg)
         log("Error: can't decode '" .. filename .. "': " .. msg)
     end, str)
+    if type(result) == "userdata" then
+        return {} -- jsonc does this when the string is empty for some reason
+    end
     return result
 end
 
