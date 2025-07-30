@@ -21,21 +21,34 @@ local function get_callback(path)
     end
 end
 
+local existed = {}
+
 ---watch files (called on loop), calls index.changed on file changes
 ---@param file_list table
 return function(file_list)
     for i = 1, #file_list do
-        local name = file_list[i]
-        event_handles[name] = event_handles[name] or uv.new_fs_event()
+        local path = file_list[i]
+        local is_first_time = event_handles[path] == nil
+        event_handles[path] = event_handles[path] or uv.new_fs_event()
         -- the file path of a handle is nil if it has been stopped or not started yet
-        if event_handles[name]:getpath() == nil then
-            if love.filesystem.getRealDirectory(name) == love.filesystem.getSaveDirectory() then
+        if event_handles[path]:getpath() == nil then
+            if love.filesystem.getRealDirectory(path) == love.filesystem.getSaveDirectory() then
                 -- is in save directory
-                event_handles[name]:start(love.filesystem.getSaveDirectory() .. "/" .. name, {}, get_callback(name))
+                event_handles[path]:start(love.filesystem.getSaveDirectory() .. "/" .. path, {}, get_callback(path))
             else
                 -- is outside save directory
-                event_handles[name]:start(name, {}, get_callback(name))
+                event_handles[path]:start(path, {}, get_callback(path))
             end
+
+            -- poll for file existing if handle path stays nil
+            local exists = love.filesystem.exists(path)
+            if not is_first_time and existed[path] == false and exists then
+                -- file went from not existing to existing
+                -- reattaching handle does not call callback, so do it here
+                log("File changed", path)
+                index.changed(path)
+            end
+            existed[path] = exists
         end
     end
     uv.sleep(100)
