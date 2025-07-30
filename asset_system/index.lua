@@ -23,12 +23,38 @@ local resource_watch_map = {}
 local loading_stack = {}
 local loading_stack_index = 0
 
----note dependency changes in other asset based on current and old dependency tables
----@param old_dependencies table
+---puts an asset on the stack and calls its loader or unloads it
 ---@param asset table
-local function update_dependencies(old_dependencies, asset)
-    for i = 1, math.max(#old_dependencies, #asset.dependencies) do
-        local old_dep = assets[old_dependencies[i]]
+---@param clear boolean?
+local function load_asset(asset, clear)
+    -- push asset id to loading stack
+    loading_stack_index = loading_stack_index + 1
+    loading_stack[loading_stack_index] = asset
+
+    -- back up and clear old data
+    local resources = asset.resources
+    asset.resources = {}
+    local dependencies = asset.dependencies
+    asset.dependencies = {}
+
+    -- load the asset or set value to nil if clear is true
+    asset.value = (not clear) and asset.loader_function(unpack(asset.arguments)) or nil
+
+    -- resource removals (additions happen directly in index.watch)
+    for resource_id in pairs(resources) do
+        if not asset.resources[resource_id] then
+            -- resource got removed
+            local ids = resource_watch_map[resource_id]
+            ids[asset.id] = nil
+            -- call remove function if ids only has the element at 1 left
+            if next(ids, next(ids)) == nil and ids[1] then
+                ids[1](resource_id)
+            end
+        end
+    end
+    -- note dependency changes in other asset based on current and old dependency tables
+    for i = 1, math.max(#dependencies, #asset.dependencies) do
+        local old_dep = assets[dependencies[i]]
         local new_dep = assets[asset.dependencies[i]]
         if old_dep ~= new_dep then
             if old_dep then -- remove old dep
@@ -43,38 +69,6 @@ local function update_dependencies(old_dependencies, asset)
             end
         end
     end
-end
-
----puts an asset on the stack and calls its loader
----@param asset any
-local function load_asset(asset)
-    -- push asset id to loading stack
-    loading_stack_index = loading_stack_index + 1
-    loading_stack[loading_stack_index] = asset
-
-    -- back up and clear old data
-    local resources = asset.resources
-    asset.resources = {}
-    local dependencies = asset.dependencies
-    asset.dependencies = {}
-
-    -- load the asset
-    asset.value = asset.loader_function(unpack(asset.arguments))
-
-    -- resource removals (additions happen directly in index.watch)
-    for resource_id in pairs(resources) do
-        if not asset.resources[resource_id] then
-            -- resource got removed
-            local ids = resource_watch_map[resource_id]
-            ids[asset.id] = nil
-            -- call remove function if ids only has the element at 1 left
-            if next(ids, next(ids)) == nil and ids[1] then
-                ids[1](resource_id)
-            end
-        end
-    end
-
-    update_dependencies(dependencies, asset)
 
     -- pop asset id from loading stack
     loading_stack_index = loading_stack_index - 1
@@ -179,12 +173,9 @@ end
 ---@param id_or_key string
 function index.unload(id_or_key)
     local asset = mirrored_assets[id_or_key] or assets[id_or_key]
-    asset.value = nil
 
-    -- note change in other assets
-    local dependencies = asset.dependencies
-    asset.dependencies = {}
-    update_dependencies(dependencies, asset)
+    -- clear asset value and update other assets
+    load_asset(asset, true)
 
     -- remove from index
     assets[asset.id] = nil
