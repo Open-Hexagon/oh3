@@ -3,6 +3,7 @@ local log = require("log")("threadify")
 local modname, is_thread = ...
 
 if is_thread then
+    local send_responses = not select(3, ...)
     local api = require(modname)
     local in_channel = love.thread.getChannel(modname .. "_cmd")
     local out_channel = love.thread.getChannel(modname .. "_out")
@@ -28,7 +29,9 @@ if is_thread then
                     ret = (ret or "") .. "\n" .. debug.traceback(co)
                 end
                 if coroutine.status(co) == "dead" then
-                    out_channel:push({ call_id, success, ret })
+                    if send_responses then
+                        out_channel:push({ call_id, success, ret })
+                    end
                     if not success then
                         log(("Error calling '%s.%s' with:"):format(modname, cmd[2]), unpack(cmd, 3))
                         log(debug.traceback(co, ret))
@@ -36,7 +39,7 @@ if is_thread then
                 else
                     running_coroutines[#running_coroutines + 1] = { call_id, co }
                 end
-            else
+            elseif send_responses then
                 out_channel:push({ call_id, false, "'" .. modname .. "." .. cmd[2] .. "' is not a function" })
             end
         else
@@ -48,7 +51,9 @@ if is_thread then
                 end
                 if coroutine.status(co) == "dead" then
                     table.remove(running_coroutines, i)
-                    out_channel:push({ call_id, success, ret })
+                    if send_responses then
+                        out_channel:push({ call_id, success, ret })
+                    end
                 end
             end
         end
@@ -60,7 +65,7 @@ else
     local threadify = {}
     local threads_channel = love.thread.getChannel("threads")
 
-    function threadify.require(require_string)
+    function threadify.require(require_string, no_responses)
         if not threads[require_string] then
             local thread_table = {
                 resolvers = {},
@@ -74,7 +79,7 @@ else
                     thread_table.thread = love.thread.newThread("threadify.lua")
                 end
                 if not thread_table.thread:isRunning() then
-                    thread_table.thread:start(require_string, true)
+                    thread_table.thread:start(require_string, true, no_responses)
                 end
                 all_threads[require_string] = thread_table.thread
                 channel:push(all_threads)
@@ -84,13 +89,17 @@ else
         end
         local thread = threads[require_string]
         local interface = {}
+        local id_channel = love.thread.getChannel(require_string .. "_ids")
+        local cmd_channel = love.thread.getChannel(require_string .. "_cmd")
         return setmetatable(interface, {
             __index = function(_, key)
                 return function(...)
                     local msg = { -1, key, ... }
+                    if no_responses then
+                        cmd_channel:push(msg)
+                        return
+                    end
                     return async.promise:new(function(resolve, reject)
-                        local id_channel = love.thread.getChannel(require_string .. "_ids")
-                        local cmd_channel = love.thread.getChannel(require_string .. "_cmd")
                         -- get a request id with no duplicates across any other threads
                         local request_id = 1
                         id_channel:performAtomic(function(channel)

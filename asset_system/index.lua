@@ -264,7 +264,7 @@ function index.changed(resource_id)
 end
 
 local threadify = require("threadify")
-local watcher = threadify.require("asset_system.file_monitor")
+local watcher = threadify.require("asset_system.file_monitor", true)
 
 ---adds the specified file as dependency for the currently loading asset
 ---@param path string
