@@ -98,14 +98,13 @@ end
 ---@param ... unknown
 ---@return string
 local function generate_asset_id(loader, ...)
-    local t = { loader, ... }
+    local args = { ... }
     local info = debug.getinfo(get_loader_function(loader))
-    if not info.isvararg and info.nparams < select("#", ...) then
-        for i = #t, info.nparams + 1, -1 do
-            t[i] = nil
-        end
+    local limit = info.isvararg and #args or math.min(info.nparams, #args)
+    for i = 1, limit do
+        args[i] = type(args[i]) == "table" and json.encode(args[i]) or tostring(args[i])
     end
-    return json.encode(t)
+    return ("%s(%s)"):format(loader, table.concat(args, ",", 1, limit))
 end
 
 ---request an asset to be loaded and mirrored into the index
