@@ -141,8 +141,7 @@ end
 
 ---reloads an asset, using either its id or key
 ---@param id_or_key string
----@param no_mirror boolean?
-function index.reload(id_or_key, no_mirror)
+function index.reload(id_or_key)
     local asset = mirrored_assets[id_or_key] or assets[id_or_key]
     load_asset(asset)
 
@@ -153,9 +152,7 @@ function index.reload(id_or_key, no_mirror)
     end
 
     -- mirror all pending assets once at the end of the initial reload
-    if not no_mirror then
-        mirror_server.sync_pending_assets()
-    end
+    mirror_server.sync_pending_assets()
 end
 
 local threadify = require("threadify")
@@ -183,9 +180,10 @@ end
 ---@param resource_id string
 function index.changed(resource_id)
     if resource_watch_map[resource_id] then
-        local ids = resource_watch_map[resource_id]
-        for id in pairs(ids) do
-            index.reload(id, true)
+        -- reload assets that depend on this the resource
+        local plan = reload_traverse(resource_watch_map[resource_id])
+        for i = 1, #plan do
+            load_asset(assets[plan[i]])
         end
         mirror_server.sync_pending_assets()
     end
