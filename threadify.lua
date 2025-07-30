@@ -9,6 +9,27 @@ if is_thread then
     local out_channel = love.thread.getChannel(modname .. "_out")
     local run = true
     local running_coroutines = {}
+    local function run_coroutine(co, call_id, cmd)
+        local success, ret = coroutine.resume(co, unpack(cmd or {}, 3))
+        if not success then
+            ret = (ret or "") .. "\n" .. debug.traceback(co)
+        end
+        local is_dead = coroutine.status(co) == "dead"
+        if is_dead then
+            if send_responses then
+                out_channel:push({ call_id, success, ret })
+            end
+            if not success then
+                if cmd then
+                    log(("Error calling '%s.%s' with:"):format(modname, cmd[2]), unpack(cmd, 3))
+                else
+                    log(("Error resuming coroutine in %s"):format(modname))
+                end
+                log(debug.traceback(co, ret))
+            end
+        end
+        return is_dead
+    end
     while run do
         local cmd
         if #running_coroutines > 0 or package.loaded.threadify then
@@ -24,19 +45,7 @@ if is_thread then
             local fn = api[cmd[2]]
             if type(fn) == "function" then
                 local co = coroutine.create(fn)
-                local success, ret = coroutine.resume(co, unpack(cmd, 3))
-                if not success then
-                    ret = (ret or "") .. "\n" .. debug.traceback(co)
-                end
-                if coroutine.status(co) == "dead" then
-                    if send_responses then
-                        out_channel:push({ call_id, success, ret })
-                    end
-                    if not success then
-                        log(("Error calling '%s.%s' with:"):format(modname, cmd[2]), unpack(cmd, 3))
-                        log(debug.traceback(co, ret))
-                    end
-                else
+                if not run_coroutine(co, call_id, cmd) then
                     running_coroutines[#running_coroutines + 1] = { call_id, co }
                 end
             elseif send_responses then
@@ -45,15 +54,8 @@ if is_thread then
         else
             for i = #running_coroutines, 1, -1 do
                 local call_id, co = unpack(running_coroutines[i])
-                local success, ret = coroutine.resume(co)
-                if not success then
-                    ret = (ret or "") .. "\n" .. debug.traceback(co)
-                end
-                if coroutine.status(co) == "dead" then
+                if run_coroutine(co, call_id) then
                     table.remove(running_coroutines, i)
-                    if send_responses then
-                        out_channel:push({ call_id, success, ret })
-                    end
                 end
             end
         end
