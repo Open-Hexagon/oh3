@@ -23,6 +23,24 @@ local resource_watch_map = {}
 local loading_stack = {}
 local loading_stack_index = 0
 
+---note dependency changes in other asset based on current and old dependency tables
+---@param old_dependencies table
+---@param asset table
+local function update_dependencies(old_dependencies, asset)
+    for i = 1, math.max(#old_dependencies, #asset.dependencies) do
+        local old_dep = assets[old_dependencies[i]]
+        local new_dep = assets[asset.dependencies[i]]
+        if old_dep ~= new_dep then
+            if old_dep then -- remove old dep
+                old_dep.depended_on_by[asset.id] = nil
+            end
+            if new_dep then -- add new dep
+                new_dep.depended_on_by[asset.id] = true
+            end
+        end
+    end
+end
+
 ---puts an asset on the stack and calls its loader
 ---@param asset any
 local function load_asset(asset)
@@ -52,19 +70,7 @@ local function load_asset(asset)
         end
     end
 
-    -- note dependency changes in other assets
-    for i = 1, math.max(#dependencies, #asset.dependencies) do
-        local old_dep = assets[dependencies[i]]
-        local new_dep = assets[asset.dependencies[i]]
-        if old_dep ~= new_dep then
-            if old_dep then -- remove old dep
-                old_dep.depended_on_by[asset.id] = nil
-            end
-            if new_dep then -- add new dep
-                new_dep.depended_on_by[asset.id] = true
-            end
-        end
-    end
+    update_dependencies(dependencies, asset)
 
     -- pop asset id from loading stack
     loading_stack_index = loading_stack_index - 1
@@ -74,7 +80,6 @@ local function load_asset(asset)
         mirror_server.schedule_sync(asset)
     end
 end
-
 
 ---get loader function based on loader string
 ---@param loader string
@@ -164,6 +169,28 @@ end
 function index.local_request(loader, ...)
     index.request(nil, loader, ...)
     return assets[generate_asset_id(loader, ...)].value
+end
+
+---unload an asset
+---@param id_or_key string
+function index.unload(id_or_key)
+    local asset = mirrored_assets[id_or_key] or assets[id_or_key]
+    asset.value = nil
+
+    -- note change in other assets
+    local dependencies = asset.dependencies
+    asset.dependencies = {}
+    update_dependencies(dependencies, asset)
+
+    -- remove from index
+    assets[asset.id] = nil
+
+    -- only mirror after unloading if there is a key
+    if asset.key then
+        mirrored_assets[asset.key] = nil
+        mirror_server.schedule_sync(asset)
+        mirror_server.sync_pending_assets()
+    end
 end
 
 ---traverses the asset dependency tree without duplicates
