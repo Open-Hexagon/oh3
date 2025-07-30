@@ -14,6 +14,10 @@ function preview:new()
     }, preview)
 end
 
+function preview:get_data()
+    self.data = (assets.mirror[self.key] or {})[self.level] or self.data
+end
+
 function preview:set(game_version, pack, level, has_pack)
     if has_pack == nil then
         has_pack = true
@@ -22,7 +26,7 @@ function preview:set(game_version, pack, level, has_pack)
     self.key = "preview_data_" .. game_version .. "_" .. pack
     if has_pack then
         assets.index.request(self.key, "pack.compat.preview_data", game_version, pack):done(function()
-            self.data = (assets.mirror[self.key] or {})[self.level]
+            self:get_data()
         end)
     else
         download.get_preview_data(game_version, pack):done(function(data)
@@ -32,6 +36,7 @@ function preview:set(game_version, pack, level, has_pack)
 end
 
 function preview:draw(fullscreen)
+    self:get_data()
     if not self.data then
         return
     end
