@@ -56,7 +56,14 @@ end
 
 local function print_stats(start_text)
     if load_call_count > 0 then
-        log(("%s in %fs with %d loader call%s."):format(start_text, love.timer.getTime() - start_time, load_call_count, load_call_count > 1 and "s" or ""))
+        log(
+            ("%s in %fs with %d loader call%s."):format(
+                start_text,
+                love.timer.getTime() - start_time,
+                load_call_count,
+                load_call_count > 1 and "s" or ""
+            )
+        )
     end
 end
 
