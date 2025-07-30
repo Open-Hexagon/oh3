@@ -1,3 +1,4 @@
+local log = require("log")(...)
 local threadify = require("threadify")
 local index = threadify.require("asset_system.index")
 require("love.timer")
@@ -13,6 +14,7 @@ return function(file_list)
         if last_infos[name] then
             local last_info = last_infos[name]
             if info.modtime > last_info.modtime or info.size ~= last_info.size or info.type ~= last_info.type then
+                log("File changed", name)
                 index.changed(name)
             end
         end

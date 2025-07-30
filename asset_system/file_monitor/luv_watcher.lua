@@ -11,6 +11,7 @@ local function get_callback(path)
             -- I have never seen that happen, so not sure what could go wrong here
             log("Error watching", filename, err)
         else
+            log("File changed", path)
             index.changed(path)
         end
         -- since some editors move the file when saving (idk why)
