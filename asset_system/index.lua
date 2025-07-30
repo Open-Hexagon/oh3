@@ -20,24 +20,43 @@ end
 -- used to get asset ids from resource id, as well as a resource's remove function
 local resource_watch_map = {}
 
+-- allow unused assets to be retained for a certain amount of requests/reloads
+-- this prevents them from unloading just before the next reload uses them again
+local RETAIN_UNUSED_ASSETS = 2
+local unused_assets = {}
+
+---goes through unused assets and unloads them if they have not been used too many times
+local function process_unused_assets()
+    for asset, unused_count in pairs(unused_assets) do
+        if next(asset.depended_on_by) or asset.key then
+            unused_assets[asset] = nil -- no longer unused
+        else
+            if unused_count >= RETAIN_UNUSED_ASSETS then
+                index.unload(asset.id)
+                unused_assets[asset] = nil
+            else
+                unused_assets[asset] = unused_count + 1
+            end
+        end
+    end
+end
+
 -- used to check which asset is causing the loading of another asset to infer dependencies
 local loading_stack = {}
 local loading_stack_index = 0
 
 -- for printing statistics
-local load_call_count
+local load_call_count = 0
 local start_time
 
 local function reset_stats()
-    if loading_stack_index == 0 then
-        load_call_count = 0
-        start_time = love.timer.getTime()
-    end
+    load_call_count = 0
+    start_time = love.timer.getTime()
 end
 
 local function print_stats(start_text)
-    if loading_stack_index == 0 then
-        log(("%s in %fs with %d loader calls."):format(start_text, love.timer.getTime() - start_time, load_call_count))
+    if load_call_count > 0 then
+        log(("%s in %fs with %d loader call%s."):format(start_text, love.timer.getTime() - start_time, load_call_count, load_call_count > 1 and "s" or ""))
     end
 end
 
@@ -45,8 +64,6 @@ end
 ---@param asset table
 ---@param clear boolean?
 local function load_asset(asset, clear)
-    reset_stats()
-
     -- push asset id to loading stack
     loading_stack_index = loading_stack_index + 1
     loading_stack[loading_stack_index] = asset
@@ -80,9 +97,9 @@ local function load_asset(asset, clear)
         if old_dep ~= new_dep then
             if old_dep then -- remove old dep
                 old_dep.depended_on_by[asset.id] = nil
-                -- unload asset if it is not mirrored and not depended on by any other assets
+                -- schedule asset for unload if it is not mirrored and not depended on by any other assets
                 if next(old_dep.depended_on_by) == nil and not old_dep.key then
-                    index.unload(old_dep.id)
+                    unused_assets[old_dep] = 0
                 end
             end
             if new_dep then -- add new dep
@@ -96,7 +113,6 @@ local function load_asset(asset, clear)
 
     -- only mirror after loading if there is a key
     if asset.key then
-        print_stats("Loaded '" .. asset.key .. "'")
         mirror_server.schedule_sync(asset)
     end
 end
@@ -135,6 +151,10 @@ end
 ---@param loader string
 ---@param ... unknown
 function index.request(key, loader, ...)
+    if loading_stack_index == 0 then
+        reset_stats()
+    end
+
     -- put asset in index if not already there
     local id = generate_asset_id(loader, ...)
     assets[id] = assets[id]
@@ -177,6 +197,8 @@ function index.request(key, loader, ...)
     -- mirror all pending assets once at the end of the initial request
     if loading_stack_index == 0 then
         mirror_server.sync_pending_assets()
+        print_stats("Processed request for '" .. asset.key .. "'")
+        process_unused_assets()
     end
 end
 
@@ -245,6 +267,7 @@ end
 ---reloads an asset, using either its id or key
 ---@param id_or_key string
 function index.reload(id_or_key)
+    reset_stats()
     local asset = mirrored_assets[id_or_key] or assets[id_or_key]
     load_asset(asset)
 
@@ -256,6 +279,7 @@ function index.reload(id_or_key)
 
     -- mirror all pending assets once at the end of the initial reload
     mirror_server.sync_pending_assets()
+    print_stats("Reloaded '" .. id_or_key .. "'")
 end
 
 ---watch any external resource, the id has to be unique
@@ -283,12 +307,15 @@ end
 ---@param resource_id string
 function index.changed(resource_id)
     if resource_watch_map[resource_id] then
+        reset_stats()
         -- reload assets that depend on this the resource
         local plan = reload_traverse(resource_watch_map[resource_id])
         for i = 1, #plan do
             load_asset(assets[plan[i]])
         end
         mirror_server.sync_pending_assets()
+        print_stats("Processed '" .. resource_id .. "' change")
+        process_unused_assets()
     end
 end
 
