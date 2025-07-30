@@ -16,6 +16,9 @@ function index.unregister_mirror()
     mirror_server.unregister_mirror()
 end
 
+-- used to get asset ids from resource id, as well as a resource's remove function
+local resource_watch_map = {}
+
 -- used to check which asset is causing the loading of another asset to infer dependencies
 local loading_stack = {}
 local loading_stack_index = 0
@@ -27,8 +30,25 @@ local function load_asset(asset)
     loading_stack_index = loading_stack_index + 1
     loading_stack[loading_stack_index] = asset.id
 
+    -- back up and clear resource ids
+    local resources = asset.resources
+    asset.resources = {}
+
     -- load the asset
     asset.value = asset.loader_function(unpack(asset.arguments))
+
+    -- resource removals (additions happen directly in index.watch)
+    for resource_id in pairs(resources) do
+        if not asset.resources[resource_id] then
+            -- resource got removed
+            local ids = resource_watch_map[resource_id]
+            ids[asset.id] = nil
+            -- call remove function if ids only has the element at 1 left
+            if next(ids, next(ids)) == nil and ids[1] then
+                ids[1](resource_id)
+            end
+        end
+    end
 
     -- pop asset id from loading stack
     loading_stack_index = loading_stack_index - 1
@@ -82,6 +102,7 @@ function index.request(key, loader, ...)
             loader_function = get_loader_function(loader),
             arguments = { ... },
             has_as_dependency = {},
+            resources = {},
             id = id,
         }
     local asset = assets[id]
@@ -137,15 +158,17 @@ local function reload_traverse(asset_ids)
     repeat
         local next_assets = {}
         for dependee in pairs(asset_ids) do
-            for new_dependee in pairs(assets[dependee].has_as_dependency) do
-                next_assets[new_dependee] = true
-            end
-            for i = #plan, 1, -1 do
-                if plan[i] == dependee then
-                    table.remove(plan, i)
+            if type(dependee) == "string" then -- ignore other table content
+                for new_dependee in pairs(assets[dependee].has_as_dependency) do
+                    next_assets[new_dependee] = true
                 end
+                for i = #plan, 1, -1 do
+                    if plan[i] == dependee then
+                        table.remove(plan, i)
+                    end
+                end
+                plan[#plan + 1] = dependee
             end
-            plan[#plan + 1] = dependee
         end
         asset_ids = next_assets
     until not next(asset_ids)
@@ -168,25 +191,25 @@ function index.reload(id_or_key)
     mirror_server.sync_pending_assets()
 end
 
-local threadify = require("threadify")
-local watcher = threadify.require("asset_system.file_monitor")
-local resource_watch_map = {}
-
----watch any external resource, the id has to be unique, returns true if resource has not been watched by any asset before
+---watch any external resource, the id has to be unique
 ---@param resource_id string
----@return boolean
-function index.watch(resource_id)
+---@param watch_add function?
+---@param watch_del function?
+function index.watch(resource_id, watch_add, watch_del)
     if loading_stack_index <= 0 then
         error("cannot register resource watcher outside of asset loader")
     end
     local asset_id = loading_stack[loading_stack_index]
+    assets[asset_id].resources[resource_id] = true
     if resource_watch_map[resource_id] then
         local ids = resource_watch_map[resource_id]
         ids[asset_id] = true
         return false
     end
-    resource_watch_map[resource_id] = { [asset_id] = true }
-    return true
+    resource_watch_map[resource_id] = { watch_del, [asset_id] = true }
+    if watch_add then
+        watch_add(resource_id)
+    end
 end
 
 ---notify asset index of changes in an external resource
@@ -202,12 +225,13 @@ function index.changed(resource_id)
     end
 end
 
+local threadify = require("threadify")
+local watcher = threadify.require("asset_system.file_monitor")
+
 ---adds the specified file as dependency for the currently loading asset
 ---@param path string
 function index.watch_file(path)
-    if index.watch(path) then
-        watcher.add(path)
-    end
+    index.watch(path, watcher.add, watcher.remove)
 end
 
 return index

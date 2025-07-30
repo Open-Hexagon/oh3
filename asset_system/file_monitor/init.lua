@@ -55,4 +55,22 @@ function watcher.add(path)
     end
 end
 
+local function remove(t, e)
+    for i = 1, #t do
+        if t[i] == e then
+            table.remove(t, i)
+            return
+        end
+    end
+end
+
+---remove a file from watcher
+---@param path string
+function watcher.remove(path)
+    remove(file_list, path)
+    if path_filter and path:find(path_filter) == 1 then
+        remove(filtered_list, path)
+    end
+end
+
 return watcher
