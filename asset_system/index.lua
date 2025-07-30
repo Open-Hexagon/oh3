@@ -33,6 +33,10 @@ local function update_dependencies(old_dependencies, asset)
         if old_dep ~= new_dep then
             if old_dep then -- remove old dep
                 old_dep.depended_on_by[asset.id] = nil
+                -- unload asset if it is not mirrored and not depended on by any other assets
+                if next(old_dep.depended_on_by) == nil and not old_dep.key then
+                    index.unload(old_dep.id)
+                end
             end
             if new_dep then -- add new dep
                 new_dep.depended_on_by[asset.id] = true
