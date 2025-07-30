@@ -40,7 +40,7 @@ end)
 ## Loader
 Any asset before it appears in the index and gets mirrored to all threads must be requested with a loader which is a function that runs in the asset thread.
 
-A loader can use other assets to create its own asset, these assets will then automatically note that the currently loading asset depends on them, so that once any of them changes this loader is called again. (note that if a loader depends on many assets all of them apart from the changed one are still cached)
+A loader can use other assets to create its own asset, these assets will then automatically note that they are depended on by the currently loading asset, so that once any of them changes this loader is called again. (note that if a loader depends on many assets all of them apart from the changed one are still cached)
 
 Requesting other assets from a loader is blocking instead of asynchronous as it is running in the same thread in that case.
 For example a json loader could look like this:
@@ -105,7 +105,7 @@ function loaders.some_loader()
     index.watch("mydata_id")
     local data = love.thread.getChannel("mydata"):peek()
     return data.number + 10
-end)
+end
 ```
 Application code:
 ```lua
@@ -130,3 +130,11 @@ async.await(assets.index.changed("mydata_id"))
 ```
 
 This can also work with files, the `index.watch_file` function also adds the resource id (in this case a file path) to a file watcher that can be turned on using `assets.start_hot_reloading`, so `assets.index.changed` no longer needs to be called manually in that case.
+
+## Unloading
+An asset can be unloaded using the `index.unload` function that takes either its internal id or mirror key. This will also mirror the asset to be nil again in all threads if the asset is mirrored.
+
+## Dependencies
+Since an asset may depend on any number of assets, a dependency tree is created and updated when assets are loaded, reloaded or unloaded. (Note that circular dependencies are impossible as that would require partial loader executions to yield results.)
+
+This tree is used to automatically reload an asset when an asset it depends on is reloaded or to automatically unload an asset when it is no longer used by any other asset and also not mirrored.
