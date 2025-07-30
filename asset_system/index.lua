@@ -87,6 +87,7 @@ local function load_asset(asset, clear)
             -- call remove function if ids only has the element at 1 left
             if next(ids, next(ids)) == nil and ids[1] then
                 ids[1](resource_id)
+                resource_watch_map[resource_id] = nil
             end
         end
     end
