@@ -68,7 +68,9 @@ function mirror_server.sync_pending_assets()
         end
         update_channel:pop()
     end
-    notification_id_offset = pending_notification_count + notification_id_offset > 1 and 0 or 1
+    if pending_notification_count > 0 then
+        notification_id_offset = pending_notification_count + notification_id_offset > 1 and 0 or 1
+    end
     pending_notification_count = 0
 end
 
