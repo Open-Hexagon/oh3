@@ -1,3 +1,4 @@
+local log = require("log")(...)
 local json = require("extlibs.json.json")
 local mirror_server = require("asset_system.mirror_server")
 require("love.timer")
@@ -23,10 +24,29 @@ local resource_watch_map = {}
 local loading_stack = {}
 local loading_stack_index = 0
 
+-- for printing statistics
+local load_call_count
+local start_time
+
+local function reset_stats()
+    if loading_stack_index == 0 then
+        load_call_count = 0
+        start_time = love.timer.getTime()
+    end
+end
+
+local function print_stats(start_text)
+    if loading_stack_index == 0 then
+        log(("%s in %fs with %d loader calls."):format(start_text, love.timer.getTime() - start_time, load_call_count))
+    end
+end
+
 ---puts an asset on the stack and calls its loader or unloads it
 ---@param asset table
 ---@param clear boolean?
 local function load_asset(asset, clear)
+    reset_stats()
+
     -- push asset id to loading stack
     loading_stack_index = loading_stack_index + 1
     loading_stack[loading_stack_index] = asset
@@ -39,6 +59,7 @@ local function load_asset(asset, clear)
 
     -- load the asset or set value to nil if clear is true
     asset.value = (not clear) and asset.loader_function(unpack(asset.arguments)) or nil
+    load_call_count = load_call_count + 1
 
     -- resource removals (additions happen directly in index.watch)
     for resource_id in pairs(resources) do
@@ -75,6 +96,7 @@ local function load_asset(asset, clear)
 
     -- only mirror after loading if there is a key
     if asset.key then
+        print_stats("Loaded '" .. asset.key .. "'")
         mirror_server.schedule_sync(asset)
     end
 end
