@@ -6,6 +6,7 @@ local pack_loaders = {}
 
 function pack_loaders.preload_packs(version)
     log("Loading pack information for game" .. version)
+    index.watch_file("packs" .. version)
     local pack_folders = love.filesystem.getDirectoryItems("packs" .. version)
     local packs = {}
     for j = 1, #pack_folders do
@@ -71,6 +72,7 @@ end
 function pack_loaders.load_register()
     local result = {}
     -- check all folders in save directory
+    -- don't watch here as adding a new game version will never happen without restarting
     local folders = love.filesystem.getDirectoryItems("")
     for i = 1, #folders do
         -- check if the name matches "packs<version>"

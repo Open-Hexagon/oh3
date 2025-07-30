@@ -76,6 +76,7 @@ end
 ---@param info table
 ---@return function
 local function file_iter(dir, ending, loader, info)
+    index.watch_file(info.path .. dir)
     local files = love.filesystem.getDirectoryItems(info.path .. dir)
     local virt_folder = index.local_request("pack.compat.virtual_folder", info.folder_name)
     virt_folder = virt_folder[dir] or {}
@@ -90,7 +91,8 @@ local function file_iter(dir, ending, loader, info)
                 -- virtual files take precedence over real ones (overwriting)
                 if virt_folder[name] then
                     coroutine.yield(
-                        index.local_request(loader, virt_folder[name], true, name, info.game_version, info.folder_name)
+                        index.local_request(loader, virt_folder[name], true, name, info.game_version, info.folder_name),
+                        name
                     )
                 else
                     coroutine.yield(
@@ -101,7 +103,8 @@ local function file_iter(dir, ending, loader, info)
                             name,
                             info.game_version,
                             info.folder_name
-                        )
+                        ),
+                        name
                     )
                 end
             end
@@ -179,6 +182,8 @@ end
 function compat_loaders.info(pack_folder_name, version)
     local folder = "packs" .. version .. "/" .. pack_folder_name .. "/"
     local info = {}
+    index.watch_file(folder .. "pack.json")
+    index.watch_file(folder .. "Scripts")
     if not love.filesystem.exists(folder .. "pack.json") then
         log("Invalid pack at " .. folder .. " missing pack.json")
     elseif not love.filesystem.exists(folder .. "Scripts") then
@@ -231,9 +236,14 @@ end
 function compat_loaders.load_file_list(dir, ending, loader, key, version, name)
     local info = index.local_request("pack.compat.info", name, version)
     local list = {}
-    for result in file_iter(dir, ending, loader, info) do
+    for result, filename in file_iter(dir, ending, loader, info) do
         if key then
-            list[result[key]] = result
+            local k = result[key]
+            if k then
+                list[k] = result
+            else
+                log("Failed loading " .. filename)
+            end
         else
             list[#list + 1] = result
         end
@@ -250,7 +260,8 @@ function compat_loaders.music(path_or_content, filename, is_content, version, pa
         local fallback_path = filename:gsub("%.json$", ".ogg")
         music.file_name = music.file_name or fallback_path
         local path = pack_info.path .. "Music/" .. music.file_name
-        if music.file_name:sub(-4) ~= ".ogg" or love.filesystem.exists(path) then
+        index.watch_file(path)
+        if music.file_name:sub(-4) ~= ".ogg" or not love.filesystem.exists(path) then
             music.file_name = fallback_path
         end
         if love.filesystem.exists(path) then
@@ -317,6 +328,7 @@ function compat_loaders.preview_data(version, name)
             rotation_speed = level.rotation_speed or rotation_speed
         else
             local lua_path = info.path .. "/" .. level.lua_file
+            index.watch_file(lua_path)
             if love.filesystem.exists(lua_path) then
                 local code = love.filesystem.read(lua_path)
                 for match in code:gmatch("function%s*onInit.-l_setSides%((.-)%).-end") do
