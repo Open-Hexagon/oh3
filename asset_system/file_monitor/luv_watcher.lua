@@ -10,9 +10,6 @@ local function get_callback(path)
         if err then
             -- I have never seen that happen, so not sure what could go wrong here
             log("Error watching", filename, err)
-        else
-            log("File changed", path)
-            index.changed(path)
         end
         -- since some editors move the file when saving (idk why)
         -- the handle has to be recreated every time in case the inode of the file changed
@@ -20,8 +17,6 @@ local function get_callback(path)
         event_handles[path]:stop()
     end
 end
-
-local existed = {}
 
 ---watch files (called on loop), calls index.changed on file changes
 ---@param file_list table
@@ -40,15 +35,12 @@ return function(file_list)
                 event_handles[path]:start(path, {}, get_callback(path))
             end
 
-            -- poll for file existing if handle path stays nil
-            local exists = love.filesystem.exists(path)
-            if not is_first_time and existed[path] == false and exists then
-                -- file went from not existing to existing
-                -- reattaching handle does not call callback, so do it here
+            -- if restarting (not starting) was successfull the file changed
+            -- (restarting may fail if the file was deleted, so this should get reappearances)
+            if not is_first_time and event_handles[path]:getpath() ~= nil then
                 log("File changed", path)
                 index.changed(path)
             end
-            existed[path] = exists
         end
     end
     uv.sleep(100)
