@@ -172,6 +172,13 @@ end
 ---@param id_or_key string
 function index.unload(id_or_key)
     local asset = mirrored_assets[id_or_key] or assets[id_or_key]
+    if next(asset.depended_on_by) ~= nil then
+        local t = {}
+        for id in pairs(asset.depended_on_by) do
+            t[#t + 1] = id
+        end
+        error(("can't unload asset %s, it is still depended on by %s"):format(id_or_key, table.concat(t, ", ")))
+    end
 
     -- clear asset value and update other assets
     load_asset(asset, true)
