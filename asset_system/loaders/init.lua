@@ -10,12 +10,12 @@ end
 
 function loaders.image(path)
     index.watch_file(path)
-    return utils.run_on_main("love", "graphics", "newImage", path)
+    return utils.run_on_main("return love.graphics.newImage(...)", path)
 end
 
 function loaders.font(path, size)
     index.watch_file(path)
-    return utils.run_on_main("love", "graphics", "newFont", path, size)
+    return utils.run_on_main("return love.graphics.newFont(...)", path, size)
 end
 
 function loaders.json(path)
