@@ -1,4 +1,3 @@
-local log = require("log")(...)
 local index = require("asset_system.index")
 local utils = require("asset_system.loaders.utils")
 local loaders = {}
@@ -22,6 +21,11 @@ function loaders.json(path)
     local json = require("extlibs.json.json")
     local text = index.local_request("text_file", path)
     return json.decode(text)
+end
+
+function loaders.sound_data(path)
+    index.watch_file(path)
+    return love.sound.newSoundData(path)
 end
 
 function loaders.icon_font(name, size)

@@ -234,7 +234,9 @@ function compat_loaders.load_file_list(dir, ending, loader, key, version, name)
     local info = index.local_request("pack.compat.info", name, version)
     local list = {}
     for result, filename in file_iter(dir, ending, loader, info) do
-        if key then
+        if key == "filename" then
+            list[filename] = result
+        elseif key then
             local k = result[key]
             if k then
                 list[k] = result
@@ -392,6 +394,8 @@ function compat_loaders.full_load(version, id)
 
     pack.music =
         index.local_request("pack.compat.load_file_list", "Music", ".json", "pack.compat.music", "id", version, name)
+    pack.sounds =
+        index.local_request("pack.compat.load_file_list", "Sounds", ".ogg", "sound_data", "filename", version, name)
 
     -- shaders in compat mode are only required for 21
     if not headless and version == 21 then
@@ -429,9 +433,6 @@ function compat_loaders.full_load(version, id)
             name
         )
     end
-
-    -- small preview data
-    pack.preview_data = index.local_request("pack.compat.preview_data", version, name)
 
     return pack
 end
