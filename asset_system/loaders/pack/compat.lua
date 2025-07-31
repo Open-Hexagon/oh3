@@ -230,21 +230,24 @@ function compat_loaders.load_dependency_map21()
     return map
 end
 
-function compat_loaders.load_file_list(dir, ending, loader, key, version, name)
+function compat_loaders.load_file_list(dir, ending, loader, list_key, version, name, res_key)
     local info = index.local_request("pack.compat.info", name, version)
     local list = {}
     for result, filename in file_iter(dir, ending, loader, info) do
-        if key == "filename" then
-            list[filename] = result
-        elseif key then
-            local k = result[key]
-            if k then
-                list[k] = result
-            else
-                log("Failed loading " .. filename)
-            end
+        local key = #list + 1
+        if list_key == "filename" then
+            key = filename
+        elseif list_key then
+            key = result[list_key]
+        end
+        if not key then
+            log("Failed loading " .. filename)
         else
-            list[#list + 1] = result
+            if res_key then
+                list[key] = result[res_key]
+            else
+                list[key] = result
+            end
         end
     end
     return list
@@ -430,7 +433,8 @@ function compat_loaders.full_load(version, id)
             "pack.compat.json_file",
             "id",
             version,
-            name
+            name,
+            "events"
         )
     end
 
