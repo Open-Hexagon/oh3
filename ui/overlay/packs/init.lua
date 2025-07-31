@@ -12,7 +12,7 @@ local threadify = require("threadify")
 local channel_callbacks = require("channel_callbacks")
 local pack_elements = require("ui.screens.levelselect.packs")
 local pack_details = require("ui.overlay.packs.details")
-local game_handler = require("game_handler")
+local assets = require("asset_system")
 local async = require("async")
 local config = require("config")
 local dialogs = require("ui.overlay.dialog")
@@ -145,7 +145,20 @@ local load_pack_chunk = async(function()
             for j = 1, #promises do
                 async.await(promises[j])
             end
-            local pack_data = async.await(game_handler.import_pack(pack.folder_name, pack.game_version))
+            async.await(assets.index.changed("packs" .. pack.game_version))
+            -- update ui to actually reflect asset change
+            local packs = assets.mirror.pack_level_data
+            local pack_data
+            for j = 1, #packs do
+                if pack.game_version == packs[j].game_version and pack.id == packs[j].id then
+                    pack_data = packs[j]
+                    break
+                end
+            end
+            if not pack_data then
+                dialogs.alert("Loading pack failed.")
+                return
+            end
             local elem = pack_elements.make_pack_element(pack_data, true)
             -- element may not be created if an element for the pack already exists
             if elem then
