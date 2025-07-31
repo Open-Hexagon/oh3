@@ -1,6 +1,3 @@
-local log = require("log")(...)
-local threadify = require("threadify")
-local index = threadify.require("asset_system.index")
 require("love.timer")
 
 ---get info with directory items or "deleted" if it doesn't exist
@@ -49,8 +46,7 @@ return function(file_list)
         local info = get_custom_info(path)
         if last_infos[path] then
             if has_changed(info, last_infos[path]) then
-                log("File changed", path)
-                index.changed(path)
+                coroutine.yield(path)
             end
         end
         last_infos[path] = info

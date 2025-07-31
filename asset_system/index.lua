@@ -312,19 +312,22 @@ function index.watch(resource_id, watch_add, watch_del)
 end
 
 ---notify asset index of changes in an external resource
----@param resource_id string
-function index.changed(resource_id)
-    if resource_watch_map[resource_id] then
-        reset_stats()
-        -- reload assets that depend on this the resource
-        local plan = reload_traverse(resource_watch_map[resource_id])
-        for i = 1, #plan do
-            load_asset(assets[plan[i]])
+---@param ... unknown
+function index.changed(...)
+    reset_stats()
+    for i = 1, select("#", ...) do
+        local resource_id = select(i, ...)
+        if resource_watch_map[resource_id] then
+            -- reload assets that depend on this the resource
+            local plan = reload_traverse(resource_watch_map[resource_id])
+            for j = 1, #plan do
+                load_asset(assets[plan[j]])
+            end
         end
-        mirror_server.sync_pending_assets()
-        print_stats("Processed '" .. resource_id .. "' change")
-        process_unused_assets()
     end
+    mirror_server.sync_pending_assets()
+    print_stats("Processed resource changes")
+    process_unused_assets()
 end
 
 local threadify = require("threadify")

@@ -9,6 +9,8 @@ else
     log("luv backend is not available for hot reloading, will fall back to polling")
     impl = require("asset_system.file_monitor.poll_watcher")
 end
+local threadify = require("threadify")
+local index = threadify.require("asset_system.index")
 
 local watcher = {}
 
@@ -33,8 +35,18 @@ function watcher.start(filter)
         filtered_list = file_list
     end
     watching = true
+    local paths = {}
     while watching do
-        impl(filtered_list)
+        local co = coroutine.wrap(impl)
+        local i = 0
+        repeat
+            i = i + 1
+            paths[i] = co(filtered_list)
+        until not paths[i]
+        if i > 1 then
+            log("Files changed: " .. table.concat(paths, ", ", 1, i - 1))
+            index.changed(unpack(paths, 1, i - 1))
+        end
         -- has to be non-blocking so new files can be added while watching
         coroutine.yield()
     end
