@@ -134,7 +134,10 @@ public.start = async(function(pack_folder, level_id, level_options)
 
     game.real_time = 0
     last_real_time = 0
-    game.pack = async.await(assets.get_pack(pack_folder))
+    local key = "192_" .. pack_folder
+    local a = require("asset_system")
+    async.await(a.index.request(key, "pack.compat.full_load", 192, pack_folder))
+    game.pack = setmetatable(a.mirror[key], { __index = a.mirror[key].info })
     local level_data = game.pack.levels[level_id]
     if level_data == nil then
         error("Level with id '" .. level_id .. "' not found")
