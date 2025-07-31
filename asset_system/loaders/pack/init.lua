@@ -93,7 +93,7 @@ function pack_loaders.load_id_map()
     local reg = index.local_request("pack.load_register")
     local packs = {}
     for i = 1, #reg do
-        local pack = reg[i].info
+        local pack = reg[i]
         packs[pack.game_version] = packs[pack.game_version] or {}
         packs[pack.game_version][pack.id] =
             index.local_request("pack.compat.preload_pack", pack.folder_name, pack.game_version)

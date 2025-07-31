@@ -252,9 +252,9 @@ end
 
 local headless = false -- TODO: get somehow
 
-function compat_loaders.music(path_or_content, filename, is_content, version, pack_folder_name)
+function compat_loaders.music(path_or_content, is_content, filename, version, pack_folder_name)
     local pack_info = index.local_request("pack.compat.info", pack_folder_name, version)
-    local music = index.local_request("pack.compat.json_file", path_or_content, filename, is_content)
+    local music = index.local_request("pack.compat.json_file", path_or_content, is_content, filename)
     if not headless then
         local fallback_path = filename:gsub("%.json$", ".ogg")
         music.file_name = music.file_name or fallback_path
@@ -282,7 +282,7 @@ function compat_loaders.music(path_or_content, filename, is_content, version, pa
     return music
 end
 
-function compat_loaders.shader(path_or_content, filename, is_content)
+function compat_loaders.shader(path_or_content, is_content, filename)
     local code = index.local_request("pack.compat.text_file", path_or_content, is_content)
     local translated_shader = shader_compat.translate(code, filename)
     local compiled_shader
@@ -390,7 +390,7 @@ function compat_loaders.full_load(version, id)
     end
     local name = pack.info.folder_name
 
-    log("Loading '" .. pack.id .. "' assets")
+    log("Loading '" .. pack.info.id .. "' assets")
 
     pack.music =
         index.local_request("pack.compat.load_file_list", "Music", ".json", "pack.compat.music", "id", version, name)
