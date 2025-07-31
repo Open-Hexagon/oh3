@@ -1,8 +1,6 @@
 local log = require("log")("ui.overlay.packs.download_thread")
 local json = require("extlibs.json.json")
-local threadify = require("threadify")
-local assets = threadify.require("game_handler.assets")
-local async = require("async")
+local assets = require("asset_system")
 local url = require("socket.url")
 require("love.timer")
 
@@ -19,8 +17,6 @@ local tmp_folder = "download_cache/"
 if not love.filesystem.getInfo(tmp_folder) then
     love.filesystem.createDirectory(tmp_folder)
 end
-
-local pack_list
 
 local pack_map = {}
 local download = {}
@@ -61,11 +57,9 @@ end
 ---@param stop number
 ---@return table|boolean|nil
 function download.get_pack_list(start, stop)
+    local pack_list = assets.mirror.pack_level_data
     if not pack_list then
-        pack_list = async.busy_await(assets.init({}, true))
-        if not pack_list then
-            error("could not get current pack list")
-        end
+        error("pack registry was not loaded yet")
     end
     local pack_data_list = api(("get_packs/%d/%d"):format(start, stop))
     if not pack_data_list then
