@@ -3,8 +3,6 @@ local log = require("log")(...)
 local msgpack = require("extlibs.msgpack.msgpack")
 local replay = require("game_handler.replay")
 local game_handler = require("game_handler")
-local config = require("config")
-local threadify = require("threadify")
 local async = require("async")
 require("love.timer")
 
@@ -14,6 +12,8 @@ local database, replay_path
 database = require("server.database")
 database.set_identity(1)
 replay_path = database.get_replay_path()
+local failed_replay_path = "server/failed_replays/"
+love.filesystem.createDirectory(failed_replay_path)
 
 local api = {}
 
@@ -99,24 +99,25 @@ function api.verify_replay(compressed_replay, time, steam_id)
     if is_custom_score and decoded_replay.game_version == 21 then
         decoded_replay.score = decoded_replay.score * 60
     end
-    log(
-        "Finished running replay. compare score: "
-            .. compare_score
-            .. " timed score: "
-            .. timed_score
-            .. "s replay score: "
-            .. decoded_replay.score
-            .. " save score: "
-            .. score
-            .. " real time: "
-            .. time
-            .. "s"
-    )
+    local time_string = "compare score: "
+        .. compare_score
+        .. " timed score: "
+        .. timed_score
+        .. "s replay score: "
+        .. decoded_replay.score
+        .. " save score: "
+        .. score
+        .. " real time: "
+        .. time
+        .. "s"
+    log("Finished running replay. " .. time_string)
+    local verified = false
     if
         compare_score + score_tolerance > decoded_replay.score
         and compare_score - score_tolerance < decoded_replay.score
     then
         if time + time_tolerance > timed_score and time - time_tolerance < timed_score then
+            verified = true
             log("replay verified, score: " .. score)
             local hash, data = decoded_replay:get_hash()
             local packed_level_settings = msgpack.pack(decoded_replay.data.level_settings)
@@ -161,6 +162,10 @@ function api.verify_replay(compressed_replay, time, steam_id)
         end
     else
         log("The replay's score of " .. decoded_replay.score .. " does not match the actual score of " .. compare_score)
+    end
+    if not verified then
+        log("Saving failed replay with real time.")
+        decoded_replay:save(failed_replay_path .. love.timer.getTime() .. "_steam_" .. steam_id .. "_" .. time_string)
     end
 end
 
