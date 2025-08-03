@@ -26,7 +26,7 @@ function love.conf(t)
         end
     else
         t.modules.data = true
-        t.modules.event = args.server
+        t.modules.event = true
         t.modules.audio = false
         t.modules.font = false
         t.modules.graphics = false
