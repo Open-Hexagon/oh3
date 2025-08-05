@@ -149,7 +149,7 @@ function assets.get_pack_sound(pack, id)
             return
         end
     end
-    if cached_sounds[glob_id] == nil then
+    if cached_sounds[glob_id] == nil and love.filesystem.exists(pack.path .. "/Sounds/" .. id) then
         cached_sounds[glob_id] = audio.new_static(pack.path .. "/Sounds/" .. id)
         cached_sounds[glob_id].volume = sound_volume
     end
