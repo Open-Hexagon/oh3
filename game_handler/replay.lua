@@ -155,7 +155,10 @@ end
 ---@param path string
 ---@param data string|love.CompressedData|nil
 function replay:save(path, data)
-    local file = love.filesystem.openFile(path, "w")
+    local file, err = love.filesystem.openFile(path, "w")
+    if err then
+        log("Error opening file:", err)
+    end
     file:write(data or self:_get_compressed())
     file:close()
 end

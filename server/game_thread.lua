@@ -165,6 +165,7 @@ function api.verify_replay(compressed_replay, time, steam_id)
     end
     if not verified then
         log("Saving failed replay with real time.")
+        time_string = time_string:gsub(" ", "_"):gsub(":", "") -- remove special characters
         decoded_replay:save(failed_replay_path .. love.timer.getTime() .. "_steam_" .. steam_id .. "_" .. time_string)
     end
 end
