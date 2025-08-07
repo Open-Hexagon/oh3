@@ -2,6 +2,7 @@ local threadify = require("threadify")
 local threaded_assets = threadify.require("game_handler.assets")
 local async = require("async")
 local audio = require("audio")
+local args = require("args")
 local assets = {}
 local sound_volume
 local sound_path = "assets/audio/"
@@ -11,7 +12,7 @@ local pending_packs = {}
 
 assets.init = async(function(config)
     sound_volume = config.get("sound_volume")
-    if config.get("preload_all_packs") then
+    if config.get("preload_all_packs") and not args.replay_viewer then
         local game_handler = require("game_handler")
         local packs = game_handler.get_packs()
         for i = 1, #packs do
