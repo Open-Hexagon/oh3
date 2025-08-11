@@ -110,7 +110,8 @@ function api.verify_replay(compressed_replay, time, steam_id)
         .. " real time: "
         .. time
         .. "s"
-    log("Finished running replay. " .. time_string)
+    log("Finished running replay on", decoded_replay.pack_id, decoded_replay.level_id)
+    log("Times: " .. time_string)
     local verified = false
     if
         compare_score + score_tolerance > decoded_replay.score
@@ -201,17 +202,24 @@ function api.set_render_top_scores(bool)
 end
 
 local run = true
+local channel = love.thread.getChannel("game_commands")
 while run do
-    local cmd = love.thread.getChannel("game_commands"):demand()
-    if cmd[1] == "stop" then
-        run = false
-    else
-        xpcall(function()
-            local fn = api[cmd[1]]
-            table.remove(cmd, 1)
-            fn(unpack(cmd))
-        end, function(err)
-            log("Error while verifying replay:\n", err)
-        end)
+    local cmd = channel:demand(10)
+    log("game thread is alive and ready")
+    if cmd then
+        log("processing game command.", channel:getCount(), "left.")
+        if cmd[1] == "stop" then
+            run = false
+        else
+            xpcall(function()
+                local fn = api[cmd[1]]
+                table.remove(cmd, 1)
+                fn(unpack(cmd))
+            end, function(err)
+                log("Error while verifying replay:\n", err)
+            end)
+        end
+        log("done.")
     end
 end
+log("quitting")
