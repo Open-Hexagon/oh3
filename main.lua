@@ -162,14 +162,20 @@ function love.run()
 
     if args.extract_working_replays then
         local database = require("server.database")
-        local game = require("server.game")
         local Replay = require("game_handler.replay")
 
         love.filesystem.createDirectory("server/working_replays")
         database.set_identity(0)
         database.init()
-        game.init(false)
+        local threads = {}
+        local workers = 12
+        for i = 1, workers do
+            local thread = love.thread.newThread("server/game_thread.lua")
+            thread:start("server.game_thread." .. i, true)
+            threads[i] = thread
+        end
         local worked = 0
+        local pending = {}
         local replay_path = database.get_replay_path()
         local scores = database.get_all_scores()
         for i = 1, #scores do
@@ -180,18 +186,36 @@ function love.run()
                 local path = replay_path .. hash:sub(1, 2) .. "/" .. hash
                 if love.filesystem.exists(path) then
                     local replay = Replay:new(path)
-                    game.verify_replay_and_save_score(replay:_get_compressed(), score.time)
-                    local result = love.thread.getChannel("verification_results"):demand()
+                    love.thread.getChannel("game_commands"):push({ "verify_replay", replay:_get_compressed(), score.time, 0, i })
+                    pending[#pending + 1] = i
+                end
+            end
+        end
+        while #pending > 0 do
+            for j = #pending, 1, -1 do
+                local i = pending[j]
+                local result = love.thread.getChannel("verification_results_" .. i):peek()
+                if result ~= nil then
+                    table.remove(pending, j)
+                    log(("got result for %d, %d / %d to go."):format(i, #pending, #scores))
                     if result then
                         log("worked, copying...")
-                        replay:save("server/working_replays/" .. hash)
+                        local hash = scores[i].replay_hash
+                        local path = replay_path .. hash:sub(1, 2) .. "/" .. hash
+                        Replay:new(path):save("server/working_replays/" .. hash)
                         worked = worked + 1
                     end
                 end
             end
+            love.timer.sleep(0.01)
         end
         log(("Done verifying. %d / %d scores worked."):format(worked, #scores))
-        game.stop()
+        for _ = 1, workers do
+            love.thread.getChannel("game_commands"):push({ "stop" })
+        end
+        for i = 1, workers do
+            threads[i]:wait()
+        end
         database.stop()
         return function()
             return 0

@@ -41,7 +41,7 @@ local function get_replay_save_path(hash)
     return path, hash
 end
 
-function api.verify_replay(compressed_replay, time, steam_id)
+function api.verify_replay(compressed_replay, time, steam_id, test_id)
     local start = love.timer.getTime()
     local decoded_replay = replay:new_from_data(compressed_replay)
     local around_time = 0
@@ -84,8 +84,8 @@ function api.verify_replay(compressed_replay, time, steam_id)
     end)
     if exceeded_max_processing_time then
         log("no player death 60s after end of input data. discarding replay.")
-        if steam_id == nil then
-            love.thread.getChannel("verification_results"):push(false)
+        if test_id then
+            love.thread.getChannel("verification_results_" .. test_id):push(false)
         end
         return
     end
@@ -122,7 +122,7 @@ function api.verify_replay(compressed_replay, time, steam_id)
     then
         if time + time_tolerance > timed_score and time - time_tolerance < timed_score then
             verified = true
-            if steam_id ~= nil then
+            if not test_id then
                 log("replay verified, score: " .. score)
                 local hash, data = decoded_replay:get_hash()
                 local packed_level_settings = msgpack.pack(decoded_replay.data.level_settings)
@@ -169,8 +169,8 @@ function api.verify_replay(compressed_replay, time, steam_id)
     else
         log("The replay's score of " .. decoded_replay.score .. " does not match the actual score of " .. compare_score)
     end
-    if steam_id == nil then
-        love.thread.getChannel("verification_results"):push(verified)
+    if test_id then
+        love.thread.getChannel("verification_results_" .. test_id):push(verified)
     elseif not verified then
         log("Saving failed replay with real time.")
         time_string = time_string:gsub(" ", "_"):gsub(":", "") -- remove special characters
