@@ -160,6 +160,42 @@ function love.run()
         end
     end
 
+    if args.extract_working_replays then
+        local database = require("server.database")
+        local game = require("server.game")
+        local Replay = require("game_handler.replay")
+
+        love.filesystem.createDirectory("server/working_replays")
+        database.set_identity(0)
+        database.init()
+        game.init(false)
+        local worked = 0
+        local replay_path = database.get_replay_path()
+        local scores = database.get_all_scores()
+        for i = 1, #scores do
+            log(("checking %d / %d scores"):format(i, #scores))
+            local score = scores[i]
+            local hash = score.replay_hash
+            local path = replay_path .. hash:sub(1, 2) .. "/" .. hash
+            if love.filesystem.exists(path) then
+                local replay = Replay:new(path)
+                game.verify_replay_and_save_score(replay:_get_compressed(), score.time)
+                local result = love.thread.getChannel("verification_results"):demand()
+                if result then
+                    log("worked, copying...")
+                    replay:save("server/working_replays/" .. hash)
+                    worked = worked + 1
+                end
+            end
+        end
+        log(("Done verifying. %d / %d scores worked."):format(worked, #scores))
+        game.stop()
+        database.stop()
+        return function()
+            return 0
+        end
+    end
+
     if args.headless then
         if args.replay_file == nil then
             error("Started headless mode without replay")
