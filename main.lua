@@ -176,15 +176,17 @@ function love.run()
             log(("checking %d / %d scores"):format(i, #scores))
             local score = scores[i]
             local hash = score.replay_hash
-            local path = replay_path .. hash:sub(1, 2) .. "/" .. hash
-            if love.filesystem.exists(path) then
-                local replay = Replay:new(path)
-                game.verify_replay_and_save_score(replay:_get_compressed(), score.time)
-                local result = love.thread.getChannel("verification_results"):demand()
-                if result then
-                    log("worked, copying...")
-                    replay:save("server/working_replays/" .. hash)
-                    worked = worked + 1
+            if hash then
+                local path = replay_path .. hash:sub(1, 2) .. "/" .. hash
+                if love.filesystem.exists(path) then
+                    local replay = Replay:new(path)
+                    game.verify_replay_and_save_score(replay:_get_compressed(), score.time)
+                    local result = love.thread.getChannel("verification_results"):demand()
+                    if result then
+                        log("worked, copying...")
+                        replay:save("server/working_replays/" .. hash)
+                        worked = worked + 1
+                    end
                 end
             end
         end
