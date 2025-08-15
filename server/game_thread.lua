@@ -224,6 +224,10 @@ while run do
                 fn(unpack(cmd))
             end, function(err)
                 log("Error while verifying replay:\n", err)
+                local test_id = cmd[4]
+                if test_id then
+                    love.thread.getChannel("verification_results_" .. test_id):push(false)
+                end
             end)
         end
         log("done.")
