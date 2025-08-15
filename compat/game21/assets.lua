@@ -24,7 +24,6 @@ local loaded_images = {}
 local sound_volume
 local dependency_mapping = {}
 local cached_packs = {}
-local pending_packs = {}
 
 local assets = {}
 
@@ -70,13 +69,7 @@ local function build_pack_id(disambiguator, author, name, version)
 end
 
 assets.get_pack = async(function(id)
-    if pending_packs[id] then
-        async.await(pending_packs[id])
-    elseif not cached_packs[id] then
-        local done_func
-        pending_packs[id] = async.promise:new(function(resolve)
-            done_func = resolve
-        end)
+    if not cached_packs[id] then
         local pack = async.await(threaded_assets.get_pack(21, id, args.headless))
         compile_shaders(pack)
         -- update pack in dependency_mapping now that shaders are compiled
@@ -106,9 +99,7 @@ assets.get_pack = async(function(id)
             end
         end
         cached_packs[id] = pack
-        done_func()
     end
-    pending_packs[id] = nil
     return cached_packs[id]
 end)
 
