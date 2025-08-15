@@ -190,23 +190,25 @@ function love.run()
                     local path = replay_path .. hash:sub(1, 2) .. "/" .. hash
                     if love.filesystem.exists(path) then
                         local replay = Replay:new(path)
-                        love.thread.getChannel("game_commands"):push({ "verify_replay", replay:_get_compressed(), score.time, 0, i })
+                        love.thread
+                            .getChannel("game_commands")
+                            :push({ "verify_replay", replay:_get_compressed(), score.time, 0, i })
                         pending[#pending + 1] = i
                     end
                 end
             end
         end
-	local last_time = love.timer.getTime()
+        local last_time = love.timer.getTime()
         while #pending > 0 do
-	    if love.timer.getTime() - last_time > 60 then
-		log("got nothing for a minute, aborting")
-		break
-	    end
+            if love.timer.getTime() - last_time > 60 then
+                log("got nothing for a minute, aborting")
+                break
+            end
             for j = #pending, 1, -1 do
                 local i = pending[j]
                 local result = love.thread.getChannel("verification_results_" .. i):peek()
                 if result ~= nil then
-		    last_time = love.timer.getTime()
+                    last_time = love.timer.getTime()
                     table.remove(pending, j)
                     log(("got result for %d, %d / %d to go."):format(i, #pending, #scores))
                     if result then
@@ -224,8 +226,8 @@ function love.run()
         for _ = 1, workers do
             love.thread.getChannel("game_commands"):push({ "stop" })
         end
-	love.timer.sleep(10)  -- give them a bit of time to exit
-	-- otherwise kill with force
+        love.timer.sleep(10) -- give them a bit of time to exit
+        -- otherwise kill with force
         for i = 1, workers do
             threads[i]:release()
         end
