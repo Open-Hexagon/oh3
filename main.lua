@@ -199,41 +199,56 @@ function love.run()
             end
         end
         local last_time = love.timer.getTime()
-        while #pending > 0 do
+        return function()
+            love.event.pump()
+            for event, t, err in love.event.poll() do
+                if event == "threaderror" then
+                    error("Thread error ("..tostring(t)..")\n\n"..err, 0)
+                end
+            end
+            local should_stop = #pending == 0
             if love.timer.getTime() - last_time > 60 then
                 log("got nothing for a minute, aborting")
-                break
-            end
-            for j = #pending, 1, -1 do
-                local i = pending[j]
-                local result = love.thread.getChannel("verification_results_" .. i):peek()
-                if result ~= nil then
-                    last_time = love.timer.getTime()
-                    table.remove(pending, j)
-                    log(("got result for %d, %d / %d to go."):format(i, #pending, #scores))
-                    if result then
-                        log("worked, copying...")
-                        local hash = scores[i].replay_hash
-                        local path = replay_path .. hash:sub(1, 2) .. "/" .. hash
-                        Replay:new(path):save("server/working_replays/" .. hash)
-                        worked = worked + 1
+                should_stop = true
+            else
+                for j = #pending, 1, -1 do
+                    local i = pending[j]
+                    local result = love.thread.getChannel("verification_results_" .. i):peek()
+                    if result ~= nil then
+                        last_time = love.timer.getTime()
+                        table.remove(pending, j)
+                        log(("got result for %d, %d / %d to go."):format(i, #pending, #scores))
+                        if result then
+                            log("worked, copying...")
+                            local hash = scores[i].replay_hash
+                            local path = replay_path .. hash:sub(1, 2) .. "/" .. hash
+                            Replay:new(path):save("server/working_replays/" .. hash)
+                            worked = worked + 1
+                        end
                     end
                 end
             end
             love.timer.sleep(0.01)
-        end
-        log(("Done verifying. %d / %d scores worked."):format(worked, #scores))
-        for _ = 1, workers do
-            love.thread.getChannel("game_commands"):push({ "stop" })
-        end
-        love.timer.sleep(10) -- give them a bit of time to exit
-        -- otherwise kill with force
-        for i = 1, workers do
-            threads[i]:release()
-        end
-        database.stop()
-        return function()
-            return 0
+            if should_stop then
+                log(("Done verifying. %d / %d scores worked."):format(worked, #scores))
+                for _ = 1, workers do
+                    love.thread.getChannel("game_commands"):push({ "stop" })
+                end
+                love.timer.sleep(0.1)
+                local is_running = false
+                for i = 1, workers do
+                    is_running = is_running or threads[i]:isRunning()
+                end
+                if is_running then
+                    love.timer.sleep(10) -- give them a bit of time to exit
+                    -- otherwise kill with force
+                    for i = 1, workers do
+                        threads[i]:release()
+                    end
+                end
+                database.stop()
+                return 0
+            end
         end
     end
 
