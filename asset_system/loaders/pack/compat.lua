@@ -21,6 +21,14 @@ function compat_loaders.build_pack_id21(info, include_version)
     return pack_id
 end
 
+function compat_loaders.sound_data(path_or_content, use_vfs)
+    if use_vfs then
+        error("loading sounds from virtual filesystem is not supported.")
+    end
+    index.watch_file(path_or_content)
+    return love.sound.newSoundData(path_or_content)
+end
+
 function compat_loaders.text_file(path_or_content, use_vfs)
     if use_vfs then
         return path_or_content
@@ -437,6 +445,17 @@ function compat_loaders.full_load(version, id)
             "events"
         )
     end
+
+    -- sounds
+    pack.sounds = index.local_request(
+        "pack.compat.load_file_list",
+        "Sounds",
+        ".ogg",
+        "pack.compat.sound_data",
+        "filename",
+        version,
+        name
+    )
 
     return pack
 end
