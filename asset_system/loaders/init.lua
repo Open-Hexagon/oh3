@@ -1,3 +1,4 @@
+require("love.sound")
 local index = require("asset_system.index")
 local utils = require("asset_system.loaders.utils")
 local loaders = {}
