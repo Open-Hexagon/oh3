@@ -59,7 +59,12 @@ function audio.set_encoder(video_encoder)
 end
 
 function audio.new_static(file)
-    local data = love.sound.newSoundData(file)
+    local data
+    if file.typeOf and file.typeOf("SoundData") then
+        data = file
+    else
+        data = love.sound.newSoundData(file)
+    end
     local resampled_data = data
     if data:getSampleRate() ~= SAMPLE_RATE then
         resampled_data = resample(data, 1)

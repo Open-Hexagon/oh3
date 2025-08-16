@@ -3,7 +3,7 @@ local args = require("args")
 local music = require("compat.music")
 local style = require("compat.game192.style")
 local status = require("compat.game192.status")
-local play_sound = require("compat.game192.play_sound")
+local sound = require("compat.sound")
 local executing_events = {}
 local queued_events = {}
 local events = {}
@@ -269,7 +269,7 @@ function events.init(game, public)
             lua_runtime.run_lua_file(game.pack.path .. "Scripts/" .. event.value_name)
         end,
         play_sound = function(event)
-            play_sound(game.assets.get_sound(event.id))
+            sound.play_pack(game.pack, event.id)
         end,
     }
 end

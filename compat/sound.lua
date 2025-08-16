@@ -1,0 +1,58 @@
+local assets = require("asset_system")
+local audio = require("audio")
+local log = require("log")(...)
+local sound = {}
+
+local function play_external_pack_sound(game_version, pack_folder, actual_name)
+    -- TODO: make this less jank or don't support it at all (less jank as in not polluting asset mirrors and preventing unloads)
+    -- the only level I know that does this is "Ace in the hole" from "Exschwasion" (it plays "test.ogg" from "VeeEndurance")
+    local key = ("sound_datas_%d_%s"):format(game_version, pack_folder)
+    assets.index
+        .request(
+            key,
+            "pack.compat.load_file_list",
+            "Sounds",
+            ".ogg",
+            "pack.compat.sound_data",
+            "filename",
+            game_version,
+            pack_folder
+        )
+        :done(function()
+            audio.play_sound(assets.mirror[key][actual_name])
+        end)
+end
+
+local function get_game_sound(name)
+    if assets.mirror.game_sounds then
+        return assets.mirror.game_sounds[name]
+    else
+        log("sound module used without initializing first")
+    end
+end
+
+function sound.play_game(name)
+    audio.play_sound(get_game_sound(name))
+end
+
+function sound.play_pack(pack, name)
+    local game_sound = get_game_sound(name)
+    if game_sound then
+        audio.play_sound(game_sound)
+    else
+        local pack_folder, actual_name = name:match("(.*)_(.*)")
+        if pack_folder ~= pack.info.folder_name then
+            play_external_pack_sound(pack.info.game_version, pack_folder, actual_name)
+        elseif pack.sounds[actual_name] then
+            audio.play_sound(pack.sounds[actual_name])
+        else
+            log("Sound not found:", name)
+        end
+    end
+end
+
+function sound.init()
+    return assets.index.request("game_sounds", "compat.all_game_sounds")
+end
+
+return sound

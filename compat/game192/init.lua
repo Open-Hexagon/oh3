@@ -1,7 +1,7 @@
 local log = require("log")
 local args = require("args")
-local playsound = require("compat.game21.playsound")
-local assets = require("compat.game192.assets")
+local sound = require("compat.sound")
+local assets = require("asset_system")
 local DynamicQuads = require("compat.game21.dynamic_quads")
 local Timeline = require("compat.game192.timeline")
 local set_color = require("compat.game21.color_transform")
@@ -33,14 +33,12 @@ local game = {
     effect_timeline = Timeline:new(),
     real_time = 0,
     blocked_updates = 0,
-    assets = assets,
     current_frametime = 0.25 / 60,
 }
 
 local shake_move = { 0, 0 }
-local beep_sound, death_sound, game_over_sound, go_sound, level_up_sound, message_font, layer_shader, main_quads
+local layer_shader, main_quads
 if not args.headless then
-    message_font = love.graphics.newFont("assets/font/imagine.ttf", 40)
     layer_shader = love.graphics.newShader(
         [[
             layout(location = 3) in vec2 instance_offset;
@@ -73,7 +71,7 @@ local last_real_time = 0
 local current_rotation = 0
 
 function game.increment_difficulty()
-    playsound(level_up_sound)
+    sound.play_game("level_up.ogg")
     game.level_data.rotation_speed = game.level_data.rotation_speed
         + game.level_data.rotation_increment * (game.level_data.rotation_speed > 0 and 1 or -1)
     game.level_data.rotation_speed = -game.level_data.rotation_speed
@@ -110,7 +108,7 @@ end
 
 function game.set_sides(side_count)
     side_count = utils.round_to_even(side_count) % 2 ^ 32
-    playsound(beep_sound)
+    sound.play_game("beep.ogg")
     if side_count < 3 then
         side_count = 3
     end
@@ -159,9 +157,7 @@ public.start = async(function(pack_folder, level_id, level_options)
     else
         music.play(new_music, not public.first_play)
     end
-    if not args.headless then
-        go_sound:play()
-    end
+    sound.play_game("go.ogg")
 
     -- virtual filesystem init
     vfs.clear()
@@ -264,8 +260,8 @@ function public.update(frametime)
         end
         walls.update(frametime, status.radius)
         if player.update(frametime, status.radius, move, focus, walls) and not public.preview_mode then
-            playsound(death_sound)
-            playsound(game_over_sound)
+            sound.play_game("death.ogg")
+            sound.play_game("game_over.ogg")
             if not config.get("invincible") then
                 status.flash_effect = 255
                 -- camera shake
@@ -486,8 +482,8 @@ function public.draw(screen)
         local function draw_text(ox, oy)
             love.graphics.print(
                 game.message_text,
-                message_font,
-                width / zoom_factor / 2 - message_font:getWidth(game.message_text) / 2 + ox,
+                assets.mirror.imagine_font,
+                width / zoom_factor / 2 - assets.mirror.imagine_font:getWidth(game.message_text) / 2 + ox,
                 height / zoom_factor / 6 + oy
             )
         end
@@ -539,15 +535,11 @@ function public.stop()
 end
 
 ---initialize the game
----@param conf table
-public.init = async(function(conf)
-    async.await(assets.init(conf))
+---@async
+public.init = async(function()
     if not args.headless then
-        beep_sound = assets.get_sound("beep.ogg")
-        death_sound = assets.get_sound("death.ogg")
-        game_over_sound = assets.get_sound("game_over.ogg")
-        go_sound = assets.get_sound("go.ogg")
-        level_up_sound = assets.get_sound("level_up.ogg")
+        async.await(assets.index.request("imagine_font", "font", "assets/font/imagine.ttf", 40))
+        async.await(sound.init())
     end
 end)
 
@@ -563,10 +555,6 @@ function public.update_save_data()
     if has_files then
         public.persistent_data = files
     end
-end
-
-function public.set_volume(volume)
-    assets.set_volume(volume)
 end
 
 return public

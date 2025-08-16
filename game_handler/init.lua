@@ -6,6 +6,7 @@ local async = require("async")
 local music = require("compat.music")
 local config = require("config")
 local assets = require("asset_system")
+local audio = require("audio")
 local game_handler = {}
 local games = {
     [192] = require("compat.game192"),
@@ -59,9 +60,7 @@ function game_handler.set_volume(music_volume, sound_volume)
         music.update_volume(music_volume)
     end
     if sound_volume then
-        for _, game in pairs(games) do
-            game.set_volume(sound_volume)
-        end
+        audio.sound_volume = sound_volume
     end
 end
 
