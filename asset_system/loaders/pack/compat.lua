@@ -273,6 +273,7 @@ function compat_loaders.music(path_or_content, is_content, filename, version, pa
         index.watch_file(path)
         if music.file_name:sub(-4) ~= ".ogg" or not love.filesystem.exists(path) then
             music.file_name = fallback_path
+            path = pack_info.path .. "Music/" .. music.file_name
         end
         if love.filesystem.exists(path) then
             -- don't load music here yet, load it when required and unload it again to save memory usage (otherwise the game may use 5+ gb just for music assets after clicking through the menu)
