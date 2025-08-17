@@ -1,6 +1,5 @@
 local set_color = require("compat.game21.color_transform")
-local args = require("args")
-local playsound = require("compat.game21.playsound")
+local sound = require("compat.sound")
 local utils = require("compat.game192.utils")
 local extra_math = require("compat.game21.math")
 local timer = require("compat.game21.timer")
@@ -24,11 +23,10 @@ local color_main = {}
 local pos
 local last_pos
 local start_pos = { 0, 0 }
-local swap_sound
 local game
 local cap_vertices = {}
 
-function player.reset(pass_game, assets)
+function player.reset(pass_game)
     game = pass_game
     swap_timer = timer:new(36)
     swap_blink_timer = timer:new(5)
@@ -42,9 +40,6 @@ function player.reset(pass_game, assets)
     black_and_white = config.get("black_and_white")
     pos = { 0, 0 }
     last_pos = { 0, 0 }
-    if not args.headless then
-        swap_sound = assets.get_sound("swap.ogg")
-    end
 end
 
 local function update_main_color()
@@ -160,7 +155,7 @@ function player.update(frametime, movement, focus, swap)
     end
     angle = angle + math.rad(current_speed * movement * frametime)
     if level_status.swap_enabled and swap and not swap_timer.running then
-        playsound(swap_sound)
+        sound.play_game("swap.ogg")
         swap_timer:restart()
         angle = angle + math.pi
     end

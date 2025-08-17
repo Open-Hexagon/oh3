@@ -1,6 +1,5 @@
 local log = require("log")(...)
-local args = require("args")
-local playsound = require("compat.game21.playsound")
+local sound = require("compat.sound")
 local utils = require("compat.game192.utils")
 local speed_data = require("compat.game20.speed_data")
 local config = require("config")
@@ -124,7 +123,7 @@ function lua_runtime.error(msg)
     log(debug.traceback("Error: " .. msg))
 end
 
-function lua_runtime.init_env(game, public, assets)
+function lua_runtime.init_env(game, public)
     lua_runtime.env = {
         os = {
             time = function(...)
@@ -193,17 +192,8 @@ function lua_runtime.init_env(game, public, assets)
     env.u_execScript = function(script)
         lua_runtime.run_lua_file(game.pack.path .. "Scripts/" .. script)
     end
-    local sound_mapping = {
-        ["beep.ogg"] = "click.ogg",
-    }
     env.u_playSound = function(name)
-        if not args.headless then
-            local sound = assets.get_sound(sound_mapping[name] or name)
-            if sound then
-                sound:seek(0)
-                sound:play()
-            end
-        end
+        sound.play_pack(game.pack, name)
     end
     env.u_isKeyPressed = function(key_code)
         local key = keycode_conversion[key_code]
@@ -242,7 +232,7 @@ function lua_runtime.init_env(game, public, assets)
     -- messages
     local function add_message(msg, duration)
         game.message_timeline:append_do(function()
-            playsound(game.beep_sound)
+            sound.play_game("beep.ogg")
             game.message_text = msg
         end)
         game.message_timeline:append_wait(duration)

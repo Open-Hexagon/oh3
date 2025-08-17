@@ -483,8 +483,8 @@ function public.draw(screen)
         local function draw_text(ox, oy)
             love.graphics.print(
                 game.message_text,
-                assets.mirror.imagine_font,
-                width / zoom_factor / 2 - assets.mirror.imagine_font:getWidth(game.message_text) / 2 + ox,
+                assets.mirror.imagine_font_40,
+                width / zoom_factor / 2 - assets.mirror.imagine_font_40:getWidth(game.message_text) / 2 + ox,
                 height / zoom_factor / 6 + oy
             )
         end
@@ -539,7 +539,7 @@ end
 ---@async
 public.init = async(function()
     if not args.headless then
-        async.await(assets.index.request("imagine_font", "font", "assets/font/imagine.ttf", 40))
+        async.await(assets.index.request("imagine_font_40", "font", "assets/font/imagine.ttf", 40))
         async.await(sound.init())
     end
 end)

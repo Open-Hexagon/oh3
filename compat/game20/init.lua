@@ -1,6 +1,6 @@
 local args = require("args")
-local playsound = require("compat.game21.playsound")
-local assets = require("compat.game20.assets")
+local sound = require("compat.sound")
+local assets = require("asset_system")
 local make_fake_config = require("compat.game20.fake_config")
 local lua_runtime = require("compat.game20.lua_runtime")
 local dynamic_quads = require("compat.game21.dynamic_quads")
@@ -28,14 +28,12 @@ local game = {
     message_timeline = timeline:new(),
     effect_timeline = timeline:new(),
     message_text = "",
-    beep_sound = nil,
     real_time = 0,
 }
 local shake_move = { 0, 0 }
 local main_quads
 local must_change_sides = false
 local last_move, move = 0, 0
-local death_sound, game_over_sound, level_up_sound, go_sound
 local depth = 0
 local layer_shader, message_font
 local instance_offsets = {}
@@ -50,16 +48,19 @@ public.start = async(function(pack_id, level_id, level_options)
     game.difficulty_mult = level_options.difficulty_mult
     local seed = math.floor(love.timer.getTime() * 1000000000)
     math.randomseed(input.next_seed(seed))
-    game.pack = async.await(assets.get_pack(pack_id))
+
+    local key = "20_" .. pack_id
+    if not assets.mirror[key] then
+        async.await(assets.index.request(key, "pack.compat.full_load", 20, pack_id))
+    end
+    game.pack = setmetatable(assets.mirror[key], { __index = assets.mirror[key].info })
     level.set(game.pack.levels[level_id])
     level_status.reset()
     style.set(game.pack.styles[level.style_id])
     music.stop()
     local pitch = config.get("sync_music_to_dm") and math.pow(game.difficulty_mult, 0.12) or 1
     music.play(game.pack.music[level.music_id], not public.first_play, nil, pitch)
-    if not args.headless then
-        go_sound:play()
-    end
+    sound.play_game("go.ogg")
 
     -- virtual filesystem init
     vfs.clear()
@@ -81,7 +82,7 @@ public.start = async(function(pack_id, level_id, level_options)
     game.message_timeline:clear()
     game.message_timeline:reset()
     walls.init()
-    player.reset(game, assets)
+    player.reset(game)
     game.main_timeline:clear()
     game.main_timeline:reset()
     game.effect_timeline:clear()
@@ -92,7 +93,7 @@ public.start = async(function(pack_id, level_id, level_options)
     if not public.first_play then
         lua_runtime.run_fn_if_exists("onUnload")
     end
-    lua_runtime.init_env(game, public, assets)
+    lua_runtime.init_env(game, public)
     lua_runtime.run_lua_file(game.pack.path .. level.lua_file)
     lua_runtime.run_fn_if_exists("onInit")
     lua_runtime.run_fn_if_exists("onLoad")
@@ -104,7 +105,7 @@ public.start = async(function(pack_id, level_id, level_options)
 end)
 
 function game.increment_difficulty()
-    playsound(level_up_sound)
+    sound.play_game("level_up.ogg")
     level_status.rotation_speed = level_status.rotation_speed
         + level_status.rotation_speed_inc * (level_status.rotation_speed > 0 and 1 or -1)
     level_status.rotation_speed = -level_status.rotation_speed
@@ -124,11 +125,11 @@ function game.get_delay_mult_dm()
 end
 
 function game.death(force)
-    playsound(death_sound)
+    sound.play_game("death.ogg")
     if not force and (config.get("invincible") or level_status.tutorial_mode) then
         return
     end
-    playsound(game_over_sound)
+    sound.play_game("game_over.ogg")
     status.flash_effect = 255
     -- camera shake
     local s = 7
@@ -153,7 +154,7 @@ function game.death(force)
 end
 
 function game.set_sides(sides)
-    playsound(game.beep_sound)
+    sound.play_game("beep.ogg")
     if sides < 3 then
         sides = 3
     end
@@ -381,8 +382,8 @@ function public.draw(screen)
         local function draw_text(ox, oy)
             love.graphics.print(
                 game.message_text,
-                message_font,
-                width / zoom_factor / 2 - message_font:getWidth(game.message_text) / 2 + ox,
+                assets.mirror.imagine_font_38,
+                width / zoom_factor / 2 - assets.mirror.imagine_font_38:getWidth(game.message_text) / 2 + ox,
                 height / zoom_factor / 6 + oy
             )
         end
@@ -448,17 +449,12 @@ function public.update_save_data()
 end
 
 ---initialize the game
----@param conf table
-public.init = async(function(conf)
-    async.await(assets.init(conf))
+---@async
+public.init = async(function()
     if not args.headless then
-        game.beep_sound = assets.get_sound("click.ogg")
-        death_sound = assets.get_sound("death.ogg")
-        game_over_sound = assets.get_sound("game_over.ogg")
-        level_up_sound = assets.get_sound("level_up.ogg")
-        go_sound = assets.get_sound("go.ogg")
         main_quads = dynamic_quads:new()
-        message_font = love.graphics.newFont("assets/font/imagine.ttf", 38)
+        async.await(assets.index.request("imagine_font_38", "font", "assets/font/imagine.ttf", 38))
+        async.await(sound.init())
         layer_shader = love.graphics.newShader(
             [[
                 layout(location = 3) in vec2 instance_offset;
@@ -483,9 +479,5 @@ public.init = async(function(conf)
         )
     end
 end)
-
-function public.set_volume(volume)
-    assets.set_volume(volume)
-end
 
 return public
