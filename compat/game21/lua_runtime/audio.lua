@@ -1,7 +1,6 @@
-local args = require("args")
 local music = require("compat.music")
 local level_status = require("compat.game21.level_status")
-local assets = require("compat.game21.assets")
+local sound = require("compat.sound")
 
 return function(game)
     local pack = game.pack_data
@@ -30,32 +29,10 @@ return function(game)
         end
     end
     env.a_playSound = function(sound_id)
-        if not args.headless then
-            local sound = assets.get_sound(sound_id)
-            if sound == nil then
-                lua_runtime.error("Sound with id '" .. sound_id .. "' doesn't exist!")
-            else
-                sound:seek(0)
-                sound:play()
-            end
-        end
-    end
-    local function get_pack_sound(sound_id)
-        if not args.headless then
-            local sound = assets.get_pack_sound(pack, sound_id)
-            if sound == nil then
-                lua_runtime.error("Pack Sound with id '" .. sound_id .. "' doesn't exist!")
-            else
-                return sound
-            end
-        end
+        sound.play_pack(pack, sound_id)
     end
     env.a_playPackSound = function(sound_id)
-        local sound = get_pack_sound(sound_id)
-        if sound ~= nil then
-            sound:seek(0)
-            sound:play()
-        end
+        sound.play_pack(pack, pack.info.id .. "_" .. sound_id)
     end
     env.a_syncMusicToDM = function(value)
         level_status.sync_music_to_dm = value
@@ -65,16 +42,16 @@ return function(game)
         public.refresh_music_pitch()
     end
     env.a_overrideBeepSound = function(filename)
-        level_status.beep_sound = get_pack_sound(filename) or level_status.beep_sound
+        level_status.beep_sound = pack.info.id .. "_" .. filename
     end
     env.a_overrideIncrementSound = function(filename)
-        level_status.level_up_sound = get_pack_sound(filename) or level_status.level_up_sound
+        level_status.level_up_sound = pack.info.id .. "_" .. filename
     end
     env.a_overrideSwapSound = function(filename)
-        level_status.swap_sound = get_pack_sound(filename) or level_status.swap_sound
+        level_status.swap_sound = pack.info.id .. "_" .. filename
     end
     env.a_overrideDeathSound = function(filename)
-        level_status.death_sound = get_pack_sound(filename) or level_status.death_sound
+        level_status.death_sound = pack.info.id .. "_" .. filename
     end
 
     -- deprecated

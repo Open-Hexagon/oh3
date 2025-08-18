@@ -38,6 +38,11 @@ function particles:_real_reset()
     end
 end
 
+function particles:set_image(image)
+    self.image = image
+    self.batch:setTexture(image)
+end
+
 function particles:emit(x, y, scale, angle, r, g, b, speed_mult)
     local data = self.data[self._current_particle_index]
     data.x = x

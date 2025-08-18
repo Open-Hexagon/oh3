@@ -402,6 +402,20 @@ function compat_loaders.full_load(version, id)
     end
     local name = pack.info.folder_name
 
+    if version == 21 then
+        pack.dependencies = {}
+        local dependency_map = index.local_request("pack.compat.load_dependency_map21")
+        if type(pack.info.dependencies) == "table" then
+            for i = 1, #pack.info.dependencies do
+                local pack_id = compat_loaders.build_pack_id21(pack.info.dependencies[i])
+                local full_pack_id = dependency_map[pack_id].info.id
+                if pack.info.id ~= full_pack_id then
+                    pack.dependencies[pack_id] = index.local_request("pack.compat.full_load", 21, full_pack_id)
+                end
+            end
+        end
+    end
+
     log("Loading '" .. pack.info.id .. "' assets")
 
     pack.music =

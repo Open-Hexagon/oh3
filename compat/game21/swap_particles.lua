@@ -1,6 +1,7 @@
 local Particles = require("compat.game21.particles")
 local player = require("compat.game21.player")
-local assets = require("compat.game21.assets")
+local assets = require("asset_system")
+local async = require("async")
 local swap_particles = {}
 local spawn_swap_particles_ready = false
 local must_spawn_swap_particles = false
@@ -9,8 +10,8 @@ local particle_system
 
 function swap_particles.init()
     if not particle_system then
-        local small_circle = assets.get_image("smallCircle.png")
-        particle_system = Particles:new(small_circle, function(p, frametime)
+        async.await(assets.index.request("small_circle_image", "image", "assets/image/smallCircle.png"))
+        particle_system = Particles:new(assets.mirror.small_circle_image, function(p, frametime)
             p.color[4] = p.color[4] - 3.5 / 255 * frametime
             p.scale = p.scale * 0.98
             p.x = p.x + math.cos(p.angle) * p.speed_mult * frametime

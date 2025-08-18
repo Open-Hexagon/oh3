@@ -1,12 +1,12 @@
 -- 2.1.X compatibility mode
 local args = require("args")
 local log = require("log")(...)
-local playsound = require("compat.game21.playsound")
+local assets = require("asset_system")
+local sound = require("compat.sound")
 local Timeline = require("compat.game21.timeline")
 local Quads = require("compat.game21.dynamic_quads")
 local Tris = require("compat.game21.dynamic_tris")
 local set_color = require("compat.game21.color_transform")
-local assets = require("compat.game21.assets")
 local utils = require("compat.game192.utils")
 local pulse = require("compat.game21.pulse")
 local beat_pulse = require("compat.game21.beat_pulse")
@@ -66,9 +66,6 @@ else
 end
 local current_trail_color = { 0, 0, 0, 0 }
 
--- initialized in init function
-local message_font, go_sound, level_up_sound, restart_sound, select_sound
-
 ---starts a new game
 ---@param pack_id string
 ---@param level_id string
@@ -84,7 +81,12 @@ public.start = async(function(pack_id, level_id, level_options)
     local seed = math.floor(love.timer.getTime() * 1000000000)
     math.randomseed(game_input.next_seed(seed))
     math.random()
-    game.pack_data = async.await(assets.get_pack(pack_id))
+
+    local key = "21_" .. pack_id
+    if not assets.mirror[key] then
+        async.await(assets.index.request(key, "pack.compat.full_load", 21, pack_id))
+    end
+    game.pack_data = setmetatable(assets.mirror[key], { __index = assets.mirror[key].info })
     game.level_data = game.pack_data.levels[level_id]
     if game.level_data == nil then
         error("Error: level with id '" .. level_id .. "' not found")
@@ -130,10 +132,10 @@ public.start = async(function(pack_id, level_id, level_options)
     lua_runtime.init_env(game, public)
     lua_runtime.run_lua_file(game.pack_data.path .. game.level_data.lua_file)
     if public.first_play then
-        playsound(select_sound)
+        sound.play_game("select.ogg")
     else
         lua_runtime.run_fn_if_exists("onUnload")
-        playsound(restart_sound)
+        sound.play_game("restart.ogg")
     end
     lua_runtime.run_fn_if_exists("onInit")
     game.set_sides(level_status.sides)
@@ -141,7 +143,7 @@ public.start = async(function(pack_id, level_id, level_options)
     beat_pulse.init()
     status.start()
     game.message_text = ""
-    playsound(go_sound)
+    sound.play_game("go.ogg")
     lua_runtime.run_fn_if_exists("onLoad")
 
     if not args.headless then
@@ -153,7 +155,7 @@ public.start = async(function(pack_id, level_id, level_options)
 end)
 
 function game.set_sides(sides)
-    playsound(level_status.beep_sound)
+    sound.play_pack(game.pack_data, level_status.beep_sound)
     if sides < 3 then
         sides = 3
     end
@@ -175,7 +177,7 @@ end
 function game.death(force)
     if not status.has_died then
         lua_runtime.run_fn_if_exists("onPreDeath")
-        playsound(level_status.death_sound)
+        sound.play_pack(game.pack_data, level_status.death_sound)
         if force or not (level_status.tutorial_mode or config.get("invincible")) then
             lua_runtime.run_fn_if_exists("onDeath")
             camera_shake.start()
@@ -193,7 +195,7 @@ function game.perform_player_swap(play_sound)
     player.player_swap()
     lua_runtime.run_fn_if_exists("onCursorSwap")
     if play_sound then
-        playsound(level_status.swap_sound)
+        sound.play_pack(game.pack_data, level_status.swap_sound)
     end
 end
 
@@ -221,7 +223,7 @@ function public.refresh_music_pitch()
 end
 
 function game.increment_difficulty()
-    playsound(level_up_sound)
+    sound.play_game("level_up.ogg")
     local sign_mult = level_status.rotation_speed > 0 and 1 or -1
     level_status.rotation_speed =
         utils.float_round(level_status.rotation_speed + level_status.rotation_speed_inc * sign_mult)
@@ -235,11 +237,6 @@ end
 ---update the game
 ---@param frametime number (in seconds)
 function public.update(frametime)
-    if message_font then
-        if message_font:getHeight() ~= 32 * config.get("text_scale") then
-            message_font = assets.get_font("OpenSquare-Regular.ttf", 32 * config.get("text_scale"))
-        end
-    end
     game_input.update()
     frametime = frametime * 60
     -- TODO: don't update if debug pause
@@ -431,8 +428,8 @@ function public.draw(screen, frametime)
         set_color(r, g, b, a)
         love.graphics.print(
             game.message_text,
-            message_font,
-            game.width / zoom_factor / 2 - message_font:getWidth(game.message_text) / 2,
+            assets.mirror.opensquare_font,
+            game.width / zoom_factor / 2 - assets.mirror.opensquare_font:getWidth(game.message_text) / 2,
             game.height / zoom_factor / 5.5
         )
     end
@@ -481,21 +478,18 @@ function public.stop()
 end
 
 ---initialize the game
----@param conf table
-public.init = async(function(conf)
-    async.await(assets.init(conf))
+---@async
+public.init = async(function()
     pseudo3d.init(game)
     if not args.headless then
-        message_font = assets.get_font("OpenSquare-Regular.ttf", 32 * config.get("text_scale"))
-        go_sound = assets.get_sound("go.ogg")
-        level_up_sound = assets.get_sound("level_up.ogg")
-        restart_sound = assets.get_sound("restart.ogg")
-        select_sound = assets.get_sound("select.ogg")
+        async.await(assets.index.request(
+            "opensquare_font",
+            "font",
+            "assets/font/OpenSquare-Regular.ttf",
+            32 * config.get("text_scale") -- TODO: respond to changes
+        ))
+        async.await(sound.init())
     end
 end)
-
-function public.set_volume(volume)
-    assets.set_volume(volume)
-end
 
 return public

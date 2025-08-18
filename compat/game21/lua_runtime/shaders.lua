@@ -1,7 +1,6 @@
 local args = require("args")
 local log = require("log")(...)
 local status = require("compat.game21.status")
-local assets = require("compat.game21.assets")
 
 return function(game)
     local pack = game.pack_data
@@ -10,7 +9,7 @@ return function(game)
     local shaders = {}
     local loaded_filenames = {}
     local function get_shader_id(pack_data, filename)
-        local loaded_pack_shaders = loaded_filenames[pack_data.path]
+        local loaded_pack_shaders = loaded_filenames[pack_data.info.path]
         if loaded_pack_shaders ~= nil and loaded_pack_shaders[filename] ~= nil then
             return loaded_pack_shaders[filename]
         else
@@ -21,8 +20,8 @@ return function(game)
             else
                 local id = #shaders + 1
                 shaders[id] = shader
-                loaded_filenames[pack_data.path] = loaded_filenames[pack_data.path] or {}
-                loaded_filenames[pack_data.path][filename] = id
+                loaded_filenames[pack_data.info.path] = loaded_filenames[pack_data.info.path] or {}
+                loaded_filenames[pack_data.info.path][filename] = id
                 return id
             end
         end
@@ -37,7 +36,9 @@ return function(game)
         if args.headless then
             return -1
         end
-        return get_shader_id(assets.get_pack_from_metadata(disambiguator, author, name), filename)
+        local pack_id = disambiguator .. "_" .. author .. "_" .. name
+        pack_id = pack_id:gsub(" ", "_")
+        return get_shader_id(pack.dependencies[pack_id] or pack, filename)
     end
 
     local function check_valid_shader_id(id)

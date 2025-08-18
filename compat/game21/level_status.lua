@@ -1,5 +1,3 @@
-local args = require("args")
-local assets = require("compat.game21.assets")
 local default_sounds = {
     beep_sound = "click.ogg",
     level_up_sound = "increment.ogg",
@@ -10,14 +8,8 @@ local level_status = {}
 
 -- takes sync music because unless overwritten it is defined by the global config file
 function level_status.reset(sync_music_to_dm)
-    if not args.headless then
-        for sound, source in pairs(default_sounds) do
-            if type(source) == "string" then
-                default_sounds[sound] = assets.get_sound(source)
-                source = default_sounds[sound]
-            end
-            level_status[sound] = source
-        end
+    for sound, name in pairs(default_sounds) do
+        level_status[sound] = name
     end
     level_status.tracked_variables = {}
     level_status.score_overwritten = false

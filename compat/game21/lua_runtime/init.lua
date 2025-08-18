@@ -1,5 +1,5 @@
 local log = require("log")(...)
-local args = require("args")
+local sound = require("compat.sound")
 local add_timeline_functions = require("compat.game21.lua_runtime.timelines")
 local add_audio_functions = require("compat.game21.lua_runtime.audio")
 local add_utility_functions = require("compat.game21.lua_runtime.utility")
@@ -9,24 +9,15 @@ local add_level_functions = require("compat.game21.lua_runtime.level")
 local add_style_functions = require("compat.game21.lua_runtime.style")
 local custom_timelines = require("compat.game21.custom_timelines")
 local custom_walls = require("compat.game21.custom_walls")
-local assets = require("compat.game21.assets")
 local lua_runtime = {
     env = {},
 }
 
-local error_sound
 local file_cache = {}
 local env = lua_runtime.env
 
 function lua_runtime.error(msg)
-    if not args.headless then
-        if not error_sound then
-            error_sound = assets.get_sound("error.ogg")
-        end
-        if error_sound then
-            error_sound:play()
-        end
-    end
+    sound.play_game("error.ogg")
     log(debug.traceback("Error: " .. msg))
 end
 

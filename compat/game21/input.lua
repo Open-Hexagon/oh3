@@ -1,16 +1,14 @@
-local playsound = require("compat.game21.playsound")
 local config = require("config")
 local game_input = require("input")
-local args = require("args")
 local lua_runtime = require("compat.game21.lua_runtime")
 local level_status = require("compat.game21.level_status")
 local status = require("compat.game21.status")
 local player = require("compat.game21.player")
-local assets = require("compat.game21.assets")
+local sound = require("compat.sound")
 local input = {
     move = 0,
 }
-local game, swap_particles, swap_blip_sound, has_swap
+local game, swap_particles, has_swap
 
 function input.init(pass_game, particles)
     game = pass_game
@@ -18,9 +16,6 @@ function input.init(pass_game, particles)
     if lua_runtime.env.onInput then
         local nparams = debug.getinfo(lua_runtime.env.onInput).nparams
         has_swap = nparams > 3
-    end
-    if not args.headless then
-        swap_blip_sound = assets.get_sound("swap_blip.ogg")
     end
 end
 
@@ -53,7 +48,7 @@ function input.update(frametime)
                 swap_particles.ready()
                 game.player_now_ready_to_swap = true
                 if config.get("play_swap_sound") then
-                    playsound(swap_blip_sound)
+                    sound.play_game("swap_blip.ogg")
                 end
             end
             if level_status.swap_enabled and swap and player.is_ready_to_swap() then

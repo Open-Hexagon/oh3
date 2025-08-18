@@ -1,4 +1,4 @@
-local args = require("args")
+local sound = require("compat.sound")
 local config = require("config")
 local level_status = require("compat.game21.level_status")
 local status = require("compat.game21.status")
@@ -70,11 +70,10 @@ return function(public, game)
         end)
     end
     local function add_message(message, duration, sound_toggle)
-        sound_toggle = sound_toggle and not args.headless
         if config.get("messages") then
             game.message_timeline:append_do(function()
                 if sound_toggle then
-                    level_status.beep_sound:play()
+                    sound.play_pack(game.pack_data, level_status.beep_sound)
                 end
                 game.message_text = message:upper()
             end)

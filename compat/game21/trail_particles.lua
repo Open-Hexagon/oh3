@@ -2,14 +2,15 @@ local Particles = require("compat.game21.particles")
 local config = require("config")
 local player = require("compat.game21.player")
 local status = require("compat.game21.status")
-local assets = require("compat.game21.assets")
+local assets = require("asset_system")
+local async = require("async")
 local trail_particles = {}
 local particle_system
 
 function trail_particles.init()
     if not particle_system then
-        local small_circle = assets.get_image("smallCircle.png")
-        particle_system = Particles:new(small_circle, function(p, frametime)
+        async.await(assets.index.request("small_circle_image", "image", "assets/image/smallCircle.png"))
+        particle_system = Particles:new(assets.mirror.small_circle_image, function(p, frametime)
             p.color[4] = p.color[4] - particle_system.alpha_decay / 255 * frametime
             p.scale = p.scale * 0.98
             local distance = status.radius + 2.4

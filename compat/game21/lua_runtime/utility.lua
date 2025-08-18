@@ -6,7 +6,6 @@ local status = require("compat.game21.status")
 local player = require("compat.game21.player")
 local walls = require("compat.game21.walls")
 local rng = require("compat.game21.random")
-local assets = require("compat.game21.assets")
 local utils = require("compat.game192.utils")
 
 local keycode_conversion = {
@@ -171,12 +170,14 @@ return function(public, game)
         lua_runtime.run_lua_file(pack.path .. "Scripts/" .. path)
     end
     env.u_execDependencyScript = function(disambiguator, name, author, script)
-        local dependency_pack = assets.get_pack_from_metadata(disambiguator, author, name)
+        local pack_id = disambiguator .. "_" .. author .. "_" .. name
+        pack_id = pack_id:gsub(" ", "_")
+        local dependency_pack = pack.dependencies[pack_id] or pack
         local old = env.u_execScript
         env.u_execScript = function(path)
-            lua_runtime.run_lua_file(dependency_pack.path .. "Scripts/" .. path)
+            lua_runtime.run_lua_file(dependency_pack.info.path .. "Scripts/" .. path)
         end
-        lua_runtime.run_lua_file(dependency_pack.path .. "Scripts/" .. script)
+        lua_runtime.run_lua_file(dependency_pack.info.path .. "Scripts/" .. script)
         env.u_execScript = old
     end
     env.u_getWidth = function()

@@ -1,6 +1,6 @@
+local sound = require("compat.sound")
 local utils = require("compat.game192.utils")
 local level_status = require("compat.game21.level_status")
-local playsound = require("compat.game21.playsound")
 local lua_runtime = require("compat.game21.lua_runtime")
 local status = require("compat.game21.status")
 local walls = require("compat.game21.walls")
@@ -38,7 +38,7 @@ return function(game, frametime)
             game.set_sides(side_number)
         end
         game.must_change_sides = false
-        playsound(level_status.level_up_sound)
+        sound.play_pack(game.pack_data, level_status.level_up_sound)
         lua_runtime.run_fn_if_exists("onIncrement")
     end
 
