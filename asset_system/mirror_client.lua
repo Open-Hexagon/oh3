@@ -3,19 +3,21 @@ local async = require("async")
 local index = threadify.require("asset_system.index")
 require("love.timer")
 
+local client = {}
+
 local update_channel = love.thread.getChannel("asset_index_updates")
 local update_ack_channel = love.thread.getChannel("asset_index_update_acks")
 
 -- thanks to require caching modules this will only be called once per thread
 -- in case the mirror was created after some assets are already
--- loaded the promise results in the inital mirror state
-local mirror = async.busy_await(index.register_mirror())
+-- loaded the promise results in the initial mirror state
+client.mirror = async.busy_await(index.register_mirror())
 
 local last_id
 local asset_callbacks = {}
 
 ---updates the contents of the mirror using the asset notifications
-function mirror.update()
+function client.update()
     local notification = update_channel:peek()
     if notification then
         local id = notification[1]
@@ -26,7 +28,7 @@ function mirror.update()
             last_id = id
             local key = notification[2]
             local asset = notification[3]
-            mirror[key] = asset
+            client.mirror[key] = asset
             if asset_callbacks[key] then
                 asset_callbacks[key](asset)
             end
@@ -37,8 +39,8 @@ end
 ---listen to asset changes, to unregister listener set callback to nil
 ---@param key string
 ---@param callback function?
-function mirror.listen(key, callback)
+function client.listen(key, callback)
     asset_callbacks[key] = callback
 end
 
-return mirror
+return client

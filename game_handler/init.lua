@@ -39,7 +39,7 @@ game_handler.profile = require("game_handler.profile")
 
 ---initialize all games (has to be called before doing anything)
 game_handler.init = async(function()
-    assets.mirror.listen("pack_level_data", function(packs)
+    assets.mirror_client.listen("pack_level_data", function(packs)
         pack_level_data.clear()
         pack_level_data.import_packs(packs)
     end)

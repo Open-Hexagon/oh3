@@ -236,7 +236,7 @@ function love.run()
         ui.update(love.timer.getDelta())
         audio.update()
         assets.run_main_thread_task()
-        assets.mirror.update()
+        assets.mirror_client.update()
 
         -- ensures tickrate on its own
         game_handler.update(true)
