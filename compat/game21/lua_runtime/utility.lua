@@ -167,7 +167,7 @@ return function(public, game)
         return "2.1.7"
     end
     env.u_execScript = function(path)
-        lua_runtime.run_lua_file(pack.path .. "Scripts/" .. path)
+        lua_runtime.run_lua_file(pack.info.path .. "Scripts/" .. path)
     end
     env.u_execDependencyScript = function(disambiguator, name, author, script)
         local pack_id = disambiguator .. "_" .. author .. "_" .. name

@@ -190,7 +190,7 @@ function lua_runtime.init_env(game, public)
         log("Lua: " .. message)
     end
     env.u_execScript = function(script)
-        lua_runtime.run_lua_file(game.pack.path .. "Scripts/" .. script)
+        lua_runtime.run_lua_file(game.pack.info.path .. "Scripts/" .. script)
     end
     env.u_playSound = function(name)
         sound.play_pack(game.pack, name)

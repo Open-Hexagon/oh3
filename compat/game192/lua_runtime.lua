@@ -263,7 +263,7 @@ function lua_runtime.init_env(game, public)
         return game.difficulty_mult
     end
     env.execScript = function(script)
-        lua_runtime.run_lua_file(pack.path .. "Scripts/" .. script)
+        lua_runtime.run_lua_file(pack.info.path .. "Scripts/" .. script)
     end
     env.execEvent = function(id)
         events.exec(game.pack.events[id])

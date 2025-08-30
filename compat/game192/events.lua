@@ -266,7 +266,7 @@ function events.init(game, public)
             events.queue(game.pack.events[event.id])
         end,
         script_exec = function(event)
-            lua_runtime.run_lua_file(game.pack.path .. "Scripts/" .. event.value_name)
+            lua_runtime.run_lua_file(game.pack.info.path .. "Scripts/" .. event.value_name)
         end,
         play_sound = function(event)
             sound.play_pack(game.pack, event.id)

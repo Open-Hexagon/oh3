@@ -86,7 +86,7 @@ public.start = async(function(pack_id, level_id, level_options)
     if not assets.mirror[key] then
         async.await(assets.index.request(key, "pack.compat.full_load", 21, pack_id))
     end
-    game.pack_data = setmetatable(assets.mirror[key], { __index = assets.mirror[key].info })
+    game.pack_data = assets.mirror[key]
     game.level_data = game.pack_data.levels[level_id]
     if game.level_data == nil then
         error("Error: level with id '" .. level_id .. "' not found")
@@ -130,7 +130,7 @@ public.start = async(function(pack_id, level_id, level_options)
         lua_runtime.run_fn_if_exists("onPreUnload")
     end
     lua_runtime.init_env(game, public)
-    lua_runtime.run_lua_file(game.pack_data.path .. game.level_data.lua_file)
+    lua_runtime.run_lua_file(game.pack_data.info.path .. game.level_data.lua_file)
     if public.first_play then
         sound.play_game("select.ogg")
     else

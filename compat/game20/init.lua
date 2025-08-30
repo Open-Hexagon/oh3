@@ -53,7 +53,7 @@ public.start = async(function(pack_id, level_id, level_options)
     if not assets.mirror[key] then
         async.await(assets.index.request(key, "pack.compat.full_load", 20, pack_id))
     end
-    game.pack = setmetatable(assets.mirror[key], { __index = assets.mirror[key].info })
+    game.pack = assets.mirror[key]
     level.set(game.pack.levels[level_id])
     level_status.reset()
     style.set(game.pack.styles[level.style_id])
@@ -64,7 +64,7 @@ public.start = async(function(pack_id, level_id, level_options)
 
     -- virtual filesystem init
     vfs.clear()
-    vfs.pack_path = game.pack.path
+    vfs.pack_path = game.pack.info.path
     vfs.pack_folder_name = game.pack.folder
     local files = {
         ["config.json"] = make_fake_config(config),
@@ -94,7 +94,7 @@ public.start = async(function(pack_id, level_id, level_options)
         lua_runtime.run_fn_if_exists("onUnload")
     end
     lua_runtime.init_env(game, public)
-    lua_runtime.run_lua_file(game.pack.path .. level.lua_file)
+    lua_runtime.run_lua_file(game.pack.info.path .. level.lua_file)
     lua_runtime.run_fn_if_exists("onInit")
     lua_runtime.run_fn_if_exists("onLoad")
     game.set_sides(level_status.sides)

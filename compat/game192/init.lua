@@ -136,7 +136,7 @@ public.start = async(function(pack_folder, level_id, level_options)
     if not assets.mirror[key] then
         async.await(assets.index.request(key, "pack.compat.full_load", 192, pack_folder))
     end
-    game.pack = setmetatable(assets.mirror[key], { __index = assets.mirror[key].info })
+    game.pack = assets.mirror[key]
     local level_data = game.pack.levels[level_id]
     if level_data == nil then
         error("Level with id '" .. level_id .. "' not found")
@@ -162,8 +162,8 @@ public.start = async(function(pack_folder, level_id, level_options)
 
     -- virtual filesystem init
     vfs.clear()
-    vfs.pack_path = game.pack.path
-    vfs.pack_folder_name = game.pack.id
+    vfs.pack_path = game.pack.info.path
+    vfs.pack_folder_name = game.pack.info.id
     local files = {
         ["config.json"] = make_fake_config(config),
     }
@@ -193,7 +193,7 @@ public.start = async(function(pack_folder, level_id, level_options)
         lua_runtime.run_fn_if_exists("onUnload")
     end
     lua_runtime.init_env(game, public)
-    lua_runtime.run_lua_file(game.pack.path .. "Scripts/" .. level_data.lua_file)
+    lua_runtime.run_lua_file(game.pack.info.path .. "Scripts/" .. level_data.lua_file)
     lua_runtime.run_fn_if_exists("onLoad")
     if math.random(0, 1) == 0 then
         game.level_data.rotation_speed = -game.level_data.rotation_speed
@@ -368,7 +368,7 @@ function public.update(frametime)
     if status.must_restart then
         public.running = false
         public.first_play = game.restart_first_time
-        public.start(game.pack.id, game.restart_id, { difficulty_mult = game.difficulty_mult })
+        public.start(game.pack.info.id, game.restart_id, { difficulty_mult = game.difficulty_mult })
         return
     end
     -- TODO: invalidate score if not official status invalid set or fps limit maybe?
