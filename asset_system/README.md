@@ -74,12 +74,12 @@ async.await(assets.index.reload("some_key"))
 -- the updated contents have to be read from the mirror again
 print(assets.mirror.some_key)
 ```
-Alternatively the mirror can listen to changes of an asset and call a callback.
+Alternatively the mirror client can listen to changes of an asset and call a callback.
 ```lua
 local assets = require("asset_system")
 local async = require("async")
 ...
-assets.mirror.listen("some_key", function(value)
+assets.mirror_client.listen("some_key", function(value)
     -- prints value of the asset with the key "some_key" whenever it changes
     -- it has not been loaded yet, so this will first be called once it is loaded
     print(value)
@@ -116,7 +116,7 @@ local async = require("async")
 love.thread.getChannel("mydata"):push({ number = 5 })
 
 -- listen to changes
-assets.mirror.listen("some_key", function(value)
+assets.mirror_client.listen("some_key", function(value)
     print("number + 10 = " .. value)
 end)
 
@@ -130,6 +130,42 @@ async.await(assets.index.changed("mydata_id"))
 ```
 
 This can also work with files, the `index.watch_file` function also adds the resource id (in this case a file path) to a file watcher that can be turned on using `assets.start_hot_reloading`, so `assets.index.changed` no longer needs to be called manually in that case.
+
+### Reloading table values
+
+Mirror clients edit table values in place instead of replacing them completely. So the following code does work:
+
+Loader code:
+```lua
+function loaders.some_loader()
+    index.watch("mydata")
+    local data = love.thread.getChannel("mydata"):peek()
+    data.number = data.number + 10
+    return data
+end
+```
+Application code:
+```lua
+local assets = require("asset_system")
+local async = require("async")
+...
+-- create data
+love.thread.getChannel("mydata"):push({ number = 5 })
+
+async.await(assets.index.request("some_key", "some_loader"))
+
+-- use copied table reference
+local mytable = assets.mirror.some_key
+print(mytable.number) -- 15
+
+-- change data
+love.thread.getChannel("mydata"):pop()
+love.thread.getChannel("mydata"):push({ number = 10 })
+async.await(assets.index.changed("mydata"))
+
+-- table reference didn't change, so data changes are still reflected
+print(mytable.number) -- 20
+```
 
 ## Unloading
 An asset can be unloaded using the `index.unload` function that takes either its internal id or mirror key. This will also mirror the asset to be nil again in all threads if the asset is mirrored.
