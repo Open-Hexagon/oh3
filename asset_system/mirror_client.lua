@@ -1,3 +1,4 @@
+local ltdiff = require("extlibs.ltdiff")
 local threadify = require("threadify")
 local async = require("async")
 local index = threadify.require("asset_system.index")
@@ -27,10 +28,15 @@ function client.update()
             update_ack_channel:push(id)
             last_id = id
             local key = notification[2]
-            local asset = notification[3]
-            client.mirror[key] = asset
+            local data = notification[3]
+            -- if currently mirrored value is a table and new value is one, assume it's a diff
+            if type(client.mirror[key]) == "table" and type(data) == "table" then
+                ltdiff.patch(client.mirror[key], data)
+            else
+                client.mirror[key] = data
+            end
             if asset_callbacks[key] then
-                asset_callbacks[key](asset)
+                asset_callbacks[key](client.mirror[key])
             end
         end
     end

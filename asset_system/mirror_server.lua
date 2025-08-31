@@ -1,3 +1,4 @@
+local ltdiff = require("extlibs.ltdiff")
 local log = require("log")(...)
 
 local mirror_server = {}
@@ -29,28 +30,38 @@ end
 local update_channel = love.thread.getChannel("asset_index_updates")
 local update_ack_channel = love.thread.getChannel("asset_index_update_acks")
 
--- keep track of notifications which need to be sent once loading stack is empty
-local pending_notifications = {}
-local pending_notification_count = 0
+-- keep track of assets which need to have notifications sent once loading stack is empty
+local pending_assets = {}
 local notification_id_offset = 0
 
 function mirror_server.schedule_sync(asset)
-    for i = pending_notification_count, 1, -1 do
-        if pending_notifications[i][2] == asset.key then
-            table.remove(pending_notifications, i)
-            pending_notification_count = pending_notification_count - 1
-        end
+    -- use as map to prevent double entry
+    pending_assets[asset] = true
+end
+
+local function send_notification(id, asset)
+    local notification = { id, asset.key, asset.value }
+    -- send a table diff instead of whole table when last mirrored value is a table
+    local send_diff = type(asset.last_mirrored_value) == "table" and type(asset.value) == "table"
+    if send_diff then
+        notification[3] = ltdiff.diff(asset.last_mirrored_value, asset.value)
     end
-    pending_notification_count = pending_notification_count + 1
-    pending_notifications[pending_notification_count] = { 0, asset.key, asset.value }
+    update_channel:push(notification)
+    if send_diff then
+        -- apply sent table diff to prevent having to send whole value for copying again
+        ltdiff.patch(asset.last_mirrored_value, notification[3])
+    else
+        -- copy the value sent to the channel
+        asset.last_mirrored_value = update_channel:peek()[3]
+    end
 end
 
 function mirror_server.sync_pending_assets()
-    for i = 1, pending_notification_count do
-        local notification = pending_notifications[i]
-        local id = i + notification_id_offset
-        notification[1] = id
-        update_channel:push(notification)
+    local notification_count = 0
+    for asset in pairs(pending_assets) do
+        notification_count = notification_count + 1
+        local id = notification_count + notification_id_offset
+        send_notification(id, asset)
         local acked = 0
         local timer = 0
         while acked < mirror_count do
@@ -62,16 +73,17 @@ function mirror_server.sync_pending_assets()
             love.timer.sleep(0.01)
             timer = timer + 0.01
             if timer > 1 then
-                log(string.format("Asset %s is taking an unusual amount of time being mirrored", notification[2]))
+                log(string.format("Asset %s is taking an unusual amount of time being mirrored", asset.key))
                 timer = 0
             end
         end
         update_channel:pop()
+        pending_assets[asset] = nil
     end
-    if pending_notification_count > 0 then
-        notification_id_offset = pending_notification_count + notification_id_offset > 1 and 0 or 1
+    -- prevent sending the same id twice in succession
+    if notification_count > 0 then
+        notification_id_offset = notification_count + notification_id_offset > 1 and 0 or 1
     end
-    pending_notification_count = 0
 end
 
 return mirror_server
