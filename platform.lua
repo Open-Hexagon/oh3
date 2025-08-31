@@ -3,7 +3,7 @@ local features = {}
 
 -- thanks to fake dlfcn functions, the library is actually just statically compiled in
 -- dlsym just uses a table with symbol names and pointers to the actual symbols
-package.preload.ffi = package.loadlib("cffi.a", "luaopen_cffi")
+package.preload.ffi = package.preload.ffi or package.loadlib("cffi.a", "luaopen_cffi")
 local ffi = require("ffi")
 
 -- cffi-lua has its own ffi.tonumber
@@ -39,6 +39,30 @@ if debug.getinfo(function(a, b) end).nparams ~= 2 then
         res.nparams = s:byte(pos)
         res.isvararg = s:byte(pos + 1) > 0
         return res
+    end
+end
+
+-- PUC lua 5.1 does not allow yielding across pcall/xpcall
+if coroutine.wrap(function()
+    pcall(coroutine.yield, "test")
+end)() ~= "test" then
+    function pcall(f, ...)
+        local co = coroutine.create(f)
+        local result
+        repeat
+            result = { coroutine.resume(co, ...) }
+            coroutine.yield(unpack(result, 2))
+        until coroutine.status(co) ~= "suspended"
+        return unpack(result)
+    end
+    function xpcall(f, errf, ...)
+        local result = { pcall(f, ...) }
+        if result[1] then
+            return unpack(result)
+        else
+            errf(result[2])
+            return result[1]
+        end
     end
 end
 
