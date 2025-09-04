@@ -64,30 +64,59 @@ local function table_diff(A, B)
         diff.mod = nil
     end
 
-    if next(diff.del) == nil then
+    if #diff.del == 0 then
         diff.del = nil
     end
 
     return diff
 end
 
-local function table_patch(A, diff)
+local deletion_cache = {}
+local function copy(src, dst)
+    for k in pairs(dst) do
+        dst[k] = src[k]
+    end
+    for k, v in pairs(src) do
+        dst[k] = v
+    end
+end
+
+local function table_patch(A, diff, post)
     if diff.sub ~= nil then
         for k, v in pairs(diff.sub) do
-            A[k] = table_patch(A[k], v)
+            A[k] = table_patch(A[k], v, post)
         end
     end
 
     if diff.del ~= nil then
-        for k, v in pairs(diff.del) do
-            A[v] = nil
+        for i = 1, #diff.del do
+            local k = diff.del[i]
+            local v = A[k]
+            if type(v) == "table" then
+                deletion_cache[A] = deletion_cache[A] or {}
+                deletion_cache[A][k] = v
+            end
+            A[k] = nil
         end
     end
 
     if diff.mod ~= nil then
         for k, v in pairs(diff.mod) do
-            A[k] = v
+            if type(v) == "table" and deletion_cache[A] and deletion_cache[A][k] then
+                A[k] = deletion_cache[A][k]
+                copy(v, A[k])
+                if post then
+                    post(A[k])
+                end
+                deletion_cache[A][k] = nil
+            else
+                A[k] = v
+            end
         end
+    end
+
+    if post then
+        post(A)
     end
 
     return A
