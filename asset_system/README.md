@@ -167,6 +167,10 @@ async.await(assets.index.changed("mydata"))
 print(mytable.number) -- 20
 ```
 
+### Listening to table content changes
+
+While listening to asset reloads generally is possible as shown previously. Sometimes you may want to listen to just sub table changes. This can be achieved by passing the sub table reference to `assets.mirror_client.listen` instead of the mirror key. (Note that the same api still applies: Only one callback is allowed per asset/sub table and it can be set to nil to remove it)
+
 ## Unloading
 An asset can be unloaded using the `index.unload` function that takes either its internal id or mirror key. This will also mirror the asset to be nil again in all threads if the asset is mirrored.
 

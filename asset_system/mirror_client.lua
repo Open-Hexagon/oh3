@@ -31,7 +31,11 @@ function client.update()
             local data = notification[3]
             -- if currently mirrored value is a table and new value is one, assume it's a diff
             if type(client.mirror[key]) == "table" and type(data) == "table" then
-                ltdiff.patch(client.mirror[key], data)
+                ltdiff.patch(client.mirror[key], data, function(t)
+                    if asset_callbacks[t] then
+                        asset_callbacks[t](t)
+                    end
+                end)
             else
                 client.mirror[key] = data
             end
@@ -43,7 +47,7 @@ function client.update()
 end
 
 ---listen to asset changes, to unregister listener set callback to nil
----@param key string
+---@param key string|table
 ---@param callback function?
 function client.listen(key, callback)
     asset_callbacks[key] = callback
