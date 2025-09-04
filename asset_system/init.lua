@@ -7,6 +7,7 @@ local asset_system = {
     mirror_client = mirror_client,
     mirror = mirror_client.mirror,
     index = index,
+    is_hot_reloading = false,
 }
 
 local main_thread_tasks = love.thread.getChannel("asset_loading_main_thread_tasks")
@@ -28,10 +29,12 @@ end
 ---@param filter string?
 function asset_system.start_hot_reloading(filter)
     watcher.start(filter)
+    asset_system.is_hot_reloading = true
 end
 
 ---don't automatically call index.reload on the correct assets based on file changes
 function asset_system.stop_hot_reloading()
+    asset_system.is_hot_reloading = false
     watcher.stop()
 end
 
