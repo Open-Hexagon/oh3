@@ -63,11 +63,11 @@ return function(game)
                     shaders[id].text_shader:send(name, value)
                 else
                     lua_runtime.error(
-                        "Uniform type '"
-                            .. uniform_type
-                            .. "' does not match the type in the shader '"
-                            .. shader_type
-                            .. "'"
+                        ("Uniform '%s': type '%s' does not match the type in the shader '%s'"):format(
+                            name,
+                            uniform_type,
+                            shader_type
+                        )
                     )
                 end
             end
