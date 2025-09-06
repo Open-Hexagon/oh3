@@ -1,31 +1,115 @@
 local args = require("args")
 local log = require("log")(...)
 local status = require("compat.game21.status")
+local assets = require("asset_system")
 
-return function(game)
-    local pack = game.pack_data
-    local lua_runtime = require("compat.game21.lua_runtime")
-    local env = lua_runtime.env
-    local shaders = {}
-    local loaded_filenames = {}
-    local function get_shader_id(pack_data, filename)
-        local loaded_pack_shaders = loaded_filenames[pack_data.info.path]
-        if loaded_pack_shaders ~= nil and loaded_pack_shaders[filename] ~= nil then
-            return loaded_pack_shaders[filename]
+local M = {}
+
+local shaders
+local loaded_filenames
+
+local function get_shader_id(pack_data, filename)
+    local loaded_pack_shaders = loaded_filenames[pack_data.info.path]
+    if loaded_pack_shaders ~= nil and loaded_pack_shaders[filename] ~= nil then
+        return loaded_pack_shaders[filename]
+    else
+        local shader = pack_data.shaders[filename]
+        if shader == nil then
+            require("compat.game21.lua_runtime").error("Shader '" .. filename .. "' does not exist!")
+            return -1
         else
-            local shader = pack_data.shaders[filename]
-            if shader == nil then
-                lua_runtime.error("Shader '" .. filename .. "' does not exist!")
-                return -1
+            local id = #shaders + 1
+            shaders[id] = shader
+            loaded_filenames[pack_data.info.path] = loaded_filenames[pack_data.info.path] or {}
+            loaded_filenames[pack_data.info.path][filename] = id
+            return id
+        end
+    end
+end
+
+local function check_valid_shader_id(id)
+    if args.headless then
+        return false
+    end
+    if id < 1 or id > #shaders then
+        log("Invalid shader id: '" .. id .. "'")
+        return false
+    end
+    return true
+end
+
+local uniform_values
+
+local function set_uniform(id_or_shader, uniform_type, name, value)
+    local shader = id_or_shader
+    if type(id_or_shader) == "number" and check_valid_shader_id(id_or_shader or -1) then
+        shader = shaders[id_or_shader or -1]
+    end
+    if shader then
+        local shader_type = shader.uniforms[name]
+        -- would be nil if uniform didn't exist (not printing errors because of spam)
+        if shader_type ~= nil then
+            if shader_type == uniform_type then
+                if assets.is_hot_reloading then
+                    -- store uniforms when hot reloading
+                    uniform_values[shader] = uniform_values[shader] or {}
+                    uniform_values[shader][name] = uniform_values[shader][name] or {}
+                    uniform_values[shader][name].value = value
+                    uniform_values[shader][name].type = uniform_type
+                end
+                shader.shader:send(name, value)
+                shader.instance_shader:send(name, value)
+                shader.text_shader:send(name, value)
             else
-                local id = #shaders + 1
-                shaders[id] = shader
-                loaded_filenames[pack_data.info.path] = loaded_filenames[pack_data.info.path] or {}
-                loaded_filenames[pack_data.info.path][filename] = id
-                return id
+                require("compat.game21.lua_runtime").error(
+                    ("Uniform '%s': type '%s' does not match the type in the shader '%s'"):format(
+                        name,
+                        uniform_type,
+                        shader_type
+                    )
+                )
             end
         end
     end
+end
+
+local last_shader_tables = {}
+local last_shader_userdata = {}
+
+---check if shaders changed
+function M.check()
+    if assets.is_hot_reloading then
+        for i = 0, 8 do
+            if
+                last_shader_tables[i] ~= nil
+                and last_shader_tables[i] == status.fragment_shaders[i]
+                and last_shader_userdata[i] ~= status.fragment_shaders[i].shader
+            then
+                -- shader changed, reapply uniforms
+                local shader = last_shader_tables[i]
+                for uname, uvalue in pairs(uniform_values[shader]) do
+                    set_uniform(shader, uvalue.type, uname, uvalue.value)
+                end
+            end
+        end
+        for i = 0, 8 do
+            last_shader_tables[i] = status.fragment_shaders[i]
+            if last_shader_tables[i] ~= nil then
+                last_shader_userdata[i] = status.fragment_shaders[i].shader
+            end
+        end
+    end
+end
+
+---add functions to env table
+---@param game table
+function M.use(game)
+    local pack = game.pack_data
+    local lua_runtime = require("compat.game21.lua_runtime")
+    local env = lua_runtime.env
+    shaders = {}
+    loaded_filenames = {}
+    uniform_values = {}
     env.shdr_getShaderId = function(filename)
         if args.headless then
             return -1
@@ -41,38 +125,6 @@ return function(game)
         return get_shader_id(pack.dependencies[pack_id] or pack, filename)
     end
 
-    local function check_valid_shader_id(id)
-        if args.headless then
-            return false
-        end
-        if id < 1 or id > #shaders then
-            log("Invalid shader id: '" .. id .. "'")
-            return false
-        end
-        return true
-    end
-    local function set_uniform(id, uniform_type, name, value)
-        id = id or -1
-        if check_valid_shader_id(id) then
-            local shader_type = shaders[id].uniforms[name]
-            -- would be nil if uniform didn't exist (not printing errors because of spam)
-            if shader_type ~= nil then
-                if shader_type == uniform_type then
-                    shaders[id].shader:send(name, value)
-                    shaders[id].instance_shader:send(name, value)
-                    shaders[id].text_shader:send(name, value)
-                else
-                    lua_runtime.error(
-                        ("Uniform '%s': type '%s' does not match the type in the shader '%s'"):format(
-                            name,
-                            uniform_type,
-                            shader_type
-                        )
-                    )
-                end
-            end
-        end
-    end
     -- making sure we don't need to create new tables all the time
     local uniform_value = {}
     env.shdr_setUniformF = function(id, name, a)
@@ -143,3 +195,5 @@ return function(game)
         end
     end
 end
+
+return M

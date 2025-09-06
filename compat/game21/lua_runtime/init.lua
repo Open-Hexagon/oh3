@@ -4,9 +4,9 @@ local add_timeline_functions = require("compat.game21.lua_runtime.timelines")
 local add_audio_functions = require("compat.game21.lua_runtime.audio")
 local add_utility_functions = require("compat.game21.lua_runtime.utility")
 local add_wall_functions = require("compat.game21.lua_runtime.walls")
-local add_shader_functions = require("compat.game21.lua_runtime.shaders")
 local add_level_functions = require("compat.game21.lua_runtime.level")
 local add_style_functions = require("compat.game21.lua_runtime.style")
+local shader_functions = require("compat.game21.lua_runtime.shaders")
 local custom_timelines = require("compat.game21.custom_timelines")
 local custom_walls = require("compat.game21.custom_walls")
 local lua_runtime = {
@@ -73,7 +73,7 @@ function lua_runtime.init_env(game, public)
         end
     end
 
-    add_shader_functions(game)
+    shader_functions.use(game)
 
     -- Miscellaneous functions
     env.steam_unlockAchievement = function(achievement)
