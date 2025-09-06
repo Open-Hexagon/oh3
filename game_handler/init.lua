@@ -163,11 +163,9 @@ game_handler.replay_start = async(function(file_or_replay_obj)
     is_resumed = false
     was_replaying = true
     game_handler.set_volume(config.get("music_volume"), config.get("sound_volume"))
-    local replay
-    if type(file_or_replay_obj) == "table" then
-        replay = file_or_replay_obj
-    else
-        replay = Replay:new(file_or_replay_obj)
+    local replay = file_or_replay_obj
+    if type(replay) == "string" then
+        replay = Replay:new(replay)
     end
     if replay.game_version ~= current_game_version then
         game_handler.set_version(replay.game_version)
