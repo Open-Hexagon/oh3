@@ -42,10 +42,10 @@ local uniform_values
 
 local function set_uniform(id_or_shader, uniform_type, name, value)
     local shader = id_or_shader
-    if type(id_or_shader) == "number" and check_valid_shader_id(id_or_shader or -1) then
-        shader = shaders[id_or_shader or -1]
+    if type(shader) == "number" and check_valid_shader_id(shader or -1) then
+        shader = shaders[shader or -1]
     end
-    if shader then
+    if type(shader) == "table" then
         local shader_type = shader.uniforms[name]
         -- would be nil if uniform didn't exist (not printing errors because of spam)
         if shader_type ~= nil then
