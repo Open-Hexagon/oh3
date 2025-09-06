@@ -1,5 +1,6 @@
 local assets = require("asset_system")
 local audio = require("audio")
+local args = require("args")
 local log = require("log")(...)
 local sound = {}
 
@@ -42,21 +43,25 @@ local function get_game_sound(name)
 end
 
 function sound.play_game(name)
-    audio.play_sound(get_game_sound(name))
+    if not args.headless then
+        audio.play_sound(get_game_sound(name))
+    end
 end
 
 function sound.play_pack(pack, name)
-    local game_sound = get_game_sound(name)
-    if game_sound then
-        audio.play_sound(game_sound)
-    else
-        local pack_id, actual_name = name:match("(.*)_(.*)")
-        if pack_id ~= pack.info.id then
-            play_external_pack_sound(pack.info.game_version, pack_id, actual_name)
-        elseif pack.sounds[actual_name] then
-            audio.play_sound(pack.sounds[actual_name])
+    if not args.headless then
+        local game_sound = get_game_sound(name)
+        if game_sound then
+            audio.play_sound(game_sound)
         else
-            log("Sound not found:", name)
+            local pack_id, actual_name = name:match("(.*)_(.*)")
+            if pack_id ~= pack.info.id then
+                play_external_pack_sound(pack.info.game_version, pack_id, actual_name)
+            elseif pack.sounds[actual_name] then
+                audio.play_sound(pack.sounds[actual_name])
+            else
+                log("Sound not found:", name)
+            end
         end
     end
 end

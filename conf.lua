@@ -36,7 +36,7 @@ function love.conf(t)
         t.modules.math = true
         t.modules.mouse = false
         t.modules.physics = false
-        t.modules.sound = false
+        t.modules.sound = true
         t.modules.system = true
         t.modules.thread = true
         t.modules.timer = true
